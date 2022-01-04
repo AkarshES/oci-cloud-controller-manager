@@ -183,8 +183,7 @@ function run_e2e_tests() {
         --nsg-ocids=${NSG_OCIDS} \
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
-        --volume-handle=${FSS_VOLUME_HANDLE} \
-
+        --volume-handle=${FSS_VOLUME_HANDLE}
     retval=$?
     rm -f $OCI_KEY_FILE
     return $retval
@@ -203,7 +202,7 @@ function run_e2e_tests_existing_cluster() {
         --nsg-ocids=${NSG_OCIDS} \
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
-        --volume-handle=${FSS_VOLUME_HANDLE} \
+        --volume-handle=${FSS_VOLUME_HANDLE}
     retval=$?
     return $retval
 }
@@ -236,6 +235,7 @@ function setup_arm() {
         export OCI_NODESUBNET=$OCI_NODESUBNET_ARM
         export NSG_OCIDS=$NSG_OCIDS_ARM
         export OKE_ENDPOINT=$OKE_ENDPOINT_ARM
+        export FSS_VOLUME_HANDLE=$FSS_VOLUME_HANDLE_ARM
         declare_setup "CREATE"
     elif [[ "$#" -ne  "0" && "$1" == "EXIST" ]]; then
         export CLUSTER_KUBECONFIG=$CLUSTER_KUBECONFIG_ARM
@@ -346,6 +346,7 @@ function run_tests () {
             check_environment
             declare_environment
             run_e2e_tests
+            retval_amd=$?
         fi
         # run ARM tests
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "ARM" ]]; then
@@ -353,6 +354,7 @@ function run_tests () {
             check_environment
             declare_environment
             run_e2e_tests
+            retval_arm=$?
         fi
     else
         # run the ginko test framework for existing cluster
@@ -362,6 +364,7 @@ function run_tests () {
             check_environment
             declare_environment
             run_e2e_tests_existing_cluster
+            retval_arm=$?
         fi
         # run AMD tests
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "AMD" ]]; then
@@ -369,6 +372,46 @@ function run_tests () {
             check_environment
             declare_environment
             run_e2e_tests_existing_cluster
+            retval_amd=$?
+        fi
+    fi
+
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
+    if [[ "$SCOPE" == "BOTH" ]]; then
+        if [[ $retval_amd == 0 && $retval_arm == 0 ]]; then
+            printf "ARM and AMD tests are Successful!"
+            return $retval_amd
+        fi
+
+        if [[ $retval_amd != 0 ]]; then
+            printf "${RED}AMD Failed${NC}"
+            return $retval_amd
+        fi
+
+        if [[ $retval_arm != 0 ]]; then
+            printf "${RED}ARM Failed${NC}"
+            return $retval_arm
+        fi
+    fi
+
+    if [[ "$SCOPE" == "ARM" ]]; then
+        if [[ $retval_arm != 0 ]]; then
+            printf "${RED}ARM Failed${NC}"
+            return $retval_arm
+        else
+            echo "ARM tests are Successful"
+            return $retval_arm
+        fi
+    fi
+
+    if [[ "$SCOPE" == "AMD" ]]; then
+        if [[ $retval_amd != 0 ]]; then
+            printf "${RED}AMD Failed${NC}"
+            return $retval_amd
+        else
+            echo "AMD tests are Successful"
+            return $retval_amd
         fi
     fi
 }
