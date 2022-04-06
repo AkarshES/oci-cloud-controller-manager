@@ -1,0 +1,143 @@
+
+module "dev-oc1-config" {
+  source               = "./configuration/merged_realm_config"
+  flock_config         = local.flock_config
+  overrides            = local.overrides
+  qualified_realm_name = "dev.oc1"
+}
+
+module "polaris-oc1-config" {
+  source               = "./configuration/merged_realm_config"
+  flock_config         = local.flock_config
+  overrides            = local.overrides
+  qualified_realm_name = "polaris.oc1"
+}
+
+module "integ-oc1-config" {
+  source               = "./configuration/merged_realm_config"
+  flock_config         = local.flock_config
+  overrides            = local.overrides
+  qualified_realm_name = "integ.oc1"
+}
+
+locals {
+  preprod_phases = ["polaris", "dev", "integ"]
+  preprod_scalar = contains(keys(local.prod_realm_by_name), "oc1") ? 1 : 0
+  preprod_cell_overrides = local.preprod_scalar == 1 ? {
+    for key, value in local.cell_overrides : key => value if split(".", key)[0] != "prd" && split(".", key)[1] == "oc1"
+  } : {}
+  preprod_env_setup_ets = local.preprod_scalar == 1 ? {
+    "polaris.oc1" = {
+      cell_count        = 2
+      realm             = "oc1"
+      env               = "polaris"
+      region            = "us-phoenix-1"
+      additional_locals = module.polaris-oc1-config.config
+    },
+    "dev.oc1" = {
+      cell_count        = 1
+      realm             = "oc1"
+      env               = "dev"
+      region            = "us-ashburn-1"
+      additional_locals = module.dev-oc1-config.config
+    },
+    "integ.oc1" = {
+      cell_count        = 2
+      realm             = "oc1"
+      env               = "integ"
+      region            = "us-ashburn-1"
+      additional_locals = module.integ-oc1-config.config
+    }
+  } : {}
+  preprod_spectre_setup_ets = local.preprod_scalar == 1 ? {
+    "polaris.oc1" = {
+      realm             = "oc1",
+      env               = "polaris"
+      region            = "us-phoenix-1"
+      additional_locals = module.polaris-oc1-config.config
+    },
+    "dev.oc1" = {
+      realm             = "oc1"
+      env               = "dev"
+      region            = "us-phoenix-1"
+      additional_locals = module.dev-oc1-config.config
+    },
+    "integ.oc1" = {
+      realm             = "oc1"
+      env               = "integ"
+      region            = "us-phoenix-1"
+      additional_locals = module.integ-oc1-config.config
+    }
+  } : {}
+  preprod_spectre_regional_ets = local.preprod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] != "prd" && split(".", key)[1] == "oc1"]) : toset([])
+}
+
+resource "shepherd_release_phase" "preprod" {
+  count        = local.preprod_scalar * length(local.preprod_phases)
+  name         = "${local.preprod_phases[count.index]}.oc1"
+  realm        = "oc1"
+  production   = false
+  predecessors = count.index == 0 ? [] : ["${local.preprod_phases[count.index - 1]}.oc1"]
+}
+
+resource "shepherd_execution_target" "preprod_et" {
+  for_each                  = local.preprod_cell_overrides
+  name                      = each.key
+  region                    = split(".", each.key)[2]
+  predecessors              = lookup(each.value, "predecessor", "") != "" ? [lookup(each.value, "predecessor", "")] : tonumber(split("cell", each.key)[1]) > 0 ? [format("%s.cell%s", split(".cell", each.key)[0], tonumber(split(".cell", each.key)[1]) - 1)] : []
+  phase                     = lookup(merge(each.value, lookup(local.overrides, split(".cell", each.key)[0], {})), "phase", join(".", [split(".", each.key)[0], split(".", each.key)[1]]))
+  uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
+  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
+  snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
+  additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
+  alarms_to_watch {
+    compartment_name = format("cell%d:cell%d.mp:cell%d.mp.orchestration", split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1]) # This is a compartment in the tenancy above
+    labels           = [format(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "watch_mp_release_label_format"), split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1])]
+  }
+  ignored_region_build_capabilities = ["grafana_dashboard"]
+}
+
+resource "shepherd_execution_target" "preprod_env_setup_et" {
+  for_each                          = local.preprod_env_setup_ets
+  name                              = format("env.setup.%s", each.key)
+  region                            = each.value.region
+  phase                             = lookup(each.value, "phase", each.key)
+  predecessors                      = []
+  uniquifier                        = format("env-setup-%s", replace(each.key, ".", "-"))
+  tenancy_name                      = lookup(lookup(local.overrides.tenancy_info, each.value.env, {}), each.value.realm, local.overrides.tenancy_info.default)
+  snowflake_config_location         = "generic_tenancy"
+  additional_locals                 = merge(each.value.additional_locals, { cell_count : each.value.cell_count })
+  ignored_region_build_capabilities = ["grafana_dashboard"]
+}
+
+resource "shepherd_execution_target" "preprod_spectre_setup_et" {
+  for_each                          = local.preprod_spectre_setup_ets
+  name                              = format("spectre.setup.%s", each.key)
+  region                            = each.value.region
+  phase                             = lookup(each.value, "phase", each.key)
+  predecessors                      = ["env.setup.${each.value.env}.${each.value.realm}"]
+  uniquifier                        = format("spectre-setup-%s", replace(each.key, ".", "-"))
+  tenancy_name                      = lookup(lookup(local.overrides.tenancy_info, each.value.env, {}), each.value.realm, local.overrides.tenancy_info.default)
+  snowflake_config_location         = "spectre_region"
+  additional_locals                 = each.value.additional_locals
+  ignored_region_build_capabilities = ["grafana_dashboard"]
+}
+
+resource "shepherd_execution_target" "preprod_region_values" {
+  for_each                  = local.preprod_spectre_regional_ets
+  name                      = format("spectre.values.%s", each.key)
+  region                    = local.home_region_by_realm[split(".", each.key)[1]]
+  predecessors              = [join(".", [each.key, "cell0"])]
+  phase                     = lookup(merge(lookup(local.overrides, each.key, {})), "phase", join(".", [split(".", each.key)[0], split(".", each.key)[1]]))
+  uniquifier                = format("spectre-values-%s", lookup(module.merged_cell_config.uniquifiers, join(".", [each.key, "cell0"]), ""))
+  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
+  snowflake_config_location = "generic_spectre_region"
+  additional_locals = merge({
+    limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
+    manage_regional_values = "true"
+    manage_definitions     = "false"
+    spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"])), "spectre_group_name")
+    },
+    lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {})
+  )
+}

@@ -1,0 +1,170 @@
+variable "root_compartment_ocid" {}
+variable "region_code" {}
+variable "cell_index" {}
+variable "cell_compartment_format" {}
+variable "orchestration_compartment_format" {}
+variable "kmi_compartment_format" {}
+variable "vcn_format" {}
+variable "mapi_instance_subnet_name" {}
+variable "mapi_lb_subnet_name" {}
+variable "mp_worker_subnet_name" {}
+variable "kmi_subnet_name" {}
+variable "env_name" {}
+variable "tag_ns_name" {}
+variable "instance_type_tag_name" {}
+variable "api_hostclass" {}
+variable "mapi_instance_count" {}
+variable "mapi_instance_shape" {}
+variable "mapi_instance_assign_public_ip" {}
+variable "mapi_instance_name" {}
+variable "mapi_instance_type_tag_value" {}
+variable "worker_hostclass" {}
+variable "worker_instance_count" {}
+variable "worker_instance_shape" {}
+variable "worker_instance_assign_public_ip" {}
+variable "worker_instance_name" {}
+variable "worker_instance_type_tag_value" {}
+variable "lb_shape" {}
+variable "enable_kaas_regional_instance" {}
+variable "kaas_name_format" {}
+variable "region_public_name" {}
+variable "enable_wfaas" {}
+variable "wfaas_name_format" {}
+variable "api_log_namespace_format" {}
+variable "monitor_log_namespace_format" {}
+variable "worker_log_namespace_format" {}
+variable "phonebook_name" {}
+variable "sms_namespace_name_format" {}
+variable "certificate_name_format" {}
+variable "certificate_compartment" {}
+variable "alarms_enabled" {}
+variable "alarms_compartment" {}
+variable "alarms_project" {}
+variable "jira_project" {}
+variable "jira_component" {}
+variable "leadership_jira_component" {}
+variable "runbook_base" {}
+variable "severity_2" {}
+variable "severity_3" {}
+variable "severity_4" {}
+variable "mapi_jira_item" {}
+variable "mapi_api_alarm_label_format" {}
+variable "mapi_infra_alarm_label_format" {}
+variable "mapi_availability_severity" {}
+variable "mapi_latency_severity" {}
+variable "mapi_api_alarms_enabled" {}
+variable "mapi_availability_threshold" {}
+variable "mapi_latency_threshold" {}
+variable "mapi_dashboard" {}
+variable "mapi_availability_runbook" {}
+variable "mapi_latency_runbook" {}
+variable "mapi_failure_runbook" {}
+variable "mapi_alarms_fleet_format" {}
+variable "mapi_alarms_hostmetrics_fleet" {}
+variable "mapi_subdomain" {}
+variable "iaas_domain" {}
+variable "kmon_jira_item" {}
+variable "kmon_infra_alarm_label_format" {}
+variable "kmon_alarms_fleet_format" {}
+variable "kmon_alarm_label_format" {}
+variable "kmon_alarms_enabled" {}
+variable "kmon_dashboard" {}
+variable "worker_jira_item" {}
+variable "worker_alarms_fleet_format" {}
+variable "worker_alarms_hostmetrics_fleet" {}
+variable "worker_alarm_label_format" {}
+variable "worker_alarms_enabled" {}
+variable "worker_dashboard" {}
+variable "has_mapi_grafana_dashboard" {}
+variable "image_name" {}
+variable "image_url" {}
+variable "splunk_enabled" {}
+variable "mapi_lb_name" {}
+variable "realm" {}
+variable "splat_base_service_name" {}
+variable "splat_service_name_format" {}
+variable "splat_service_fleet" {}
+variable "oke_secrets_namespace" {}
+variable "cp_vcn_name_format" {}
+variable "cp_vcn_compartment" {}
+variable "pl_vcn_name" {}
+variable "pl_vcn_compartment" {}
+variable "prime_vcn_compartment" {}
+variable "prime_vcn_name" {}
+variable "watch_mp_release_label_format" {}
+variable "skip_mapi_alarms" {}
+variable "skip_kmon_alarms" {}
+variable "skip_worker_alarms" {}
+variable "skip_dns" {}
+variable "image_type" {}
+variable "mapi_shape_config" {}
+variable "worker_shape_config" {}
+
+locals {
+  cp_vcn_name = var.env_name == "prd" ? format(var.cp_vcn_name_format,"prod") : format(var.cp_vcn_name_format,var.env_name)
+  watch_mp_release_label = format(var.watch_mp_release_label_format, var.cell_index)
+  certificate_compartment = tonumber(var.cell_index) == 0 && var.env_name == "prd" ? "assets" : format(var.orchestration_compartment_format, var.cell_index)
+  alarms_compartment      = coalesce(var.alarms_compartment, format(var.orchestration_compartment_format, var.cell_index))
+}
+
+// saving the format for phase 2
+
+/*module "alarms" {
+  source = "../alarms"
+  root_compartment_ocid = var.root_compartment_ocid
+  region_code = var.region_code
+  compartment_name = local.alarms_compartment
+  cell_compartment_format = var.cell_compartment_format
+  cell_index = var.cell_index
+  env_name = var.env_name
+  alarms_enabled = var.alarms_enabled
+  project = var.alarms_project
+  jira_project = var.jira_project
+  jira_component = var.jira_component
+  leadership_jira_component = var.leadership_jira_component
+  runbook_base = var.runbook_base
+  severity_2 = var.severity_2
+  severity_3 = var.severity_3
+  severity_4 = var.severity_4
+  mapi_api_alarm_label_format = var.mapi_api_alarm_label_format
+  mapi_infra_alarm_label_format = var.mapi_infra_alarm_label_format
+  mapi_availability_severity = var.mapi_availability_severity
+  mapi_latency_severity = var.mapi_latency_severity
+  mapi_jira_item = var.mapi_jira_item
+  mapi_api_alarms_enabled = var.mapi_api_alarms_enabled
+  mapi_availability_threshold = var.mapi_availability_threshold
+  mapi_latency_threshold = var.mapi_latency_threshold
+  mapi_dashboard = var.mapi_dashboard
+  realm = var.realm
+  mapi_availability_runbook = var.mapi_availability_runbook
+  mapi_latency_runbook = var.mapi_latency_runbook
+  mapi_failure_runbook = var.mapi_failure_runbook
+  mapi_fleet_format = var.mapi_alarms_fleet_format
+  mapi_hostmetrics_fleet = var.mapi_alarms_hostmetrics_fleet
+  kmon_infra_alarm_label_format = var.kmon_infra_alarm_label_format
+  kmon_fleet_format = var.kmon_alarms_fleet_format
+  kmon_jira_item = var.kmon_jira_item
+  kmon_alarm_label_format = var.kmon_alarm_label_format
+  kmon_alarms_enabled = var.kmon_alarms_enabled
+  kmon_dashboard = var.kmon_dashboard
+  worker_fleet_format = var.worker_alarms_fleet_format
+  worker_hostmetrics_fleet = var.worker_alarms_hostmetrics_fleet
+  worker_jira_item = var.worker_jira_item
+  worker_alarm_label_format = var.worker_alarm_label_format
+  worker_alarms_enabled = var.worker_alarms_enabled
+  worker_dashboard = var.worker_dashboard
+  region = var.region_public_name
+  mapi_lb = module.loadbalancer.mp_api_load_balancer
+  watch_mp_release_label = local.watch_mp_release_label
+  skip_kmon_alarms = var.skip_kmon_alarms
+  skip_mapi_alarms = var.skip_mapi_alarms
+  skip_worker_alarms = var.skip_worker_alarms
+}*/
+
+
+/*
+module "grafana_dashboard" {
+  source = "../grafana_dashboard"
+  has_mapi_grafana_dashboard = var.has_mapi_grafana_dashboard
+}
+*/

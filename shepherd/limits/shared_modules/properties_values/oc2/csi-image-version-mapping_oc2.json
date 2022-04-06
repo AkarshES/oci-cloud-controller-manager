@@ -1,0 +1,8 @@
+{
+  "realms" : [ "oc2" ],
+  "name": "csi-image-version-mapping",
+  "values" : [ {
+    "ad" : "all",
+    "value" : "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",  \"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",  \"v1.19\": \"oke-multiarch-1.19-cc35785-154@sha256:a49b484c9bfc0fa8ff2dbca6eb66c534bc3f025d877d6ba2be467b840bc70af5\",  \"v1.20\": \"oke-multiarch-1.19-cc35785-154@sha256:a49b484c9bfc0fa8ff2dbca6eb66c534bc3f025d877d6ba2be467b840bc70af5\",  \"v1.21\": \"oke-multiarch-1.19-cc35785-154@sha256:a49b484c9bfc0fa8ff2dbca6eb66c534bc3f025d877d6ba2be467b840bc70af5\",  \"v1.22\": \"oke-multiarch-1.22-3c65cc0-33@sha256:5618262bf456959faf640ed2e23a3776ca8aef015827818c396567701b16c296\"}"
+  } ]
+}

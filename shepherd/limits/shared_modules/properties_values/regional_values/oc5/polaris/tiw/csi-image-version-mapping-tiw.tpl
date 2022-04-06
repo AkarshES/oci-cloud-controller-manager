@@ -1,0 +1,9 @@
+{
+  "realms" : [ "oc5" ],
+  "name": "csi-image-version-mapping",
+  "region":  "${region}",
+  "values" : [ {
+    "ad" : "all",
+    "value" : "{\"default\": \"oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1\",  \"v1.16\": \"oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1\",  \"v1.17\": \"oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364\",  \"v1.18\": \"oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364\",  \"v1.19\": \"oke-1.19-cc35785-154@sha256:c174f1ae4bdde5c8c4b877a871c454ae58f745845dff3febf9ab5d19f52add1e\",  \"v1.20\": \"oke-1.19-cc35785-154@sha256:c174f1ae4bdde5c8c4b877a871c454ae58f745845dff3febf9ab5d19f52add1e\",  \"v1.21\": \"oke-1.19-cc35785-154@sha256:c174f1ae4bdde5c8c4b877a871c454ae58f745845dff3febf9ab5d19f52add1e\",  \"v1.22\": \"oke-1.22-3c65cc0-33@sha256:bbadf611bdc1a67975fdb0e53063a3246249b15a3144c77bff9cb2d3f676befe\"}"
+  } ]
+}
