@@ -1,0 +1,10 @@
+//this is a sample file, if you want to add a property value to all the region, follow the below pattern and save it as .json file
+{
+  "realms" : [ "oc1" ],
+  "name" : "sample",
+  "values" : [ {
+    "region" : "all",
+    "ad" : "all",
+    "value" : "{\"default\": \"@sha256:14cad471dfe66fb9f9230e1f6df9f454ef7f27b30aaf8d54d67f683870466491\"}"
+  } ]
+}
