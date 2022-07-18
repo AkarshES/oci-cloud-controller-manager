@@ -44,10 +44,10 @@ locals {
 }
 
 resource "shepherd_release_phase" "onsr_prod" {
-  count        = length(local.onsr_phases) * local.onsr_scalar
-  name         = "prd.${local.onsr_phases[count.index]}"
-  realm        = local.onsr_phases[count.index]
-  production   = ! contains(local.realms_under_build, local.onsr_phases[count.index])
+  count        = length(local.onsr_realms) * local.onsr_scalar
+  name         = "prd.${local.onsr_realms[count.index].name}"
+  realm        = local.onsr_realms[count.index].name
+  production   = ! contains(local.realms_under_build, local.onsr_realms[count.index].name)
   predecessors = count.index == 0 ? local.onsr_polaris_scalar == 0 ? [] : local.onsr_realms[count.index].name != "oc5" ? ["prd.${local.prod_realms[length(local.prod_realms) - 1].name}"] : ["polaris.oc5"] : local.onsr_polaris_scalar == 1 && local.onsr_realms[count.index].name == "oc5" ? ["polaris.oc5"] : ["prd.${local.onsr_realms[count.index - 1].name}"]
   dynamic "on_success" {
     for_each = local.onsr_phases[count.index] == "oc3" ? toset([local.onsr_phases[count.index]]) : toset([])

@@ -44,7 +44,7 @@ resource "shepherd_release_phase" "build_realm" {
   name         = "realm-build.${local.build_phases[count.index]}"
   realm        = local.build_phases[count.index]
   production   = ! contains(local.realms_under_build, local.build_phases[count.index])
-  predecessors = count.index == 0 ? ["prd.${local.onsr_phases[length(local.onsr_phases) - 1]}"] : ["realm-build.${local.build_phases[count.index - 1]}"]
+  predecessors = count.index == 0 ? ["prd.${local.onsr_realms[length(local.onsr_phases) - 1].name}"] : ["realm-build.${local.build_phases[count.index - 1]}"]
   dynamic "on_success" {
     for_each = local.build_phases[count.index] == "oc3" ? toset([local.build_phases[count.index]]) : toset([])
     content {

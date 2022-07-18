@@ -102,13 +102,13 @@ resource "shepherd_release_phase" prd-oc1-single-ad-part-2 {
 }
 
 resource "shepherd_release_phase" "prod" {
-  count        = length(local.prod_phases) * local.prod_scalar
-  name         = "prd.${local.prod_phases[count.index]}"
-  realm        = local.prod_phases[count.index]
-  production   = ! contains(local.realms_under_build, local.prod_phases[count.index])
-  predecessors = count.index == 0 ? [shepherd_release_phase.prd-oc1-single-ad-part-2[0].name] : ["prd.${local.prod_phases[count.index - 1]}"]
+  count        = length(local.prod_realms) * local.prod_scalar
+  name         = "prd.${local.prod_realms[count.index].name}"
+  realm        = local.prod_realms[count.index].name
+  production   = ! contains(local.realms_under_build, local.prod_realms[count.index].name)
+  predecessors = count.index == 0 ? [shepherd_release_phase.prd-oc1-single-ad-part-2[0].name] : ["prd.${local.prod_realms[count.index - 1].name}"]
   dynamic "on_success" {
-    for_each = local.prod_phases[count.index] == "oc3" ? toset([local.prod_phases[count.index]]) : toset([])
+    for_each = local.prod_realms[count.index].name == "oc3" ? toset([local.prod_realms[count.index].name]) : toset([])
     content {
       # the default version set will get merged into the golden after it has been verified
       publish_region_build_version_sets = ["default", "*/break_glass"]

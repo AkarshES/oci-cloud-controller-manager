@@ -8,9 +8,9 @@ module "polaris-oc5-config" {
 
 locals {
   onsr_polaris_scalar     = contains(local.onsr_phases, "oc5") ? 1 : 0
-  index_prior_to_oc5      = try(index(local.onsr_phases, "oc5"), 0)
-  index_0_and_commercial  = local.prod_scalar == 1 ? ["prd.${local.prod_phases[length(local.prod_phases) - 1]}"] : []
-  polaris_oc5_predecessor = local.index_prior_to_oc5 == 0 ? local.index_0_and_commercial : ["prd.${local.onsr_phases[local.index_prior_to_oc5 - 1]}"]
+  index_prior_to_oc5      = try(index(keys(local.onsr_realm_by_name), "oc5"), 0)
+  index_0_and_commercial  = local.prod_scalar == 1 ? ["prd.${local.prod_realms[length(local.prod_realms) - 1].name}"] : []
+  polaris_oc5_predecessor = local.index_prior_to_oc5 == 0 ? local.index_0_and_commercial : ["prd.${local.onsr_realms[local.index_prior_to_oc5 - 1].name}"]
   onsr_polaris_cell_overrides = local.onsr_polaris_scalar == 1 ? {
     for key, value in local.cell_overrides : key => value if split(".", key)[0] == "polaris" && split(".", key)[1] == "oc5"
   } : {}
