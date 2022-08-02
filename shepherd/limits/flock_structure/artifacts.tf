@@ -16,6 +16,10 @@ locals {
   }
 }
 # Artifacts
+/*Commenting out as the application release is not currently enabled in this flock.
+This block might be needed at a later point.
+*/
+/*
 resource "shepherd_artifacts" "artifact" {
   for_each = local.artifact_config
   artifact {
@@ -25,3 +29,4 @@ resource "shepherd_artifacts" "artifact" {
     description = each.value.description
   }
 }
+*/
