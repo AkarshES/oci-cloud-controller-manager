@@ -5,3 +5,7 @@ module "properties_values" {
   env                = lookup(local.execution_target.additional_locals, "env", "")
   realm              = local.execution_target.region.realm
 }
+
+resource "capability_require_capability" "oke_ccm_csi_internal_capability" {
+  name  = "oke_ccm_csi_internal_capability"
+}
