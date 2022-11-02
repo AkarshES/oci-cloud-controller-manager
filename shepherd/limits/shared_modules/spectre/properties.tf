@@ -65,6 +65,14 @@ locals {
       "false"]
       default_value = "false"
     }
+    "oci-service-controller-enabled" = {
+      type = "ENUM"
+      description = "Enable custom OCI service controller for SKE support"
+      options = [
+        "true",
+        "false"]
+      default_value = "false"
+    }
   }
 
   
