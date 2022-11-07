@@ -303,7 +303,7 @@ type LBSpec struct {
 }
 
 // NewLBSpec creates a LB Spec from a Kubernetes service and a slice of nodes.
-func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, virtualPods []*v1.Pod, subnets []string, sslConfig *SSLConfig, secListFactory securityListManagerFactory, initialLBTags *config.InitialTags) (*LBSpec, error) {
+func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, virtualPods []*v1.Pod, subnets []string, sslConfig *SSLConfig, secListFactory securityListManagerFactory, initialLBTags *config.InitialTags, existingLB *client.GenericLoadBalancer) (*LBSpec, error) {
 	if err := validateService(svc); err != nil {
 		return nil, errors.Wrap(err, "invalid service")
 	}
@@ -313,7 +313,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
-	shape, flexShapeMinMbps, flexShapeMaxMbps, err := getLBShape(svc)
+	shape, flexShapeMinMbps, flexShapeMaxMbps, err := getLBShape(svc, existingLB)
 	if err != nil {
 		return nil, err
 	}
@@ -985,11 +985,23 @@ func isInternalLB(svc *v1.Service) (bool, error) {
 	return false, nil
 }
 
-func getLBShape(svc *v1.Service) (string, *int, *int, error) {
+func getLBShape(svc *v1.Service, existingLB *client.GenericLoadBalancer) (string, *int, *int, error) {
 	if getLoadBalancerType(svc) == NLB {
 		return flexible, nil, nil, nil
 	}
 	shape := lbDefaultShape
+	var flexMinS, flexMaxS string
+	// If existing LB is already flexible, retain the configuration done one the LB.
+	// If min and max bandwith annotations are present, they take precedence over
+	// what it configured on the LB.
+	// This handles the situation where customers convert to flexible shape outside of K8s
+	// but don't update the K8s service manifest
+	if existingLB != nil && *existingLB.ShapeName == flexible {
+		shape = flexible
+		flexMinS = strconv.Itoa(*existingLB.ShapeDetails.MinimumBandwidthInMbps)
+		flexMaxS = strconv.Itoa(*existingLB.ShapeDetails.MaximumBandwidthInMbps)
+	}
+
 	if s, ok := svc.Annotations[ServiceAnnotationLoadBalancerShape]; ok {
 		shape = s
 	}
@@ -1008,9 +1020,6 @@ func getLBShape(svc *v1.Service) (string, *int, *int, error) {
 		return shape, nil, nil, nil
 	}
 
-	var flexMinS, flexMaxS string
-	var flexShapeMinMbps, flexShapeMaxMbps int
-
 	if fmin, ok := svc.Annotations[ServiceAnnotationLoadBalancerShapeFlexMin]; ok {
 		flexMinS = fmin
 	}
@@ -1027,10 +1036,12 @@ func getLBShape(svc *v1.Service) (string, *int, *int, error) {
 		)
 	}
 
+	var flexShapeMinMbps, flexShapeMaxMbps int
 	flexShapeMinMbps, err := parseFlexibleShapeBandwidth(flexMinS, ServiceAnnotationLoadBalancerShapeFlexMin)
 	if err != nil {
 		return "", nil, nil, err
 	}
+
 	flexShapeMaxMbps, err = parseFlexibleShapeBandwidth(flexMaxS, ServiceAnnotationLoadBalancerShapeFlexMax)
 	if err != nil {
 		return "", nil, nil, err

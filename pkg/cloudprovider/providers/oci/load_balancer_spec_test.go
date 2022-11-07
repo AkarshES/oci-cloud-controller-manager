@@ -1907,7 +1907,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.clusterTags)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.clusterTags, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -2018,7 +2018,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.clusterTags)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.clusterTags, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -2293,7 +2293,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 				slManagerFactory := func(mode string) securityListManager {
 					return newSecurityListManagerNOOP()
 				}
-				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.clusterTags)
+				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.clusterTags, nil)
 			}
 			if err == nil || err.Error() != tc.expectedErrMsg {
 				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)
@@ -2554,9 +2554,16 @@ func TestRequiresCertificate(t *testing.T) {
 				ServiceAnnotationLoadBalancerSSLPorts: "443",
 			},
 		},
-		"Does not container the Load Balancer SSL Ports Annotation": {
+		"Does not contain the Load Balancer SSL Ports Annotation": {
 			expected:    false,
 			annotations: make(map[string]string, 0),
+		},
+		"Always false for NLBs": {
+			expected: false,
+			annotations: map[string]string{
+				ServiceAnnotationLoadBalancerSSLPorts: "443",
+				ServiceAnnotationLoadBalancerType:     "nlb",
+			},
 		},
 	}
 
@@ -4450,6 +4457,245 @@ func Test_getPreserveSourceDestination(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+var getLBShapeTestCases = []struct {
+	name                 string
+	existingLb           *client.GenericLoadBalancer
+	service              *v1.Service
+	expectedShape        string
+	expectedMinBandwidth int
+	expectedMaxBandwidth int
+	expectedError        error
+}{
+	{
+		"default spec, no existing LB",
+		nil,
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   "kube-system",
+				Name:        "testservice",
+				UID:         "test-uid",
+				Annotations: map[string]string{},
+			},
+		},
+		"100Mbps",
+		0,
+		0,
+		nil,
+	},
+	{
+		"flexible spec, no existing LB",
+		nil,
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape:        "flexible",
+					ServiceAnnotationLoadBalancerShapeFlexMin: "1",
+					ServiceAnnotationLoadBalancerShapeFlexMax: "10000000",
+				},
+			},
+		},
+		"flexible",
+		10,
+		8192,
+		nil,
+	},
+	{
+		"default shape in spec, existing LB converted to flexible",
+		&client.GenericLoadBalancer{
+			ShapeName: common.String("flexible"),
+			ShapeDetails: &client.GenericShapeDetails{
+				MinimumBandwidthInMbps: common.Int(12),
+				MaximumBandwidthInMbps: common.Int(13),
+			},
+		},
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   "kube-system",
+				Name:        "testservice",
+				UID:         "test-uid",
+				Annotations: map[string]string{},
+			},
+		},
+		"flexible",
+		12,
+		13,
+		nil,
+	},
+	{
+		"bad flexible spec",
+		nil,
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape:        "flexible",
+					ServiceAnnotationLoadBalancerShapeFlexMin: "1AB",
+					ServiceAnnotationLoadBalancerShapeFlexMax: "2AB",
+				},
+			},
+		},
+		"",
+		10,
+		8192,
+		errors.New("invalid format for service.beta.kubernetes.io/oci-load-balancer-shape-flex-min annotation : 1AB"),
+	},
+	{
+		"bad flexible max bandwidth",
+		nil,
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape:        "flexible",
+					ServiceAnnotationLoadBalancerShapeFlexMin: "10",
+					ServiceAnnotationLoadBalancerShapeFlexMax: "2AB",
+				},
+			},
+		},
+		"",
+		10,
+		0,
+		errors.New("invalid format for service.beta.kubernetes.io/oci-load-balancer-shape-flex-max annotation : 2AB"),
+	},
+	{
+		"flexible max bandwidth lower than min bandwidth",
+		nil,
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape:        "flexible",
+					ServiceAnnotationLoadBalancerShapeFlexMin: "100",
+					ServiceAnnotationLoadBalancerShapeFlexMax: "10",
+				},
+			},
+		},
+		"flexible",
+		100,
+		100,
+		nil,
+	},
+	{
+		"bad flexible min and max bandwidth",
+		nil,
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape:        "flexible",
+					ServiceAnnotationLoadBalancerShapeFlexMin: "100000",
+					ServiceAnnotationLoadBalancerShapeFlexMax: "1",
+				},
+			},
+		},
+		"flexible",
+		8192,
+		8192,
+		nil,
+	},
+	{
+		"existing LB converted to flex outside of OKE",
+		&client.GenericLoadBalancer{
+			ShapeName: common.String("flexible"),
+			ShapeDetails: &client.GenericShapeDetails{
+				MinimumBandwidthInMbps: common.Int(10),
+				MaximumBandwidthInMbps: common.Int(100),
+			},
+		},
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   "kube-system",
+				Name:        "testservice",
+				UID:         "test-uid",
+				Annotations: map[string]string{},
+			},
+		},
+		"flexible",
+		10,
+		100,
+		nil,
+	},
+	{
+		"existing LB converted to flex outside of OKE, but dynamic shape annotation still present",
+		&client.GenericLoadBalancer{
+			ShapeName: common.String("flexible"),
+			ShapeDetails: &client.GenericShapeDetails{
+				MinimumBandwidthInMbps: common.Int(10),
+				MaximumBandwidthInMbps: common.Int(100),
+			},
+		},
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape: "100Mbps",
+				},
+			},
+		},
+		"100Mbps",
+		0,
+		0,
+		nil,
+	},
+	{
+		"existing LB converted to flex outside of OKE, but flexible annotations have different value",
+		&client.GenericLoadBalancer{
+			ShapeName: common.String("flexible"),
+			ShapeDetails: &client.GenericShapeDetails{
+				MinimumBandwidthInMbps: common.Int(10),
+				MaximumBandwidthInMbps: common.Int(100),
+			},
+		},
+		&v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "kube-system",
+				Name:      "testservice",
+				UID:       "test-uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerShape:        "flexible",
+					ServiceAnnotationLoadBalancerShapeFlexMin: "100",
+					ServiceAnnotationLoadBalancerShapeFlexMax: "200",
+				},
+			},
+		},
+		"flexible",
+		100,
+		200,
+		nil,
+	},
+}
+
+func Test_getLBShape(t *testing.T) {
+	for _, tc := range getLBShapeTestCases {
+		actualShapeName, minBandwidth, maxBandwidth, err := getLBShape(tc.service, tc.existingLb)
+		if actualShapeName != tc.expectedShape {
+			t.Errorf("Expected  \n%+v\nbut got\n%+v", tc.expectedShape, actualShapeName)
+		}
+		if minBandwidth != nil && *minBandwidth != tc.expectedMinBandwidth {
+			t.Errorf("Expected  \n%+v\nbut got\n%+v", tc.expectedMinBandwidth, minBandwidth)
+		}
+		if maxBandwidth != nil && *maxBandwidth != tc.expectedMaxBandwidth {
+			t.Errorf("Expected  \n%+v\nbut got\n%+v", tc.expectedMaxBandwidth, maxBandwidth)
+		}
+		if err != nil && err.Error() != tc.expectedError.Error() {
+			t.Errorf("Expected \n%+v\nbut got\n%+v", tc.expectedError, err)
+		}
 	}
 }
 
