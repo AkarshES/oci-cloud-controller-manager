@@ -1,8 +1,8 @@
 {
-  "realms" : [ "oc7" ],
+  "realms" : [ "oc5" ],
   "name" : "fss-csi-driver-enabled",
+  "region":  "${region}",
   "values" : [ {
-    "region" : "all",
     "ad" : "all",
     "value" : "true"
   } ]
