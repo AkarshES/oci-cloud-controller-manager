@@ -3,6 +3,7 @@
     "oc5"
   ],
   "name": "csi-image-version-mapping",
+  "region":  "${region}",
   "values": [
     {
       "ad": "all",
