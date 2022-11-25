@@ -348,6 +348,8 @@ locals {
       kmon_alarms_fleet_format        = "oke-kmon-cell%d"
       worker_alarms_enabled           = true
       worker_alarms_fleet_format      = "oke-wfworker-cell%d"
+      ccm_alarms_enabled              = true
+      ccm_alarms_fleet_format         = "oke-kmi-cell%d"
       worker_alarms_hostmetrics_fleet = "oke-mp-worker-prod"
 
       // Integration with other OKE components
