@@ -515,6 +515,22 @@ var (
 		},
 	}
 
+	serviceList = map[string]*v1.Service{
+		"default": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: v1.ServiceSpec{
+				Type: v1.ServiceTypeLoadBalancer,
+			},
+		},
+		"non-loadbalancer": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "non-loadbalancer",
+			},
+		},
+	}
+
 	loadBalancers = map[string]*client.GenericLoadBalancer{
 		"privateLB": {
 			Id:          common.String("privateLB"),
@@ -784,6 +800,10 @@ func (c *MockLoadBalancerClient) UpdateBackendSet(ctx context.Context, lbID stri
 
 func (c *MockLoadBalancerClient) DeleteBackendSet(ctx context.Context, lbID, name string) (string, error) {
 	return "", nil
+}
+
+func (c *MockLoadBalancerClient) GetBackendSetHealth(ctx context.Context, lbID, name string) (*client.GenericBackendSetHealth, error) {
+	return nil, nil
 }
 
 func (c *MockLoadBalancerClient) UpdateListener(ctx context.Context, lbID string, name string, details *client.GenericListener) (string, error) {
@@ -1494,11 +1514,21 @@ func TestGetCompartmentIDByInstanceID(t *testing.T) {
 	}
 }
 
-type mockNodeLister struct{}
+type mockNodeLister struct {
+	nodes []*v1.Node
+}
 
 func (s *mockNodeLister) List(selector labels.Selector) (ret []*v1.Node, err error) {
-	var nodes []*v1.Node
-	for _, n := range nodeList {
+	var nodes, allNodes []*v1.Node
+	if len(s.nodes) > 0 {
+		allNodes = s.nodes
+	} else {
+		for _, n := range nodeList {
+			allNodes = append(allNodes, n)
+		}
+	}
+
+	for _, n := range allNodes {
 		if selector != nil {
 			if selector.Matches(labels.Set(n.ObjectMeta.GetLabels())) {
 				nodes = append(nodes, n)
@@ -1511,7 +1541,13 @@ func (s *mockNodeLister) List(selector labels.Selector) (ret []*v1.Node, err err
 }
 
 func (s *mockNodeLister) Get(name string) (*v1.Node, error) {
-	if node, ok := nodeList[name]; ok {
+	if len(s.nodes) > 0 {
+		for _, n := range s.nodes {
+			if n.Name == name {
+				return n, nil
+			}
+		}
+	} else if node, ok := nodeList[name]; ok {
 		return node, nil
 	}
 	return nil, errors.New("get node error")

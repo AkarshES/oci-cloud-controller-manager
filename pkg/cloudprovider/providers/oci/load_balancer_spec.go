@@ -530,23 +530,8 @@ func getBackendSetName(protocol string, port int) string {
 
 func getPorts(svc *v1.Service) (map[string]portSpec, error) {
 	ports := make(map[string]portSpec)
-	portsMap := make(map[int][]string)
-	mixedProtocolsPortSet := make(map[int]bool)
-	for _, servicePort := range svc.Spec.Ports {
-		portsMap[int(servicePort.Port)] = append(portsMap[int(servicePort.Port)], string(servicePort.Protocol))
-	}
-	for _, servicePort := range svc.Spec.Ports {
-		port := int(servicePort.Port)
-		backendSetName := ""
-		if len(portsMap[port]) > 1 {
-			if mixedProtocolsPortSet[port] {
-				continue
-			}
-			backendSetName = getBackendSetName(ProtocolTypeMixed, port)
-			mixedProtocolsPortSet[port] = true
-		} else {
-			backendSetName = getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))
-		}
+
+	for backendSetName, servicePort := range getBackendSetNamePortMap(svc) {
 		healthChecker, err := getHealthChecker(svc)
 		if err != nil {
 			return nil, err
@@ -613,23 +598,8 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 	if err != nil {
 		return nil, err
 	}
-	portsMap := make(map[int][]string)
-	mixedProtocolsPortSet := make(map[int]bool)
-	for _, servicePort := range svc.Spec.Ports {
-		portsMap[int(servicePort.Port)] = append(portsMap[int(servicePort.Port)], string(servicePort.Protocol))
-	}
-	for _, servicePort := range svc.Spec.Ports {
-		port := int(servicePort.Port)
-		backendSetName := ""
-		if len(portsMap[port]) > 1 {
-			if mixedProtocolsPortSet[port] {
-				continue
-			}
-			backendSetName = getBackendSetName(ProtocolTypeMixed, port)
-			mixedProtocolsPortSet[port] = true
-		} else {
-			backendSetName = getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))
-		}
+
+	for backendSetName, servicePort := range getBackendSetNamePortMap(svc) {
 		var secretName string
 		if sslCfg != nil && len(sslCfg.BackendSetSSLSecretName) != 0 {
 			secretName = sslCfg.BackendSetSSLSecretName
@@ -643,9 +613,10 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 			Backends:         getBackends(logger, provisionedNodes, virtualPods, servicePort.NodePort),
 			HealthChecker:    healthChecker,
 			IsPreserveSource: &isPreserveSource,
-			SslConfiguration: getSSLConfiguration(sslCfg, secretName, port),
+			SslConfiguration: getSSLConfiguration(sslCfg, secretName, int(servicePort.Port)),
 		}
 	}
+
 	return backendSets, nil
 }
 
@@ -1223,4 +1194,31 @@ func getLoadBalancerType(svc *v1.Service) string {
 	default:
 		return LB
 	}
+}
+
+func getBackendSetNamePortMap(service *v1.Service) map[string]v1.ServicePort {
+	backendSetPortMap := make(map[string]v1.ServicePort)
+
+	portsMap := make(map[int][]string)
+	for _, servicePort := range service.Spec.Ports {
+		portsMap[int(servicePort.Port)] = append(portsMap[int(servicePort.Port)], string(servicePort.Protocol))
+	}
+
+	mixedProtocolsPortSet := make(map[int]bool)
+	for _, servicePort := range service.Spec.Ports {
+		port := int(servicePort.Port)
+		backendSetName := ""
+		if len(portsMap[port]) > 1 {
+			if mixedProtocolsPortSet[port] {
+				continue
+			}
+			backendSetName = getBackendSetName(ProtocolTypeMixed, port)
+			mixedProtocolsPortSet[port] = true
+		} else {
+			backendSetName = getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))
+		}
+		backendSetPortMap[backendSetName] = servicePort
+	}
+
+	return backendSetPortMap
 }

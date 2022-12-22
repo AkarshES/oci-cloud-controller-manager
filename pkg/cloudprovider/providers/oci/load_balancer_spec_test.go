@@ -1924,7 +1924,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 		defaultSubnetOne string
 		defaultSubnetTwo string
 		nodes            []*v1.Node
-		virtualPods		 []*v1.Pod
+		virtualPods      []*v1.Pod
 		service          *v1.Service
 		expected         *LBSpec
 		clusterTags      *providercfg.InitialTags
@@ -2576,9 +2576,9 @@ func TestRequiresCertificate(t *testing.T) {
 
 func Test_getBackends(t *testing.T) {
 	type args struct {
-		nodes    []*v1.Node
+		nodes       []*v1.Node
 		virtualPods []*v1.Pod
-		nodePort int32
+		nodePort    int32
 	}
 	var tests = []struct {
 		name string
@@ -2911,7 +2911,7 @@ func Test_getBackends(t *testing.T) {
 							ProviderID: testNodeString,
 						},
 						Status: v1.NodeStatus{
-							Addresses:       []v1.NodeAddress{},
+							Addresses: []v1.NodeAddress{},
 						},
 					},
 					{
@@ -4449,6 +4449,131 @@ func Test_getPreserveSourceDestination(t *testing.T) {
 				t.Errorf("Expected  \n%+v\nbut got\n%+v", tc.expectedBool, enable)
 			}
 
+		})
+	}
+}
+
+func Test_getBackendSetNamePortMap(t *testing.T) {
+	testCases := map[string]struct {
+		in  *v1.Service
+		out map[string]v1.ServicePort
+	}{
+		"single port": {
+			in: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     80,
+						},
+					},
+				},
+			},
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+			},
+		},
+		"multiple ports": {
+			in: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     80,
+						},
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     81,
+						},
+					},
+				},
+			},
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+				"TCP-81": {
+					Protocol: v1.ProtocolTCP,
+					Port:     81,
+				},
+			},
+		},
+		"multiple ports with different protocols": {
+			in: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     80,
+						},
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     81,
+						},
+					},
+				},
+			},
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+				"UDP-81": {
+					Protocol: v1.ProtocolUDP,
+					Port:     81,
+				},
+			},
+		},
+		"multiple ports with mixed protocols": {
+			in: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     80,
+						},
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     81,
+						},
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     82,
+						},
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     82,
+						},
+					},
+				},
+			},
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+				"UDP-81": {
+					Protocol: v1.ProtocolUDP,
+					Port:     81,
+				},
+				"TCP_AND_UDP-82": {
+					Protocol: v1.ProtocolTCP,
+					Port:     82,
+				},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			got := getBackendSetNamePortMap(tc.in)
+			if !reflect.DeepEqual(got, tc.out) {
+				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.out, got)
+			}
 		})
 	}
 }

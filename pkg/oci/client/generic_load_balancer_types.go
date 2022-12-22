@@ -147,3 +147,11 @@ type GenericWorkRequest struct {
 type GenericUpdateNetworkSecurityGroupsDetails struct {
 	NetworkSecurityGroupIds []string
 }
+
+type GenericBackendSetHealth struct {
+	Status                    string
+	WarningStateBackendNames  []string
+	CriticalStateBackendNames []string
+	UnknownStateBackendNames  []string
+	BackendCount              *int
+}

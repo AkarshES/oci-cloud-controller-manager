@@ -226,6 +226,25 @@ func (c *networkLoadbalancer) DeleteBackendSet(ctx context.Context, lbID, name s
 	return *resp.OpcWorkRequestId, nil
 }
 
+func (c *networkLoadbalancer) GetBackendSetHealth(ctx context.Context, lbID, backendSetName string) (*GenericBackendSetHealth, error) {
+	if !c.rateLimiter.Writer.TryAccept() {
+		return nil, RateLimitError(false, "GetBackendHealth")
+	}
+
+	resp, err := c.networkloadbalancer.GetBackendSetHealth(ctx, networkloadbalancer.GetBackendSetHealthRequest{
+		NetworkLoadBalancerId: common.String(lbID),
+		BackendSetName:        common.String(backendSetName),
+		RequestMetadata:       c.requestMetadata,
+	})
+	incRequestCounter(err, getVerb, backendSetHealthResource)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c.nlbBackendSetHealthToGenericBackendSetHealth(&resp.BackendSetHealth), nil
+}
+
 func (c *networkLoadbalancer) CreateListener(ctx context.Context, lbID string, name string, details *GenericListener) (string, error) {
 	if !c.rateLimiter.Writer.TryAccept() {
 		return "", RateLimitError(true, "CreateListener")
@@ -405,6 +424,19 @@ func (c *networkLoadbalancer) networkLoadbalancerSummaryToGenericLoadbalancer(nl
 		BackendSets:             c.backendSetsToGenericBackendSetDetails(nlb.BackendSets),
 		FreeformTags:            nlb.FreeformTags,
 		DefinedTags:             nlb.DefinedTags,
+	}
+}
+
+func (c *networkLoadbalancer) nlbBackendSetHealthToGenericBackendSetHealth(backendSetHealth *networkloadbalancer.BackendSetHealth) *GenericBackendSetHealth {
+	if backendSetHealth == nil {
+		return nil
+	}
+	return &GenericBackendSetHealth{
+		Status:                    string(backendSetHealth.Status),
+		WarningStateBackendNames:  backendSetHealth.WarningStateBackendNames,
+		CriticalStateBackendNames: backendSetHealth.CriticalStateBackendNames,
+		UnknownStateBackendNames:  backendSetHealth.UnknownStateBackendNames,
+		BackendCount:              backendSetHealth.TotalBackendCount,
 	}
 }
 

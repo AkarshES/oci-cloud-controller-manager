@@ -48,6 +48,7 @@ type GenericLoadBalancerInterface interface {
 	CreateBackendSet(ctx context.Context, lbID, name string, details *GenericBackendSetDetails) (string, error)
 	UpdateBackendSet(ctx context.Context, lbID, name string, details *GenericBackendSetDetails) (string, error)
 	DeleteBackendSet(ctx context.Context, lbID, name string) (string, error)
+	GetBackendSetHealth(ctx context.Context, lbId, backendSetName string) (*GenericBackendSetHealth, error)
 
 	UpdateListener(ctx context.Context, lbID, name string, details *GenericListener) (string, error)
 	CreateListener(ctx context.Context, lbID, name string, details *GenericListener) (string, error)
@@ -318,6 +319,25 @@ func (c *loadbalancerClientStruct) DeleteBackendSet(ctx context.Context, lbID, n
 	return *resp.OpcWorkRequestId, nil
 }
 
+func (c *loadbalancerClientStruct) GetBackendSetHealth(ctx context.Context, lbID, backendSetName string) (*GenericBackendSetHealth, error) {
+	if !c.rateLimiter.Writer.TryAccept() {
+		return nil, RateLimitError(false, "GetBackendHealth")
+	}
+
+	resp, err := c.loadbalancer.GetBackendSetHealth(ctx, loadbalancer.GetBackendSetHealthRequest{
+		LoadBalancerId:  common.String(lbID),
+		BackendSetName:  common.String(backendSetName),
+		RequestMetadata: c.requestMetadata,
+	})
+	incRequestCounter(err, getVerb, backendSetHealthResource)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return c.lbBackendSetHealthToGenericBackendSetHealth(&resp.BackendSetHealth), nil
+}
+
 func (c *loadbalancerClientStruct) CreateListener(ctx context.Context, lbID string, name string, details *GenericListener) (string, error) {
 	if !c.rateLimiter.Writer.TryAccept() {
 		return "", RateLimitError(true, "CreateListener")
@@ -491,6 +511,19 @@ func (c *loadbalancerClientStruct) loadbalancerToGenericLoadbalancer(lb *loadbal
 		BackendSets:             c.backendSetsToGenericBackendSetDetails(lb.BackendSets),
 		FreeformTags:            lb.FreeformTags,
 		DefinedTags:             lb.DefinedTags,
+	}
+}
+
+func (c *loadbalancerClientStruct) lbBackendSetHealthToGenericBackendSetHealth(backendSetHealth *loadbalancer.BackendSetHealth) *GenericBackendSetHealth {
+	if backendSetHealth == nil {
+		return nil
+	}
+	return &GenericBackendSetHealth{
+		Status:                    string(backendSetHealth.Status),
+		WarningStateBackendNames:  backendSetHealth.WarningStateBackendNames,
+		CriticalStateBackendNames: backendSetHealth.CriticalStateBackendNames,
+		UnknownStateBackendNames:  backendSetHealth.UnknownStateBackendNames,
+		BackendCount:              backendSetHealth.TotalBackendCount,
 	}
 }
 

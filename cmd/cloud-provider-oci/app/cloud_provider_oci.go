@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -273,7 +272,7 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 		logger.Info("CSI is disabled.")
 	}
 
-	enableNPN := getIsFeatureEnabledFromEnv(logger, "ENABLE_NPN_CONTROLLER", false)
+	enableNPN := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NPN_CONTROLLER", false)
 
 	if enableNPN || enableNPNController {
 		wg.Add(1)
@@ -380,7 +379,7 @@ func getOCIClient(logger *zap.SugaredLogger, config *providercfg.Config) client.
 func getInitFuncConstructors(logger *zap.SugaredLogger) map[string]cloudControllerManager.ControllerInitFuncConstructor {
 	initConstructors := cloudControllerManager.DefaultInitFuncConstructors
 
-	isOciSvcCtrlEnvEnabled := getIsFeatureEnabledFromEnv(logger, "ENABLE_OCI_SERVICE_CONTROLLER", false)
+	isOciSvcCtrlEnvEnabled := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_OCI_SERVICE_CONTROLLER", false)
 	if isOciSvcCtrlEnvEnabled || enableOCIServiceController {
 		// Disable default Kubernetes Cloud Provider service controller
 		cloudControllerManager.ControllersDisabledByDefault.Insert("service")
@@ -395,18 +394,4 @@ func getInitFuncConstructors(logger *zap.SugaredLogger) map[string]cloudControll
 	}
 
 	return initConstructors
-}
-
-func getIsFeatureEnabledFromEnv(logger *zap.SugaredLogger, featureName string, defaultValue bool) bool {
-	enableFeature := defaultValue
-	enableFeatureEnvVar, ok := os.LookupEnv(featureName)
-	if ok {
-		var err error
-		enableFeature, err = strconv.ParseBool(enableFeatureEnvVar)
-		if err != nil {
-			logger.With(zap.Error(err)).Errorf("failed to parse %s envvar, defaulting to %t", featureName, defaultValue)
-			return defaultValue
-		}
-	}
-	return enableFeature
 }

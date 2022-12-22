@@ -15,9 +15,12 @@
 package oci
 
 import (
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -25,8 +28,8 @@ import (
 )
 
 const (
-	virtualNodeOcidPrefix = "ocid1.virtualnode."
-	virtualNodeOcidDevPrefix = "ocid1.virtualnodedev."
+	virtualNodeOcidPrefix      = "ocid1.virtualnode."
+	virtualNodeOcidDevPrefix   = "ocid1.virtualnodedev."
 	virtualNodeOcidIntegPrefix = "ocid1.virtualnodeinteg."
 )
 
@@ -96,4 +99,18 @@ func VirtualNodeExists(nodeLister listersv1.NodeLister) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func GetIsFeatureEnabledFromEnv(logger *zap.SugaredLogger, featureName string, defaultValue bool) bool {
+	enableFeature := defaultValue
+	enableFeatureEnvVar, ok := os.LookupEnv(featureName)
+	if ok {
+		var err error
+		enableFeature, err = strconv.ParseBool(enableFeatureEnvVar)
+		if err != nil {
+			logger.With(zap.Error(err)).Errorf("failed to parse %s envvar, defaulting to %t", featureName, defaultValue)
+			return defaultValue
+		}
+	}
+	return enableFeature
 }
