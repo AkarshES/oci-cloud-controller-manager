@@ -1,0 +1,8 @@
+{
+  "realms" : [ "oc7" ],
+  "name": "csi-bv-expansion-enabled",
+  "values" : [ {
+    "ad" : "all",
+    "value" : "true"
+  } ]
+}
