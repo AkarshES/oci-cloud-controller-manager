@@ -1,7 +1,6 @@
 {
   "realms" : [ "oc5" ],
-  "name" : "fss-csi-driver-enabled",
-  "region":  "${region}",
+  "name": "csi-bv-expansion-enabled",
   "values" : [ {
     "ad" : "all",
     "value" : "true"
