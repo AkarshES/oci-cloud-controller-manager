@@ -207,6 +207,16 @@ func (f *Framework) ListNodePools(clusterID string) []oke.NodePoolSummary {
 	return resp
 }
 
+// CheckIfNodepoolExists checks if there are nodepools present for a given cluster
+func (f *Framework) CheckIfNodepoolExists(clusterID string) bool {
+	nodepools := f.ListNodePools(clusterID)
+
+	if len(nodepools) == 0 {
+		return false
+	}
+	return true
+}
+
 // GetNodePoolSummary return the specified nodepool summary.
 func (f *Framework) GetNodePoolSummary(clusterID string, nodepoolID string) *oke.NodePoolSummary {
 	nodepools := f.ListNodePools(clusterID)
@@ -315,17 +325,31 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 	} else {
 		poolSize = size
 	}
-	nodeConfigDetails := oke.CreateNodePoolNodeConfigDetails{
-		PlacementConfigs: make([]oke.NodePoolPlacementConfigDetails, 0, len(ads)),
-		Size:             poolSize,
-	}
 
-	for _, ad := range ads {
-		nodeConfigDetails.PlacementConfigs = append(nodeConfigDetails.PlacementConfigs,
-			oke.NodePoolPlacementConfigDetails{
-				AvailabilityDomain: ad.Name,
-				SubnetId:           &rgnSubnet,
-			})
+	var nodeConfigDetails oke.CreateNodePoolNodeConfigDetails
+	if !isPreUpgradeBool {
+		nodeConfigDetails = oke.CreateNodePoolNodeConfigDetails{
+			PlacementConfigs: make([]oke.NodePoolPlacementConfigDetails, 0, len(ads)),
+			Size:             poolSize,
+		}
+
+		for _, ad := range ads {
+			nodeConfigDetails.PlacementConfigs = append(nodeConfigDetails.PlacementConfigs,
+				oke.NodePoolPlacementConfigDetails{
+					AvailabilityDomain: ad.Name,
+					SubnetId:           &rgnSubnet,
+				})
+		}
+	} else {
+		nodeConfigDetails = oke.CreateNodePoolNodeConfigDetails{
+			Size: size,
+			PlacementConfigs: []oke.NodePoolPlacementConfigDetails{
+				{
+					AvailabilityDomain: &f.AdLocation,
+					SubnetId:           &rgnSubnet,
+				},
+			},
+		}
 	}
 
 	imageId = ""

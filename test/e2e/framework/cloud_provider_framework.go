@@ -57,9 +57,9 @@ type CloudProviderFramework struct {
 	InitCloudProvider bool                    // Whether to initialise a cloud provider interface for testing
 	CloudProvider     cloudprovider.Interface // Every test has a cloud provider unless initialisation is skipped
 
-	ClientSet 		clientset.Interface
-	SnapClientSet	snapclientset.Interface
-	CRDClientSet    crdclientset.Interface
+	ClientSet     clientset.Interface
+	SnapClientSet snapclientset.Interface
+	CRDClientSet  crdclientset.Interface
 
 	CloudProviderConfig *providercfg.Config // If specified, the CloudProviderConfig. This provides information on the configuration of the test cluster.
 	Client              client.Interface    // An OCI client for checking the state of any provisioned OCI infrastructure during testing.
@@ -74,11 +74,13 @@ type CloudProviderFramework struct {
 
 	BlockStorageClient ocicore.BlockstorageClient
 	IsBackup           bool
+	IsPreUpgrade       bool
+	IsPostUpgrade      bool
 	BackupIDs          []string
 	StorageClasses     []string
 	VolumeIds          []string
 
-	VolumeSnapshotClasses	[]string
+	VolumeSnapshotClasses []string
 
 	// To make sure that this framework cleans up after itself, no matter what,
 	// we install a Cleanup action before each test and clear it after.  If we
@@ -123,25 +125,84 @@ func NewCcmFramework(baseName string, client clientset.Interface, backup bool) *
 	if k8sSeclistID != "" {
 		f.K8SSecListID = k8sSeclistID
 	}
+	if isPreUpgradeBool || isPostUpgradeBool {
+		f.SkipNamespaceCreation = true
+	}
 	BeforeEach(f.BeforeEach)
 	AfterEach(f.AfterEach)
 
 	return f
 }
 
+func (f *CloudProviderFramework) GetUpgradeTestingNamespace(name string) *v1.Namespace {
+	var namespace *v1.Namespace
+	if isPreUpgradeBool {
+		nsList, err := f.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		nsExist := false
+		for _, ns := range nsList.Items {
+			if ns.Name == name {
+				nsExist = true
+				Logf("Found pre-existing namespace: %s", name)
+
+				Logf("Checking if namespace: %s is already populated", name)
+				stsList, err := f.ClientSet.AppsV1().StatefulSets(name).List(context.Background(), metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				if len(stsList.Items) != 0 {
+					Logf("Found %d statefulsets in %s", len(stsList.Items), name)
+					Logf("Deleting namespace %s", name)
+					f.DeleteNamespace(name, 5*time.Minute)
+					Logf("Creating new namespace: %s", name)
+					namespace, err = f.CreateNamespace(false, name, map[string]string{})
+					Expect(err).NotTo(HaveOccurred())
+				} else {
+					namespace = &ns
+				}
+				break
+			}
+		}
+
+		if !nsExist {
+			Logf("Namespace %s not found. Creating new namespace.", name)
+			namespace, err = f.CreateNamespace(false, name, map[string]string{})
+			Expect(err).NotTo(HaveOccurred())
+		}
+	}
+
+	if isPostUpgradeBool {
+		stsList, err := f.ClientSet.AppsV1().StatefulSets(name).List(context.Background(), metav1.ListOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		if len(stsList.Items) != ExpectedStatefulSets {
+			Logf("Number of statefulsets found: %d", len(stsList.Items))
+			Logf("Expected number of statefulsets: %d", ExpectedStatefulSets)
+			Failf("Number of statefulsets in the upgrade testing compartment don't match the expected number of statefulsets.")
+		}
+	}
+
+	return namespace
+}
+
 // CreateNamespace creates a e2e test namespace.
-func (f *CloudProviderFramework) CreateNamespace(baseName string, labels map[string]string) (*v1.Namespace, error) {
+func (f *CloudProviderFramework) CreateNamespace(generateName bool, baseName string, labels map[string]string) (*v1.Namespace, error) {
 	if labels == nil {
 		labels = map[string]string{}
 	}
 
 	namespaceObj := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("cloud-provider-e2e-tests-%v-", baseName),
-			Namespace:    "",
-			Labels:       labels,
+			Namespace: "",
+			Labels:    labels,
 		},
 		Status: v1.NamespaceStatus{},
+	}
+
+	if generateName {
+		namespaceObj.ObjectMeta.GenerateName = fmt.Sprintf("cloud-provider-e2e-tests-%v-", baseName)
+	} else {
+		namespaceObj.Name = baseName
 	}
 
 	// Be robust about making the namespace creation call.
@@ -265,7 +326,7 @@ func (f *CloudProviderFramework) BeforeEach() {
 
 	if !f.SkipNamespaceCreation {
 		By("Building a namespace api object")
-		namespace, err := f.CreateNamespace(f.BaseName, map[string]string{
+		namespace, err := f.CreateNamespace(true, f.BaseName, map[string]string{
 			"e2e-framework": f.BaseName,
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -275,11 +336,19 @@ func (f *CloudProviderFramework) BeforeEach() {
 	if f.IsBackup {
 		f.BlockStorageClient = f.createStorageClient()
 	}
+
+	if (isPreUpgradeBool || isPostUpgradeBool) && f.Namespace == nil {
+		f.Namespace = f.GetUpgradeTestingNamespace(namespace)
+	}
 }
 
 // AfterEach deletes the namespace(s).
 func (f *CloudProviderFramework) AfterEach() {
 	RemoveCleanupAction(f.cleanupHandle)
+
+	if isPreUpgradeBool || isPostUpgradeBool {
+		return
+	}
 
 	nsDeletionErrors := map[string]error{}
 	if deleteNamespace {
@@ -368,6 +437,22 @@ func (f *CloudProviderFramework) createStorageClient() ocicore.BlockstorageClien
 	}
 
 	return blockStorageClient
+}
+
+func (f *CloudProviderFramework) CleanupUpgradeTestingNamespace() {
+	Logf("Deleting upgrade testing namespace: %s", namespace)
+	if err := f.DeleteNamespace(namespace, 5*time.Minute); err != nil {
+		Logf("Couldn't delete upgrade testing namespace: %s\n error: %v", namespace, err)
+	}
+
+	Logf("Deleting Storage Classes:")
+	for _, storageClass := range f.StorageClasses {
+		By(fmt.Sprintf("Deleting storage class %q", storageClass))
+		err := f.ClientSet.StorageV1().StorageClasses().Delete(context.Background(), storageClass, metav1.DeleteOptions{})
+		if err != nil && !apierrors.IsNotFound(err) {
+			Logf("Storage Class Delete API error: %v", err)
+		}
+	}
 }
 
 func instanceCacheKeyFn(obj interface{}) (string, error) {
