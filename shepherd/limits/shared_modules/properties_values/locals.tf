@@ -112,11 +112,107 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaao5xkfdkgtgakm2gngfktpoxddhgak3sqlbuuc6ipsj4uqijhavsa"
           },
           {
-            regions      = ["iad"]
+            regions      = ["iad", "phx"]
             env          = "prd"
             value        = "true"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaalgye6or5foisxcezh5hrrloiqedji3gseyz4jlkjy4ixa7en4yra"
-          }
+          },
+          {
+            regions      = ["iad", "phx", "fra", "yyz"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa62vpswgwthtfeiqsapy5dydvyk2bzzq6v3txo6gvh5g6o65ljuha"
+          },
+          {
+            regions      = ["fra"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafipe4lmow7rfrn5f3egpg3xgur6v2q2wgvb3id4ehwujnpu5mb5q"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaahzy3x4boh7ipxyft2rowu2xeglvanlfewudbnueugsieyuojkldq"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaazo2fdm3n4e5ldbcuw4nqbszce4wzynnff3vswas3frbdznidf73a"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafyd4yolgubij6qz7kgxxl5ps2qhqkfoqrvxtjvdccy66ifxmglia"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaj4ymkytn4cwasyktbc5rbqiald2enkoarepdv7pawyuw2tkazisa"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3iy7zjbsehobgcdr3hr54ohhfzz6gb3mlrx3nil3rc5mefibhdqq"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaageglfk6dntbw6xlw3a2zwyxmojqdltjrrk6qrhergy2mmnuvgzga"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa6myvkd2ri4u2p5rdgydenosfxgjrorlgxzede2dlmq37cbdagffq"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaiirvljo5b5ps4etbubykf3sorn46ih2cq47zbjwqpj3x3jmcxara"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaal4apn7aq4e3h4zv6cqz56omhwgmnrd6sepnjc3x2vifhdaes4oq"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaqeltzy3b3ioqnyqusa2po52d3ygn24yb72b44ceau4jdwoy2pnzq"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa64d4rod2cgrqleyskgao4wkbeosylqellmeqbvxxkybhonlrbgk"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa4fdy3gbpphhp2v7lrworctpyjli5yvwhoa7db6uutr4xqwquq5eq"
+          },
+          {
+            regions      = ["iad", "phx"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaasyc4pviq2l4mjafhhk2hejvsprv52jblh53jtujqoxi4knifzgya"
+          },
+          {
+            regions      = ["iad", "phx", "fra", "yyz"]
+            env          = "prd"
+            value        = "true"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatf553tfabldbvae4sfe3gqizjetiitaa6y7zyx2pazejqrufxlya"
+          },
         ]
       }
     }
