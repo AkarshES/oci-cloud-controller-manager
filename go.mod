@@ -53,6 +53,7 @@ require (
 	github.com/kubernetes-csi/external-provisioner v0.0.0-20220926225645-d724c61af62f // v3.3.0
 	github.com/kubernetes-csi/external-resizer v0.0.0-20220909153723-62048789556f // v1.6.0
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0
+	github.com/kubernetes-csi/external-snapshotter/v6 v6.1.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.1
 	github.com/oracle/oci-go-sdk/v65 v65.2.0

@@ -45,6 +45,13 @@ const (
 	// ExportDelete is the OCI metric suffix for Export delete
 	ExportDelete = "EXP_DELETE"
 
+	// BlockSnapshotProvision is the OCI metric suffix for Block Volume Snapshot Provision
+	BlockSnapshotProvision = "BSNAP_PROVISION"
+	// BlockSnapshotDelete is the OCI metric suffix for Block Volume Snapshot Delete
+	BlockSnapshotDelete = "BSNAP_DELETE"
+	// BlockSnapshotRestore is the OCI metric suffix for Block Volume Snapshot Restore
+	BlockSnapshotRestore = "BSNAP_RESTORE"
+
 	ResourceOCIDDimension     = "resourceOCID"
 	ComponentDimension        = "component"
 	BackendSetsCountDimension = "backendSetsCount"
