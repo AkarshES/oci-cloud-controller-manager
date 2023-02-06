@@ -28,6 +28,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csi-provisioner"
 	csiresizer "github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csi-resizer"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
+	snapshotenabler "github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/snapshot-enabler"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/csi/driver"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
 )
@@ -64,6 +65,12 @@ func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 		logger.Info("starting csi-resizer go routine")
 		go csiresizer.StartCSIResizer(csioptions)
 	}
+
+	logger = logger.With(zap.String("component", "csi-controller"))
+
+	logger.Info("starting snapshot-enabler go routine for BV")
+	go snapshotenabler.Start(csioptions, logger)
+
 	// controller for block volume
 	logger.Info("starting csi-controller go routine for BV")
 	go csicontrollerdriver.StartControllerDriver(csioptions, driver.BV)

@@ -59,6 +59,7 @@ const (
 	nsgResource                 resource = "load_balancer_network_security_groups"
 	publicReservedIPResource    resource = "public_reserved_ip"
 	virtualNodeResource         resource = "virtual_node"
+	snapshotResource			resource = "snapshot"
 )
 
 type verb string

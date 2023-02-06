@@ -135,6 +135,7 @@ export FSS_VOLUME_HANDLE_ARM="ocid1.filesystem.oc1.iad.aaaaaaaaaac2cd4dnfqwillqo
 export MNT_TARGET_ID=
 export MNT_TARGET_SUBNET_ID=
 export MNT_TARGET_COMPARTMENT_ID=
+export STATIC_SNAPSHOT_COMPARTMENT_ID=
 #Architecture to run tests on
 export ARCHITECTURE_AMD="AMD"
 export ARCHITECTURE_ARM="ARM"
