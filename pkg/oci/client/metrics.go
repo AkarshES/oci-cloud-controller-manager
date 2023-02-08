@@ -42,6 +42,7 @@ const (
 	loadBalancerResource        resource = "load_balancer"
 	networkLoadBalancerResource resource = "network_load_balancer"
 	backendSetResource          resource = "load_balancer_backend_set"
+	backendSetHealthResource    resource = "load_balancer_backend_set_health"
 	listenerResource            resource = "load_balancer_listener"
 	shapeResource               resource = "load_balancer_shape"
 	certificateResource         resource = "load_balancer_certificate"

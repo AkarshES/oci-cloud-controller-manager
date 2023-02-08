@@ -114,10 +114,10 @@ func (f *Framework) ListNodePoolImages() map[string]string {
 func (f *Framework) PickNonGPUImageWithAMDCompatibility(images map[string]string, kubeVersion string) (string, string, bool) {
 	for sourceName, imageId := range images {
 		if !strings.Contains(sourceName, "GPU") && !strings.Contains(sourceName, "-aarch64") {
-			if (!strings.Contains(sourceName, "-OKE")) {
+			if !strings.Contains(sourceName, "-OKE") {
 				return imageId, sourceName, true
 			}
-			if (strings.Contains(sourceName, "-OKE") && strings.Contains(sourceName, kubeVersion)) {
+			if strings.Contains(sourceName, "-OKE") && strings.Contains(sourceName, kubeVersion) {
 				return imageId, sourceName, true
 			}
 		}

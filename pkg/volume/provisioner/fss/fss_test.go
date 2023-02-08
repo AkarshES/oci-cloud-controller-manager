@@ -398,6 +398,10 @@ func (c *MockLoadBalancerClient) DeleteBackendSet(ctx context.Context, lbID, nam
 	return "", nil
 }
 
+func (c *MockLoadBalancerClient) GetBackendSetHealth(ctx context.Context, lbID, name string) (*client.GenericBackendSetHealth, error) {
+	return nil, nil
+}
+
 func (c *MockLoadBalancerClient) UpdateListener(ctx context.Context, lbID string, name string, details *client.GenericListener) (string, error) {
 	return "", nil
 }

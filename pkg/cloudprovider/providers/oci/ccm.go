@@ -57,7 +57,7 @@ const (
 
 	// endpointSliceUpdatesBatchPeriod is the duration after which a service
 	// owning an endpointslice is batched in the Service Controller
-	endpointSliceUpdatesBatchPeriod = 5*time.Second
+	endpointSliceUpdatesBatchPeriod = 5 * time.Second
 )
 
 // ProviderName uniquely identifies the Oracle Bare Metal Cloud Services (OCI)
@@ -207,6 +207,30 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 	}
 	cp.NodeLister = nodeInformer.Lister()
 	cp.EndpointSliceLister = endpointSliceInformer.Lister()
+
+	enablePodReadinessController := GetIsFeatureEnabledFromEnv(cp.logger, "ENABLE_POD_READINESS_CONTROLLER", false)
+	if enablePodReadinessController {
+		podInformer := factory.Core().V1().Pods()
+		go podInformer.Informer().Run(wait.NeverStop)
+
+		cp.logger.Info("Waiting for pod informer cache to sync")
+		if !cache.WaitForCacheSync(wait.NeverStop, podInformer.Informer().HasSynced) {
+			utilruntime.HandleError(fmt.Errorf("timed out waiting for pod informer to sync"))
+		}
+
+		podReadinessController := NewPodReadinessController(
+			cp.kubeclient,
+			cp.client,
+			cp.logger,
+			cp.metricPusher,
+			cp.config,
+			serviceInformer.Lister(),
+			podInformer.Lister(),
+			nodeInformer.Lister(),
+		)
+
+		go podReadinessController.Run(1, stop)
+	}
 
 	cp.securityListManagerFactory = func(mode string) securityListManager {
 		if cp.config.LoadBalancer.Disabled {

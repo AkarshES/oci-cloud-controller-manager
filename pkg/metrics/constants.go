@@ -7,6 +7,8 @@ const (
 	LBUpdate = "LB_UPDATE"
 	// LBDelete is the OCI metric suffix for LB delete
 	LBDelete = "LB_DELETE"
+	// LBPodReadinessSync is the OCI metric suffix for LB pod readiness sync
+	LBPodReadinessSync = "LB_PODREADINESS_SYNC"
 
 	// NLBProvision is the OCI metric suffix for NLB provision
 	NLBProvision = "NLB_PROVISION"
@@ -14,6 +16,8 @@ const (
 	NLBUpdate = "NLB_UPDATE"
 	// NLBDelete is the OCI metric suffix for NLB delete
 	NLBDelete = "NLB_DELETE"
+	// NLBPodReadinessSync is the OCI metric suffix for NLB pod readiness sync
+	NLBPodReadinessSync = "NLB_PODREADINESS_SYNC"
 
 	// PVProvision is the OCI metric suffix for PV provision
 	PVProvision = "PV_PROVISION"
