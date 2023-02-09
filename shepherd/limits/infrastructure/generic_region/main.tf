@@ -75,3 +75,7 @@ module "data" {
 resource "capability_require_capability" "oke_secrets_management" {
   name = "oke_secrets_management"
 }
+
+resource "capability_require_capability" "oke_limits_management" {
+  name = "oke_limits_management"
+}

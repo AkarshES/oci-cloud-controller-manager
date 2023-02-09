@@ -16,7 +16,7 @@ resource "shepherd_execution_target" "prod_build_spectre_region_et" {
   for_each                          = local.build_region_cell_overrides
   name                              = format("spectre.values.setup.%s", split(".cell", each.key)[0])
   region                            = local.home_region_by_realm[split(".", each.key)[1]]
-  predecessors                      = []
+  predecessors                      = [ each.key ]
   phase                             = format("region-build_%s", split(".", each.key)[2])
   uniquifier                        = format("spectre-values-setup-%s", replace(each.key, ".", "-"))
   tenancy_name                      = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
@@ -35,7 +35,8 @@ resource "shepherd_execution_target" "prod_build_region_et" {
   for_each                  = local.build_region_cell_overrides
   name                      = each.key
   region                    = split(".", each.key)[2]
-  predecessors              = tonumber(split(".cell", each.key)[1]) == 0 ? [format("spectre.values.setup.%s", split(".cell", each.key)[0])] : [format("%s.cell%s", split(".cell", each.key)[0], tonumber(split(".cell", each.key)[1]) - 1)]
+  #predecessors              = tonumber(split(".cell", each.key)[1]) == 0 ? [format("spectre.values.setup.%s", split(".cell", each.key)[0])] : [format("%s.cell%s", split(".cell", each.key)[0], tonumber(split(".cell", each.key)[1]) - 1)]
+  predecessors              = tonumber(split(".cell", each.key)[1]) == 0 ? [] : [format("%s.cell%s", split(".cell", each.key)[0], tonumber(split(".cell", each.key)[1]) - 1)]
   phase                     = lookup(merge(each.value, lookup(local.overrides, split(".cell", each.key)[0], {})), "phase", join(".", [split(".", each.key)[0], split(".", each.key)[1]]))
   uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
   tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
