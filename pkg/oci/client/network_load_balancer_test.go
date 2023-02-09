@@ -182,6 +182,9 @@ func (c *MockNetworkLoadBalancerClient) UpdateBackendSet(ctx context.Context, re
 func (c *MockNetworkLoadBalancerClient) DeleteBackendSet(ctx context.Context, request networkloadbalancer.DeleteBackendSetRequest) (response networkloadbalancer.DeleteBackendSetResponse, err error) {
 	return
 }
+func (c *MockNetworkLoadBalancerClient) GetBackendSetHealth(ctx context.Context, request networkloadbalancer.GetBackendSetHealthRequest) (response networkloadbalancer.GetBackendSetHealthResponse, err error) {
+	return
+}
 func (c *MockNetworkLoadBalancerClient) CreateListener(ctx context.Context, request networkloadbalancer.CreateListenerRequest) (response networkloadbalancer.CreateListenerResponse, err error) {
 	return
 }

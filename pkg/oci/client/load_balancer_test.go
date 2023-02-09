@@ -191,6 +191,9 @@ func (c *MockLoadBalancerClient) UpdateBackendSet(ctx context.Context, request l
 func (c *MockLoadBalancerClient) DeleteBackendSet(ctx context.Context, request loadbalancer.DeleteBackendSetRequest) (response loadbalancer.DeleteBackendSetResponse, err error) {
 	return
 }
+func (c *MockLoadBalancerClient) GetBackendSetHealth(ctx context.Context, request loadbalancer.GetBackendSetHealthRequest) (response loadbalancer.GetBackendSetHealthResponse, err error) {
+	return
+}
 func (c *MockLoadBalancerClient) CreateListener(ctx context.Context, request loadbalancer.CreateListenerRequest) (response loadbalancer.CreateListenerResponse, err error) {
 	return
 }
