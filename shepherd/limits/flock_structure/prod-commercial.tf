@@ -40,9 +40,7 @@ locals {
       },
     r == "oc1" ? { phase = length(shepherd_release_phase.prd-oc1-bake-1) == 1 ? shepherd_release_phase.prd-oc1-bake-1[0].name : null } : {})
   }
-  current_prod_realms         = ["oc1", "oc2", "oc3", "oc4", "oc5", "oc6", "oc7", "oc8", "oc9", "oc10"] ## Prod Realms as of 03/24/2022
-  prod_spectre_regional_ets   = local.prod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] == "prd" && contains(local.prod_phases, split(".", key)[1]) && contains(local.current_prod_realms, split(".", key)[1])]) : toset([])
-  prod_spectre_new_region_ets = local.prod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] == "prd" && contains(local.prod_phases, split(".", key)[1]) && ! contains(local.current_prod_realms, split(".", key)[1])]) : toset([])
+  prod_spectre_regional_ets   = local.prod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] == "prd" && contains(local.prod_phases, split(".", key)[1])]) : toset([])
 }
 
 resource "shepherd_release_phase" prd-oc1-bake-1 {
