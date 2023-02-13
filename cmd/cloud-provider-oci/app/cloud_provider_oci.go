@@ -157,6 +157,7 @@ manager and oci volume provisioner. It embeds the cloud specific control loops s
 	csiFlagSet.StringVar(&csioption.LeaderElectionType, "csi-leader-election-type", "endpoints", "the type of leader election, options are 'endpoints' (default) or 'leases' (strongly recommended). The 'endpoints' option is deprecated in favor of 'leases'.")
 	csiFlagSet.StringVar(&csioption.LeaderElectionNamespace, "csi-leader-election-namespace", "", "Namespace where the leader election resource lives. Defaults to the pod namespace if not set.")
 	csiFlagSet.BoolVar(&csioption.StrictTopology, "csi-strict-topology", false, "Passes only selected node topology to CreateVolume Request, unlike default behavior of passing aggregated cluster topologies that match with topology keys of the selected node.")
+	csiFlagSet.BoolVar(&csioption.ImmediateTopology, "csi-immediate-topology", true, "Immediate binding: pass aggregated cluster topologies for all nodes where the CSI driver is available (enabled, the default) or no topology requirements (if disabled)")
 	csiFlagSet.DurationVar(&csioption.Resync, "csi-resync", 10*time.Minute, "Resync interval of the controller.")
 	csiFlagSet.DurationVar(&csioption.Timeout, "csi-timeout", 15*time.Second, "Timeout for waiting for attaching or detaching the volume.")
 	csiFlagSet.BoolVar(&csioption.EnableResizer, "csi-bv-expansion-enabled", false, "Enables go routine csi-resizer.")
