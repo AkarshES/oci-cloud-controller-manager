@@ -272,18 +272,6 @@ locals {
             env          = "prd"
             value        = "true"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaaft2mucrx352mvjgie7ez7lobrnvn56hv5lkxm7kbv6m6wrwo22q"
-          },
-          {
-            regions      = ["iad", "phx"]
-            env          = "prd"
-            value        = "true"
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaadwrl3bncwmbc6wf4wkysh5awpzbrayi5qr2hqq56plls4awa6ypa"
-          },
-          {
-            regions      = ["phx"]
-            env          = "prd"
-            value        = "true"
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaamuhda4xcynzumstqiwxbx5d2mkmeqflyfnwsta6gn4g7ofmnfkq"
           }
         ]
       }
