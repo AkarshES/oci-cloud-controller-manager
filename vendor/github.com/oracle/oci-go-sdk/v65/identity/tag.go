@@ -1,10 +1,10 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
 // Identity and Access Management Service API
 //
-// APIs for managing users, groups, compartments, policies, and identity domains.
+// Use the Identity and Access Management Service API to manage users, groups, identity domains, compartments, policies, tagging, and limits. For information about managing users, groups, compartments, and policies, see Identity and Access Management (without identity domains) (https://docs.cloud.oracle.com/iaas/Content/Identity/Concepts/overview.htm). For information about tagging and service limits, see Tagging (https://docs.cloud.oracle.com/iaas/Content/Tagging/Concepts/taggingoverview.htm) and Service Limits (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/servicelimits.htm). For information about creating, modifying, and deleting identity domains, see Identity and Access Management (with identity domains) (https://docs.cloud.oracle.com/iaas/Content/Identity/home.htm).
 //
 
 package identity
@@ -60,6 +60,10 @@ type Tag struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
+	// The system tags for this resource. Each key is predefined and scoped to a namespace.
+	// Example: `{"orcl-cloud": {"free-tier-retained": "true"}}`
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
+
 	// The tag's current state. After creating a tag, make sure its `lifecycleState` is ACTIVE before using it. After retiring a tag, make sure its `lifecycleState` is INACTIVE before using it. If you delete a tag, you cannot delete another tag until the deleted tag's `lifecycleState` changes from DELETING to DELETED.
 	LifecycleState TagLifecycleStateEnum `mandatory:"false" json:"lifecycleState,omitempty"`
 
@@ -93,6 +97,7 @@ func (m *Tag) UnmarshalJSON(data []byte) (e error) {
 	model := struct {
 		FreeformTags     map[string]string                 `json:"freeformTags"`
 		DefinedTags      map[string]map[string]interface{} `json:"definedTags"`
+		SystemTags       map[string]map[string]interface{} `json:"systemTags"`
 		LifecycleState   TagLifecycleStateEnum             `json:"lifecycleState"`
 		IsCostTracking   *bool                             `json:"isCostTracking"`
 		Validator        basetagdefinitionvalidator        `json:"validator"`
@@ -114,6 +119,8 @@ func (m *Tag) UnmarshalJSON(data []byte) (e error) {
 	m.FreeformTags = model.FreeformTags
 
 	m.DefinedTags = model.DefinedTags
+
+	m.SystemTags = model.SystemTags
 
 	m.LifecycleState = model.LifecycleState
 

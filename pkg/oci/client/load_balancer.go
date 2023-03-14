@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
+	"github.com/oracle/oci-go-sdk/v65/common/utils"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"github.com/pkg/errors"
 )
@@ -268,6 +269,7 @@ func (c *loadbalancerClientStruct) CreateBackendSet(ctx context.Context, lbID st
 			Backends: c.genericBackendDetailsToBackendDetails(details.Backends),
 			HealthChecker: &loadbalancer.HealthCheckerDetails{
 				Protocol:         &details.HealthChecker.Protocol,
+				IsForcePlainText: details.HealthChecker.IsForcePlainText,
 				Port:             details.HealthChecker.Port,
 				UrlPath:          details.HealthChecker.UrlPath,
 				Retries:          details.HealthChecker.Retries,
@@ -306,6 +308,7 @@ func (c *loadbalancerClientStruct) UpdateBackendSet(ctx context.Context, lbID st
 			Backends: c.genericBackendDetailsToBackendDetails(details.Backends),
 			HealthChecker: &loadbalancer.HealthCheckerDetails{
 				Protocol:         &details.HealthChecker.Protocol,
+				IsForcePlainText: details.HealthChecker.IsForcePlainText,
 				Port:             details.HealthChecker.Port,
 				UrlPath:          details.HealthChecker.UrlPath,
 				Retries:          details.HealthChecker.Retries,
@@ -441,7 +444,7 @@ func (c *loadbalancerClientStruct) AwaitWorkRequest(ctx context.Context, id stri
 	var wr *loadbalancer.WorkRequest
 	contextWithTimeout, cancel := context.WithTimeout(ctx, defaultSynchronousAPIPollContextTimeout)
 	defer cancel()
-	requestId, _ := generateRandUUID()
+	requestId := utils.GenerateOpcRequestID()
 	logger := zap.L().Sugar()
 	logger = logger.With("opc-workrequest-id", id,
 		"request-id", requestId,
@@ -460,6 +463,7 @@ func (c *loadbalancerClientStruct) AwaitWorkRequest(ctx context.Context, id stri
 		}
 		switch twr.LifecycleState {
 		case loadbalancer.WorkRequestLifecycleStateSucceeded:
+			logger.Info("Workrequest succeeded")
 			wr = twr
 			return true, nil
 		case loadbalancer.WorkRequestLifecycleStateFailed:
@@ -685,6 +689,7 @@ func (c *loadbalancerClientStruct) backendSetsToGenericBackendSetDetails(backend
 		backendDetailsStruct := GenericBackendSetDetails{
 			HealthChecker: &GenericHealthChecker{
 				Protocol:         *v.HealthChecker.Protocol,
+				IsForcePlainText: v.HealthChecker.IsForcePlainText,
 				Port:             v.HealthChecker.Port,
 				UrlPath:          v.HealthChecker.UrlPath,
 				Retries:          v.HealthChecker.Retries,
@@ -717,6 +722,7 @@ func (c *loadbalancerClientStruct) genericBackendSetDetailsToBackendSets(backend
 		backendSetDetailsStruct := loadbalancer.BackendSetDetails{
 			HealthChecker: &loadbalancer.HealthCheckerDetails{
 				Protocol:         &v.HealthChecker.Protocol,
+				IsForcePlainText: v.HealthChecker.IsForcePlainText,
 				Port:             v.HealthChecker.Port,
 				UrlPath:          v.HealthChecker.UrlPath,
 				Retries:          v.HealthChecker.Retries,

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -9,6 +9,8 @@
 // documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
 // Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
 // Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// The required permissions are documented in the
+// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -102,6 +104,10 @@ func (m *platformconfig) UnmarshalPolymorphicJSON(data []byte) (interface{}, err
 		mm := IntelVmPlatformConfig{}
 		err = json.Unmarshal(data, &mm)
 		return mm, err
+	case "AMD_MILAN_BM_GPU":
+		mm := AmdMilanBmGpuPlatformConfig{}
+		err = json.Unmarshal(data, &mm)
+		return mm, err
 	default:
 		common.Logf("Recieved unsupported enum value for PlatformConfig: %s.", m.Type)
 		return *m, nil
@@ -150,6 +156,7 @@ type PlatformConfigTypeEnum string
 // Set of constants representing the allowable values for PlatformConfigTypeEnum
 const (
 	PlatformConfigTypeAmdMilanBm     PlatformConfigTypeEnum = "AMD_MILAN_BM"
+	PlatformConfigTypeAmdMilanBmGpu  PlatformConfigTypeEnum = "AMD_MILAN_BM_GPU"
 	PlatformConfigTypeAmdRomeBm      PlatformConfigTypeEnum = "AMD_ROME_BM"
 	PlatformConfigTypeAmdRomeBmGpu   PlatformConfigTypeEnum = "AMD_ROME_BM_GPU"
 	PlatformConfigTypeIntelIcelakeBm PlatformConfigTypeEnum = "INTEL_ICELAKE_BM"
@@ -160,6 +167,7 @@ const (
 
 var mappingPlatformConfigTypeEnum = map[string]PlatformConfigTypeEnum{
 	"AMD_MILAN_BM":     PlatformConfigTypeAmdMilanBm,
+	"AMD_MILAN_BM_GPU": PlatformConfigTypeAmdMilanBmGpu,
 	"AMD_ROME_BM":      PlatformConfigTypeAmdRomeBm,
 	"AMD_ROME_BM_GPU":  PlatformConfigTypeAmdRomeBmGpu,
 	"INTEL_ICELAKE_BM": PlatformConfigTypeIntelIcelakeBm,
@@ -170,6 +178,7 @@ var mappingPlatformConfigTypeEnum = map[string]PlatformConfigTypeEnum{
 
 var mappingPlatformConfigTypeEnumLowerCase = map[string]PlatformConfigTypeEnum{
 	"amd_milan_bm":     PlatformConfigTypeAmdMilanBm,
+	"amd_milan_bm_gpu": PlatformConfigTypeAmdMilanBmGpu,
 	"amd_rome_bm":      PlatformConfigTypeAmdRomeBm,
 	"amd_rome_bm_gpu":  PlatformConfigTypeAmdRomeBmGpu,
 	"intel_icelake_bm": PlatformConfigTypeIntelIcelakeBm,
@@ -191,6 +200,7 @@ func GetPlatformConfigTypeEnumValues() []PlatformConfigTypeEnum {
 func GetPlatformConfigTypeEnumStringValues() []string {
 	return []string{
 		"AMD_MILAN_BM",
+		"AMD_MILAN_BM_GPU",
 		"AMD_ROME_BM",
 		"AMD_ROME_BM_GPU",
 		"INTEL_ICELAKE_BM",

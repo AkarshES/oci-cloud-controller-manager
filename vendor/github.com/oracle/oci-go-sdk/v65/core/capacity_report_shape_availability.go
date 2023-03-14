@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -9,6 +9,8 @@
 // documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
 // Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
 // Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// The required permissions are documented in the
+// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -19,26 +21,22 @@ import (
 	"strings"
 )
 
-// CapacityReportShapeAvailability The capacity availability details for a requested shape.
+// CapacityReportShapeAvailability Information about the available capacity for a shape.
 type CapacityReportShapeAvailability struct {
 
-	// A fault domain is a grouping of hardware and infrastructure within an availability domain.
-	// Each availability domain contains three fault domains. Fault domains let you distribute your
-	// instances so that they are not on the same physical hardware within a single availability domain.
-	// A hardware failure or Compute hardware maintenance that affects one fault domain does not affect
-	// instances in other fault domains.
-	// If you do not specify the fault domain, the capacity report will be applicable to all fault domains.
+	// The fault domain for the capacity report.
+	// If you do not specify the fault domain, the capacity report includes information about all fault domains.
 	FaultDomain *string `mandatory:"false" json:"faultDomain"`
 
-	// The shape for the compute capacity report availability details.
+	// The shape that the capacity report was requested for.
 	InstanceShape *string `mandatory:"false" json:"instanceShape"`
 
 	InstanceShapeConfig *CapacityReportInstanceShapeConfig `mandatory:"false" json:"instanceShapeConfig"`
 
-	// The total number of instances that are available to launch new instances.
+	// The total number of new instances that can be created with the specified shape configuration.
 	AvailableCount *int64 `mandatory:"false" json:"availableCount"`
 
-	// The flag denoting whether capacity is available.
+	// A flag denoting whether capacity is available.
 	AvailabilityStatus CapacityReportShapeAvailabilityAvailabilityStatusEnum `mandatory:"false" json:"availabilityStatus,omitempty"`
 }
 

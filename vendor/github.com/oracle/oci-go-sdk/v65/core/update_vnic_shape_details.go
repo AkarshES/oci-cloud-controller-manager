@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -9,6 +9,8 @@
 // documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
 // Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
 // Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// The required permissions are documented in the
+// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -92,9 +94,13 @@ const (
 	UpdateVnicShapeDetailsVnicShapeEntirehostB125g                 UpdateVnicShapeDetailsVnicShapeEnum = "ENTIREHOST_B1_25G"
 	UpdateVnicShapeDetailsVnicShapeMicroVmFixed0048E125g           UpdateVnicShapeDetailsVnicShapeEnum = "MICRO_VM_FIXED0048_E1_25G"
 	UpdateVnicShapeDetailsVnicShapeMicroLbFixed0001E125g           UpdateVnicShapeDetailsVnicShapeEnum = "MICRO_LB_FIXED0001_E1_25G"
+	UpdateVnicShapeDetailsVnicShapeVnicaasFixed0025                UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FIXED0025"
 	UpdateVnicShapeDetailsVnicShapeVnicaasFixed0200                UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FIXED0200"
 	UpdateVnicShapeDetailsVnicShapeVnicaasFixed0400                UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FIXED0400"
+	UpdateVnicShapeDetailsVnicShapeVnicaasFixed0625                UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FIXED0625"
 	UpdateVnicShapeDetailsVnicShapeVnicaasFixed0700                UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FIXED0700"
+	UpdateVnicShapeDetailsVnicShapeVnicaasFixed1250                UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FIXED1250"
+	UpdateVnicShapeDetailsVnicShapeVnicaasFwaas6g250m              UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_FWAAS_6G_250M"
 	UpdateVnicShapeDetailsVnicShapeVnicaasNlbApproved10g           UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_10G"
 	UpdateVnicShapeDetailsVnicShapeVnicaasNlbApproved25g           UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_25G"
 	UpdateVnicShapeDetailsVnicShapeVnicaasTelesis25g               UpdateVnicShapeDetailsVnicShapeEnum = "VNICAAS_TELESIS_25G"
@@ -196,6 +202,86 @@ const (
 	UpdateVnicShapeDetailsVnicShapeFixed3900E450g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3900_E4_50G"
 	UpdateVnicShapeDetailsVnicShapeFixed4000E450g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED4000_E4_50G"
 	UpdateVnicShapeDetailsVnicShapeEntirehostE450g                 UpdateVnicShapeDetailsVnicShapeEnum = "ENTIREHOST_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed01001E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0100_1_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed02002E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0200_2_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed03003E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0300_3_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed04004E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0400_4_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed05005E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0500_5_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed06006E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0600_6_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed07007E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0700_7_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed08008E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0800_8_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed09009E450g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0900_9_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed100010E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1000_10_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed110011E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1100_11_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed120012E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1200_12_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed130013E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1300_13_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed140014E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1400_14_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed150015E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1500_15_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed160016E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1600_16_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed170017E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1700_17_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed180018E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1800_18_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed190019E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1900_19_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed200020E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2000_20_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed210021E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2100_21_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed220022E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2200_22_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed230023E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2300_23_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed240024E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2400_24_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed250025E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2500_25_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed260026E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2600_26_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed270027E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2700_27_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed280028E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2800_28_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed290029E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2900_29_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed300030E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3000_30_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed310031E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3100_31_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320032E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_32_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed330033E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3300_33_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed340034E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3400_34_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed350035E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3500_35_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed360036E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3600_36_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed370037E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3700_37_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed380038E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3800_38_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed390039E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3900_39_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400040E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_40_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400041E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_41_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400042E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_42_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400043E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_43_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400044E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_44_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400045E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_45_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400046E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_46_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400047E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_47_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400048E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_48_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400049E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_49_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400050E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_50_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400051E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_51_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400052E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_52_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400053E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_53_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400054E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_54_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400055E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_55_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400056E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_56_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400057E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_57_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400058E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_58_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400059E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_59_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400060E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_60_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400061E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_61_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400062E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_62_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400063E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_63_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400064E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_64_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400065E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_65_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400066E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_66_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400067E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_67_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400068E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_68_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400069E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_69_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400070E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_70_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400071E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_71_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400072E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_72_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400073E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_73_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400074E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_74_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400075E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_75_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400076E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_76_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400077E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_77_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400078E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_78_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400079E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_79_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400080E450g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_80_E4_50G"
 	UpdateVnicShapeDetailsVnicShapeMicroVmFixed0050E350g           UpdateVnicShapeDetailsVnicShapeEnum = "Micro_VM_Fixed0050_E3_50G"
 	UpdateVnicShapeDetailsVnicShapeMicroVmFixed0050E450g           UpdateVnicShapeDetailsVnicShapeEnum = "Micro_VM_Fixed0050_E4_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0025E350g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0025_E3_50G"
@@ -528,6 +614,250 @@ const (
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4900E450g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4900_E4_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4950E450g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4950_E4_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed5000E450g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED5000_E4_50G"
+	UpdateVnicShapeDetailsVnicShapeDynamicE550g                    UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeDynamicE5100g                   UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_E5_100G"
+	UpdateVnicShapeDetailsVnicShapeEntirehostE550g                 UpdateVnicShapeDetailsVnicShapeEnum = "EntireHost_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0040E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "Fixed0040_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0100E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0200E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0300E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0400E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0500E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0600E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0700E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0800E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed0900E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1000E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1100E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1200E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1300E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1400E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1500E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1600E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1700E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1800E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed1900E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED1900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2000E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2100E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2200E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2300E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2400E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2500E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2600E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2700E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2800E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed2900E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED2900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3000E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3100E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3200E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3300E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3400E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3500E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3600E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3700E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3800E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed3900E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED3900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeFixed4000E550g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED4000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0025E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0025_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0050E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0050_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0075E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0075_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0100E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0125E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0125_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0150E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0150_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0175E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0175_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0200E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0225E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0225_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0250E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0250_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0275E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0275_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0300E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0325E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0325_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0350E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0350_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0375E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0375_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0400E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0425E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0425_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0450E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0450_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0475E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0475_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0500E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0525E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0525_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0550E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0550_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0575E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0575_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0600E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0625E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0625_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0650E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0650_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0675E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0675_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0700E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0725E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0725_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0750E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0750_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0775E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0775_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0800E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0825E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0825_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0850E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0850_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0875E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0875_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0900E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0925E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0925_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0950E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0950_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0975E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0975_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1000E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1025E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1025_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1050E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1050_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1075E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1075_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1100E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1125E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1125_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1150E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1150_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1175E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1175_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1200E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1225E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1225_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1250E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1250_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1275E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1275_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1300E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1325E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1325_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1350E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1350_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1375E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1375_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1400E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1425E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1425_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1450E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1450_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1475E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1475_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1500E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1525E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1525_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1550E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1550_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1575E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1575_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1600E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1625E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1625_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1650E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1650_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1675E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1675_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1700E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1725E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1725_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1750E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1750_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1775E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1775_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1800E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1825E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1825_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1850E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1850_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1875E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1875_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1900E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1925E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1925_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1950E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1950_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1975E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1975_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2000E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2025E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2025_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2050E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2050_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2075E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2075_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2100E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2125E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2125_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2150E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2150_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2175E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2175_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2200E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2225E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2225_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2250E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2250_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2275E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2275_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2300E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2325E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2325_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2350E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2350_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2375E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2375_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2400E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2425E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2425_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2450E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2450_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2475E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2475_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2500E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2525E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2525_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2550E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2550_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2575E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2575_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2600E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2625E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2625_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2650E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2650_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2675E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2675_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2700E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2725E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2725_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2750E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2750_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2775E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2775_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2800E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2825E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2825_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2850E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2850_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2875E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2875_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2900E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2925E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2925_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2950E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2950_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2975E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2975_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3000E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3025E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3025_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3050E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3050_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3075E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3075_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3100E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3125E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3125_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3150E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3150_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3175E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3175_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3200E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3225E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3225_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3250E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3250_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3275E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3275_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3300E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3325E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3325_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3350E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3350_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3375E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3375_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3400E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3425E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3425_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3450E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3450_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3475E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3475_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3500E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3525E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3525_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3550E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3550_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3575E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3575_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3600E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3625E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3625_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3650E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3650_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3675E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3675_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3700E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3725E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3725_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3750E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3750_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3775E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3775_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3800E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3825E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3825_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3850E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3850_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3875E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3875_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3900E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3925E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3925_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3950E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3950_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3975E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3975_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4000E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4000_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4025E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4025_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4050E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4050_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4075E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4075_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4100E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4100_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4125E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4125_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4150E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4150_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4175E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4175_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4200E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4200_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4225E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4225_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4250E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4250_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4275E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4275_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4300E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4300_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4325E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4325_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4350E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4350_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4375E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4375_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4400E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4400_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4425E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4425_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4450E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4450_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4475E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4475_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4500E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4500_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4525E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4525_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4550E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4550_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4575E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4575_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4600E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4600_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4625E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4625_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4650E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4650_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4675E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4675_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4700E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4700_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4725E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4725_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4750E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4750_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4775E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4775_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4800E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4800_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4825E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4825_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4850E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4850_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4875E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4875_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4900E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4900_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4925E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4925_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4950E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4950_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4975E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4975_E5_50G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed5000E550g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED5000_E5_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0020A150g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0020_A1_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0040A150g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0040_A1_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0060A150g         UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0060_A1_50G"
@@ -877,6 +1207,129 @@ const (
 	UpdateVnicShapeDetailsVnicShapeFixed4000A150g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED4000_A1_50G"
 	UpdateVnicShapeDetailsVnicShapeFixed5000TelesisA150g           UpdateVnicShapeDetailsVnicShapeEnum = "FIXED5000_TELESIS_A1_50G"
 	UpdateVnicShapeDetailsVnicShapeEntirehostA150g                 UpdateVnicShapeDetailsVnicShapeEnum = "ENTIREHOST_A1_50G"
+	UpdateVnicShapeDetailsVnicShapeDynamicX725g                    UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeFixed0040X725g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0040_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0100X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0100_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0200X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0200_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0300X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0300_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0400X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0400_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0500X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0500_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0600X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0600_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0700X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0700_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0800X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0800_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed0900X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED0900_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1000X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1000_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1100X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1100_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1200X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1200_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1300X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1300_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1400X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1400_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1500X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1500_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1600X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1600_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1700X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1700_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1800X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1800_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed1900X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED1900_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed2000X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED2000_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed2100X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED2100_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed2200X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED2200_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed2300X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED2300_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed2400X725g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED2400_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0025X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0025_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0050X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0050_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0075X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0075_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0100X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0100_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0125X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0125_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0150X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0150_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0175X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0175_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0200X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0200_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0225X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0225_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0250X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0250_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0275X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0275_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0300X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0300_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0325X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0325_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0350X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0350_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0375X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0375_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0400X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0400_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0425X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0425_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0450X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0450_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0475X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0475_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0500X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0500_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0525X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0525_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0550X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0550_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0575X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0575_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0600X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0600_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0625X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0625_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0650X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0650_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0675X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0675_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0700X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0700_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0725X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0725_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0750X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0750_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0775X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0775_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0800X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0800_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0825X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0825_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0850X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0850_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0875X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0875_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0900X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0900_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0925X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0925_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0950X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0950_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0975X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0975_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1000X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1000_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1025X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1025_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1050X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1050_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1075X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1075_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1100X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1100_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1125X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1125_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1150X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1150_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1175X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1175_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1200X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1200_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1225X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1225_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1250X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1250_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1275X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1275_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1300X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1300_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1325X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1325_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1350X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1350_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1375X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1375_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1400X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1400_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1425X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1425_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1450X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1450_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1475X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1475_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1500X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1500_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1525X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1525_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1550X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1550_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1575X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1575_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1600X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1600_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1625X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1625_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1650X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1650_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1675X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1675_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1700X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1700_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1725X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1725_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1750X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1750_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1775X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1775_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1800X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1800_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1825X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1825_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1850X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1850_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1875X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1875_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1900X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1900_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1925X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1925_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1950X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1950_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1975X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1975_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2000X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2000_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2025X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2025_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2050X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2050_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2075X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2075_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2100X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2100_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2125X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2125_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2150X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2150_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2175X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2175_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2200X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2200_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2225X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2225_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2250X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2250_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2275X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2275_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2300X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2300_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2325X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2325_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2350X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2350_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2375X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2375_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2400X725g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2400_X7_25G"
+	UpdateVnicShapeDetailsVnicShapeEntirehostX725g                 UpdateVnicShapeDetailsVnicShapeEnum = "ENTIREHOST_X7_25G"
 	UpdateVnicShapeDetailsVnicShapeDynamicX950g                    UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeFixed0040X950g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0040_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeFixed0400X950g                  UpdateVnicShapeDetailsVnicShapeEnum = "FIXED0400_X9_50G"
@@ -929,6 +1382,82 @@ const (
 	UpdateVnicShapeDetailsVnicShapeStandardVmFixed3800X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED3800_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeStandardVmFixed3900X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED3900_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4000X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4000_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4100X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4100_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4200X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4200_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4300X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4300_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4400X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4400_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4500X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4500_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4600X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4600_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4700X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4700_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4800X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4800_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed4900X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED4900_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeStandardVmFixed5000X950g        UpdateVnicShapeDetailsVnicShapeEnum = "STANDARD_VM_FIXED5000_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeA10GpuVmFixed2400X950g          UpdateVnicShapeDetailsVnicShapeEnum = "A10_GPU_VM_FIXED2400_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeA10GpuVmFixed4800X950g          UpdateVnicShapeDetailsVnicShapeEnum = "A10_GPU_VM_FIXED4800_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed01001X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0100_1_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed02002X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0200_2_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed03003X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0300_3_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed04004X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0400_4_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed05005X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0500_5_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed06006X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0600_6_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed07007X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0700_7_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed08008X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0800_8_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed09009X950g          UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED0900_9_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed100010X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1000_10_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed110011X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1100_11_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed120012X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1200_12_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed130013X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1300_13_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed140014X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1400_14_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed150015X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1500_15_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed160016X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1600_16_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed170017X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1700_17_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed180018X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1800_18_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed190019X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED1900_19_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed200020X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2000_20_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed210021X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2100_21_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed220022X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2200_22_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed230023X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2300_23_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed240024X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2400_24_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed250025X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2500_25_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed260026X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2600_26_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed270027X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2700_27_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed280028X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2800_28_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed290029X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED2900_29_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed300030X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3000_30_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed310031X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3100_31_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320032X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_32_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320033X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_33_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320034X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_34_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320035X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_35_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320036X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_36_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320037X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_37_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320038X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_38_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320039X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_39_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320040X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_40_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320041X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_41_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320042X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_42_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320043X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_43_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320044X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_44_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320045X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_45_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320046X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_46_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320047X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_47_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320048X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_48_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320049X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_49_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320050X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_50_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320051X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_51_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320052X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_52_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320053X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_53_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320054X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_54_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320055X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_55_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320056X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_56_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320057X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_57_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320058X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_58_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320059X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_59_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320060X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_60_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320061X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_61_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320062X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_62_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320063X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_63_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320064X950g         UpdateVnicShapeDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_64_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0025X950g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0025_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0050X950g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0050_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0075X950g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0075_X9_50G"
@@ -1095,6 +1624,9 @@ const (
 	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed4950X950g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED4950_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed5000X950g UpdateVnicShapeDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED5000_X9_50G"
 	UpdateVnicShapeDetailsVnicShapeEntirehostX950g                 UpdateVnicShapeDetailsVnicShapeEnum = "ENTIREHOST_X9_50G"
+	UpdateVnicShapeDetailsVnicShapeDynamicX9100g                   UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_X9_100G"
+	UpdateVnicShapeDetailsVnicShapeDynamicX1050g                   UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_X10_50G"
+	UpdateVnicShapeDetailsVnicShapeDynamicX10100g                  UpdateVnicShapeDetailsVnicShapeEnum = "DYNAMIC_X10_100G"
 )
 
 var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetailsVnicShapeEnum{
@@ -1137,9 +1669,13 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetai
 	"ENTIREHOST_B1_25G":                    UpdateVnicShapeDetailsVnicShapeEntirehostB125g,
 	"MICRO_VM_FIXED0048_E1_25G":            UpdateVnicShapeDetailsVnicShapeMicroVmFixed0048E125g,
 	"MICRO_LB_FIXED0001_E1_25G":            UpdateVnicShapeDetailsVnicShapeMicroLbFixed0001E125g,
+	"VNICAAS_FIXED0025":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0025,
 	"VNICAAS_FIXED0200":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0200,
 	"VNICAAS_FIXED0400":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0400,
+	"VNICAAS_FIXED0625":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0625,
 	"VNICAAS_FIXED0700":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0700,
+	"VNICAAS_FIXED1250":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed1250,
+	"VNICAAS_FWAAS_6G_250M":                UpdateVnicShapeDetailsVnicShapeVnicaasFwaas6g250m,
 	"VNICAAS_NLB_APPROVED_10G":             UpdateVnicShapeDetailsVnicShapeVnicaasNlbApproved10g,
 	"VNICAAS_NLB_APPROVED_25G":             UpdateVnicShapeDetailsVnicShapeVnicaasNlbApproved25g,
 	"VNICAAS_TELESIS_25G":                  UpdateVnicShapeDetailsVnicShapeVnicaasTelesis25g,
@@ -1241,6 +1777,86 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetai
 	"FIXED3900_E4_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3900E450g,
 	"FIXED4000_E4_50G":                     UpdateVnicShapeDetailsVnicShapeFixed4000E450g,
 	"ENTIREHOST_E4_50G":                    UpdateVnicShapeDetailsVnicShapeEntirehostE450g,
+	"VNUMA_VM_FIXED0100_1_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed01001E450g,
+	"VNUMA_VM_FIXED0200_2_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed02002E450g,
+	"VNUMA_VM_FIXED0300_3_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed03003E450g,
+	"VNUMA_VM_FIXED0400_4_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed04004E450g,
+	"VNUMA_VM_FIXED0500_5_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed05005E450g,
+	"VNUMA_VM_FIXED0600_6_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed06006E450g,
+	"VNUMA_VM_FIXED0700_7_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed07007E450g,
+	"VNUMA_VM_FIXED0800_8_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed08008E450g,
+	"VNUMA_VM_FIXED0900_9_E4_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed09009E450g,
+	"VNUMA_VM_FIXED1000_10_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed100010E450g,
+	"VNUMA_VM_FIXED1100_11_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed110011E450g,
+	"VNUMA_VM_FIXED1200_12_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed120012E450g,
+	"VNUMA_VM_FIXED1300_13_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed130013E450g,
+	"VNUMA_VM_FIXED1400_14_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed140014E450g,
+	"VNUMA_VM_FIXED1500_15_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed150015E450g,
+	"VNUMA_VM_FIXED1600_16_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed160016E450g,
+	"VNUMA_VM_FIXED1700_17_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed170017E450g,
+	"VNUMA_VM_FIXED1800_18_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed180018E450g,
+	"VNUMA_VM_FIXED1900_19_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed190019E450g,
+	"VNUMA_VM_FIXED2000_20_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed200020E450g,
+	"VNUMA_VM_FIXED2100_21_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed210021E450g,
+	"VNUMA_VM_FIXED2200_22_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed220022E450g,
+	"VNUMA_VM_FIXED2300_23_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed230023E450g,
+	"VNUMA_VM_FIXED2400_24_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed240024E450g,
+	"VNUMA_VM_FIXED2500_25_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed250025E450g,
+	"VNUMA_VM_FIXED2600_26_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed260026E450g,
+	"VNUMA_VM_FIXED2700_27_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed270027E450g,
+	"VNUMA_VM_FIXED2800_28_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed280028E450g,
+	"VNUMA_VM_FIXED2900_29_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed290029E450g,
+	"VNUMA_VM_FIXED3000_30_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed300030E450g,
+	"VNUMA_VM_FIXED3100_31_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed310031E450g,
+	"VNUMA_VM_FIXED3200_32_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320032E450g,
+	"VNUMA_VM_FIXED3300_33_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed330033E450g,
+	"VNUMA_VM_FIXED3400_34_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed340034E450g,
+	"VNUMA_VM_FIXED3500_35_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed350035E450g,
+	"VNUMA_VM_FIXED3600_36_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed360036E450g,
+	"VNUMA_VM_FIXED3700_37_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed370037E450g,
+	"VNUMA_VM_FIXED3800_38_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed380038E450g,
+	"VNUMA_VM_FIXED3900_39_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed390039E450g,
+	"VNUMA_VM_FIXED4000_40_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400040E450g,
+	"VNUMA_VM_FIXED4000_41_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400041E450g,
+	"VNUMA_VM_FIXED4000_42_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400042E450g,
+	"VNUMA_VM_FIXED4000_43_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400043E450g,
+	"VNUMA_VM_FIXED4000_44_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400044E450g,
+	"VNUMA_VM_FIXED4000_45_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400045E450g,
+	"VNUMA_VM_FIXED4000_46_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400046E450g,
+	"VNUMA_VM_FIXED4000_47_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400047E450g,
+	"VNUMA_VM_FIXED4000_48_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400048E450g,
+	"VNUMA_VM_FIXED4000_49_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400049E450g,
+	"VNUMA_VM_FIXED4000_50_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400050E450g,
+	"VNUMA_VM_FIXED4000_51_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400051E450g,
+	"VNUMA_VM_FIXED4000_52_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400052E450g,
+	"VNUMA_VM_FIXED4000_53_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400053E450g,
+	"VNUMA_VM_FIXED4000_54_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400054E450g,
+	"VNUMA_VM_FIXED4000_55_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400055E450g,
+	"VNUMA_VM_FIXED4000_56_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400056E450g,
+	"VNUMA_VM_FIXED4000_57_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400057E450g,
+	"VNUMA_VM_FIXED4000_58_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400058E450g,
+	"VNUMA_VM_FIXED4000_59_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400059E450g,
+	"VNUMA_VM_FIXED4000_60_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400060E450g,
+	"VNUMA_VM_FIXED4000_61_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400061E450g,
+	"VNUMA_VM_FIXED4000_62_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400062E450g,
+	"VNUMA_VM_FIXED4000_63_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400063E450g,
+	"VNUMA_VM_FIXED4000_64_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400064E450g,
+	"VNUMA_VM_FIXED4000_65_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400065E450g,
+	"VNUMA_VM_FIXED4000_66_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400066E450g,
+	"VNUMA_VM_FIXED4000_67_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400067E450g,
+	"VNUMA_VM_FIXED4000_68_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400068E450g,
+	"VNUMA_VM_FIXED4000_69_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400069E450g,
+	"VNUMA_VM_FIXED4000_70_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400070E450g,
+	"VNUMA_VM_FIXED4000_71_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400071E450g,
+	"VNUMA_VM_FIXED4000_72_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400072E450g,
+	"VNUMA_VM_FIXED4000_73_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400073E450g,
+	"VNUMA_VM_FIXED4000_74_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400074E450g,
+	"VNUMA_VM_FIXED4000_75_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400075E450g,
+	"VNUMA_VM_FIXED4000_76_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400076E450g,
+	"VNUMA_VM_FIXED4000_77_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400077E450g,
+	"VNUMA_VM_FIXED4000_78_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400078E450g,
+	"VNUMA_VM_FIXED4000_79_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400079E450g,
+	"VNUMA_VM_FIXED4000_80_E4_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400080E450g,
 	"Micro_VM_Fixed0050_E3_50G":            UpdateVnicShapeDetailsVnicShapeMicroVmFixed0050E350g,
 	"Micro_VM_Fixed0050_E4_50G":            UpdateVnicShapeDetailsVnicShapeMicroVmFixed0050E450g,
 	"SUBCORE_VM_FIXED0025_E3_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0025E350g,
@@ -1573,6 +2189,250 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetai
 	"SUBCORE_VM_FIXED4900_E4_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4900E450g,
 	"SUBCORE_VM_FIXED4950_E4_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4950E450g,
 	"SUBCORE_VM_FIXED5000_E4_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed5000E450g,
+	"DYNAMIC_E5_50G":                       UpdateVnicShapeDetailsVnicShapeDynamicE550g,
+	"DYNAMIC_E5_100G":                      UpdateVnicShapeDetailsVnicShapeDynamicE5100g,
+	"EntireHost_E5_50G":                    UpdateVnicShapeDetailsVnicShapeEntirehostE550g,
+	"Fixed0040_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0040E550g,
+	"FIXED0100_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0100E550g,
+	"FIXED0200_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0200E550g,
+	"FIXED0300_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0300E550g,
+	"FIXED0400_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0400E550g,
+	"FIXED0500_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0500E550g,
+	"FIXED0600_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0600E550g,
+	"FIXED0700_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0700E550g,
+	"FIXED0800_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0800E550g,
+	"FIXED0900_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0900E550g,
+	"FIXED1000_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1000E550g,
+	"FIXED1100_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1100E550g,
+	"FIXED1200_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1200E550g,
+	"FIXED1300_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1300E550g,
+	"FIXED1400_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1400E550g,
+	"FIXED1500_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1500E550g,
+	"FIXED1600_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1600E550g,
+	"FIXED1700_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1700E550g,
+	"FIXED1800_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1800E550g,
+	"FIXED1900_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed1900E550g,
+	"FIXED2000_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2000E550g,
+	"FIXED2100_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2100E550g,
+	"FIXED2200_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2200E550g,
+	"FIXED2300_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2300E550g,
+	"FIXED2400_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2400E550g,
+	"FIXED2500_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2500E550g,
+	"FIXED2600_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2600E550g,
+	"FIXED2700_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2700E550g,
+	"FIXED2800_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2800E550g,
+	"FIXED2900_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed2900E550g,
+	"FIXED3000_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3000E550g,
+	"FIXED3100_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3100E550g,
+	"FIXED3200_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3200E550g,
+	"FIXED3300_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3300E550g,
+	"FIXED3400_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3400E550g,
+	"FIXED3500_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3500E550g,
+	"FIXED3600_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3600E550g,
+	"FIXED3700_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3700E550g,
+	"FIXED3800_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3800E550g,
+	"FIXED3900_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed3900E550g,
+	"FIXED4000_E5_50G":                     UpdateVnicShapeDetailsVnicShapeFixed4000E550g,
+	"SUBCORE_VM_FIXED0025_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0025E550g,
+	"SUBCORE_VM_FIXED0050_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0050E550g,
+	"SUBCORE_VM_FIXED0075_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0075E550g,
+	"SUBCORE_VM_FIXED0100_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0100E550g,
+	"SUBCORE_VM_FIXED0125_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0125E550g,
+	"SUBCORE_VM_FIXED0150_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0150E550g,
+	"SUBCORE_VM_FIXED0175_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0175E550g,
+	"SUBCORE_VM_FIXED0200_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0200E550g,
+	"SUBCORE_VM_FIXED0225_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0225E550g,
+	"SUBCORE_VM_FIXED0250_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0250E550g,
+	"SUBCORE_VM_FIXED0275_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0275E550g,
+	"SUBCORE_VM_FIXED0300_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0300E550g,
+	"SUBCORE_VM_FIXED0325_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0325E550g,
+	"SUBCORE_VM_FIXED0350_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0350E550g,
+	"SUBCORE_VM_FIXED0375_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0375E550g,
+	"SUBCORE_VM_FIXED0400_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0400E550g,
+	"SUBCORE_VM_FIXED0425_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0425E550g,
+	"SUBCORE_VM_FIXED0450_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0450E550g,
+	"SUBCORE_VM_FIXED0475_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0475E550g,
+	"SUBCORE_VM_FIXED0500_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0500E550g,
+	"SUBCORE_VM_FIXED0525_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0525E550g,
+	"SUBCORE_VM_FIXED0550_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0550E550g,
+	"SUBCORE_VM_FIXED0575_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0575E550g,
+	"SUBCORE_VM_FIXED0600_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0600E550g,
+	"SUBCORE_VM_FIXED0625_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0625E550g,
+	"SUBCORE_VM_FIXED0650_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0650E550g,
+	"SUBCORE_VM_FIXED0675_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0675E550g,
+	"SUBCORE_VM_FIXED0700_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0700E550g,
+	"SUBCORE_VM_FIXED0725_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0725E550g,
+	"SUBCORE_VM_FIXED0750_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0750E550g,
+	"SUBCORE_VM_FIXED0775_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0775E550g,
+	"SUBCORE_VM_FIXED0800_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0800E550g,
+	"SUBCORE_VM_FIXED0825_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0825E550g,
+	"SUBCORE_VM_FIXED0850_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0850E550g,
+	"SUBCORE_VM_FIXED0875_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0875E550g,
+	"SUBCORE_VM_FIXED0900_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0900E550g,
+	"SUBCORE_VM_FIXED0925_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0925E550g,
+	"SUBCORE_VM_FIXED0950_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0950E550g,
+	"SUBCORE_VM_FIXED0975_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0975E550g,
+	"SUBCORE_VM_FIXED1000_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1000E550g,
+	"SUBCORE_VM_FIXED1025_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1025E550g,
+	"SUBCORE_VM_FIXED1050_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1050E550g,
+	"SUBCORE_VM_FIXED1075_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1075E550g,
+	"SUBCORE_VM_FIXED1100_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1100E550g,
+	"SUBCORE_VM_FIXED1125_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1125E550g,
+	"SUBCORE_VM_FIXED1150_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1150E550g,
+	"SUBCORE_VM_FIXED1175_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1175E550g,
+	"SUBCORE_VM_FIXED1200_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1200E550g,
+	"SUBCORE_VM_FIXED1225_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1225E550g,
+	"SUBCORE_VM_FIXED1250_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1250E550g,
+	"SUBCORE_VM_FIXED1275_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1275E550g,
+	"SUBCORE_VM_FIXED1300_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1300E550g,
+	"SUBCORE_VM_FIXED1325_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1325E550g,
+	"SUBCORE_VM_FIXED1350_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1350E550g,
+	"SUBCORE_VM_FIXED1375_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1375E550g,
+	"SUBCORE_VM_FIXED1400_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1400E550g,
+	"SUBCORE_VM_FIXED1425_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1425E550g,
+	"SUBCORE_VM_FIXED1450_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1450E550g,
+	"SUBCORE_VM_FIXED1475_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1475E550g,
+	"SUBCORE_VM_FIXED1500_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1500E550g,
+	"SUBCORE_VM_FIXED1525_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1525E550g,
+	"SUBCORE_VM_FIXED1550_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1550E550g,
+	"SUBCORE_VM_FIXED1575_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1575E550g,
+	"SUBCORE_VM_FIXED1600_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1600E550g,
+	"SUBCORE_VM_FIXED1625_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1625E550g,
+	"SUBCORE_VM_FIXED1650_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1650E550g,
+	"SUBCORE_VM_FIXED1675_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1675E550g,
+	"SUBCORE_VM_FIXED1700_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1700E550g,
+	"SUBCORE_VM_FIXED1725_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1725E550g,
+	"SUBCORE_VM_FIXED1750_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1750E550g,
+	"SUBCORE_VM_FIXED1775_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1775E550g,
+	"SUBCORE_VM_FIXED1800_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1800E550g,
+	"SUBCORE_VM_FIXED1825_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1825E550g,
+	"SUBCORE_VM_FIXED1850_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1850E550g,
+	"SUBCORE_VM_FIXED1875_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1875E550g,
+	"SUBCORE_VM_FIXED1900_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1900E550g,
+	"SUBCORE_VM_FIXED1925_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1925E550g,
+	"SUBCORE_VM_FIXED1950_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1950E550g,
+	"SUBCORE_VM_FIXED1975_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1975E550g,
+	"SUBCORE_VM_FIXED2000_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2000E550g,
+	"SUBCORE_VM_FIXED2025_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2025E550g,
+	"SUBCORE_VM_FIXED2050_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2050E550g,
+	"SUBCORE_VM_FIXED2075_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2075E550g,
+	"SUBCORE_VM_FIXED2100_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2100E550g,
+	"SUBCORE_VM_FIXED2125_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2125E550g,
+	"SUBCORE_VM_FIXED2150_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2150E550g,
+	"SUBCORE_VM_FIXED2175_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2175E550g,
+	"SUBCORE_VM_FIXED2200_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2200E550g,
+	"SUBCORE_VM_FIXED2225_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2225E550g,
+	"SUBCORE_VM_FIXED2250_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2250E550g,
+	"SUBCORE_VM_FIXED2275_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2275E550g,
+	"SUBCORE_VM_FIXED2300_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2300E550g,
+	"SUBCORE_VM_FIXED2325_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2325E550g,
+	"SUBCORE_VM_FIXED2350_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2350E550g,
+	"SUBCORE_VM_FIXED2375_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2375E550g,
+	"SUBCORE_VM_FIXED2400_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2400E550g,
+	"SUBCORE_VM_FIXED2425_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2425E550g,
+	"SUBCORE_VM_FIXED2450_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2450E550g,
+	"SUBCORE_VM_FIXED2475_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2475E550g,
+	"SUBCORE_VM_FIXED2500_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2500E550g,
+	"SUBCORE_VM_FIXED2525_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2525E550g,
+	"SUBCORE_VM_FIXED2550_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2550E550g,
+	"SUBCORE_VM_FIXED2575_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2575E550g,
+	"SUBCORE_VM_FIXED2600_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2600E550g,
+	"SUBCORE_VM_FIXED2625_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2625E550g,
+	"SUBCORE_VM_FIXED2650_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2650E550g,
+	"SUBCORE_VM_FIXED2675_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2675E550g,
+	"SUBCORE_VM_FIXED2700_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2700E550g,
+	"SUBCORE_VM_FIXED2725_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2725E550g,
+	"SUBCORE_VM_FIXED2750_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2750E550g,
+	"SUBCORE_VM_FIXED2775_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2775E550g,
+	"SUBCORE_VM_FIXED2800_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2800E550g,
+	"SUBCORE_VM_FIXED2825_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2825E550g,
+	"SUBCORE_VM_FIXED2850_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2850E550g,
+	"SUBCORE_VM_FIXED2875_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2875E550g,
+	"SUBCORE_VM_FIXED2900_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2900E550g,
+	"SUBCORE_VM_FIXED2925_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2925E550g,
+	"SUBCORE_VM_FIXED2950_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2950E550g,
+	"SUBCORE_VM_FIXED2975_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2975E550g,
+	"SUBCORE_VM_FIXED3000_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3000E550g,
+	"SUBCORE_VM_FIXED3025_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3025E550g,
+	"SUBCORE_VM_FIXED3050_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3050E550g,
+	"SUBCORE_VM_FIXED3075_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3075E550g,
+	"SUBCORE_VM_FIXED3100_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3100E550g,
+	"SUBCORE_VM_FIXED3125_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3125E550g,
+	"SUBCORE_VM_FIXED3150_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3150E550g,
+	"SUBCORE_VM_FIXED3175_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3175E550g,
+	"SUBCORE_VM_FIXED3200_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3200E550g,
+	"SUBCORE_VM_FIXED3225_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3225E550g,
+	"SUBCORE_VM_FIXED3250_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3250E550g,
+	"SUBCORE_VM_FIXED3275_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3275E550g,
+	"SUBCORE_VM_FIXED3300_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3300E550g,
+	"SUBCORE_VM_FIXED3325_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3325E550g,
+	"SUBCORE_VM_FIXED3350_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3350E550g,
+	"SUBCORE_VM_FIXED3375_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3375E550g,
+	"SUBCORE_VM_FIXED3400_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3400E550g,
+	"SUBCORE_VM_FIXED3425_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3425E550g,
+	"SUBCORE_VM_FIXED3450_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3450E550g,
+	"SUBCORE_VM_FIXED3475_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3475E550g,
+	"SUBCORE_VM_FIXED3500_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3500E550g,
+	"SUBCORE_VM_FIXED3525_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3525E550g,
+	"SUBCORE_VM_FIXED3550_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3550E550g,
+	"SUBCORE_VM_FIXED3575_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3575E550g,
+	"SUBCORE_VM_FIXED3600_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3600E550g,
+	"SUBCORE_VM_FIXED3625_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3625E550g,
+	"SUBCORE_VM_FIXED3650_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3650E550g,
+	"SUBCORE_VM_FIXED3675_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3675E550g,
+	"SUBCORE_VM_FIXED3700_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3700E550g,
+	"SUBCORE_VM_FIXED3725_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3725E550g,
+	"SUBCORE_VM_FIXED3750_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3750E550g,
+	"SUBCORE_VM_FIXED3775_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3775E550g,
+	"SUBCORE_VM_FIXED3800_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3800E550g,
+	"SUBCORE_VM_FIXED3825_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3825E550g,
+	"SUBCORE_VM_FIXED3850_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3850E550g,
+	"SUBCORE_VM_FIXED3875_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3875E550g,
+	"SUBCORE_VM_FIXED3900_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3900E550g,
+	"SUBCORE_VM_FIXED3925_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3925E550g,
+	"SUBCORE_VM_FIXED3950_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3950E550g,
+	"SUBCORE_VM_FIXED3975_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3975E550g,
+	"SUBCORE_VM_FIXED4000_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4000E550g,
+	"SUBCORE_VM_FIXED4025_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4025E550g,
+	"SUBCORE_VM_FIXED4050_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4050E550g,
+	"SUBCORE_VM_FIXED4075_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4075E550g,
+	"SUBCORE_VM_FIXED4100_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4100E550g,
+	"SUBCORE_VM_FIXED4125_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4125E550g,
+	"SUBCORE_VM_FIXED4150_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4150E550g,
+	"SUBCORE_VM_FIXED4175_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4175E550g,
+	"SUBCORE_VM_FIXED4200_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4200E550g,
+	"SUBCORE_VM_FIXED4225_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4225E550g,
+	"SUBCORE_VM_FIXED4250_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4250E550g,
+	"SUBCORE_VM_FIXED4275_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4275E550g,
+	"SUBCORE_VM_FIXED4300_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4300E550g,
+	"SUBCORE_VM_FIXED4325_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4325E550g,
+	"SUBCORE_VM_FIXED4350_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4350E550g,
+	"SUBCORE_VM_FIXED4375_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4375E550g,
+	"SUBCORE_VM_FIXED4400_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4400E550g,
+	"SUBCORE_VM_FIXED4425_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4425E550g,
+	"SUBCORE_VM_FIXED4450_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4450E550g,
+	"SUBCORE_VM_FIXED4475_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4475E550g,
+	"SUBCORE_VM_FIXED4500_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4500E550g,
+	"SUBCORE_VM_FIXED4525_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4525E550g,
+	"SUBCORE_VM_FIXED4550_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4550E550g,
+	"SUBCORE_VM_FIXED4575_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4575E550g,
+	"SUBCORE_VM_FIXED4600_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4600E550g,
+	"SUBCORE_VM_FIXED4625_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4625E550g,
+	"SUBCORE_VM_FIXED4650_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4650E550g,
+	"SUBCORE_VM_FIXED4675_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4675E550g,
+	"SUBCORE_VM_FIXED4700_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4700E550g,
+	"SUBCORE_VM_FIXED4725_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4725E550g,
+	"SUBCORE_VM_FIXED4750_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4750E550g,
+	"SUBCORE_VM_FIXED4775_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4775E550g,
+	"SUBCORE_VM_FIXED4800_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4800E550g,
+	"SUBCORE_VM_FIXED4825_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4825E550g,
+	"SUBCORE_VM_FIXED4850_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4850E550g,
+	"SUBCORE_VM_FIXED4875_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4875E550g,
+	"SUBCORE_VM_FIXED4900_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4900E550g,
+	"SUBCORE_VM_FIXED4925_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4925E550g,
+	"SUBCORE_VM_FIXED4950_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4950E550g,
+	"SUBCORE_VM_FIXED4975_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4975E550g,
+	"SUBCORE_VM_FIXED5000_E5_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed5000E550g,
 	"SUBCORE_VM_FIXED0020_A1_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0020A150g,
 	"SUBCORE_VM_FIXED0040_A1_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0040A150g,
 	"SUBCORE_VM_FIXED0060_A1_50G":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0060A150g,
@@ -1922,6 +2782,129 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetai
 	"FIXED4000_A1_50G":                     UpdateVnicShapeDetailsVnicShapeFixed4000A150g,
 	"FIXED5000_TELESIS_A1_50G":             UpdateVnicShapeDetailsVnicShapeFixed5000TelesisA150g,
 	"ENTIREHOST_A1_50G":                    UpdateVnicShapeDetailsVnicShapeEntirehostA150g,
+	"DYNAMIC_X7_25G":                       UpdateVnicShapeDetailsVnicShapeDynamicX725g,
+	"FIXED0040_X7_25G":                     UpdateVnicShapeDetailsVnicShapeFixed0040X725g,
+	"STANDARD_VM_FIXED0100_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0100X725g,
+	"STANDARD_VM_FIXED0200_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0200X725g,
+	"STANDARD_VM_FIXED0300_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0300X725g,
+	"STANDARD_VM_FIXED0400_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0400X725g,
+	"STANDARD_VM_FIXED0500_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0500X725g,
+	"STANDARD_VM_FIXED0600_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0600X725g,
+	"STANDARD_VM_FIXED0700_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0700X725g,
+	"STANDARD_VM_FIXED0800_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0800X725g,
+	"STANDARD_VM_FIXED0900_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0900X725g,
+	"STANDARD_VM_FIXED1000_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1000X725g,
+	"STANDARD_VM_FIXED1100_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1100X725g,
+	"STANDARD_VM_FIXED1200_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1200X725g,
+	"STANDARD_VM_FIXED1300_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1300X725g,
+	"STANDARD_VM_FIXED1400_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1400X725g,
+	"STANDARD_VM_FIXED1500_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1500X725g,
+	"STANDARD_VM_FIXED1600_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1600X725g,
+	"STANDARD_VM_FIXED1700_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1700X725g,
+	"STANDARD_VM_FIXED1800_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1800X725g,
+	"STANDARD_VM_FIXED1900_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1900X725g,
+	"STANDARD_VM_FIXED2000_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2000X725g,
+	"STANDARD_VM_FIXED2100_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2100X725g,
+	"STANDARD_VM_FIXED2200_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2200X725g,
+	"STANDARD_VM_FIXED2300_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2300X725g,
+	"STANDARD_VM_FIXED2400_X7_25G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2400X725g,
+	"SUBCORE_STANDARD_VM_FIXED0025_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0025X725g,
+	"SUBCORE_STANDARD_VM_FIXED0050_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0050X725g,
+	"SUBCORE_STANDARD_VM_FIXED0075_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0075X725g,
+	"SUBCORE_STANDARD_VM_FIXED0100_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0100X725g,
+	"SUBCORE_STANDARD_VM_FIXED0125_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0125X725g,
+	"SUBCORE_STANDARD_VM_FIXED0150_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0150X725g,
+	"SUBCORE_STANDARD_VM_FIXED0175_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0175X725g,
+	"SUBCORE_STANDARD_VM_FIXED0200_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0200X725g,
+	"SUBCORE_STANDARD_VM_FIXED0225_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0225X725g,
+	"SUBCORE_STANDARD_VM_FIXED0250_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0250X725g,
+	"SUBCORE_STANDARD_VM_FIXED0275_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0275X725g,
+	"SUBCORE_STANDARD_VM_FIXED0300_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0300X725g,
+	"SUBCORE_STANDARD_VM_FIXED0325_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0325X725g,
+	"SUBCORE_STANDARD_VM_FIXED0350_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0350X725g,
+	"SUBCORE_STANDARD_VM_FIXED0375_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0375X725g,
+	"SUBCORE_STANDARD_VM_FIXED0400_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0400X725g,
+	"SUBCORE_STANDARD_VM_FIXED0425_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0425X725g,
+	"SUBCORE_STANDARD_VM_FIXED0450_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0450X725g,
+	"SUBCORE_STANDARD_VM_FIXED0475_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0475X725g,
+	"SUBCORE_STANDARD_VM_FIXED0500_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0500X725g,
+	"SUBCORE_STANDARD_VM_FIXED0525_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0525X725g,
+	"SUBCORE_STANDARD_VM_FIXED0550_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0550X725g,
+	"SUBCORE_STANDARD_VM_FIXED0575_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0575X725g,
+	"SUBCORE_STANDARD_VM_FIXED0600_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0600X725g,
+	"SUBCORE_STANDARD_VM_FIXED0625_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0625X725g,
+	"SUBCORE_STANDARD_VM_FIXED0650_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0650X725g,
+	"SUBCORE_STANDARD_VM_FIXED0675_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0675X725g,
+	"SUBCORE_STANDARD_VM_FIXED0700_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0700X725g,
+	"SUBCORE_STANDARD_VM_FIXED0725_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0725X725g,
+	"SUBCORE_STANDARD_VM_FIXED0750_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0750X725g,
+	"SUBCORE_STANDARD_VM_FIXED0775_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0775X725g,
+	"SUBCORE_STANDARD_VM_FIXED0800_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0800X725g,
+	"SUBCORE_STANDARD_VM_FIXED0825_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0825X725g,
+	"SUBCORE_STANDARD_VM_FIXED0850_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0850X725g,
+	"SUBCORE_STANDARD_VM_FIXED0875_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0875X725g,
+	"SUBCORE_STANDARD_VM_FIXED0900_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0900X725g,
+	"SUBCORE_STANDARD_VM_FIXED0925_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0925X725g,
+	"SUBCORE_STANDARD_VM_FIXED0950_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0950X725g,
+	"SUBCORE_STANDARD_VM_FIXED0975_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0975X725g,
+	"SUBCORE_STANDARD_VM_FIXED1000_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1000X725g,
+	"SUBCORE_STANDARD_VM_FIXED1025_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1025X725g,
+	"SUBCORE_STANDARD_VM_FIXED1050_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1050X725g,
+	"SUBCORE_STANDARD_VM_FIXED1075_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1075X725g,
+	"SUBCORE_STANDARD_VM_FIXED1100_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1100X725g,
+	"SUBCORE_STANDARD_VM_FIXED1125_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1125X725g,
+	"SUBCORE_STANDARD_VM_FIXED1150_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1150X725g,
+	"SUBCORE_STANDARD_VM_FIXED1175_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1175X725g,
+	"SUBCORE_STANDARD_VM_FIXED1200_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1200X725g,
+	"SUBCORE_STANDARD_VM_FIXED1225_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1225X725g,
+	"SUBCORE_STANDARD_VM_FIXED1250_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1250X725g,
+	"SUBCORE_STANDARD_VM_FIXED1275_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1275X725g,
+	"SUBCORE_STANDARD_VM_FIXED1300_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1300X725g,
+	"SUBCORE_STANDARD_VM_FIXED1325_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1325X725g,
+	"SUBCORE_STANDARD_VM_FIXED1350_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1350X725g,
+	"SUBCORE_STANDARD_VM_FIXED1375_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1375X725g,
+	"SUBCORE_STANDARD_VM_FIXED1400_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1400X725g,
+	"SUBCORE_STANDARD_VM_FIXED1425_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1425X725g,
+	"SUBCORE_STANDARD_VM_FIXED1450_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1450X725g,
+	"SUBCORE_STANDARD_VM_FIXED1475_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1475X725g,
+	"SUBCORE_STANDARD_VM_FIXED1500_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1500X725g,
+	"SUBCORE_STANDARD_VM_FIXED1525_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1525X725g,
+	"SUBCORE_STANDARD_VM_FIXED1550_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1550X725g,
+	"SUBCORE_STANDARD_VM_FIXED1575_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1575X725g,
+	"SUBCORE_STANDARD_VM_FIXED1600_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1600X725g,
+	"SUBCORE_STANDARD_VM_FIXED1625_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1625X725g,
+	"SUBCORE_STANDARD_VM_FIXED1650_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1650X725g,
+	"SUBCORE_STANDARD_VM_FIXED1675_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1675X725g,
+	"SUBCORE_STANDARD_VM_FIXED1700_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1700X725g,
+	"SUBCORE_STANDARD_VM_FIXED1725_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1725X725g,
+	"SUBCORE_STANDARD_VM_FIXED1750_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1750X725g,
+	"SUBCORE_STANDARD_VM_FIXED1775_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1775X725g,
+	"SUBCORE_STANDARD_VM_FIXED1800_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1800X725g,
+	"SUBCORE_STANDARD_VM_FIXED1825_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1825X725g,
+	"SUBCORE_STANDARD_VM_FIXED1850_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1850X725g,
+	"SUBCORE_STANDARD_VM_FIXED1875_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1875X725g,
+	"SUBCORE_STANDARD_VM_FIXED1900_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1900X725g,
+	"SUBCORE_STANDARD_VM_FIXED1925_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1925X725g,
+	"SUBCORE_STANDARD_VM_FIXED1950_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1950X725g,
+	"SUBCORE_STANDARD_VM_FIXED1975_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1975X725g,
+	"SUBCORE_STANDARD_VM_FIXED2000_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2000X725g,
+	"SUBCORE_STANDARD_VM_FIXED2025_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2025X725g,
+	"SUBCORE_STANDARD_VM_FIXED2050_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2050X725g,
+	"SUBCORE_STANDARD_VM_FIXED2075_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2075X725g,
+	"SUBCORE_STANDARD_VM_FIXED2100_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2100X725g,
+	"SUBCORE_STANDARD_VM_FIXED2125_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2125X725g,
+	"SUBCORE_STANDARD_VM_FIXED2150_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2150X725g,
+	"SUBCORE_STANDARD_VM_FIXED2175_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2175X725g,
+	"SUBCORE_STANDARD_VM_FIXED2200_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2200X725g,
+	"SUBCORE_STANDARD_VM_FIXED2225_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2225X725g,
+	"SUBCORE_STANDARD_VM_FIXED2250_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2250X725g,
+	"SUBCORE_STANDARD_VM_FIXED2275_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2275X725g,
+	"SUBCORE_STANDARD_VM_FIXED2300_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2300X725g,
+	"SUBCORE_STANDARD_VM_FIXED2325_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2325X725g,
+	"SUBCORE_STANDARD_VM_FIXED2350_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2350X725g,
+	"SUBCORE_STANDARD_VM_FIXED2375_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2375X725g,
+	"SUBCORE_STANDARD_VM_FIXED2400_X7_25G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2400X725g,
+	"ENTIREHOST_X7_25G":                    UpdateVnicShapeDetailsVnicShapeEntirehostX725g,
 	"DYNAMIC_X9_50G":                       UpdateVnicShapeDetailsVnicShapeDynamicX950g,
 	"FIXED0040_X9_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0040X950g,
 	"FIXED0400_X9_50G":                     UpdateVnicShapeDetailsVnicShapeFixed0400X950g,
@@ -1974,6 +2957,82 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetai
 	"STANDARD_VM_FIXED3800_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed3800X950g,
 	"STANDARD_VM_FIXED3900_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed3900X950g,
 	"STANDARD_VM_FIXED4000_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4000X950g,
+	"STANDARD_VM_FIXED4100_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4100X950g,
+	"STANDARD_VM_FIXED4200_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4200X950g,
+	"STANDARD_VM_FIXED4300_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4300X950g,
+	"STANDARD_VM_FIXED4400_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4400X950g,
+	"STANDARD_VM_FIXED4500_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4500X950g,
+	"STANDARD_VM_FIXED4600_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4600X950g,
+	"STANDARD_VM_FIXED4700_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4700X950g,
+	"STANDARD_VM_FIXED4800_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4800X950g,
+	"STANDARD_VM_FIXED4900_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4900X950g,
+	"STANDARD_VM_FIXED5000_X9_50G":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed5000X950g,
+	"A10_GPU_VM_FIXED2400_X9_50G":          UpdateVnicShapeDetailsVnicShapeA10GpuVmFixed2400X950g,
+	"A10_GPU_VM_FIXED4800_X9_50G":          UpdateVnicShapeDetailsVnicShapeA10GpuVmFixed4800X950g,
+	"VNUMA_VM_FIXED0100_1_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed01001X950g,
+	"VNUMA_VM_FIXED0200_2_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed02002X950g,
+	"VNUMA_VM_FIXED0300_3_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed03003X950g,
+	"VNUMA_VM_FIXED0400_4_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed04004X950g,
+	"VNUMA_VM_FIXED0500_5_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed05005X950g,
+	"VNUMA_VM_FIXED0600_6_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed06006X950g,
+	"VNUMA_VM_FIXED0700_7_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed07007X950g,
+	"VNUMA_VM_FIXED0800_8_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed08008X950g,
+	"VNUMA_VM_FIXED0900_9_X9_50G":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed09009X950g,
+	"VNUMA_VM_FIXED1000_10_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed100010X950g,
+	"VNUMA_VM_FIXED1100_11_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed110011X950g,
+	"VNUMA_VM_FIXED1200_12_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed120012X950g,
+	"VNUMA_VM_FIXED1300_13_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed130013X950g,
+	"VNUMA_VM_FIXED1400_14_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed140014X950g,
+	"VNUMA_VM_FIXED1500_15_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed150015X950g,
+	"VNUMA_VM_FIXED1600_16_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed160016X950g,
+	"VNUMA_VM_FIXED1700_17_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed170017X950g,
+	"VNUMA_VM_FIXED1800_18_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed180018X950g,
+	"VNUMA_VM_FIXED1900_19_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed190019X950g,
+	"VNUMA_VM_FIXED2000_20_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed200020X950g,
+	"VNUMA_VM_FIXED2100_21_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed210021X950g,
+	"VNUMA_VM_FIXED2200_22_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed220022X950g,
+	"VNUMA_VM_FIXED2300_23_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed230023X950g,
+	"VNUMA_VM_FIXED2400_24_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed240024X950g,
+	"VNUMA_VM_FIXED2500_25_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed250025X950g,
+	"VNUMA_VM_FIXED2600_26_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed260026X950g,
+	"VNUMA_VM_FIXED2700_27_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed270027X950g,
+	"VNUMA_VM_FIXED2800_28_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed280028X950g,
+	"VNUMA_VM_FIXED2900_29_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed290029X950g,
+	"VNUMA_VM_FIXED3000_30_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed300030X950g,
+	"VNUMA_VM_FIXED3100_31_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed310031X950g,
+	"VNUMA_VM_FIXED3200_32_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320032X950g,
+	"VNUMA_VM_FIXED3200_33_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320033X950g,
+	"VNUMA_VM_FIXED3200_34_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320034X950g,
+	"VNUMA_VM_FIXED3200_35_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320035X950g,
+	"VNUMA_VM_FIXED3200_36_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320036X950g,
+	"VNUMA_VM_FIXED3200_37_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320037X950g,
+	"VNUMA_VM_FIXED3200_38_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320038X950g,
+	"VNUMA_VM_FIXED3200_39_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320039X950g,
+	"VNUMA_VM_FIXED3200_40_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320040X950g,
+	"VNUMA_VM_FIXED3200_41_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320041X950g,
+	"VNUMA_VM_FIXED3200_42_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320042X950g,
+	"VNUMA_VM_FIXED3200_43_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320043X950g,
+	"VNUMA_VM_FIXED3200_44_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320044X950g,
+	"VNUMA_VM_FIXED3200_45_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320045X950g,
+	"VNUMA_VM_FIXED3200_46_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320046X950g,
+	"VNUMA_VM_FIXED3200_47_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320047X950g,
+	"VNUMA_VM_FIXED3200_48_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320048X950g,
+	"VNUMA_VM_FIXED3200_49_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320049X950g,
+	"VNUMA_VM_FIXED3200_50_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320050X950g,
+	"VNUMA_VM_FIXED3200_51_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320051X950g,
+	"VNUMA_VM_FIXED3200_52_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320052X950g,
+	"VNUMA_VM_FIXED3200_53_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320053X950g,
+	"VNUMA_VM_FIXED3200_54_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320054X950g,
+	"VNUMA_VM_FIXED3200_55_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320055X950g,
+	"VNUMA_VM_FIXED3200_56_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320056X950g,
+	"VNUMA_VM_FIXED3200_57_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320057X950g,
+	"VNUMA_VM_FIXED3200_58_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320058X950g,
+	"VNUMA_VM_FIXED3200_59_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320059X950g,
+	"VNUMA_VM_FIXED3200_60_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320060X950g,
+	"VNUMA_VM_FIXED3200_61_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320061X950g,
+	"VNUMA_VM_FIXED3200_62_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320062X950g,
+	"VNUMA_VM_FIXED3200_63_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320063X950g,
+	"VNUMA_VM_FIXED3200_64_X9_50G":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320064X950g,
 	"SUBCORE_STANDARD_VM_FIXED0025_X9_50G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0025X950g,
 	"SUBCORE_STANDARD_VM_FIXED0050_X9_50G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0050X950g,
 	"SUBCORE_STANDARD_VM_FIXED0075_X9_50G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0075X950g,
@@ -2140,6 +3199,9 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnum = map[string]UpdateVnicShapeDetai
 	"SUBCORE_STANDARD_VM_FIXED4950_X9_50G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed4950X950g,
 	"SUBCORE_STANDARD_VM_FIXED5000_X9_50G": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed5000X950g,
 	"ENTIREHOST_X9_50G":                    UpdateVnicShapeDetailsVnicShapeEntirehostX950g,
+	"DYNAMIC_X9_100G":                      UpdateVnicShapeDetailsVnicShapeDynamicX9100g,
+	"DYNAMIC_X10_50G":                      UpdateVnicShapeDetailsVnicShapeDynamicX1050g,
+	"DYNAMIC_X10_100G":                     UpdateVnicShapeDetailsVnicShapeDynamicX10100g,
 }
 
 var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicShapeDetailsVnicShapeEnum{
@@ -2182,9 +3244,13 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicS
 	"entirehost_b1_25g":                    UpdateVnicShapeDetailsVnicShapeEntirehostB125g,
 	"micro_vm_fixed0048_e1_25g":            UpdateVnicShapeDetailsVnicShapeMicroVmFixed0048E125g,
 	"micro_lb_fixed0001_e1_25g":            UpdateVnicShapeDetailsVnicShapeMicroLbFixed0001E125g,
+	"vnicaas_fixed0025":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0025,
 	"vnicaas_fixed0200":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0200,
 	"vnicaas_fixed0400":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0400,
+	"vnicaas_fixed0625":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0625,
 	"vnicaas_fixed0700":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed0700,
+	"vnicaas_fixed1250":                    UpdateVnicShapeDetailsVnicShapeVnicaasFixed1250,
+	"vnicaas_fwaas_6g_250m":                UpdateVnicShapeDetailsVnicShapeVnicaasFwaas6g250m,
 	"vnicaas_nlb_approved_10g":             UpdateVnicShapeDetailsVnicShapeVnicaasNlbApproved10g,
 	"vnicaas_nlb_approved_25g":             UpdateVnicShapeDetailsVnicShapeVnicaasNlbApproved25g,
 	"vnicaas_telesis_25g":                  UpdateVnicShapeDetailsVnicShapeVnicaasTelesis25g,
@@ -2286,6 +3352,86 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicS
 	"fixed3900_e4_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3900E450g,
 	"fixed4000_e4_50g":                     UpdateVnicShapeDetailsVnicShapeFixed4000E450g,
 	"entirehost_e4_50g":                    UpdateVnicShapeDetailsVnicShapeEntirehostE450g,
+	"vnuma_vm_fixed0100_1_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed01001E450g,
+	"vnuma_vm_fixed0200_2_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed02002E450g,
+	"vnuma_vm_fixed0300_3_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed03003E450g,
+	"vnuma_vm_fixed0400_4_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed04004E450g,
+	"vnuma_vm_fixed0500_5_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed05005E450g,
+	"vnuma_vm_fixed0600_6_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed06006E450g,
+	"vnuma_vm_fixed0700_7_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed07007E450g,
+	"vnuma_vm_fixed0800_8_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed08008E450g,
+	"vnuma_vm_fixed0900_9_e4_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed09009E450g,
+	"vnuma_vm_fixed1000_10_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed100010E450g,
+	"vnuma_vm_fixed1100_11_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed110011E450g,
+	"vnuma_vm_fixed1200_12_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed120012E450g,
+	"vnuma_vm_fixed1300_13_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed130013E450g,
+	"vnuma_vm_fixed1400_14_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed140014E450g,
+	"vnuma_vm_fixed1500_15_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed150015E450g,
+	"vnuma_vm_fixed1600_16_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed160016E450g,
+	"vnuma_vm_fixed1700_17_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed170017E450g,
+	"vnuma_vm_fixed1800_18_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed180018E450g,
+	"vnuma_vm_fixed1900_19_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed190019E450g,
+	"vnuma_vm_fixed2000_20_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed200020E450g,
+	"vnuma_vm_fixed2100_21_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed210021E450g,
+	"vnuma_vm_fixed2200_22_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed220022E450g,
+	"vnuma_vm_fixed2300_23_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed230023E450g,
+	"vnuma_vm_fixed2400_24_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed240024E450g,
+	"vnuma_vm_fixed2500_25_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed250025E450g,
+	"vnuma_vm_fixed2600_26_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed260026E450g,
+	"vnuma_vm_fixed2700_27_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed270027E450g,
+	"vnuma_vm_fixed2800_28_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed280028E450g,
+	"vnuma_vm_fixed2900_29_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed290029E450g,
+	"vnuma_vm_fixed3000_30_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed300030E450g,
+	"vnuma_vm_fixed3100_31_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed310031E450g,
+	"vnuma_vm_fixed3200_32_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320032E450g,
+	"vnuma_vm_fixed3300_33_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed330033E450g,
+	"vnuma_vm_fixed3400_34_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed340034E450g,
+	"vnuma_vm_fixed3500_35_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed350035E450g,
+	"vnuma_vm_fixed3600_36_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed360036E450g,
+	"vnuma_vm_fixed3700_37_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed370037E450g,
+	"vnuma_vm_fixed3800_38_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed380038E450g,
+	"vnuma_vm_fixed3900_39_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed390039E450g,
+	"vnuma_vm_fixed4000_40_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400040E450g,
+	"vnuma_vm_fixed4000_41_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400041E450g,
+	"vnuma_vm_fixed4000_42_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400042E450g,
+	"vnuma_vm_fixed4000_43_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400043E450g,
+	"vnuma_vm_fixed4000_44_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400044E450g,
+	"vnuma_vm_fixed4000_45_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400045E450g,
+	"vnuma_vm_fixed4000_46_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400046E450g,
+	"vnuma_vm_fixed4000_47_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400047E450g,
+	"vnuma_vm_fixed4000_48_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400048E450g,
+	"vnuma_vm_fixed4000_49_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400049E450g,
+	"vnuma_vm_fixed4000_50_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400050E450g,
+	"vnuma_vm_fixed4000_51_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400051E450g,
+	"vnuma_vm_fixed4000_52_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400052E450g,
+	"vnuma_vm_fixed4000_53_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400053E450g,
+	"vnuma_vm_fixed4000_54_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400054E450g,
+	"vnuma_vm_fixed4000_55_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400055E450g,
+	"vnuma_vm_fixed4000_56_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400056E450g,
+	"vnuma_vm_fixed4000_57_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400057E450g,
+	"vnuma_vm_fixed4000_58_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400058E450g,
+	"vnuma_vm_fixed4000_59_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400059E450g,
+	"vnuma_vm_fixed4000_60_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400060E450g,
+	"vnuma_vm_fixed4000_61_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400061E450g,
+	"vnuma_vm_fixed4000_62_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400062E450g,
+	"vnuma_vm_fixed4000_63_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400063E450g,
+	"vnuma_vm_fixed4000_64_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400064E450g,
+	"vnuma_vm_fixed4000_65_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400065E450g,
+	"vnuma_vm_fixed4000_66_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400066E450g,
+	"vnuma_vm_fixed4000_67_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400067E450g,
+	"vnuma_vm_fixed4000_68_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400068E450g,
+	"vnuma_vm_fixed4000_69_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400069E450g,
+	"vnuma_vm_fixed4000_70_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400070E450g,
+	"vnuma_vm_fixed4000_71_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400071E450g,
+	"vnuma_vm_fixed4000_72_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400072E450g,
+	"vnuma_vm_fixed4000_73_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400073E450g,
+	"vnuma_vm_fixed4000_74_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400074E450g,
+	"vnuma_vm_fixed4000_75_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400075E450g,
+	"vnuma_vm_fixed4000_76_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400076E450g,
+	"vnuma_vm_fixed4000_77_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400077E450g,
+	"vnuma_vm_fixed4000_78_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400078E450g,
+	"vnuma_vm_fixed4000_79_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400079E450g,
+	"vnuma_vm_fixed4000_80_e4_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed400080E450g,
 	"micro_vm_fixed0050_e3_50g":            UpdateVnicShapeDetailsVnicShapeMicroVmFixed0050E350g,
 	"micro_vm_fixed0050_e4_50g":            UpdateVnicShapeDetailsVnicShapeMicroVmFixed0050E450g,
 	"subcore_vm_fixed0025_e3_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0025E350g,
@@ -2618,6 +3764,250 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicS
 	"subcore_vm_fixed4900_e4_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4900E450g,
 	"subcore_vm_fixed4950_e4_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4950E450g,
 	"subcore_vm_fixed5000_e4_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed5000E450g,
+	"dynamic_e5_50g":                       UpdateVnicShapeDetailsVnicShapeDynamicE550g,
+	"dynamic_e5_100g":                      UpdateVnicShapeDetailsVnicShapeDynamicE5100g,
+	"entirehost_e5_50g":                    UpdateVnicShapeDetailsVnicShapeEntirehostE550g,
+	"fixed0040_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0040E550g,
+	"fixed0100_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0100E550g,
+	"fixed0200_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0200E550g,
+	"fixed0300_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0300E550g,
+	"fixed0400_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0400E550g,
+	"fixed0500_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0500E550g,
+	"fixed0600_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0600E550g,
+	"fixed0700_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0700E550g,
+	"fixed0800_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0800E550g,
+	"fixed0900_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0900E550g,
+	"fixed1000_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1000E550g,
+	"fixed1100_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1100E550g,
+	"fixed1200_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1200E550g,
+	"fixed1300_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1300E550g,
+	"fixed1400_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1400E550g,
+	"fixed1500_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1500E550g,
+	"fixed1600_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1600E550g,
+	"fixed1700_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1700E550g,
+	"fixed1800_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1800E550g,
+	"fixed1900_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed1900E550g,
+	"fixed2000_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2000E550g,
+	"fixed2100_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2100E550g,
+	"fixed2200_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2200E550g,
+	"fixed2300_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2300E550g,
+	"fixed2400_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2400E550g,
+	"fixed2500_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2500E550g,
+	"fixed2600_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2600E550g,
+	"fixed2700_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2700E550g,
+	"fixed2800_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2800E550g,
+	"fixed2900_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed2900E550g,
+	"fixed3000_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3000E550g,
+	"fixed3100_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3100E550g,
+	"fixed3200_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3200E550g,
+	"fixed3300_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3300E550g,
+	"fixed3400_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3400E550g,
+	"fixed3500_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3500E550g,
+	"fixed3600_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3600E550g,
+	"fixed3700_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3700E550g,
+	"fixed3800_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3800E550g,
+	"fixed3900_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed3900E550g,
+	"fixed4000_e5_50g":                     UpdateVnicShapeDetailsVnicShapeFixed4000E550g,
+	"subcore_vm_fixed0025_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0025E550g,
+	"subcore_vm_fixed0050_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0050E550g,
+	"subcore_vm_fixed0075_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0075E550g,
+	"subcore_vm_fixed0100_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0100E550g,
+	"subcore_vm_fixed0125_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0125E550g,
+	"subcore_vm_fixed0150_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0150E550g,
+	"subcore_vm_fixed0175_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0175E550g,
+	"subcore_vm_fixed0200_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0200E550g,
+	"subcore_vm_fixed0225_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0225E550g,
+	"subcore_vm_fixed0250_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0250E550g,
+	"subcore_vm_fixed0275_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0275E550g,
+	"subcore_vm_fixed0300_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0300E550g,
+	"subcore_vm_fixed0325_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0325E550g,
+	"subcore_vm_fixed0350_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0350E550g,
+	"subcore_vm_fixed0375_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0375E550g,
+	"subcore_vm_fixed0400_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0400E550g,
+	"subcore_vm_fixed0425_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0425E550g,
+	"subcore_vm_fixed0450_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0450E550g,
+	"subcore_vm_fixed0475_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0475E550g,
+	"subcore_vm_fixed0500_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0500E550g,
+	"subcore_vm_fixed0525_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0525E550g,
+	"subcore_vm_fixed0550_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0550E550g,
+	"subcore_vm_fixed0575_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0575E550g,
+	"subcore_vm_fixed0600_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0600E550g,
+	"subcore_vm_fixed0625_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0625E550g,
+	"subcore_vm_fixed0650_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0650E550g,
+	"subcore_vm_fixed0675_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0675E550g,
+	"subcore_vm_fixed0700_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0700E550g,
+	"subcore_vm_fixed0725_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0725E550g,
+	"subcore_vm_fixed0750_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0750E550g,
+	"subcore_vm_fixed0775_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0775E550g,
+	"subcore_vm_fixed0800_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0800E550g,
+	"subcore_vm_fixed0825_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0825E550g,
+	"subcore_vm_fixed0850_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0850E550g,
+	"subcore_vm_fixed0875_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0875E550g,
+	"subcore_vm_fixed0900_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0900E550g,
+	"subcore_vm_fixed0925_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0925E550g,
+	"subcore_vm_fixed0950_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0950E550g,
+	"subcore_vm_fixed0975_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0975E550g,
+	"subcore_vm_fixed1000_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1000E550g,
+	"subcore_vm_fixed1025_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1025E550g,
+	"subcore_vm_fixed1050_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1050E550g,
+	"subcore_vm_fixed1075_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1075E550g,
+	"subcore_vm_fixed1100_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1100E550g,
+	"subcore_vm_fixed1125_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1125E550g,
+	"subcore_vm_fixed1150_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1150E550g,
+	"subcore_vm_fixed1175_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1175E550g,
+	"subcore_vm_fixed1200_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1200E550g,
+	"subcore_vm_fixed1225_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1225E550g,
+	"subcore_vm_fixed1250_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1250E550g,
+	"subcore_vm_fixed1275_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1275E550g,
+	"subcore_vm_fixed1300_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1300E550g,
+	"subcore_vm_fixed1325_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1325E550g,
+	"subcore_vm_fixed1350_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1350E550g,
+	"subcore_vm_fixed1375_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1375E550g,
+	"subcore_vm_fixed1400_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1400E550g,
+	"subcore_vm_fixed1425_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1425E550g,
+	"subcore_vm_fixed1450_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1450E550g,
+	"subcore_vm_fixed1475_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1475E550g,
+	"subcore_vm_fixed1500_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1500E550g,
+	"subcore_vm_fixed1525_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1525E550g,
+	"subcore_vm_fixed1550_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1550E550g,
+	"subcore_vm_fixed1575_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1575E550g,
+	"subcore_vm_fixed1600_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1600E550g,
+	"subcore_vm_fixed1625_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1625E550g,
+	"subcore_vm_fixed1650_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1650E550g,
+	"subcore_vm_fixed1675_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1675E550g,
+	"subcore_vm_fixed1700_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1700E550g,
+	"subcore_vm_fixed1725_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1725E550g,
+	"subcore_vm_fixed1750_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1750E550g,
+	"subcore_vm_fixed1775_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1775E550g,
+	"subcore_vm_fixed1800_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1800E550g,
+	"subcore_vm_fixed1825_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1825E550g,
+	"subcore_vm_fixed1850_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1850E550g,
+	"subcore_vm_fixed1875_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1875E550g,
+	"subcore_vm_fixed1900_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1900E550g,
+	"subcore_vm_fixed1925_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1925E550g,
+	"subcore_vm_fixed1950_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1950E550g,
+	"subcore_vm_fixed1975_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed1975E550g,
+	"subcore_vm_fixed2000_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2000E550g,
+	"subcore_vm_fixed2025_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2025E550g,
+	"subcore_vm_fixed2050_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2050E550g,
+	"subcore_vm_fixed2075_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2075E550g,
+	"subcore_vm_fixed2100_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2100E550g,
+	"subcore_vm_fixed2125_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2125E550g,
+	"subcore_vm_fixed2150_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2150E550g,
+	"subcore_vm_fixed2175_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2175E550g,
+	"subcore_vm_fixed2200_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2200E550g,
+	"subcore_vm_fixed2225_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2225E550g,
+	"subcore_vm_fixed2250_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2250E550g,
+	"subcore_vm_fixed2275_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2275E550g,
+	"subcore_vm_fixed2300_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2300E550g,
+	"subcore_vm_fixed2325_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2325E550g,
+	"subcore_vm_fixed2350_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2350E550g,
+	"subcore_vm_fixed2375_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2375E550g,
+	"subcore_vm_fixed2400_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2400E550g,
+	"subcore_vm_fixed2425_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2425E550g,
+	"subcore_vm_fixed2450_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2450E550g,
+	"subcore_vm_fixed2475_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2475E550g,
+	"subcore_vm_fixed2500_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2500E550g,
+	"subcore_vm_fixed2525_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2525E550g,
+	"subcore_vm_fixed2550_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2550E550g,
+	"subcore_vm_fixed2575_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2575E550g,
+	"subcore_vm_fixed2600_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2600E550g,
+	"subcore_vm_fixed2625_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2625E550g,
+	"subcore_vm_fixed2650_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2650E550g,
+	"subcore_vm_fixed2675_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2675E550g,
+	"subcore_vm_fixed2700_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2700E550g,
+	"subcore_vm_fixed2725_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2725E550g,
+	"subcore_vm_fixed2750_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2750E550g,
+	"subcore_vm_fixed2775_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2775E550g,
+	"subcore_vm_fixed2800_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2800E550g,
+	"subcore_vm_fixed2825_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2825E550g,
+	"subcore_vm_fixed2850_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2850E550g,
+	"subcore_vm_fixed2875_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2875E550g,
+	"subcore_vm_fixed2900_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2900E550g,
+	"subcore_vm_fixed2925_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2925E550g,
+	"subcore_vm_fixed2950_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2950E550g,
+	"subcore_vm_fixed2975_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed2975E550g,
+	"subcore_vm_fixed3000_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3000E550g,
+	"subcore_vm_fixed3025_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3025E550g,
+	"subcore_vm_fixed3050_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3050E550g,
+	"subcore_vm_fixed3075_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3075E550g,
+	"subcore_vm_fixed3100_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3100E550g,
+	"subcore_vm_fixed3125_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3125E550g,
+	"subcore_vm_fixed3150_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3150E550g,
+	"subcore_vm_fixed3175_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3175E550g,
+	"subcore_vm_fixed3200_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3200E550g,
+	"subcore_vm_fixed3225_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3225E550g,
+	"subcore_vm_fixed3250_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3250E550g,
+	"subcore_vm_fixed3275_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3275E550g,
+	"subcore_vm_fixed3300_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3300E550g,
+	"subcore_vm_fixed3325_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3325E550g,
+	"subcore_vm_fixed3350_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3350E550g,
+	"subcore_vm_fixed3375_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3375E550g,
+	"subcore_vm_fixed3400_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3400E550g,
+	"subcore_vm_fixed3425_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3425E550g,
+	"subcore_vm_fixed3450_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3450E550g,
+	"subcore_vm_fixed3475_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3475E550g,
+	"subcore_vm_fixed3500_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3500E550g,
+	"subcore_vm_fixed3525_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3525E550g,
+	"subcore_vm_fixed3550_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3550E550g,
+	"subcore_vm_fixed3575_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3575E550g,
+	"subcore_vm_fixed3600_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3600E550g,
+	"subcore_vm_fixed3625_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3625E550g,
+	"subcore_vm_fixed3650_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3650E550g,
+	"subcore_vm_fixed3675_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3675E550g,
+	"subcore_vm_fixed3700_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3700E550g,
+	"subcore_vm_fixed3725_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3725E550g,
+	"subcore_vm_fixed3750_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3750E550g,
+	"subcore_vm_fixed3775_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3775E550g,
+	"subcore_vm_fixed3800_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3800E550g,
+	"subcore_vm_fixed3825_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3825E550g,
+	"subcore_vm_fixed3850_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3850E550g,
+	"subcore_vm_fixed3875_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3875E550g,
+	"subcore_vm_fixed3900_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3900E550g,
+	"subcore_vm_fixed3925_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3925E550g,
+	"subcore_vm_fixed3950_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3950E550g,
+	"subcore_vm_fixed3975_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed3975E550g,
+	"subcore_vm_fixed4000_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4000E550g,
+	"subcore_vm_fixed4025_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4025E550g,
+	"subcore_vm_fixed4050_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4050E550g,
+	"subcore_vm_fixed4075_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4075E550g,
+	"subcore_vm_fixed4100_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4100E550g,
+	"subcore_vm_fixed4125_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4125E550g,
+	"subcore_vm_fixed4150_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4150E550g,
+	"subcore_vm_fixed4175_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4175E550g,
+	"subcore_vm_fixed4200_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4200E550g,
+	"subcore_vm_fixed4225_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4225E550g,
+	"subcore_vm_fixed4250_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4250E550g,
+	"subcore_vm_fixed4275_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4275E550g,
+	"subcore_vm_fixed4300_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4300E550g,
+	"subcore_vm_fixed4325_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4325E550g,
+	"subcore_vm_fixed4350_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4350E550g,
+	"subcore_vm_fixed4375_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4375E550g,
+	"subcore_vm_fixed4400_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4400E550g,
+	"subcore_vm_fixed4425_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4425E550g,
+	"subcore_vm_fixed4450_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4450E550g,
+	"subcore_vm_fixed4475_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4475E550g,
+	"subcore_vm_fixed4500_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4500E550g,
+	"subcore_vm_fixed4525_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4525E550g,
+	"subcore_vm_fixed4550_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4550E550g,
+	"subcore_vm_fixed4575_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4575E550g,
+	"subcore_vm_fixed4600_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4600E550g,
+	"subcore_vm_fixed4625_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4625E550g,
+	"subcore_vm_fixed4650_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4650E550g,
+	"subcore_vm_fixed4675_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4675E550g,
+	"subcore_vm_fixed4700_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4700E550g,
+	"subcore_vm_fixed4725_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4725E550g,
+	"subcore_vm_fixed4750_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4750E550g,
+	"subcore_vm_fixed4775_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4775E550g,
+	"subcore_vm_fixed4800_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4800E550g,
+	"subcore_vm_fixed4825_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4825E550g,
+	"subcore_vm_fixed4850_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4850E550g,
+	"subcore_vm_fixed4875_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4875E550g,
+	"subcore_vm_fixed4900_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4900E550g,
+	"subcore_vm_fixed4925_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4925E550g,
+	"subcore_vm_fixed4950_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4950E550g,
+	"subcore_vm_fixed4975_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed4975E550g,
+	"subcore_vm_fixed5000_e5_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed5000E550g,
 	"subcore_vm_fixed0020_a1_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0020A150g,
 	"subcore_vm_fixed0040_a1_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0040A150g,
 	"subcore_vm_fixed0060_a1_50g":          UpdateVnicShapeDetailsVnicShapeSubcoreVmFixed0060A150g,
@@ -2967,6 +4357,129 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicS
 	"fixed4000_a1_50g":                     UpdateVnicShapeDetailsVnicShapeFixed4000A150g,
 	"fixed5000_telesis_a1_50g":             UpdateVnicShapeDetailsVnicShapeFixed5000TelesisA150g,
 	"entirehost_a1_50g":                    UpdateVnicShapeDetailsVnicShapeEntirehostA150g,
+	"dynamic_x7_25g":                       UpdateVnicShapeDetailsVnicShapeDynamicX725g,
+	"fixed0040_x7_25g":                     UpdateVnicShapeDetailsVnicShapeFixed0040X725g,
+	"standard_vm_fixed0100_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0100X725g,
+	"standard_vm_fixed0200_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0200X725g,
+	"standard_vm_fixed0300_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0300X725g,
+	"standard_vm_fixed0400_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0400X725g,
+	"standard_vm_fixed0500_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0500X725g,
+	"standard_vm_fixed0600_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0600X725g,
+	"standard_vm_fixed0700_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0700X725g,
+	"standard_vm_fixed0800_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0800X725g,
+	"standard_vm_fixed0900_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed0900X725g,
+	"standard_vm_fixed1000_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1000X725g,
+	"standard_vm_fixed1100_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1100X725g,
+	"standard_vm_fixed1200_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1200X725g,
+	"standard_vm_fixed1300_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1300X725g,
+	"standard_vm_fixed1400_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1400X725g,
+	"standard_vm_fixed1500_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1500X725g,
+	"standard_vm_fixed1600_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1600X725g,
+	"standard_vm_fixed1700_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1700X725g,
+	"standard_vm_fixed1800_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1800X725g,
+	"standard_vm_fixed1900_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed1900X725g,
+	"standard_vm_fixed2000_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2000X725g,
+	"standard_vm_fixed2100_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2100X725g,
+	"standard_vm_fixed2200_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2200X725g,
+	"standard_vm_fixed2300_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2300X725g,
+	"standard_vm_fixed2400_x7_25g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed2400X725g,
+	"subcore_standard_vm_fixed0025_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0025X725g,
+	"subcore_standard_vm_fixed0050_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0050X725g,
+	"subcore_standard_vm_fixed0075_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0075X725g,
+	"subcore_standard_vm_fixed0100_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0100X725g,
+	"subcore_standard_vm_fixed0125_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0125X725g,
+	"subcore_standard_vm_fixed0150_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0150X725g,
+	"subcore_standard_vm_fixed0175_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0175X725g,
+	"subcore_standard_vm_fixed0200_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0200X725g,
+	"subcore_standard_vm_fixed0225_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0225X725g,
+	"subcore_standard_vm_fixed0250_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0250X725g,
+	"subcore_standard_vm_fixed0275_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0275X725g,
+	"subcore_standard_vm_fixed0300_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0300X725g,
+	"subcore_standard_vm_fixed0325_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0325X725g,
+	"subcore_standard_vm_fixed0350_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0350X725g,
+	"subcore_standard_vm_fixed0375_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0375X725g,
+	"subcore_standard_vm_fixed0400_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0400X725g,
+	"subcore_standard_vm_fixed0425_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0425X725g,
+	"subcore_standard_vm_fixed0450_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0450X725g,
+	"subcore_standard_vm_fixed0475_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0475X725g,
+	"subcore_standard_vm_fixed0500_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0500X725g,
+	"subcore_standard_vm_fixed0525_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0525X725g,
+	"subcore_standard_vm_fixed0550_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0550X725g,
+	"subcore_standard_vm_fixed0575_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0575X725g,
+	"subcore_standard_vm_fixed0600_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0600X725g,
+	"subcore_standard_vm_fixed0625_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0625X725g,
+	"subcore_standard_vm_fixed0650_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0650X725g,
+	"subcore_standard_vm_fixed0675_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0675X725g,
+	"subcore_standard_vm_fixed0700_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0700X725g,
+	"subcore_standard_vm_fixed0725_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0725X725g,
+	"subcore_standard_vm_fixed0750_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0750X725g,
+	"subcore_standard_vm_fixed0775_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0775X725g,
+	"subcore_standard_vm_fixed0800_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0800X725g,
+	"subcore_standard_vm_fixed0825_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0825X725g,
+	"subcore_standard_vm_fixed0850_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0850X725g,
+	"subcore_standard_vm_fixed0875_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0875X725g,
+	"subcore_standard_vm_fixed0900_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0900X725g,
+	"subcore_standard_vm_fixed0925_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0925X725g,
+	"subcore_standard_vm_fixed0950_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0950X725g,
+	"subcore_standard_vm_fixed0975_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0975X725g,
+	"subcore_standard_vm_fixed1000_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1000X725g,
+	"subcore_standard_vm_fixed1025_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1025X725g,
+	"subcore_standard_vm_fixed1050_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1050X725g,
+	"subcore_standard_vm_fixed1075_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1075X725g,
+	"subcore_standard_vm_fixed1100_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1100X725g,
+	"subcore_standard_vm_fixed1125_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1125X725g,
+	"subcore_standard_vm_fixed1150_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1150X725g,
+	"subcore_standard_vm_fixed1175_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1175X725g,
+	"subcore_standard_vm_fixed1200_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1200X725g,
+	"subcore_standard_vm_fixed1225_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1225X725g,
+	"subcore_standard_vm_fixed1250_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1250X725g,
+	"subcore_standard_vm_fixed1275_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1275X725g,
+	"subcore_standard_vm_fixed1300_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1300X725g,
+	"subcore_standard_vm_fixed1325_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1325X725g,
+	"subcore_standard_vm_fixed1350_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1350X725g,
+	"subcore_standard_vm_fixed1375_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1375X725g,
+	"subcore_standard_vm_fixed1400_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1400X725g,
+	"subcore_standard_vm_fixed1425_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1425X725g,
+	"subcore_standard_vm_fixed1450_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1450X725g,
+	"subcore_standard_vm_fixed1475_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1475X725g,
+	"subcore_standard_vm_fixed1500_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1500X725g,
+	"subcore_standard_vm_fixed1525_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1525X725g,
+	"subcore_standard_vm_fixed1550_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1550X725g,
+	"subcore_standard_vm_fixed1575_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1575X725g,
+	"subcore_standard_vm_fixed1600_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1600X725g,
+	"subcore_standard_vm_fixed1625_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1625X725g,
+	"subcore_standard_vm_fixed1650_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1650X725g,
+	"subcore_standard_vm_fixed1675_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1675X725g,
+	"subcore_standard_vm_fixed1700_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1700X725g,
+	"subcore_standard_vm_fixed1725_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1725X725g,
+	"subcore_standard_vm_fixed1750_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1750X725g,
+	"subcore_standard_vm_fixed1775_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1775X725g,
+	"subcore_standard_vm_fixed1800_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1800X725g,
+	"subcore_standard_vm_fixed1825_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1825X725g,
+	"subcore_standard_vm_fixed1850_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1850X725g,
+	"subcore_standard_vm_fixed1875_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1875X725g,
+	"subcore_standard_vm_fixed1900_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1900X725g,
+	"subcore_standard_vm_fixed1925_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1925X725g,
+	"subcore_standard_vm_fixed1950_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1950X725g,
+	"subcore_standard_vm_fixed1975_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed1975X725g,
+	"subcore_standard_vm_fixed2000_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2000X725g,
+	"subcore_standard_vm_fixed2025_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2025X725g,
+	"subcore_standard_vm_fixed2050_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2050X725g,
+	"subcore_standard_vm_fixed2075_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2075X725g,
+	"subcore_standard_vm_fixed2100_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2100X725g,
+	"subcore_standard_vm_fixed2125_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2125X725g,
+	"subcore_standard_vm_fixed2150_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2150X725g,
+	"subcore_standard_vm_fixed2175_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2175X725g,
+	"subcore_standard_vm_fixed2200_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2200X725g,
+	"subcore_standard_vm_fixed2225_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2225X725g,
+	"subcore_standard_vm_fixed2250_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2250X725g,
+	"subcore_standard_vm_fixed2275_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2275X725g,
+	"subcore_standard_vm_fixed2300_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2300X725g,
+	"subcore_standard_vm_fixed2325_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2325X725g,
+	"subcore_standard_vm_fixed2350_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2350X725g,
+	"subcore_standard_vm_fixed2375_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2375X725g,
+	"subcore_standard_vm_fixed2400_x7_25g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed2400X725g,
+	"entirehost_x7_25g":                    UpdateVnicShapeDetailsVnicShapeEntirehostX725g,
 	"dynamic_x9_50g":                       UpdateVnicShapeDetailsVnicShapeDynamicX950g,
 	"fixed0040_x9_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0040X950g,
 	"fixed0400_x9_50g":                     UpdateVnicShapeDetailsVnicShapeFixed0400X950g,
@@ -3019,6 +4532,82 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicS
 	"standard_vm_fixed3800_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed3800X950g,
 	"standard_vm_fixed3900_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed3900X950g,
 	"standard_vm_fixed4000_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4000X950g,
+	"standard_vm_fixed4100_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4100X950g,
+	"standard_vm_fixed4200_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4200X950g,
+	"standard_vm_fixed4300_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4300X950g,
+	"standard_vm_fixed4400_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4400X950g,
+	"standard_vm_fixed4500_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4500X950g,
+	"standard_vm_fixed4600_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4600X950g,
+	"standard_vm_fixed4700_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4700X950g,
+	"standard_vm_fixed4800_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4800X950g,
+	"standard_vm_fixed4900_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed4900X950g,
+	"standard_vm_fixed5000_x9_50g":         UpdateVnicShapeDetailsVnicShapeStandardVmFixed5000X950g,
+	"a10_gpu_vm_fixed2400_x9_50g":          UpdateVnicShapeDetailsVnicShapeA10GpuVmFixed2400X950g,
+	"a10_gpu_vm_fixed4800_x9_50g":          UpdateVnicShapeDetailsVnicShapeA10GpuVmFixed4800X950g,
+	"vnuma_vm_fixed0100_1_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed01001X950g,
+	"vnuma_vm_fixed0200_2_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed02002X950g,
+	"vnuma_vm_fixed0300_3_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed03003X950g,
+	"vnuma_vm_fixed0400_4_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed04004X950g,
+	"vnuma_vm_fixed0500_5_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed05005X950g,
+	"vnuma_vm_fixed0600_6_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed06006X950g,
+	"vnuma_vm_fixed0700_7_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed07007X950g,
+	"vnuma_vm_fixed0800_8_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed08008X950g,
+	"vnuma_vm_fixed0900_9_x9_50g":          UpdateVnicShapeDetailsVnicShapeVnumaVmFixed09009X950g,
+	"vnuma_vm_fixed1000_10_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed100010X950g,
+	"vnuma_vm_fixed1100_11_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed110011X950g,
+	"vnuma_vm_fixed1200_12_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed120012X950g,
+	"vnuma_vm_fixed1300_13_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed130013X950g,
+	"vnuma_vm_fixed1400_14_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed140014X950g,
+	"vnuma_vm_fixed1500_15_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed150015X950g,
+	"vnuma_vm_fixed1600_16_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed160016X950g,
+	"vnuma_vm_fixed1700_17_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed170017X950g,
+	"vnuma_vm_fixed1800_18_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed180018X950g,
+	"vnuma_vm_fixed1900_19_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed190019X950g,
+	"vnuma_vm_fixed2000_20_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed200020X950g,
+	"vnuma_vm_fixed2100_21_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed210021X950g,
+	"vnuma_vm_fixed2200_22_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed220022X950g,
+	"vnuma_vm_fixed2300_23_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed230023X950g,
+	"vnuma_vm_fixed2400_24_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed240024X950g,
+	"vnuma_vm_fixed2500_25_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed250025X950g,
+	"vnuma_vm_fixed2600_26_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed260026X950g,
+	"vnuma_vm_fixed2700_27_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed270027X950g,
+	"vnuma_vm_fixed2800_28_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed280028X950g,
+	"vnuma_vm_fixed2900_29_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed290029X950g,
+	"vnuma_vm_fixed3000_30_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed300030X950g,
+	"vnuma_vm_fixed3100_31_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed310031X950g,
+	"vnuma_vm_fixed3200_32_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320032X950g,
+	"vnuma_vm_fixed3200_33_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320033X950g,
+	"vnuma_vm_fixed3200_34_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320034X950g,
+	"vnuma_vm_fixed3200_35_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320035X950g,
+	"vnuma_vm_fixed3200_36_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320036X950g,
+	"vnuma_vm_fixed3200_37_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320037X950g,
+	"vnuma_vm_fixed3200_38_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320038X950g,
+	"vnuma_vm_fixed3200_39_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320039X950g,
+	"vnuma_vm_fixed3200_40_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320040X950g,
+	"vnuma_vm_fixed3200_41_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320041X950g,
+	"vnuma_vm_fixed3200_42_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320042X950g,
+	"vnuma_vm_fixed3200_43_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320043X950g,
+	"vnuma_vm_fixed3200_44_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320044X950g,
+	"vnuma_vm_fixed3200_45_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320045X950g,
+	"vnuma_vm_fixed3200_46_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320046X950g,
+	"vnuma_vm_fixed3200_47_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320047X950g,
+	"vnuma_vm_fixed3200_48_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320048X950g,
+	"vnuma_vm_fixed3200_49_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320049X950g,
+	"vnuma_vm_fixed3200_50_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320050X950g,
+	"vnuma_vm_fixed3200_51_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320051X950g,
+	"vnuma_vm_fixed3200_52_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320052X950g,
+	"vnuma_vm_fixed3200_53_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320053X950g,
+	"vnuma_vm_fixed3200_54_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320054X950g,
+	"vnuma_vm_fixed3200_55_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320055X950g,
+	"vnuma_vm_fixed3200_56_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320056X950g,
+	"vnuma_vm_fixed3200_57_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320057X950g,
+	"vnuma_vm_fixed3200_58_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320058X950g,
+	"vnuma_vm_fixed3200_59_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320059X950g,
+	"vnuma_vm_fixed3200_60_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320060X950g,
+	"vnuma_vm_fixed3200_61_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320061X950g,
+	"vnuma_vm_fixed3200_62_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320062X950g,
+	"vnuma_vm_fixed3200_63_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320063X950g,
+	"vnuma_vm_fixed3200_64_x9_50g":         UpdateVnicShapeDetailsVnicShapeVnumaVmFixed320064X950g,
 	"subcore_standard_vm_fixed0025_x9_50g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0025X950g,
 	"subcore_standard_vm_fixed0050_x9_50g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0050X950g,
 	"subcore_standard_vm_fixed0075_x9_50g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed0075X950g,
@@ -3185,6 +4774,9 @@ var mappingUpdateVnicShapeDetailsVnicShapeEnumLowerCase = map[string]UpdateVnicS
 	"subcore_standard_vm_fixed4950_x9_50g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed4950X950g,
 	"subcore_standard_vm_fixed5000_x9_50g": UpdateVnicShapeDetailsVnicShapeSubcoreStandardVmFixed5000X950g,
 	"entirehost_x9_50g":                    UpdateVnicShapeDetailsVnicShapeEntirehostX950g,
+	"dynamic_x9_100g":                      UpdateVnicShapeDetailsVnicShapeDynamicX9100g,
+	"dynamic_x10_50g":                      UpdateVnicShapeDetailsVnicShapeDynamicX1050g,
+	"dynamic_x10_100g":                     UpdateVnicShapeDetailsVnicShapeDynamicX10100g,
 }
 
 // GetUpdateVnicShapeDetailsVnicShapeEnumValues Enumerates the set of values for UpdateVnicShapeDetailsVnicShapeEnum
@@ -3238,9 +4830,13 @@ func GetUpdateVnicShapeDetailsVnicShapeEnumStringValues() []string {
 		"ENTIREHOST_B1_25G",
 		"MICRO_VM_FIXED0048_E1_25G",
 		"MICRO_LB_FIXED0001_E1_25G",
+		"VNICAAS_FIXED0025",
 		"VNICAAS_FIXED0200",
 		"VNICAAS_FIXED0400",
+		"VNICAAS_FIXED0625",
 		"VNICAAS_FIXED0700",
+		"VNICAAS_FIXED1250",
+		"VNICAAS_FWAAS_6G_250M",
 		"VNICAAS_NLB_APPROVED_10G",
 		"VNICAAS_NLB_APPROVED_25G",
 		"VNICAAS_TELESIS_25G",
@@ -3342,6 +4938,86 @@ func GetUpdateVnicShapeDetailsVnicShapeEnumStringValues() []string {
 		"FIXED3900_E4_50G",
 		"FIXED4000_E4_50G",
 		"ENTIREHOST_E4_50G",
+		"VNUMA_VM_FIXED0100_1_E4_50G",
+		"VNUMA_VM_FIXED0200_2_E4_50G",
+		"VNUMA_VM_FIXED0300_3_E4_50G",
+		"VNUMA_VM_FIXED0400_4_E4_50G",
+		"VNUMA_VM_FIXED0500_5_E4_50G",
+		"VNUMA_VM_FIXED0600_6_E4_50G",
+		"VNUMA_VM_FIXED0700_7_E4_50G",
+		"VNUMA_VM_FIXED0800_8_E4_50G",
+		"VNUMA_VM_FIXED0900_9_E4_50G",
+		"VNUMA_VM_FIXED1000_10_E4_50G",
+		"VNUMA_VM_FIXED1100_11_E4_50G",
+		"VNUMA_VM_FIXED1200_12_E4_50G",
+		"VNUMA_VM_FIXED1300_13_E4_50G",
+		"VNUMA_VM_FIXED1400_14_E4_50G",
+		"VNUMA_VM_FIXED1500_15_E4_50G",
+		"VNUMA_VM_FIXED1600_16_E4_50G",
+		"VNUMA_VM_FIXED1700_17_E4_50G",
+		"VNUMA_VM_FIXED1800_18_E4_50G",
+		"VNUMA_VM_FIXED1900_19_E4_50G",
+		"VNUMA_VM_FIXED2000_20_E4_50G",
+		"VNUMA_VM_FIXED2100_21_E4_50G",
+		"VNUMA_VM_FIXED2200_22_E4_50G",
+		"VNUMA_VM_FIXED2300_23_E4_50G",
+		"VNUMA_VM_FIXED2400_24_E4_50G",
+		"VNUMA_VM_FIXED2500_25_E4_50G",
+		"VNUMA_VM_FIXED2600_26_E4_50G",
+		"VNUMA_VM_FIXED2700_27_E4_50G",
+		"VNUMA_VM_FIXED2800_28_E4_50G",
+		"VNUMA_VM_FIXED2900_29_E4_50G",
+		"VNUMA_VM_FIXED3000_30_E4_50G",
+		"VNUMA_VM_FIXED3100_31_E4_50G",
+		"VNUMA_VM_FIXED3200_32_E4_50G",
+		"VNUMA_VM_FIXED3300_33_E4_50G",
+		"VNUMA_VM_FIXED3400_34_E4_50G",
+		"VNUMA_VM_FIXED3500_35_E4_50G",
+		"VNUMA_VM_FIXED3600_36_E4_50G",
+		"VNUMA_VM_FIXED3700_37_E4_50G",
+		"VNUMA_VM_FIXED3800_38_E4_50G",
+		"VNUMA_VM_FIXED3900_39_E4_50G",
+		"VNUMA_VM_FIXED4000_40_E4_50G",
+		"VNUMA_VM_FIXED4000_41_E4_50G",
+		"VNUMA_VM_FIXED4000_42_E4_50G",
+		"VNUMA_VM_FIXED4000_43_E4_50G",
+		"VNUMA_VM_FIXED4000_44_E4_50G",
+		"VNUMA_VM_FIXED4000_45_E4_50G",
+		"VNUMA_VM_FIXED4000_46_E4_50G",
+		"VNUMA_VM_FIXED4000_47_E4_50G",
+		"VNUMA_VM_FIXED4000_48_E4_50G",
+		"VNUMA_VM_FIXED4000_49_E4_50G",
+		"VNUMA_VM_FIXED4000_50_E4_50G",
+		"VNUMA_VM_FIXED4000_51_E4_50G",
+		"VNUMA_VM_FIXED4000_52_E4_50G",
+		"VNUMA_VM_FIXED4000_53_E4_50G",
+		"VNUMA_VM_FIXED4000_54_E4_50G",
+		"VNUMA_VM_FIXED4000_55_E4_50G",
+		"VNUMA_VM_FIXED4000_56_E4_50G",
+		"VNUMA_VM_FIXED4000_57_E4_50G",
+		"VNUMA_VM_FIXED4000_58_E4_50G",
+		"VNUMA_VM_FIXED4000_59_E4_50G",
+		"VNUMA_VM_FIXED4000_60_E4_50G",
+		"VNUMA_VM_FIXED4000_61_E4_50G",
+		"VNUMA_VM_FIXED4000_62_E4_50G",
+		"VNUMA_VM_FIXED4000_63_E4_50G",
+		"VNUMA_VM_FIXED4000_64_E4_50G",
+		"VNUMA_VM_FIXED4000_65_E4_50G",
+		"VNUMA_VM_FIXED4000_66_E4_50G",
+		"VNUMA_VM_FIXED4000_67_E4_50G",
+		"VNUMA_VM_FIXED4000_68_E4_50G",
+		"VNUMA_VM_FIXED4000_69_E4_50G",
+		"VNUMA_VM_FIXED4000_70_E4_50G",
+		"VNUMA_VM_FIXED4000_71_E4_50G",
+		"VNUMA_VM_FIXED4000_72_E4_50G",
+		"VNUMA_VM_FIXED4000_73_E4_50G",
+		"VNUMA_VM_FIXED4000_74_E4_50G",
+		"VNUMA_VM_FIXED4000_75_E4_50G",
+		"VNUMA_VM_FIXED4000_76_E4_50G",
+		"VNUMA_VM_FIXED4000_77_E4_50G",
+		"VNUMA_VM_FIXED4000_78_E4_50G",
+		"VNUMA_VM_FIXED4000_79_E4_50G",
+		"VNUMA_VM_FIXED4000_80_E4_50G",
 		"Micro_VM_Fixed0050_E3_50G",
 		"Micro_VM_Fixed0050_E4_50G",
 		"SUBCORE_VM_FIXED0025_E3_50G",
@@ -3674,6 +5350,250 @@ func GetUpdateVnicShapeDetailsVnicShapeEnumStringValues() []string {
 		"SUBCORE_VM_FIXED4900_E4_50G",
 		"SUBCORE_VM_FIXED4950_E4_50G",
 		"SUBCORE_VM_FIXED5000_E4_50G",
+		"DYNAMIC_E5_50G",
+		"DYNAMIC_E5_100G",
+		"EntireHost_E5_50G",
+		"Fixed0040_E5_50G",
+		"FIXED0100_E5_50G",
+		"FIXED0200_E5_50G",
+		"FIXED0300_E5_50G",
+		"FIXED0400_E5_50G",
+		"FIXED0500_E5_50G",
+		"FIXED0600_E5_50G",
+		"FIXED0700_E5_50G",
+		"FIXED0800_E5_50G",
+		"FIXED0900_E5_50G",
+		"FIXED1000_E5_50G",
+		"FIXED1100_E5_50G",
+		"FIXED1200_E5_50G",
+		"FIXED1300_E5_50G",
+		"FIXED1400_E5_50G",
+		"FIXED1500_E5_50G",
+		"FIXED1600_E5_50G",
+		"FIXED1700_E5_50G",
+		"FIXED1800_E5_50G",
+		"FIXED1900_E5_50G",
+		"FIXED2000_E5_50G",
+		"FIXED2100_E5_50G",
+		"FIXED2200_E5_50G",
+		"FIXED2300_E5_50G",
+		"FIXED2400_E5_50G",
+		"FIXED2500_E5_50G",
+		"FIXED2600_E5_50G",
+		"FIXED2700_E5_50G",
+		"FIXED2800_E5_50G",
+		"FIXED2900_E5_50G",
+		"FIXED3000_E5_50G",
+		"FIXED3100_E5_50G",
+		"FIXED3200_E5_50G",
+		"FIXED3300_E5_50G",
+		"FIXED3400_E5_50G",
+		"FIXED3500_E5_50G",
+		"FIXED3600_E5_50G",
+		"FIXED3700_E5_50G",
+		"FIXED3800_E5_50G",
+		"FIXED3900_E5_50G",
+		"FIXED4000_E5_50G",
+		"SUBCORE_VM_FIXED0025_E5_50G",
+		"SUBCORE_VM_FIXED0050_E5_50G",
+		"SUBCORE_VM_FIXED0075_E5_50G",
+		"SUBCORE_VM_FIXED0100_E5_50G",
+		"SUBCORE_VM_FIXED0125_E5_50G",
+		"SUBCORE_VM_FIXED0150_E5_50G",
+		"SUBCORE_VM_FIXED0175_E5_50G",
+		"SUBCORE_VM_FIXED0200_E5_50G",
+		"SUBCORE_VM_FIXED0225_E5_50G",
+		"SUBCORE_VM_FIXED0250_E5_50G",
+		"SUBCORE_VM_FIXED0275_E5_50G",
+		"SUBCORE_VM_FIXED0300_E5_50G",
+		"SUBCORE_VM_FIXED0325_E5_50G",
+		"SUBCORE_VM_FIXED0350_E5_50G",
+		"SUBCORE_VM_FIXED0375_E5_50G",
+		"SUBCORE_VM_FIXED0400_E5_50G",
+		"SUBCORE_VM_FIXED0425_E5_50G",
+		"SUBCORE_VM_FIXED0450_E5_50G",
+		"SUBCORE_VM_FIXED0475_E5_50G",
+		"SUBCORE_VM_FIXED0500_E5_50G",
+		"SUBCORE_VM_FIXED0525_E5_50G",
+		"SUBCORE_VM_FIXED0550_E5_50G",
+		"SUBCORE_VM_FIXED0575_E5_50G",
+		"SUBCORE_VM_FIXED0600_E5_50G",
+		"SUBCORE_VM_FIXED0625_E5_50G",
+		"SUBCORE_VM_FIXED0650_E5_50G",
+		"SUBCORE_VM_FIXED0675_E5_50G",
+		"SUBCORE_VM_FIXED0700_E5_50G",
+		"SUBCORE_VM_FIXED0725_E5_50G",
+		"SUBCORE_VM_FIXED0750_E5_50G",
+		"SUBCORE_VM_FIXED0775_E5_50G",
+		"SUBCORE_VM_FIXED0800_E5_50G",
+		"SUBCORE_VM_FIXED0825_E5_50G",
+		"SUBCORE_VM_FIXED0850_E5_50G",
+		"SUBCORE_VM_FIXED0875_E5_50G",
+		"SUBCORE_VM_FIXED0900_E5_50G",
+		"SUBCORE_VM_FIXED0925_E5_50G",
+		"SUBCORE_VM_FIXED0950_E5_50G",
+		"SUBCORE_VM_FIXED0975_E5_50G",
+		"SUBCORE_VM_FIXED1000_E5_50G",
+		"SUBCORE_VM_FIXED1025_E5_50G",
+		"SUBCORE_VM_FIXED1050_E5_50G",
+		"SUBCORE_VM_FIXED1075_E5_50G",
+		"SUBCORE_VM_FIXED1100_E5_50G",
+		"SUBCORE_VM_FIXED1125_E5_50G",
+		"SUBCORE_VM_FIXED1150_E5_50G",
+		"SUBCORE_VM_FIXED1175_E5_50G",
+		"SUBCORE_VM_FIXED1200_E5_50G",
+		"SUBCORE_VM_FIXED1225_E5_50G",
+		"SUBCORE_VM_FIXED1250_E5_50G",
+		"SUBCORE_VM_FIXED1275_E5_50G",
+		"SUBCORE_VM_FIXED1300_E5_50G",
+		"SUBCORE_VM_FIXED1325_E5_50G",
+		"SUBCORE_VM_FIXED1350_E5_50G",
+		"SUBCORE_VM_FIXED1375_E5_50G",
+		"SUBCORE_VM_FIXED1400_E5_50G",
+		"SUBCORE_VM_FIXED1425_E5_50G",
+		"SUBCORE_VM_FIXED1450_E5_50G",
+		"SUBCORE_VM_FIXED1475_E5_50G",
+		"SUBCORE_VM_FIXED1500_E5_50G",
+		"SUBCORE_VM_FIXED1525_E5_50G",
+		"SUBCORE_VM_FIXED1550_E5_50G",
+		"SUBCORE_VM_FIXED1575_E5_50G",
+		"SUBCORE_VM_FIXED1600_E5_50G",
+		"SUBCORE_VM_FIXED1625_E5_50G",
+		"SUBCORE_VM_FIXED1650_E5_50G",
+		"SUBCORE_VM_FIXED1675_E5_50G",
+		"SUBCORE_VM_FIXED1700_E5_50G",
+		"SUBCORE_VM_FIXED1725_E5_50G",
+		"SUBCORE_VM_FIXED1750_E5_50G",
+		"SUBCORE_VM_FIXED1775_E5_50G",
+		"SUBCORE_VM_FIXED1800_E5_50G",
+		"SUBCORE_VM_FIXED1825_E5_50G",
+		"SUBCORE_VM_FIXED1850_E5_50G",
+		"SUBCORE_VM_FIXED1875_E5_50G",
+		"SUBCORE_VM_FIXED1900_E5_50G",
+		"SUBCORE_VM_FIXED1925_E5_50G",
+		"SUBCORE_VM_FIXED1950_E5_50G",
+		"SUBCORE_VM_FIXED1975_E5_50G",
+		"SUBCORE_VM_FIXED2000_E5_50G",
+		"SUBCORE_VM_FIXED2025_E5_50G",
+		"SUBCORE_VM_FIXED2050_E5_50G",
+		"SUBCORE_VM_FIXED2075_E5_50G",
+		"SUBCORE_VM_FIXED2100_E5_50G",
+		"SUBCORE_VM_FIXED2125_E5_50G",
+		"SUBCORE_VM_FIXED2150_E5_50G",
+		"SUBCORE_VM_FIXED2175_E5_50G",
+		"SUBCORE_VM_FIXED2200_E5_50G",
+		"SUBCORE_VM_FIXED2225_E5_50G",
+		"SUBCORE_VM_FIXED2250_E5_50G",
+		"SUBCORE_VM_FIXED2275_E5_50G",
+		"SUBCORE_VM_FIXED2300_E5_50G",
+		"SUBCORE_VM_FIXED2325_E5_50G",
+		"SUBCORE_VM_FIXED2350_E5_50G",
+		"SUBCORE_VM_FIXED2375_E5_50G",
+		"SUBCORE_VM_FIXED2400_E5_50G",
+		"SUBCORE_VM_FIXED2425_E5_50G",
+		"SUBCORE_VM_FIXED2450_E5_50G",
+		"SUBCORE_VM_FIXED2475_E5_50G",
+		"SUBCORE_VM_FIXED2500_E5_50G",
+		"SUBCORE_VM_FIXED2525_E5_50G",
+		"SUBCORE_VM_FIXED2550_E5_50G",
+		"SUBCORE_VM_FIXED2575_E5_50G",
+		"SUBCORE_VM_FIXED2600_E5_50G",
+		"SUBCORE_VM_FIXED2625_E5_50G",
+		"SUBCORE_VM_FIXED2650_E5_50G",
+		"SUBCORE_VM_FIXED2675_E5_50G",
+		"SUBCORE_VM_FIXED2700_E5_50G",
+		"SUBCORE_VM_FIXED2725_E5_50G",
+		"SUBCORE_VM_FIXED2750_E5_50G",
+		"SUBCORE_VM_FIXED2775_E5_50G",
+		"SUBCORE_VM_FIXED2800_E5_50G",
+		"SUBCORE_VM_FIXED2825_E5_50G",
+		"SUBCORE_VM_FIXED2850_E5_50G",
+		"SUBCORE_VM_FIXED2875_E5_50G",
+		"SUBCORE_VM_FIXED2900_E5_50G",
+		"SUBCORE_VM_FIXED2925_E5_50G",
+		"SUBCORE_VM_FIXED2950_E5_50G",
+		"SUBCORE_VM_FIXED2975_E5_50G",
+		"SUBCORE_VM_FIXED3000_E5_50G",
+		"SUBCORE_VM_FIXED3025_E5_50G",
+		"SUBCORE_VM_FIXED3050_E5_50G",
+		"SUBCORE_VM_FIXED3075_E5_50G",
+		"SUBCORE_VM_FIXED3100_E5_50G",
+		"SUBCORE_VM_FIXED3125_E5_50G",
+		"SUBCORE_VM_FIXED3150_E5_50G",
+		"SUBCORE_VM_FIXED3175_E5_50G",
+		"SUBCORE_VM_FIXED3200_E5_50G",
+		"SUBCORE_VM_FIXED3225_E5_50G",
+		"SUBCORE_VM_FIXED3250_E5_50G",
+		"SUBCORE_VM_FIXED3275_E5_50G",
+		"SUBCORE_VM_FIXED3300_E5_50G",
+		"SUBCORE_VM_FIXED3325_E5_50G",
+		"SUBCORE_VM_FIXED3350_E5_50G",
+		"SUBCORE_VM_FIXED3375_E5_50G",
+		"SUBCORE_VM_FIXED3400_E5_50G",
+		"SUBCORE_VM_FIXED3425_E5_50G",
+		"SUBCORE_VM_FIXED3450_E5_50G",
+		"SUBCORE_VM_FIXED3475_E5_50G",
+		"SUBCORE_VM_FIXED3500_E5_50G",
+		"SUBCORE_VM_FIXED3525_E5_50G",
+		"SUBCORE_VM_FIXED3550_E5_50G",
+		"SUBCORE_VM_FIXED3575_E5_50G",
+		"SUBCORE_VM_FIXED3600_E5_50G",
+		"SUBCORE_VM_FIXED3625_E5_50G",
+		"SUBCORE_VM_FIXED3650_E5_50G",
+		"SUBCORE_VM_FIXED3675_E5_50G",
+		"SUBCORE_VM_FIXED3700_E5_50G",
+		"SUBCORE_VM_FIXED3725_E5_50G",
+		"SUBCORE_VM_FIXED3750_E5_50G",
+		"SUBCORE_VM_FIXED3775_E5_50G",
+		"SUBCORE_VM_FIXED3800_E5_50G",
+		"SUBCORE_VM_FIXED3825_E5_50G",
+		"SUBCORE_VM_FIXED3850_E5_50G",
+		"SUBCORE_VM_FIXED3875_E5_50G",
+		"SUBCORE_VM_FIXED3900_E5_50G",
+		"SUBCORE_VM_FIXED3925_E5_50G",
+		"SUBCORE_VM_FIXED3950_E5_50G",
+		"SUBCORE_VM_FIXED3975_E5_50G",
+		"SUBCORE_VM_FIXED4000_E5_50G",
+		"SUBCORE_VM_FIXED4025_E5_50G",
+		"SUBCORE_VM_FIXED4050_E5_50G",
+		"SUBCORE_VM_FIXED4075_E5_50G",
+		"SUBCORE_VM_FIXED4100_E5_50G",
+		"SUBCORE_VM_FIXED4125_E5_50G",
+		"SUBCORE_VM_FIXED4150_E5_50G",
+		"SUBCORE_VM_FIXED4175_E5_50G",
+		"SUBCORE_VM_FIXED4200_E5_50G",
+		"SUBCORE_VM_FIXED4225_E5_50G",
+		"SUBCORE_VM_FIXED4250_E5_50G",
+		"SUBCORE_VM_FIXED4275_E5_50G",
+		"SUBCORE_VM_FIXED4300_E5_50G",
+		"SUBCORE_VM_FIXED4325_E5_50G",
+		"SUBCORE_VM_FIXED4350_E5_50G",
+		"SUBCORE_VM_FIXED4375_E5_50G",
+		"SUBCORE_VM_FIXED4400_E5_50G",
+		"SUBCORE_VM_FIXED4425_E5_50G",
+		"SUBCORE_VM_FIXED4450_E5_50G",
+		"SUBCORE_VM_FIXED4475_E5_50G",
+		"SUBCORE_VM_FIXED4500_E5_50G",
+		"SUBCORE_VM_FIXED4525_E5_50G",
+		"SUBCORE_VM_FIXED4550_E5_50G",
+		"SUBCORE_VM_FIXED4575_E5_50G",
+		"SUBCORE_VM_FIXED4600_E5_50G",
+		"SUBCORE_VM_FIXED4625_E5_50G",
+		"SUBCORE_VM_FIXED4650_E5_50G",
+		"SUBCORE_VM_FIXED4675_E5_50G",
+		"SUBCORE_VM_FIXED4700_E5_50G",
+		"SUBCORE_VM_FIXED4725_E5_50G",
+		"SUBCORE_VM_FIXED4750_E5_50G",
+		"SUBCORE_VM_FIXED4775_E5_50G",
+		"SUBCORE_VM_FIXED4800_E5_50G",
+		"SUBCORE_VM_FIXED4825_E5_50G",
+		"SUBCORE_VM_FIXED4850_E5_50G",
+		"SUBCORE_VM_FIXED4875_E5_50G",
+		"SUBCORE_VM_FIXED4900_E5_50G",
+		"SUBCORE_VM_FIXED4925_E5_50G",
+		"SUBCORE_VM_FIXED4950_E5_50G",
+		"SUBCORE_VM_FIXED4975_E5_50G",
+		"SUBCORE_VM_FIXED5000_E5_50G",
 		"SUBCORE_VM_FIXED0020_A1_50G",
 		"SUBCORE_VM_FIXED0040_A1_50G",
 		"SUBCORE_VM_FIXED0060_A1_50G",
@@ -4023,6 +5943,129 @@ func GetUpdateVnicShapeDetailsVnicShapeEnumStringValues() []string {
 		"FIXED4000_A1_50G",
 		"FIXED5000_TELESIS_A1_50G",
 		"ENTIREHOST_A1_50G",
+		"DYNAMIC_X7_25G",
+		"FIXED0040_X7_25G",
+		"STANDARD_VM_FIXED0100_X7_25G",
+		"STANDARD_VM_FIXED0200_X7_25G",
+		"STANDARD_VM_FIXED0300_X7_25G",
+		"STANDARD_VM_FIXED0400_X7_25G",
+		"STANDARD_VM_FIXED0500_X7_25G",
+		"STANDARD_VM_FIXED0600_X7_25G",
+		"STANDARD_VM_FIXED0700_X7_25G",
+		"STANDARD_VM_FIXED0800_X7_25G",
+		"STANDARD_VM_FIXED0900_X7_25G",
+		"STANDARD_VM_FIXED1000_X7_25G",
+		"STANDARD_VM_FIXED1100_X7_25G",
+		"STANDARD_VM_FIXED1200_X7_25G",
+		"STANDARD_VM_FIXED1300_X7_25G",
+		"STANDARD_VM_FIXED1400_X7_25G",
+		"STANDARD_VM_FIXED1500_X7_25G",
+		"STANDARD_VM_FIXED1600_X7_25G",
+		"STANDARD_VM_FIXED1700_X7_25G",
+		"STANDARD_VM_FIXED1800_X7_25G",
+		"STANDARD_VM_FIXED1900_X7_25G",
+		"STANDARD_VM_FIXED2000_X7_25G",
+		"STANDARD_VM_FIXED2100_X7_25G",
+		"STANDARD_VM_FIXED2200_X7_25G",
+		"STANDARD_VM_FIXED2300_X7_25G",
+		"STANDARD_VM_FIXED2400_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0025_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0050_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0075_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0100_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0125_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0150_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0175_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0200_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0225_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0250_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0275_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0300_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0325_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0350_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0375_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0400_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0425_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0450_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0475_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0500_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0525_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0550_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0575_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0600_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0625_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0650_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0675_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0700_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0725_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0750_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0775_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0800_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0825_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0850_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0875_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0900_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0925_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0950_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0975_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1000_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1025_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1050_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1075_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1100_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1125_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1150_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1175_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1200_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1225_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1250_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1275_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1300_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1325_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1350_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1375_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1400_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1425_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1450_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1475_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1500_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1525_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1550_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1575_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1600_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1625_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1650_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1675_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1700_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1725_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1750_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1775_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1800_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1825_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1850_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1875_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1900_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1925_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1950_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1975_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2000_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2025_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2050_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2075_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2100_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2125_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2150_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2175_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2200_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2225_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2250_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2275_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2300_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2325_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2350_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2375_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2400_X7_25G",
+		"ENTIREHOST_X7_25G",
 		"DYNAMIC_X9_50G",
 		"FIXED0040_X9_50G",
 		"FIXED0400_X9_50G",
@@ -4075,6 +6118,82 @@ func GetUpdateVnicShapeDetailsVnicShapeEnumStringValues() []string {
 		"STANDARD_VM_FIXED3800_X9_50G",
 		"STANDARD_VM_FIXED3900_X9_50G",
 		"STANDARD_VM_FIXED4000_X9_50G",
+		"STANDARD_VM_FIXED4100_X9_50G",
+		"STANDARD_VM_FIXED4200_X9_50G",
+		"STANDARD_VM_FIXED4300_X9_50G",
+		"STANDARD_VM_FIXED4400_X9_50G",
+		"STANDARD_VM_FIXED4500_X9_50G",
+		"STANDARD_VM_FIXED4600_X9_50G",
+		"STANDARD_VM_FIXED4700_X9_50G",
+		"STANDARD_VM_FIXED4800_X9_50G",
+		"STANDARD_VM_FIXED4900_X9_50G",
+		"STANDARD_VM_FIXED5000_X9_50G",
+		"A10_GPU_VM_FIXED2400_X9_50G",
+		"A10_GPU_VM_FIXED4800_X9_50G",
+		"VNUMA_VM_FIXED0100_1_X9_50G",
+		"VNUMA_VM_FIXED0200_2_X9_50G",
+		"VNUMA_VM_FIXED0300_3_X9_50G",
+		"VNUMA_VM_FIXED0400_4_X9_50G",
+		"VNUMA_VM_FIXED0500_5_X9_50G",
+		"VNUMA_VM_FIXED0600_6_X9_50G",
+		"VNUMA_VM_FIXED0700_7_X9_50G",
+		"VNUMA_VM_FIXED0800_8_X9_50G",
+		"VNUMA_VM_FIXED0900_9_X9_50G",
+		"VNUMA_VM_FIXED1000_10_X9_50G",
+		"VNUMA_VM_FIXED1100_11_X9_50G",
+		"VNUMA_VM_FIXED1200_12_X9_50G",
+		"VNUMA_VM_FIXED1300_13_X9_50G",
+		"VNUMA_VM_FIXED1400_14_X9_50G",
+		"VNUMA_VM_FIXED1500_15_X9_50G",
+		"VNUMA_VM_FIXED1600_16_X9_50G",
+		"VNUMA_VM_FIXED1700_17_X9_50G",
+		"VNUMA_VM_FIXED1800_18_X9_50G",
+		"VNUMA_VM_FIXED1900_19_X9_50G",
+		"VNUMA_VM_FIXED2000_20_X9_50G",
+		"VNUMA_VM_FIXED2100_21_X9_50G",
+		"VNUMA_VM_FIXED2200_22_X9_50G",
+		"VNUMA_VM_FIXED2300_23_X9_50G",
+		"VNUMA_VM_FIXED2400_24_X9_50G",
+		"VNUMA_VM_FIXED2500_25_X9_50G",
+		"VNUMA_VM_FIXED2600_26_X9_50G",
+		"VNUMA_VM_FIXED2700_27_X9_50G",
+		"VNUMA_VM_FIXED2800_28_X9_50G",
+		"VNUMA_VM_FIXED2900_29_X9_50G",
+		"VNUMA_VM_FIXED3000_30_X9_50G",
+		"VNUMA_VM_FIXED3100_31_X9_50G",
+		"VNUMA_VM_FIXED3200_32_X9_50G",
+		"VNUMA_VM_FIXED3200_33_X9_50G",
+		"VNUMA_VM_FIXED3200_34_X9_50G",
+		"VNUMA_VM_FIXED3200_35_X9_50G",
+		"VNUMA_VM_FIXED3200_36_X9_50G",
+		"VNUMA_VM_FIXED3200_37_X9_50G",
+		"VNUMA_VM_FIXED3200_38_X9_50G",
+		"VNUMA_VM_FIXED3200_39_X9_50G",
+		"VNUMA_VM_FIXED3200_40_X9_50G",
+		"VNUMA_VM_FIXED3200_41_X9_50G",
+		"VNUMA_VM_FIXED3200_42_X9_50G",
+		"VNUMA_VM_FIXED3200_43_X9_50G",
+		"VNUMA_VM_FIXED3200_44_X9_50G",
+		"VNUMA_VM_FIXED3200_45_X9_50G",
+		"VNUMA_VM_FIXED3200_46_X9_50G",
+		"VNUMA_VM_FIXED3200_47_X9_50G",
+		"VNUMA_VM_FIXED3200_48_X9_50G",
+		"VNUMA_VM_FIXED3200_49_X9_50G",
+		"VNUMA_VM_FIXED3200_50_X9_50G",
+		"VNUMA_VM_FIXED3200_51_X9_50G",
+		"VNUMA_VM_FIXED3200_52_X9_50G",
+		"VNUMA_VM_FIXED3200_53_X9_50G",
+		"VNUMA_VM_FIXED3200_54_X9_50G",
+		"VNUMA_VM_FIXED3200_55_X9_50G",
+		"VNUMA_VM_FIXED3200_56_X9_50G",
+		"VNUMA_VM_FIXED3200_57_X9_50G",
+		"VNUMA_VM_FIXED3200_58_X9_50G",
+		"VNUMA_VM_FIXED3200_59_X9_50G",
+		"VNUMA_VM_FIXED3200_60_X9_50G",
+		"VNUMA_VM_FIXED3200_61_X9_50G",
+		"VNUMA_VM_FIXED3200_62_X9_50G",
+		"VNUMA_VM_FIXED3200_63_X9_50G",
+		"VNUMA_VM_FIXED3200_64_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED0025_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED0050_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED0075_X9_50G",
@@ -4241,6 +6360,9 @@ func GetUpdateVnicShapeDetailsVnicShapeEnumStringValues() []string {
 		"SUBCORE_STANDARD_VM_FIXED4950_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED5000_X9_50G",
 		"ENTIREHOST_X9_50G",
+		"DYNAMIC_X9_100G",
+		"DYNAMIC_X10_50G",
+		"DYNAMIC_X10_100G",
 	}
 }
 

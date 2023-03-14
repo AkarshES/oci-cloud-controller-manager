@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 
 package common
@@ -76,6 +76,12 @@ const (
 	RegionMENeom1 Region = "me-neom-1"
 	//RegionEUKragujevac1 region Kragujevac
 	RegionEUKragujevac1 Region = "eu-kragujevac-1"
+	//RegionMXMonterrey1 region Monterrey
+	RegionMXMonterrey1 Region = "mx-monterrey-1"
+	//RegionSAValparaiso1 region Valparaiso
+	RegionSAValparaiso1 Region = "sa-valparaiso-1"
+	//RegionSABogota1 region Bogota
+	RegionSABogota1 Region = "sa-bogota-1"
 	//RegionUSLangley1 region Langley
 	RegionUSLangley1 Region = "us-langley-1"
 	//RegionUSLuke1 region Luke
@@ -118,8 +124,18 @@ const (
 	RegionUSDccPhoenix1 Region = "us-dcc-phoenix-1"
 	//RegionUSDccPhoenix2 region Phoenix
 	RegionUSDccPhoenix2 Region = "us-dcc-phoenix-2"
+	//RegionUSDccPhoenix4 region Phoenix
+	RegionUSDccPhoenix4 Region = "us-dcc-phoenix-4"
 	//RegionUSDccPhoenix3 region Phoenix
 	RegionUSDccPhoenix3 Region = "us-dcc-phoenix-3"
+	//RegionEUMadrid2 region Madrid
+	RegionEUMadrid2 Region = "eu-madrid-2"
+	//RegionEUFrankfurt2 region Frankfurt
+	RegionEUFrankfurt2 Region = "eu-frankfurt-2"
+	//RegionEUJovanovac1 region Jovanovac
+	RegionEUJovanovac1 Region = "eu-jovanovac-1"
+	//RegionMEDccDoha1 region Doha
+	RegionMEDccDoha1 Region = "me-dcc-doha-1"
 )
 
 var shortNameRegion = map[string]Region{
@@ -159,6 +175,9 @@ var shortNameRegion = map[string]Region{
 	"ord": RegionUSChicago1,
 	"num": RegionMENeom1,
 	"kvo": RegionEUKragujevac1,
+	"mty": RegionMXMonterrey1,
+	"vap": RegionSAValparaiso1,
+	"bog": RegionSABogota1,
 	"lfi": RegionUSLangley1,
 	"luf": RegionUSLuke1,
 	"ric": RegionUSGovAshburn1,
@@ -180,7 +199,12 @@ var shortNameRegion = map[string]Region{
 	"sgu": RegionUSWestjordan1,
 	"ifp": RegionUSDccPhoenix1,
 	"gcn": RegionUSDccPhoenix2,
+	"yum": RegionUSDccPhoenix4,
 	"prc": RegionUSDccPhoenix3,
+	"vll": RegionEUMadrid2,
+	"str": RegionEUFrankfurt2,
+	"beg": RegionEUJovanovac1,
+	"doh": RegionMEDccDoha1,
 }
 
 var realm = map[string]string{
@@ -196,6 +220,9 @@ var realm = map[string]string{
 	"oc16": "oraclecloud16.com",
 	"oc17": "oraclecloud17.com",
 	"oc18": "oraclecloud18.com",
+	"oc19": "oraclecloud.eu",
+	"oc20": "oraclecloud20.com",
+	"oc21": "oraclecloud21.com",
 }
 
 var regionRealm = map[Region]string{
@@ -235,6 +262,9 @@ var regionRealm = map[Region]string{
 	RegionUSChicago1:      "oc1",
 	RegionMENeom1:         "oc1",
 	RegionEUKragujevac1:   "oc1",
+	RegionMXMonterrey1:    "oc1",
+	RegionSAValparaiso1:   "oc1",
+	RegionSABogota1:       "oc1",
 
 	RegionUSLangley1: "oc2",
 	RegionUSLuke1:    "oc2",
@@ -266,6 +296,14 @@ var regionRealm = map[Region]string{
 
 	RegionUSDccPhoenix1: "oc17",
 	RegionUSDccPhoenix2: "oc17",
+	RegionUSDccPhoenix4: "oc17",
 
 	RegionUSDccPhoenix3: "oc18",
+
+	RegionEUMadrid2:    "oc19",
+	RegionEUFrankfurt2: "oc19",
+
+	RegionEUJovanovac1: "oc20",
+
+	RegionMEDccDoha1: "oc21",
 }
