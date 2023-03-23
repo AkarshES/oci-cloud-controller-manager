@@ -157,9 +157,9 @@ run-volume-provisioner-dev:
 	    -v=4
 
 .PHONY: image
-BUILD_ARGS = --build-arg COMPONENT="$(COMPONENT)"
+BUILD_ARGS = --no-cache --pull --build-arg COMPONENT="$(COMPONENT)"
 image:
-	docker  build $(BUILD_ARGS) \
+	docker build $(BUILD_ARGS) \
 		-t $(IMAGE):$(VERSION) .
 	docker build $(BUILD_ARGS) \
 		-t $(IMAGE)-arm:$(VERSION) -f Dockerfile_arm .
