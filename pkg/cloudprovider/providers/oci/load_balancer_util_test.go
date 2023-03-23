@@ -239,6 +239,117 @@ func TestSortAndCombineActions(t *testing.T) {
 				},
 			},
 		},
+		// Update port 8080 - lexicographic priority
+		// Change ports 80 - 443 - Creates create delete sequence for listener and backendset - lexicographically decreased port
+		// Change ports 6443 - 9443 - Creates create delete sequence for listener and backendset - lexicographically increased port
+		"create+delete+update": {
+			backendSetActions: []Action{
+				&BackendSetAction{
+					name:       "TCP-8080",
+					actionType: Update,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&BackendSetAction{
+					name:       "TCP-9443",
+					actionType: Create,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&BackendSetAction{
+					name:       "TCP-6443",
+					actionType: Delete,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&BackendSetAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&BackendSetAction{
+					name:       "TCP-443",
+					actionType: Create,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+			},
+			listenerActions: []Action{
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-9443",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-443",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-8080",
+					actionType: Update,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-6443",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "TCP-6443",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&BackendSetAction{
+					name:       "TCP-6443",
+					actionType: Delete,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&BackendSetAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&BackendSetAction{
+					name:       "TCP-443",
+					actionType: Create,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&ListenerAction{
+					name:       "TCP-443",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-8080",
+					actionType: Update,
+					Listener:   client.GenericListener{},
+				},
+				&BackendSetAction{
+					name:       "TCP-8080",
+					actionType: Update,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&BackendSetAction{
+					name:       "TCP-9443",
+					actionType: Create,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&ListenerAction{
+					name:       "TCP-9443",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+			},
+		},
 	}
 
 	for name, tc := range testCases {

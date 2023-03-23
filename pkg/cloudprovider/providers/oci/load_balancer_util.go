@@ -670,6 +670,15 @@ func sortAndCombineActions(logger *zap.SugaredLogger, backendSetActions []Action
 			return true
 		}
 	})
+
+	sort.SliceStable(actions, func(i, j int) bool {
+		a1 := actions[i]
+		a2 := actions[j]
+		if a1.Type() != a2.Type() {
+			return a1.Type() == Delete
+		}
+		return false
+	})
 	return actions
 }
 
