@@ -11,7 +11,7 @@ WORKDIR $SRC
 
 RUN ARCH=arm make clean build-arm
 
-FROM docker-remote.artifactory.oci.oraclecorp.com/arm64v8/oraclelinux:7-slim
+FROM --platform=linux/arm64 ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:7-slim
 
 RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/cardmgmt-ol7-latest-yum-aarch64-local && yum repolist enabled
 
