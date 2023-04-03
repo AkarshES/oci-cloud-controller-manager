@@ -224,6 +224,10 @@ func hasBackendSetChanged(logger *zap.SugaredLogger, actual client.GenericBacken
 		backendSetChanges = append(backendSetChanges, fmt.Sprintf(changeFmtStr, "BackEndSet:Policy", toString(actual.Policy), toString(desired.Policy)))
 	}
 
+	if toBool(actual.IsPreserveSource) != toBool(desired.IsPreserveSource) {
+		backendSetChanges = append(backendSetChanges, fmt.Sprintf(changeFmtStr, "BackEndSet:IsPreserveSource", toBool(actual.IsPreserveSource), toBool(desired.IsPreserveSource)))
+	}
+
 	nameFormat := "%s:%d"
 
 	desiredSet := sets.NewString()
