@@ -260,16 +260,10 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 	log = log.WithValues("instanceId", *instance.Id)
-	if instance.LifecycleState != core.InstanceLifecycleStateRunning {
-		err = r.waitForInstanceToReachRunningState(ctx, npn)
-		if err != nil {
-			r.handleError(ctx, req, errInstanceNotRunning, "GetRunningInstance")
-			return ctrl.Result{RequeueAfter: time.Second * 10}, err
-		}
-	}
 
-	// In case the node never joined the cluster and the instance is deleted then remove the CR
-	if instance.LifecycleState == core.InstanceLifecycleStateTerminated {
+	// remove the CR in case the node never joined the cluster and the instance is terminated
+	if instance.LifecycleState == core.InstanceLifecycleStateTerminated ||
+		instance.LifecycleState == core.InstanceLifecycleStateTerminating {
 		err = r.Client.Delete(ctx, &npn)
 		if err != nil {
 			log.Error(err, "failed to delete NPN CR for terminated instance")
@@ -277,6 +271,14 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		}
 		log.Info("Deleted the CR for Terminated compute instance")
 		return ctrl.Result{}, nil
+	}
+
+	if instance.LifecycleState != core.InstanceLifecycleStateRunning {
+		err = r.waitForInstanceToReachRunningState(ctx, npn)
+		if err != nil {
+			r.handleError(ctx, req, errInstanceNotRunning, "GetRunningInstance")
+			return ctrl.Result{RequeueAfter: time.Second * 10}, err
+		}
 	}
 
 	primaryVnic, existingSecondaryVNICs, err := r.getPrimaryAndSecondaryVNICs(ctx, *instance.CompartmentId, *instance.Id)
