@@ -23,9 +23,11 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,8 +54,20 @@ const (
 	GetNodeTimeout = 20 * time.Minute
 	// RunningInstanceTimeout is the timeout for the instance to reach running state
 	// before we try to attach VNIC(s) to them
-	RunningInstanceTimeout                   = 5 * time.Minute
-	FetchedExistingSecondaryVNICsForInstance = "Fetched existingSecondaryVNICs for instance"
+	RunningInstanceTimeout                          = 5 * time.Minute
+	FetchingInstance                                = "Fetching OCI compute instance"
+	FetchingExistingSecondaryVNICsForInstance       = "Fetching existingSecondaryVNICs for instance"
+	FetchedExistingSecondaryVNICsForInstance        = "Fetched existingSecondaryVNICs for instance"
+	FetchingPrivateIPsForSecondaryVNICs             = "Fetching private IPs for existing secondary VNICs"
+	FetchedPrivateIPsForSecondaryVNICs              = "Fetched existingSecondaryIp for VNICs of the instance"
+	AllocateAdditionalVNICsToInstance               = "Need to attach additional secondary VNICs to the instance"
+	AllocatedAdditionalVNICsToInstance              = "Successfully allocated the required additional VNICs for instance"
+	SecondFetchingExistingSecondaryVNICsForInstance = "Fetching existingSecondaryVNICs for instance once again"
+	SecondFetchedExistingSecondaryVNICsForInstance  = "Fetched existingSecondaryVNICs for instance once again"
+	AllocatingAdditionalPrivateIPsForSecondaryVNICs = "Started allocating additional private IPs for secondary VNICs"
+	ComputingAdditionalIpsByVnic                    = "Computing required additionalIpsByVnic"
+	ComputedAdditionalIpsByVnic                     = "Computed required additionalIpsByVnic"
+	FetchingSecondaryVNICsAndIPsForInstance         = "Fetching secondary VNICs & attached private IPs for instance once again"
 )
 
 var (
@@ -74,6 +88,7 @@ type NativePodNetworkReconciler struct {
 	MetricPusher     *metrics.MetricPusher
 	OCIClient        ociclient.Interface
 	TimeTakenTracker map[string]time.Time
+	Recorder         record.EventRecorder
 }
 
 // VnicAttachmentResponse is used to store the response for attach VNIC
@@ -226,13 +241,25 @@ func computeAveragesByReturnCode(errorArray []ErrorMetric) map[string]float64 {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	var err error
+	var failReason, failMessage = "NPNReconcileFailed", ""
+	var npn npnv1beta1.NativePodNetwork
+	defer func() {
+		if failMessage != "" && err != nil {
+			r.Recorder.Event(&npn, v1.EventTypeWarning, failReason, failMessage+": "+err.Error())
+		} else if failMessage != "" {
+			r.Recorder.Event(&npn, v1.EventTypeWarning, failReason, failMessage)
+		} else if err != nil {
+			r.Recorder.Event(&npn, v1.EventTypeWarning, failReason, err.Error())
+		}
+	}()
+
 	log := log.FromContext(ctx)
 	if _, ok := r.TimeTakenTracker[req.Name]; !ok {
 		r.TimeTakenTracker[req.Name] = time.Now()
 	}
 	startTime := r.TimeTakenTracker[req.Name]
 	mutex := sync.Mutex{}
-	var npn npnv1beta1.NativePodNetwork
 	if err := r.Get(ctx, req.NamespacedName, &npn); err != nil {
 		log.Error(err, "unable to fetch NativePodNetwork")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -247,16 +274,20 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.Info("Processing NativePodNetwork CR")
 	npn.Status.State = &STATE_IN_PROGRESS
 	npn.Status.Reason = &STATE_IN_PROGRESS
-	err := r.Status().Update(context.Background(), &npn)
+	r.Recorder.Event(&npn, v1.EventTypeNormal, "StartNPNReconcile", "Starting NativePodNetwork reconciliation")
+	err = r.Status().Update(context.Background(), &npn)
 	if err != nil {
-		log.Error(err, "failed to set status on CR")
+		failReason, failMessage = "UpdateNPNStatusFailed", "failed to update status of NPN CR to InProgress"
+		log.Error(err, failMessage)
 		return ctrl.Result{}, err
 	}
 
+	log.WithValues("instanceId", *npn.Spec.Id).Info(FetchingInstance)
 	requiredSecondaryVNICs := int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxSecondaryPrivateIPsPerVNIC))
 	instance, err := r.OCIClient.Compute().GetInstance(ctx, *npn.Spec.Id)
 	if err != nil || instance.Id == nil {
-		log.WithValues("instanceId", *npn.Spec.Id).Error(err, "failed to get OCI compute instance")
+		failReason, failMessage = "GetInstanceFailed", "failed to get OCI compute instance"
+		log.WithValues("instanceId", *npn.Spec.Id).Error(err, failMessage)
 		return ctrl.Result{}, err
 	}
 	log = log.WithValues("instanceId", *instance.Id)
@@ -266,27 +297,32 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		instance.LifecycleState == core.InstanceLifecycleStateTerminating {
 		err = r.Client.Delete(ctx, &npn)
 		if err != nil {
-			log.Error(err, "failed to delete NPN CR for terminated instance")
+			failReason, failMessage = "InstanceTerminated", "failed to delete NPN CR for terminated compute instance"
+			log.Error(err, failMessage)
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
-		log.Info("Deleted the CR for Terminated compute instance")
+		log.Info("Deleted the CR for terminated compute instance")
 		return ctrl.Result{}, nil
 	}
 
 	if instance.LifecycleState != core.InstanceLifecycleStateRunning {
 		err = r.waitForInstanceToReachRunningState(ctx, npn)
 		if err != nil {
+			failReason, failMessage = "InstanceNotRunning", errInstanceNotRunning.Error()
 			r.handleError(ctx, req, errInstanceNotRunning, "GetRunningInstance")
 			return ctrl.Result{RequeueAfter: time.Second * 10}, err
 		}
 	}
 
+	log.Info(FetchingExistingSecondaryVNICsForInstance)
 	primaryVnic, existingSecondaryVNICs, err := r.getPrimaryAndSecondaryVNICs(ctx, *instance.CompartmentId, *instance.Id)
 	if err != nil {
+		failReason = "GetVNICsFailed"
 		r.handleError(ctx, req, err, "GetVNIC")
 		return ctrl.Result{}, err
 	}
 	if primaryVnic == nil {
+		failReason, failMessage = "PrimaryVNICNotFound", errPrimaryVnicNotFound.Error()
 		r.handleError(ctx, req, errPrimaryVnicNotFound, "GetPrimaryVNIC")
 		return ctrl.Result{}, errPrimaryVnicNotFound
 	}
@@ -295,18 +331,10 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(FetchedExistingSecondaryVNICsForInstance)
 
-	existingSecondaryIpsbyVNIC, err := r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
-	if err != nil {
-		r.handleError(ctx, req, err, "ListPrivateIP")
-		return ctrl.Result{}, err
-	}
-	totalAllocatedSecondaryIPs := totalAllocatedSecondaryIpsForInstance(existingSecondaryIpsbyVNIC)
-	log.WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).Info("Fetched existingSecondaryIp for instance")
-
 	requiredAdditionalSecondaryVNICs := requiredSecondaryVNICs - len(existingSecondaryVNICs)
 
 	if requiredAdditionalSecondaryVNICs > 0 {
-		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info("Need to allocate VNICs for instance")
+		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocateAdditionalVNICsToInstance)
 		additionalVNICAttachments := make([]VnicAttachmentResponse, requiredAdditionalSecondaryVNICs)
 		workqueue.ParallelizeUntil(ctx, requiredAdditionalSecondaryVNICs, requiredAdditionalSecondaryVNICs, func(index int) {
 			startTime := time.Now()
@@ -324,38 +352,48 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		})
 		err = validateAdditionalVnicAttachments(additionalVNICAttachments)
 		if err != nil {
-			log.Error(err, "failed to provision required additional VNICs")
-			r.handleError(ctx, req, err, "AttachVNIC")
+			failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to attach required additional VNICs"
+			log.Error(err, failMessage)
+			r.handleError(ctx, req, err, "Attach VNIC")
 			r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
 			return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 		}
 		r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
-		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info("Allocated the required VNICs for instance")
+		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocatedAdditionalVNICsToInstance)
 	}
 
+	log.Info(SecondFetchingExistingSecondaryVNICsForInstance)
 	_, existingSecondaryVNICs, err = r.getPrimaryAndSecondaryVNICs(ctx, *instance.CompartmentId, *instance.Id)
 	if err != nil {
+		failReason = "GetVNICsFailed"
 		r.handleError(ctx, req, err, "GetVNIC")
 		return ctrl.Result{}, err
 	}
 	log.WithValues("existingSecondaryVNICs", existingSecondaryVNICs).
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
-		Info(FetchedExistingSecondaryVNICsForInstance)
+		Info(SecondFetchedExistingSecondaryVNICsForInstance)
 
-	existingSecondaryIpsbyVNIC, err = r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
+	log.Info(FetchingPrivateIPsForSecondaryVNICs)
+	existingSecondaryIpsbyVNIC, err := r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
 	if err != nil {
+		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
 		return ctrl.Result{}, err
 	}
+	totalAllocatedSecondaryIPs := totalAllocatedSecondaryIpsForInstance(existingSecondaryIpsbyVNIC)
+	log.WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).Info(FetchedPrivateIPsForSecondaryVNICs)
 
+	log.Info(ComputingAdditionalIpsByVnic)
 	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount-totalAllocatedSecondaryIPs)
 	if err != nil {
-		log.WithValues("additionalIpsRequired", *npn.Spec.MaxPodCount-totalAllocatedSecondaryIPs).Error(err, "failed to allocate the required IP addresses")
+		failReason, failMessage = "AllocatePrivateIPsFailed", "failed to allocate the required IP addresses"
+		log.WithValues("additionalIpsRequired", *npn.Spec.MaxPodCount-totalAllocatedSecondaryIPs).Error(err, failMessage)
 		r.handleError(ctx, req, err, "AllocatePrivateIP")
 		return ctrl.Result{}, err
 	}
-	log.WithValues("additionalIpsByVnic", additionalIpsByVnic).Info("Computed required additionalIpsByVnic")
+	log.WithValues("additionalIpsByVnic", additionalIpsByVnic).Info(ComputedAdditionalIpsByVnic)
 
+	log.Info(AllocatingAdditionalPrivateIPsForSecondaryVNICs)
 	vnicAdditionalIpAllocations := make([]VnicIPAllocationResponse, requiredSecondaryVNICs)
 	workqueue.ParallelizeUntil(ctx, requiredSecondaryVNICs, requiredSecondaryVNICs, func(outerIndex int) {
 		parallelLog := log.WithValues("vnicId", additionalIpsByVnic[outerIndex].vnicId).WithValues("requiredIPs", additionalIpsByVnic[outerIndex].ips)
@@ -385,6 +423,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	})
 	for _, ips := range vnicAdditionalIpAllocations {
 		if ips.err != nil {
+			failReason, failMessage = "CreatePrivateIPFailed", ips.err.Error()
 			r.handleError(ctx, req, ips.err, "CreatePrivateIP")
 			r.PushMetric(IPAllocationSlice(ips.ipAllocations).ErrorMetric())
 			return ctrl.Result{}, ips.err
@@ -392,8 +431,10 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		r.PushMetric(IPAllocationSlice(ips.ipAllocations).ErrorMetric())
 	}
 
+	log.Info(FetchingSecondaryVNICsAndIPsForInstance)
 	_, existingSecondaryVNICs, err = r.getPrimaryAndSecondaryVNICs(ctx, *instance.CompartmentId, *instance.Id)
 	if err != nil {
+		failReason = "GetVNICsFailed"
 		r.handleError(ctx, req, err, "GetVNIC")
 		return ctrl.Result{}, err
 	}
@@ -402,6 +443,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		Info(FetchedExistingSecondaryVNICsForInstance)
 	existingSecondaryIpsbyVNIC, err = r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
 	if err != nil {
+		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
 		return ctrl.Result{}, err
 	}
@@ -411,47 +453,60 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).
 		Info("Fetched existingSecondaryIp for instance")
 
+	log.Info("Fetching NPN CR for owner ref & status update")
 	updateNPN := npnv1beta1.NativePodNetwork{}
 	err = r.Get(context.TODO(), req.NamespacedName, &updateNPN)
 	if err != nil {
-		log.Error(err, "failed to get CR")
-		r.handleError(ctx, req, err, "GetCR")
+		failReason = "GetNPNFailed"
+		log.Error(err, "failed to get NPN CR")
+		r.handleError(ctx, req, err, "GetNPN_CR")
 		return ctrl.Result{}, err
 	}
+	log.Info("Fetched NPN CR")
 
-	log.Info("Getting v1 Node object to set ownerref on CR")
+	log.Info("Getting v1 Node object to set ownerref on NPN CR")
 	// Set OwnerRef on the CR and mark CR status as SUCCESS
 	nodeObject, err := r.getNodeObjectInCluster(ctx, req.NamespacedName, *nodeName)
 	if err != nil {
+		failReason = "GetV1NodeFailed"
 		r.handleError(ctx, req, err, "GetV1Node")
 		return ctrl.Result{}, err
 	}
 
 	if err = controllerutil.SetOwnerReference(nodeObject, &updateNPN, r.Scheme); err != nil {
-		log.Error(err, "failed to update owner ref on CR")
+		failReason, failMessage = "UpdateOwnerRefrenceFailed", "failed to update owner ref on NPN CR"
+		log.Error(err, failMessage)
 		return ctrl.Result{}, err
 	}
-	log.Info("Updating ownerref and CR status as COMPLETED")
+	log.Info("Updating ownerref and NPN CR status as COMPLETED")
 	err = r.Client.Update(ctx, &updateNPN)
 	if err != nil {
-		log.Error(err, "failed to set ownerref on CR")
+		failReason, failMessage = "SetOwnerRefrenceFailed", "failed to set ownerref on NPN CR"
+		log.Error(err, failMessage)
 		return ctrl.Result{}, err
 	}
 
 	updateNPN.Status.State = &STATE_SUCCESS
 	updateNPN.Status.Reason = &COMPLETED
 	updateNPN.Status.VNICs = convertCoreVNICtoNPNStatus(existingSecondaryVNICs, existingSecondaryIpsbyVNIC)
+	r.Recorder.Event(&npn, v1.EventTypeNormal, "NPN_CR_Success", "NPN CR reconciled successfully")
 	err = r.Status().Update(ctx, &updateNPN)
 	if err != nil {
-		log.Error(err, "failed to set status on CR")
+		failReason, failMessage = "FinalUpdateNPNStatusFailed", "failed to set status on NPN CR"
+		log.Error(err, failMessage)
 		return ctrl.Result{}, err
 	}
+	log.Info("NativePodNetwork CR reconciled successfully")
+
 	r.PushMetric(endToEndLatencySlice{{time.Since(startTime).Seconds()}}.ErrorMetric())
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NativePodNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	log := zap.L().Sugar()
+	log.Info("Setting up NPN controller with manager")
+	r.Recorder = mgr.GetEventRecorderFor("nativepodnetwork")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&npnv1beta1.NativePodNetwork{}).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 20, CacheSyncTimeout: time.Hour}).
@@ -521,7 +576,7 @@ func (r *NativePodNetworkReconciler) getSecondaryPrivateIpsByVNICs(ctx context.C
 func (r *NativePodNetworkReconciler) handleError(ctx context.Context, req ctrl.Request, err error, operation string) {
 	log := log.FromContext(ctx).WithValues("name", req.Name)
 
-	log.Error(err, "received error for operation", "parsedError", util.GetError(err))
+	log.Error(err, "received error for operation "+operation, "parsedError", util.GetError(err))
 	updateNPN := npnv1beta1.NativePodNetwork{}
 	err = r.Get(context.TODO(), req.NamespacedName, &updateNPN)
 	if err != nil {
@@ -535,7 +590,6 @@ func (r *NativePodNetworkReconciler) handleError(ctx context.Context, req ctrl.R
 	if err != nil {
 		log.Error(err, "failed to set status on CR")
 	}
-
 }
 
 // exclude the primary IPs in the list of private IPs on VNIC
