@@ -44,9 +44,9 @@ const (
 	FIPS_ENABLED_FILE_PATH = "/host/proc/sys/crypto/fips_enabled"
 	ENCRYPTED_UMOUNT_COMMAND = "umount.oci-fss"
 	UMOUNT_COMMAND = "umount"
-    FINDMNT_COMMAND = "findmnt"
-    CAT_COMMAND = "cat"
-    RPM_COMMAND = "rpm"
+	FINDMNT_COMMAND = "findmnt"
+	CAT_COMMAND = "cat"
+	RPM_COMMAND = "rpm"
 	// 'fsck' found errors and corrected them
 	fsckErrorsCorrected = 1
 	// 'fsck' found errors but exited without correcting them

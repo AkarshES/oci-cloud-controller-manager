@@ -7,7 +7,7 @@ variable "region" {}
 locals {
   region         = var.region
   ## Current realms is a list of realms that already have property values defined at 
-  ## global/realm level before limits started blocking global updates. It is to main backward 
+  ## global/realm level before limits started blocking global updates. It is to main backward
   ## compatibility so that TF/Shepherd does not try to delete them. Any new realm will not have these
   ## properties created at realm level
   current_realms = ["oc1", "oc2", "oc3", "oc4", "oc6", "oc8", "oc9", "oc10"]
