@@ -1760,6 +1760,78 @@ func TestHasBackendSetChanged(t *testing.T) {
 			},
 			expected: true,
 		},
+		{
+			name: "Set IsPreserveSource",
+			desired: client.GenericBackendSetDetails{
+				IsPreserveSource: nil,
+				Policy:           common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			actual: client.GenericBackendSetDetails{
+				IsPreserveSource: common.Bool(true),
+				Policy:           common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "IsPreserveSource change",
+			desired: client.GenericBackendSetDetails{
+				IsPreserveSource: common.Bool(true),
+				Policy:           common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			actual: client.GenericBackendSetDetails{
+				IsPreserveSource: common.Bool(false),
+				Policy:           common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "no change - IsPreserveSource set",
+			desired: client.GenericBackendSetDetails{
+				IsPreserveSource: common.Bool(true),
+				Policy:           common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			actual: client.GenericBackendSetDetails{
+				IsPreserveSource: common.Bool(true),
+				Policy:           common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			expected: false,
+		},
 	}
 
 	for _, tt := range testCases {
