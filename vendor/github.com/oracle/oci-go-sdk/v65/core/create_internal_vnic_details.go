@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -9,6 +9,8 @@
 // documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
 // Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
 // Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// The required permissions are documented in the
+// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -23,6 +25,13 @@ import (
 // For more information about VNICs, see
 // Virtual Network Interface Cards (VNICs) (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/managingVNICs.htm).
 type CreateInternalVnicDetails struct {
+
+	// Whether the VNIC should be assigned IPv6 on compute instance launch or secondary VNIC creation.
+	// Example: `false`
+	AssignIpv6Ip *bool `mandatory:"false" json:"assignIpv6Ip"`
+
+	// List of IPv6 prefixes and IPv6 addresses pair.
+	Ipv6AddressIpv6SubnetCidrPairDetails []InternalIpv6AddressIpv6SubnetCidrPairDetails `mandatory:"false" json:"ipv6AddressIpv6SubnetCidrPairDetails"`
 
 	// Whether the VNIC should be assigned a public IP address. Defaults to whether
 	// the subnet is public or private. If not set and the VNIC is being created
@@ -71,7 +80,7 @@ type CreateInternalVnicDetails struct {
 
 	// The hostname for the VNIC's primary private IP. Used for DNS. The value is the hostname
 	// portion of the primary private IP's fully qualified domain name (FQDN)
-	// (for example, `bminstance-1` in FQDN `bminstance-1.subnet123.vcn1.oraclevcn.com`).
+	// (for example, `bminstance1` in FQDN `bminstance1.subnet123.vcn1.oraclevcn.com`).
 	// Must be unique across all VNICs in the subnet and comply with
 	// RFC 952 (https://tools.ietf.org/html/rfc952) and
 	// RFC 1123 (https://tools.ietf.org/html/rfc1123).
@@ -85,7 +94,7 @@ type CreateInternalVnicDetails struct {
 	// of the deprecated `hostnameLabel` in
 	// LaunchInstanceDetails.
 	// If you provide both, the values must match.
-	// Example: `bminstance-1`
+	// Example: `bminstance1`
 	HostnameLabel *string `mandatory:"false" json:"hostnameLabel"`
 
 	// Indicates if the VNIC is associated with (and will be attached to) a BM instance.
@@ -365,9 +374,13 @@ const (
 	CreateInternalVnicDetailsVnicShapeEntirehostB125g                 CreateInternalVnicDetailsVnicShapeEnum = "ENTIREHOST_B1_25G"
 	CreateInternalVnicDetailsVnicShapeMicroVmFixed0048E125g           CreateInternalVnicDetailsVnicShapeEnum = "MICRO_VM_FIXED0048_E1_25G"
 	CreateInternalVnicDetailsVnicShapeMicroLbFixed0001E125g           CreateInternalVnicDetailsVnicShapeEnum = "MICRO_LB_FIXED0001_E1_25G"
+	CreateInternalVnicDetailsVnicShapeVnicaasFixed0025                CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FIXED0025"
 	CreateInternalVnicDetailsVnicShapeVnicaasFixed0200                CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FIXED0200"
 	CreateInternalVnicDetailsVnicShapeVnicaasFixed0400                CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FIXED0400"
+	CreateInternalVnicDetailsVnicShapeVnicaasFixed0625                CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FIXED0625"
 	CreateInternalVnicDetailsVnicShapeVnicaasFixed0700                CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FIXED0700"
+	CreateInternalVnicDetailsVnicShapeVnicaasFixed1250                CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FIXED1250"
+	CreateInternalVnicDetailsVnicShapeVnicaasFwaas6g250m              CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FWAAS_6G_250M"
 	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10g           CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_10G"
 	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved25g           CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_25G"
 	CreateInternalVnicDetailsVnicShapeVnicaasTelesis25g               CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_TELESIS_25G"
@@ -469,6 +482,86 @@ const (
 	CreateInternalVnicDetailsVnicShapeFixed3900E450g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3900_E4_50G"
 	CreateInternalVnicDetailsVnicShapeFixed4000E450g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED4000_E4_50G"
 	CreateInternalVnicDetailsVnicShapeEntirehostE450g                 CreateInternalVnicDetailsVnicShapeEnum = "ENTIREHOST_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed01001E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0100_1_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed02002E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0200_2_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed03003E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0300_3_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed04004E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0400_4_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed05005E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0500_5_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed06006E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0600_6_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed07007E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0700_7_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed08008E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0800_8_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed09009E450g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0900_9_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed100010E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1000_10_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed110011E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1100_11_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed120012E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1200_12_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed130013E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1300_13_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed140014E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1400_14_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed150015E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1500_15_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed160016E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1600_16_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed170017E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1700_17_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed180018E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1800_18_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed190019E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1900_19_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed200020E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2000_20_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed210021E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2100_21_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed220022E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2200_22_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed230023E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2300_23_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed240024E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2400_24_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed250025E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2500_25_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed260026E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2600_26_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed270027E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2700_27_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed280028E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2800_28_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed290029E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2900_29_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed300030E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3000_30_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed310031E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3100_31_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320032E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_32_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed330033E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3300_33_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed340034E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3400_34_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed350035E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3500_35_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed360036E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3600_36_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed370037E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3700_37_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed380038E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3800_38_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed390039E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3900_39_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400040E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_40_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400041E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_41_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400042E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_42_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400043E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_43_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400044E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_44_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400045E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_45_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400046E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_46_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400047E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_47_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400048E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_48_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400049E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_49_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400050E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_50_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400051E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_51_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400052E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_52_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400053E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_53_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400054E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_54_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400055E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_55_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400056E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_56_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400057E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_57_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400058E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_58_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400059E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_59_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400060E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_60_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400061E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_61_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400062E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_62_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400063E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_63_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400064E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_64_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400065E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_65_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400066E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_66_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400067E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_67_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400068E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_68_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400069E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_69_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400070E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_70_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400071E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_71_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400072E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_72_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400073E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_73_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400074E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_74_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400075E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_75_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400076E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_76_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400077E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_77_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400078E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_78_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400079E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_79_E4_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed400080E450g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED4000_80_E4_50G"
 	CreateInternalVnicDetailsVnicShapeMicroVmFixed0050E350g           CreateInternalVnicDetailsVnicShapeEnum = "Micro_VM_Fixed0050_E3_50G"
 	CreateInternalVnicDetailsVnicShapeMicroVmFixed0050E450g           CreateInternalVnicDetailsVnicShapeEnum = "Micro_VM_Fixed0050_E4_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0025E350g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0025_E3_50G"
@@ -801,6 +894,250 @@ const (
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4900E450g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4900_E4_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4950E450g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4950_E4_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed5000E450g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED5000_E4_50G"
+	CreateInternalVnicDetailsVnicShapeDynamicE550g                    CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_E5_50G"
+	CreateInternalVnicDetailsVnicShapeDynamicE5100g                   CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_E5_100G"
+	CreateInternalVnicDetailsVnicShapeEntirehostE550g                 CreateInternalVnicDetailsVnicShapeEnum = "EntireHost_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0040E550g                  CreateInternalVnicDetailsVnicShapeEnum = "Fixed0040_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0100E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0200E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0300E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0400E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0500E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0600E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0700E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0800E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed0900E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1000E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1100E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1200E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1300E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1400E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1500E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1600E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1700E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1800E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed1900E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED1900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2000E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2100E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2200E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2300E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2400E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2500E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2600E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2700E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2800E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed2900E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED2900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3000E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3100E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3200E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3300E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3400E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3500E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3600E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3700E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3800E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed3900E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED3900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeFixed4000E550g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED4000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0025E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0025_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0050E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0050_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0075E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0075_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0100E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0125E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0125_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0150E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0150_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0175E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0175_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0200E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0225E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0225_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0250E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0250_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0275E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0275_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0300E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0325E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0325_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0350E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0350_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0375E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0375_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0400E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0425E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0425_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0450E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0450_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0475E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0475_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0500E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0525E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0525_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0550E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0550_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0575E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0575_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0600E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0625E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0625_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0650E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0650_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0675E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0675_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0700E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0725E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0725_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0750E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0750_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0775E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0775_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0800E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0825E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0825_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0850E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0850_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0875E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0875_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0900E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0925E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0925_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0950E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0950_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0975E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0975_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1000E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1025E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1025_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1050E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1050_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1075E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1075_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1100E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1125E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1125_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1150E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1150_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1175E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1175_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1200E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1225E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1225_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1250E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1250_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1275E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1275_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1300E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1325E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1325_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1350E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1350_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1375E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1375_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1400E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1425E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1425_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1450E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1450_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1475E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1475_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1500E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1525E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1525_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1550E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1550_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1575E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1575_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1600E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1625E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1625_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1650E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1650_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1675E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1675_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1700E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1725E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1725_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1750E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1750_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1775E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1775_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1800E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1825E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1825_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1850E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1850_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1875E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1875_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1900E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1925E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1925_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1950E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1950_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1975E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED1975_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2000E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2025E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2025_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2050E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2050_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2075E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2075_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2100E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2125E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2125_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2150E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2150_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2175E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2175_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2200E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2225E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2225_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2250E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2250_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2275E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2275_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2300E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2325E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2325_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2350E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2350_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2375E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2375_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2400E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2425E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2425_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2450E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2450_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2475E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2475_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2500E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2525E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2525_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2550E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2550_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2575E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2575_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2600E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2625E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2625_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2650E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2650_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2675E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2675_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2700E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2725E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2725_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2750E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2750_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2775E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2775_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2800E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2825E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2825_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2850E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2850_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2875E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2875_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2900E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2925E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2925_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2950E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2950_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2975E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED2975_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3000E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3025E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3025_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3050E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3050_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3075E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3075_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3100E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3125E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3125_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3150E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3150_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3175E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3175_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3200E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3225E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3225_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3250E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3250_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3275E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3275_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3300E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3325E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3325_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3350E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3350_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3375E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3375_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3400E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3425E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3425_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3450E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3450_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3475E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3475_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3500E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3525E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3525_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3550E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3550_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3575E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3575_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3600E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3625E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3625_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3650E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3650_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3675E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3675_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3700E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3725E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3725_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3750E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3750_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3775E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3775_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3800E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3825E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3825_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3850E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3850_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3875E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3875_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3900E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3925E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3925_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3950E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3950_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3975E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED3975_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4000E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4000_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4025E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4025_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4050E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4050_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4075E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4075_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4100E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4100_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4125E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4125_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4150E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4150_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4175E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4175_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4200E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4200_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4225E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4225_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4250E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4250_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4275E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4275_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4300E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4300_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4325E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4325_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4350E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4350_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4375E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4375_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4400E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4400_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4425E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4425_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4450E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4450_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4475E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4475_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4500E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4500_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4525E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4525_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4550E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4550_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4575E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4575_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4600E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4600_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4625E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4625_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4650E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4650_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4675E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4675_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4700E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4700_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4725E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4725_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4750E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4750_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4775E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4775_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4800E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4800_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4825E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4825_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4850E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4850_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4875E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4875_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4900E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4900_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4925E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4925_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4950E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4950_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4975E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED4975_E5_50G"
+	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed5000E550g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED5000_E5_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0020A150g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0020_A1_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0040A150g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0040_A1_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0060A150g         CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_VM_FIXED0060_A1_50G"
@@ -1150,6 +1487,129 @@ const (
 	CreateInternalVnicDetailsVnicShapeFixed4000A150g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED4000_A1_50G"
 	CreateInternalVnicDetailsVnicShapeFixed5000TelesisA150g           CreateInternalVnicDetailsVnicShapeEnum = "FIXED5000_TELESIS_A1_50G"
 	CreateInternalVnicDetailsVnicShapeEntirehostA150g                 CreateInternalVnicDetailsVnicShapeEnum = "ENTIREHOST_A1_50G"
+	CreateInternalVnicDetailsVnicShapeDynamicX725g                    CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_X7_25G"
+	CreateInternalVnicDetailsVnicShapeFixed0040X725g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0040_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0100X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0100_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0200X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0200_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0300X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0300_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0400X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0400_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0500X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0500_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0600X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0600_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0700X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0700_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0800X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0800_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed0900X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED0900_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1000X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1000_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1100X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1100_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1200X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1200_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1300X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1300_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1400X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1400_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1500X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1500_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1600X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1600_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1700X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1700_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1800X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1800_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed1900X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED1900_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed2000X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED2000_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed2100X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED2100_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed2200X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED2200_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed2300X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED2300_X7_25G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed2400X725g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED2400_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0025X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0025_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0050X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0050_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0075X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0075_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0100X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0100_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0125X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0125_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0150X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0150_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0175X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0175_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0200X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0200_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0225X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0225_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0250X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0250_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0275X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0275_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0300X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0300_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0325X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0325_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0350X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0350_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0375X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0375_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0400X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0400_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0425X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0425_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0450X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0450_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0475X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0475_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0500X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0500_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0525X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0525_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0550X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0550_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0575X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0575_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0600X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0600_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0625X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0625_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0650X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0650_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0675X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0675_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0700X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0700_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0725X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0725_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0750X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0750_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0775X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0775_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0800X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0800_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0825X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0825_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0850X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0850_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0875X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0875_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0900X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0900_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0925X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0925_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0950X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0950_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0975X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0975_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1000X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1000_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1025X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1025_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1050X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1050_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1075X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1075_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1100X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1100_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1125X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1125_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1150X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1150_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1175X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1175_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1200X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1200_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1225X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1225_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1250X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1250_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1275X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1275_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1300X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1300_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1325X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1325_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1350X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1350_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1375X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1375_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1400X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1400_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1425X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1425_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1450X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1450_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1475X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1475_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1500X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1500_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1525X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1525_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1550X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1550_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1575X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1575_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1600X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1600_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1625X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1625_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1650X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1650_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1675X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1675_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1700X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1700_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1725X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1725_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1750X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1750_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1775X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1775_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1800X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1800_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1825X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1825_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1850X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1850_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1875X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1875_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1900X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1900_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1925X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1925_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1950X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1950_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1975X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED1975_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2000X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2000_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2025X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2025_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2050X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2050_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2075X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2075_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2100X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2100_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2125X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2125_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2150X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2150_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2175X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2175_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2200X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2200_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2225X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2225_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2250X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2250_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2275X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2275_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2300X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2300_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2325X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2325_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2350X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2350_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2375X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2375_X7_25G"
+	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2400X725g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED2400_X7_25G"
+	CreateInternalVnicDetailsVnicShapeEntirehostX725g                 CreateInternalVnicDetailsVnicShapeEnum = "ENTIREHOST_X7_25G"
 	CreateInternalVnicDetailsVnicShapeDynamicX950g                    CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_X9_50G"
 	CreateInternalVnicDetailsVnicShapeFixed0040X950g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0040_X9_50G"
 	CreateInternalVnicDetailsVnicShapeFixed0400X950g                  CreateInternalVnicDetailsVnicShapeEnum = "FIXED0400_X9_50G"
@@ -1202,6 +1662,82 @@ const (
 	CreateInternalVnicDetailsVnicShapeStandardVmFixed3800X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED3800_X9_50G"
 	CreateInternalVnicDetailsVnicShapeStandardVmFixed3900X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED3900_X9_50G"
 	CreateInternalVnicDetailsVnicShapeStandardVmFixed4000X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4000_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4100X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4100_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4200X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4200_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4300X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4300_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4400X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4400_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4500X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4500_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4600X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4600_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4700X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4700_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4800X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4800_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed4900X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED4900_X9_50G"
+	CreateInternalVnicDetailsVnicShapeStandardVmFixed5000X950g        CreateInternalVnicDetailsVnicShapeEnum = "STANDARD_VM_FIXED5000_X9_50G"
+	CreateInternalVnicDetailsVnicShapeA10GpuVmFixed2400X950g          CreateInternalVnicDetailsVnicShapeEnum = "A10_GPU_VM_FIXED2400_X9_50G"
+	CreateInternalVnicDetailsVnicShapeA10GpuVmFixed4800X950g          CreateInternalVnicDetailsVnicShapeEnum = "A10_GPU_VM_FIXED4800_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed01001X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0100_1_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed02002X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0200_2_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed03003X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0300_3_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed04004X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0400_4_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed05005X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0500_5_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed06006X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0600_6_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed07007X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0700_7_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed08008X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0800_8_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed09009X950g          CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED0900_9_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed100010X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1000_10_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed110011X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1100_11_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed120012X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1200_12_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed130013X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1300_13_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed140014X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1400_14_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed150015X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1500_15_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed160016X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1600_16_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed170017X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1700_17_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed180018X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1800_18_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed190019X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED1900_19_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed200020X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2000_20_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed210021X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2100_21_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed220022X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2200_22_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed230023X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2300_23_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed240024X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2400_24_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed250025X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2500_25_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed260026X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2600_26_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed270027X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2700_27_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed280028X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2800_28_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed290029X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED2900_29_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed300030X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3000_30_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed310031X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3100_31_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320032X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_32_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320033X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_33_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320034X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_34_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320035X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_35_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320036X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_36_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320037X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_37_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320038X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_38_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320039X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_39_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320040X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_40_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320041X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_41_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320042X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_42_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320043X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_43_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320044X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_44_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320045X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_45_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320046X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_46_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320047X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_47_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320048X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_48_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320049X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_49_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320050X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_50_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320051X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_51_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320052X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_52_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320053X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_53_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320054X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_54_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320055X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_55_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320056X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_56_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320057X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_57_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320058X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_58_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320059X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_59_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320060X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_60_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320061X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_61_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320062X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_62_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320063X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_63_X9_50G"
+	CreateInternalVnicDetailsVnicShapeVnumaVmFixed320064X950g         CreateInternalVnicDetailsVnicShapeEnum = "VNUMA_VM_FIXED3200_64_X9_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0025X950g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0025_X9_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0050X950g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0050_X9_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0075X950g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED0075_X9_50G"
@@ -1368,6 +1904,9 @@ const (
 	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed4950X950g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED4950_X9_50G"
 	CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed5000X950g CreateInternalVnicDetailsVnicShapeEnum = "SUBCORE_STANDARD_VM_FIXED5000_X9_50G"
 	CreateInternalVnicDetailsVnicShapeEntirehostX950g                 CreateInternalVnicDetailsVnicShapeEnum = "ENTIREHOST_X9_50G"
+	CreateInternalVnicDetailsVnicShapeDynamicX9100g                   CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_X9_100G"
+	CreateInternalVnicDetailsVnicShapeDynamicX1050g                   CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_X10_50G"
+	CreateInternalVnicDetailsVnicShapeDynamicX10100g                  CreateInternalVnicDetailsVnicShapeEnum = "DYNAMIC_X10_100G"
 )
 
 var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVnicDetailsVnicShapeEnum{
@@ -1410,9 +1949,13 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"ENTIREHOST_B1_25G":                    CreateInternalVnicDetailsVnicShapeEntirehostB125g,
 	"MICRO_VM_FIXED0048_E1_25G":            CreateInternalVnicDetailsVnicShapeMicroVmFixed0048E125g,
 	"MICRO_LB_FIXED0001_E1_25G":            CreateInternalVnicDetailsVnicShapeMicroLbFixed0001E125g,
+	"VNICAAS_FIXED0025":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0025,
 	"VNICAAS_FIXED0200":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0200,
 	"VNICAAS_FIXED0400":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0400,
+	"VNICAAS_FIXED0625":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0625,
 	"VNICAAS_FIXED0700":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0700,
+	"VNICAAS_FIXED1250":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed1250,
+	"VNICAAS_FWAAS_6G_250M":                CreateInternalVnicDetailsVnicShapeVnicaasFwaas6g250m,
 	"VNICAAS_NLB_APPROVED_10G":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10g,
 	"VNICAAS_NLB_APPROVED_25G":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved25g,
 	"VNICAAS_TELESIS_25G":                  CreateInternalVnicDetailsVnicShapeVnicaasTelesis25g,
@@ -1514,6 +2057,86 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"FIXED3900_E4_50G":                     CreateInternalVnicDetailsVnicShapeFixed3900E450g,
 	"FIXED4000_E4_50G":                     CreateInternalVnicDetailsVnicShapeFixed4000E450g,
 	"ENTIREHOST_E4_50G":                    CreateInternalVnicDetailsVnicShapeEntirehostE450g,
+	"VNUMA_VM_FIXED0100_1_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed01001E450g,
+	"VNUMA_VM_FIXED0200_2_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed02002E450g,
+	"VNUMA_VM_FIXED0300_3_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed03003E450g,
+	"VNUMA_VM_FIXED0400_4_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed04004E450g,
+	"VNUMA_VM_FIXED0500_5_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed05005E450g,
+	"VNUMA_VM_FIXED0600_6_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed06006E450g,
+	"VNUMA_VM_FIXED0700_7_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed07007E450g,
+	"VNUMA_VM_FIXED0800_8_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed08008E450g,
+	"VNUMA_VM_FIXED0900_9_E4_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed09009E450g,
+	"VNUMA_VM_FIXED1000_10_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed100010E450g,
+	"VNUMA_VM_FIXED1100_11_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed110011E450g,
+	"VNUMA_VM_FIXED1200_12_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed120012E450g,
+	"VNUMA_VM_FIXED1300_13_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed130013E450g,
+	"VNUMA_VM_FIXED1400_14_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed140014E450g,
+	"VNUMA_VM_FIXED1500_15_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed150015E450g,
+	"VNUMA_VM_FIXED1600_16_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed160016E450g,
+	"VNUMA_VM_FIXED1700_17_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed170017E450g,
+	"VNUMA_VM_FIXED1800_18_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed180018E450g,
+	"VNUMA_VM_FIXED1900_19_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed190019E450g,
+	"VNUMA_VM_FIXED2000_20_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed200020E450g,
+	"VNUMA_VM_FIXED2100_21_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed210021E450g,
+	"VNUMA_VM_FIXED2200_22_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed220022E450g,
+	"VNUMA_VM_FIXED2300_23_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed230023E450g,
+	"VNUMA_VM_FIXED2400_24_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed240024E450g,
+	"VNUMA_VM_FIXED2500_25_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed250025E450g,
+	"VNUMA_VM_FIXED2600_26_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed260026E450g,
+	"VNUMA_VM_FIXED2700_27_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed270027E450g,
+	"VNUMA_VM_FIXED2800_28_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed280028E450g,
+	"VNUMA_VM_FIXED2900_29_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed290029E450g,
+	"VNUMA_VM_FIXED3000_30_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed300030E450g,
+	"VNUMA_VM_FIXED3100_31_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed310031E450g,
+	"VNUMA_VM_FIXED3200_32_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320032E450g,
+	"VNUMA_VM_FIXED3300_33_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed330033E450g,
+	"VNUMA_VM_FIXED3400_34_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed340034E450g,
+	"VNUMA_VM_FIXED3500_35_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed350035E450g,
+	"VNUMA_VM_FIXED3600_36_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed360036E450g,
+	"VNUMA_VM_FIXED3700_37_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed370037E450g,
+	"VNUMA_VM_FIXED3800_38_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed380038E450g,
+	"VNUMA_VM_FIXED3900_39_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed390039E450g,
+	"VNUMA_VM_FIXED4000_40_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400040E450g,
+	"VNUMA_VM_FIXED4000_41_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400041E450g,
+	"VNUMA_VM_FIXED4000_42_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400042E450g,
+	"VNUMA_VM_FIXED4000_43_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400043E450g,
+	"VNUMA_VM_FIXED4000_44_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400044E450g,
+	"VNUMA_VM_FIXED4000_45_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400045E450g,
+	"VNUMA_VM_FIXED4000_46_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400046E450g,
+	"VNUMA_VM_FIXED4000_47_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400047E450g,
+	"VNUMA_VM_FIXED4000_48_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400048E450g,
+	"VNUMA_VM_FIXED4000_49_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400049E450g,
+	"VNUMA_VM_FIXED4000_50_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400050E450g,
+	"VNUMA_VM_FIXED4000_51_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400051E450g,
+	"VNUMA_VM_FIXED4000_52_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400052E450g,
+	"VNUMA_VM_FIXED4000_53_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400053E450g,
+	"VNUMA_VM_FIXED4000_54_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400054E450g,
+	"VNUMA_VM_FIXED4000_55_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400055E450g,
+	"VNUMA_VM_FIXED4000_56_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400056E450g,
+	"VNUMA_VM_FIXED4000_57_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400057E450g,
+	"VNUMA_VM_FIXED4000_58_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400058E450g,
+	"VNUMA_VM_FIXED4000_59_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400059E450g,
+	"VNUMA_VM_FIXED4000_60_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400060E450g,
+	"VNUMA_VM_FIXED4000_61_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400061E450g,
+	"VNUMA_VM_FIXED4000_62_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400062E450g,
+	"VNUMA_VM_FIXED4000_63_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400063E450g,
+	"VNUMA_VM_FIXED4000_64_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400064E450g,
+	"VNUMA_VM_FIXED4000_65_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400065E450g,
+	"VNUMA_VM_FIXED4000_66_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400066E450g,
+	"VNUMA_VM_FIXED4000_67_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400067E450g,
+	"VNUMA_VM_FIXED4000_68_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400068E450g,
+	"VNUMA_VM_FIXED4000_69_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400069E450g,
+	"VNUMA_VM_FIXED4000_70_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400070E450g,
+	"VNUMA_VM_FIXED4000_71_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400071E450g,
+	"VNUMA_VM_FIXED4000_72_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400072E450g,
+	"VNUMA_VM_FIXED4000_73_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400073E450g,
+	"VNUMA_VM_FIXED4000_74_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400074E450g,
+	"VNUMA_VM_FIXED4000_75_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400075E450g,
+	"VNUMA_VM_FIXED4000_76_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400076E450g,
+	"VNUMA_VM_FIXED4000_77_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400077E450g,
+	"VNUMA_VM_FIXED4000_78_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400078E450g,
+	"VNUMA_VM_FIXED4000_79_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400079E450g,
+	"VNUMA_VM_FIXED4000_80_E4_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400080E450g,
 	"Micro_VM_Fixed0050_E3_50G":            CreateInternalVnicDetailsVnicShapeMicroVmFixed0050E350g,
 	"Micro_VM_Fixed0050_E4_50G":            CreateInternalVnicDetailsVnicShapeMicroVmFixed0050E450g,
 	"SUBCORE_VM_FIXED0025_E3_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0025E350g,
@@ -1846,6 +2469,250 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"SUBCORE_VM_FIXED4900_E4_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4900E450g,
 	"SUBCORE_VM_FIXED4950_E4_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4950E450g,
 	"SUBCORE_VM_FIXED5000_E4_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed5000E450g,
+	"DYNAMIC_E5_50G":                       CreateInternalVnicDetailsVnicShapeDynamicE550g,
+	"DYNAMIC_E5_100G":                      CreateInternalVnicDetailsVnicShapeDynamicE5100g,
+	"EntireHost_E5_50G":                    CreateInternalVnicDetailsVnicShapeEntirehostE550g,
+	"Fixed0040_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0040E550g,
+	"FIXED0100_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0100E550g,
+	"FIXED0200_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0200E550g,
+	"FIXED0300_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0300E550g,
+	"FIXED0400_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0400E550g,
+	"FIXED0500_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0500E550g,
+	"FIXED0600_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0600E550g,
+	"FIXED0700_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0700E550g,
+	"FIXED0800_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0800E550g,
+	"FIXED0900_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed0900E550g,
+	"FIXED1000_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1000E550g,
+	"FIXED1100_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1100E550g,
+	"FIXED1200_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1200E550g,
+	"FIXED1300_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1300E550g,
+	"FIXED1400_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1400E550g,
+	"FIXED1500_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1500E550g,
+	"FIXED1600_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1600E550g,
+	"FIXED1700_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1700E550g,
+	"FIXED1800_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1800E550g,
+	"FIXED1900_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed1900E550g,
+	"FIXED2000_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2000E550g,
+	"FIXED2100_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2100E550g,
+	"FIXED2200_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2200E550g,
+	"FIXED2300_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2300E550g,
+	"FIXED2400_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2400E550g,
+	"FIXED2500_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2500E550g,
+	"FIXED2600_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2600E550g,
+	"FIXED2700_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2700E550g,
+	"FIXED2800_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2800E550g,
+	"FIXED2900_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed2900E550g,
+	"FIXED3000_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3000E550g,
+	"FIXED3100_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3100E550g,
+	"FIXED3200_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3200E550g,
+	"FIXED3300_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3300E550g,
+	"FIXED3400_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3400E550g,
+	"FIXED3500_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3500E550g,
+	"FIXED3600_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3600E550g,
+	"FIXED3700_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3700E550g,
+	"FIXED3800_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3800E550g,
+	"FIXED3900_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed3900E550g,
+	"FIXED4000_E5_50G":                     CreateInternalVnicDetailsVnicShapeFixed4000E550g,
+	"SUBCORE_VM_FIXED0025_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0025E550g,
+	"SUBCORE_VM_FIXED0050_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0050E550g,
+	"SUBCORE_VM_FIXED0075_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0075E550g,
+	"SUBCORE_VM_FIXED0100_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0100E550g,
+	"SUBCORE_VM_FIXED0125_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0125E550g,
+	"SUBCORE_VM_FIXED0150_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0150E550g,
+	"SUBCORE_VM_FIXED0175_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0175E550g,
+	"SUBCORE_VM_FIXED0200_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0200E550g,
+	"SUBCORE_VM_FIXED0225_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0225E550g,
+	"SUBCORE_VM_FIXED0250_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0250E550g,
+	"SUBCORE_VM_FIXED0275_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0275E550g,
+	"SUBCORE_VM_FIXED0300_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0300E550g,
+	"SUBCORE_VM_FIXED0325_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0325E550g,
+	"SUBCORE_VM_FIXED0350_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0350E550g,
+	"SUBCORE_VM_FIXED0375_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0375E550g,
+	"SUBCORE_VM_FIXED0400_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0400E550g,
+	"SUBCORE_VM_FIXED0425_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0425E550g,
+	"SUBCORE_VM_FIXED0450_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0450E550g,
+	"SUBCORE_VM_FIXED0475_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0475E550g,
+	"SUBCORE_VM_FIXED0500_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0500E550g,
+	"SUBCORE_VM_FIXED0525_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0525E550g,
+	"SUBCORE_VM_FIXED0550_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0550E550g,
+	"SUBCORE_VM_FIXED0575_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0575E550g,
+	"SUBCORE_VM_FIXED0600_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0600E550g,
+	"SUBCORE_VM_FIXED0625_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0625E550g,
+	"SUBCORE_VM_FIXED0650_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0650E550g,
+	"SUBCORE_VM_FIXED0675_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0675E550g,
+	"SUBCORE_VM_FIXED0700_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0700E550g,
+	"SUBCORE_VM_FIXED0725_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0725E550g,
+	"SUBCORE_VM_FIXED0750_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0750E550g,
+	"SUBCORE_VM_FIXED0775_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0775E550g,
+	"SUBCORE_VM_FIXED0800_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0800E550g,
+	"SUBCORE_VM_FIXED0825_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0825E550g,
+	"SUBCORE_VM_FIXED0850_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0850E550g,
+	"SUBCORE_VM_FIXED0875_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0875E550g,
+	"SUBCORE_VM_FIXED0900_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0900E550g,
+	"SUBCORE_VM_FIXED0925_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0925E550g,
+	"SUBCORE_VM_FIXED0950_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0950E550g,
+	"SUBCORE_VM_FIXED0975_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0975E550g,
+	"SUBCORE_VM_FIXED1000_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1000E550g,
+	"SUBCORE_VM_FIXED1025_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1025E550g,
+	"SUBCORE_VM_FIXED1050_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1050E550g,
+	"SUBCORE_VM_FIXED1075_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1075E550g,
+	"SUBCORE_VM_FIXED1100_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1100E550g,
+	"SUBCORE_VM_FIXED1125_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1125E550g,
+	"SUBCORE_VM_FIXED1150_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1150E550g,
+	"SUBCORE_VM_FIXED1175_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1175E550g,
+	"SUBCORE_VM_FIXED1200_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1200E550g,
+	"SUBCORE_VM_FIXED1225_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1225E550g,
+	"SUBCORE_VM_FIXED1250_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1250E550g,
+	"SUBCORE_VM_FIXED1275_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1275E550g,
+	"SUBCORE_VM_FIXED1300_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1300E550g,
+	"SUBCORE_VM_FIXED1325_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1325E550g,
+	"SUBCORE_VM_FIXED1350_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1350E550g,
+	"SUBCORE_VM_FIXED1375_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1375E550g,
+	"SUBCORE_VM_FIXED1400_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1400E550g,
+	"SUBCORE_VM_FIXED1425_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1425E550g,
+	"SUBCORE_VM_FIXED1450_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1450E550g,
+	"SUBCORE_VM_FIXED1475_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1475E550g,
+	"SUBCORE_VM_FIXED1500_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1500E550g,
+	"SUBCORE_VM_FIXED1525_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1525E550g,
+	"SUBCORE_VM_FIXED1550_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1550E550g,
+	"SUBCORE_VM_FIXED1575_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1575E550g,
+	"SUBCORE_VM_FIXED1600_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1600E550g,
+	"SUBCORE_VM_FIXED1625_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1625E550g,
+	"SUBCORE_VM_FIXED1650_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1650E550g,
+	"SUBCORE_VM_FIXED1675_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1675E550g,
+	"SUBCORE_VM_FIXED1700_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1700E550g,
+	"SUBCORE_VM_FIXED1725_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1725E550g,
+	"SUBCORE_VM_FIXED1750_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1750E550g,
+	"SUBCORE_VM_FIXED1775_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1775E550g,
+	"SUBCORE_VM_FIXED1800_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1800E550g,
+	"SUBCORE_VM_FIXED1825_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1825E550g,
+	"SUBCORE_VM_FIXED1850_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1850E550g,
+	"SUBCORE_VM_FIXED1875_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1875E550g,
+	"SUBCORE_VM_FIXED1900_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1900E550g,
+	"SUBCORE_VM_FIXED1925_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1925E550g,
+	"SUBCORE_VM_FIXED1950_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1950E550g,
+	"SUBCORE_VM_FIXED1975_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1975E550g,
+	"SUBCORE_VM_FIXED2000_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2000E550g,
+	"SUBCORE_VM_FIXED2025_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2025E550g,
+	"SUBCORE_VM_FIXED2050_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2050E550g,
+	"SUBCORE_VM_FIXED2075_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2075E550g,
+	"SUBCORE_VM_FIXED2100_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2100E550g,
+	"SUBCORE_VM_FIXED2125_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2125E550g,
+	"SUBCORE_VM_FIXED2150_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2150E550g,
+	"SUBCORE_VM_FIXED2175_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2175E550g,
+	"SUBCORE_VM_FIXED2200_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2200E550g,
+	"SUBCORE_VM_FIXED2225_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2225E550g,
+	"SUBCORE_VM_FIXED2250_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2250E550g,
+	"SUBCORE_VM_FIXED2275_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2275E550g,
+	"SUBCORE_VM_FIXED2300_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2300E550g,
+	"SUBCORE_VM_FIXED2325_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2325E550g,
+	"SUBCORE_VM_FIXED2350_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2350E550g,
+	"SUBCORE_VM_FIXED2375_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2375E550g,
+	"SUBCORE_VM_FIXED2400_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2400E550g,
+	"SUBCORE_VM_FIXED2425_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2425E550g,
+	"SUBCORE_VM_FIXED2450_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2450E550g,
+	"SUBCORE_VM_FIXED2475_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2475E550g,
+	"SUBCORE_VM_FIXED2500_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2500E550g,
+	"SUBCORE_VM_FIXED2525_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2525E550g,
+	"SUBCORE_VM_FIXED2550_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2550E550g,
+	"SUBCORE_VM_FIXED2575_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2575E550g,
+	"SUBCORE_VM_FIXED2600_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2600E550g,
+	"SUBCORE_VM_FIXED2625_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2625E550g,
+	"SUBCORE_VM_FIXED2650_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2650E550g,
+	"SUBCORE_VM_FIXED2675_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2675E550g,
+	"SUBCORE_VM_FIXED2700_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2700E550g,
+	"SUBCORE_VM_FIXED2725_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2725E550g,
+	"SUBCORE_VM_FIXED2750_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2750E550g,
+	"SUBCORE_VM_FIXED2775_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2775E550g,
+	"SUBCORE_VM_FIXED2800_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2800E550g,
+	"SUBCORE_VM_FIXED2825_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2825E550g,
+	"SUBCORE_VM_FIXED2850_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2850E550g,
+	"SUBCORE_VM_FIXED2875_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2875E550g,
+	"SUBCORE_VM_FIXED2900_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2900E550g,
+	"SUBCORE_VM_FIXED2925_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2925E550g,
+	"SUBCORE_VM_FIXED2950_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2950E550g,
+	"SUBCORE_VM_FIXED2975_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2975E550g,
+	"SUBCORE_VM_FIXED3000_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3000E550g,
+	"SUBCORE_VM_FIXED3025_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3025E550g,
+	"SUBCORE_VM_FIXED3050_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3050E550g,
+	"SUBCORE_VM_FIXED3075_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3075E550g,
+	"SUBCORE_VM_FIXED3100_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3100E550g,
+	"SUBCORE_VM_FIXED3125_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3125E550g,
+	"SUBCORE_VM_FIXED3150_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3150E550g,
+	"SUBCORE_VM_FIXED3175_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3175E550g,
+	"SUBCORE_VM_FIXED3200_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3200E550g,
+	"SUBCORE_VM_FIXED3225_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3225E550g,
+	"SUBCORE_VM_FIXED3250_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3250E550g,
+	"SUBCORE_VM_FIXED3275_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3275E550g,
+	"SUBCORE_VM_FIXED3300_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3300E550g,
+	"SUBCORE_VM_FIXED3325_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3325E550g,
+	"SUBCORE_VM_FIXED3350_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3350E550g,
+	"SUBCORE_VM_FIXED3375_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3375E550g,
+	"SUBCORE_VM_FIXED3400_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3400E550g,
+	"SUBCORE_VM_FIXED3425_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3425E550g,
+	"SUBCORE_VM_FIXED3450_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3450E550g,
+	"SUBCORE_VM_FIXED3475_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3475E550g,
+	"SUBCORE_VM_FIXED3500_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3500E550g,
+	"SUBCORE_VM_FIXED3525_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3525E550g,
+	"SUBCORE_VM_FIXED3550_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3550E550g,
+	"SUBCORE_VM_FIXED3575_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3575E550g,
+	"SUBCORE_VM_FIXED3600_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3600E550g,
+	"SUBCORE_VM_FIXED3625_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3625E550g,
+	"SUBCORE_VM_FIXED3650_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3650E550g,
+	"SUBCORE_VM_FIXED3675_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3675E550g,
+	"SUBCORE_VM_FIXED3700_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3700E550g,
+	"SUBCORE_VM_FIXED3725_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3725E550g,
+	"SUBCORE_VM_FIXED3750_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3750E550g,
+	"SUBCORE_VM_FIXED3775_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3775E550g,
+	"SUBCORE_VM_FIXED3800_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3800E550g,
+	"SUBCORE_VM_FIXED3825_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3825E550g,
+	"SUBCORE_VM_FIXED3850_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3850E550g,
+	"SUBCORE_VM_FIXED3875_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3875E550g,
+	"SUBCORE_VM_FIXED3900_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3900E550g,
+	"SUBCORE_VM_FIXED3925_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3925E550g,
+	"SUBCORE_VM_FIXED3950_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3950E550g,
+	"SUBCORE_VM_FIXED3975_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3975E550g,
+	"SUBCORE_VM_FIXED4000_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4000E550g,
+	"SUBCORE_VM_FIXED4025_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4025E550g,
+	"SUBCORE_VM_FIXED4050_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4050E550g,
+	"SUBCORE_VM_FIXED4075_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4075E550g,
+	"SUBCORE_VM_FIXED4100_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4100E550g,
+	"SUBCORE_VM_FIXED4125_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4125E550g,
+	"SUBCORE_VM_FIXED4150_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4150E550g,
+	"SUBCORE_VM_FIXED4175_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4175E550g,
+	"SUBCORE_VM_FIXED4200_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4200E550g,
+	"SUBCORE_VM_FIXED4225_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4225E550g,
+	"SUBCORE_VM_FIXED4250_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4250E550g,
+	"SUBCORE_VM_FIXED4275_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4275E550g,
+	"SUBCORE_VM_FIXED4300_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4300E550g,
+	"SUBCORE_VM_FIXED4325_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4325E550g,
+	"SUBCORE_VM_FIXED4350_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4350E550g,
+	"SUBCORE_VM_FIXED4375_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4375E550g,
+	"SUBCORE_VM_FIXED4400_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4400E550g,
+	"SUBCORE_VM_FIXED4425_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4425E550g,
+	"SUBCORE_VM_FIXED4450_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4450E550g,
+	"SUBCORE_VM_FIXED4475_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4475E550g,
+	"SUBCORE_VM_FIXED4500_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4500E550g,
+	"SUBCORE_VM_FIXED4525_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4525E550g,
+	"SUBCORE_VM_FIXED4550_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4550E550g,
+	"SUBCORE_VM_FIXED4575_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4575E550g,
+	"SUBCORE_VM_FIXED4600_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4600E550g,
+	"SUBCORE_VM_FIXED4625_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4625E550g,
+	"SUBCORE_VM_FIXED4650_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4650E550g,
+	"SUBCORE_VM_FIXED4675_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4675E550g,
+	"SUBCORE_VM_FIXED4700_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4700E550g,
+	"SUBCORE_VM_FIXED4725_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4725E550g,
+	"SUBCORE_VM_FIXED4750_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4750E550g,
+	"SUBCORE_VM_FIXED4775_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4775E550g,
+	"SUBCORE_VM_FIXED4800_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4800E550g,
+	"SUBCORE_VM_FIXED4825_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4825E550g,
+	"SUBCORE_VM_FIXED4850_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4850E550g,
+	"SUBCORE_VM_FIXED4875_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4875E550g,
+	"SUBCORE_VM_FIXED4900_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4900E550g,
+	"SUBCORE_VM_FIXED4925_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4925E550g,
+	"SUBCORE_VM_FIXED4950_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4950E550g,
+	"SUBCORE_VM_FIXED4975_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4975E550g,
+	"SUBCORE_VM_FIXED5000_E5_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed5000E550g,
 	"SUBCORE_VM_FIXED0020_A1_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0020A150g,
 	"SUBCORE_VM_FIXED0040_A1_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0040A150g,
 	"SUBCORE_VM_FIXED0060_A1_50G":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0060A150g,
@@ -2195,6 +3062,129 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"FIXED4000_A1_50G":                     CreateInternalVnicDetailsVnicShapeFixed4000A150g,
 	"FIXED5000_TELESIS_A1_50G":             CreateInternalVnicDetailsVnicShapeFixed5000TelesisA150g,
 	"ENTIREHOST_A1_50G":                    CreateInternalVnicDetailsVnicShapeEntirehostA150g,
+	"DYNAMIC_X7_25G":                       CreateInternalVnicDetailsVnicShapeDynamicX725g,
+	"FIXED0040_X7_25G":                     CreateInternalVnicDetailsVnicShapeFixed0040X725g,
+	"STANDARD_VM_FIXED0100_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0100X725g,
+	"STANDARD_VM_FIXED0200_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0200X725g,
+	"STANDARD_VM_FIXED0300_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0300X725g,
+	"STANDARD_VM_FIXED0400_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0400X725g,
+	"STANDARD_VM_FIXED0500_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0500X725g,
+	"STANDARD_VM_FIXED0600_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0600X725g,
+	"STANDARD_VM_FIXED0700_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0700X725g,
+	"STANDARD_VM_FIXED0800_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0800X725g,
+	"STANDARD_VM_FIXED0900_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0900X725g,
+	"STANDARD_VM_FIXED1000_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1000X725g,
+	"STANDARD_VM_FIXED1100_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1100X725g,
+	"STANDARD_VM_FIXED1200_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1200X725g,
+	"STANDARD_VM_FIXED1300_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1300X725g,
+	"STANDARD_VM_FIXED1400_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1400X725g,
+	"STANDARD_VM_FIXED1500_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1500X725g,
+	"STANDARD_VM_FIXED1600_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1600X725g,
+	"STANDARD_VM_FIXED1700_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1700X725g,
+	"STANDARD_VM_FIXED1800_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1800X725g,
+	"STANDARD_VM_FIXED1900_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1900X725g,
+	"STANDARD_VM_FIXED2000_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2000X725g,
+	"STANDARD_VM_FIXED2100_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2100X725g,
+	"STANDARD_VM_FIXED2200_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2200X725g,
+	"STANDARD_VM_FIXED2300_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2300X725g,
+	"STANDARD_VM_FIXED2400_X7_25G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2400X725g,
+	"SUBCORE_STANDARD_VM_FIXED0025_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0025X725g,
+	"SUBCORE_STANDARD_VM_FIXED0050_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0050X725g,
+	"SUBCORE_STANDARD_VM_FIXED0075_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0075X725g,
+	"SUBCORE_STANDARD_VM_FIXED0100_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0100X725g,
+	"SUBCORE_STANDARD_VM_FIXED0125_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0125X725g,
+	"SUBCORE_STANDARD_VM_FIXED0150_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0150X725g,
+	"SUBCORE_STANDARD_VM_FIXED0175_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0175X725g,
+	"SUBCORE_STANDARD_VM_FIXED0200_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0200X725g,
+	"SUBCORE_STANDARD_VM_FIXED0225_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0225X725g,
+	"SUBCORE_STANDARD_VM_FIXED0250_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0250X725g,
+	"SUBCORE_STANDARD_VM_FIXED0275_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0275X725g,
+	"SUBCORE_STANDARD_VM_FIXED0300_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0300X725g,
+	"SUBCORE_STANDARD_VM_FIXED0325_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0325X725g,
+	"SUBCORE_STANDARD_VM_FIXED0350_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0350X725g,
+	"SUBCORE_STANDARD_VM_FIXED0375_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0375X725g,
+	"SUBCORE_STANDARD_VM_FIXED0400_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0400X725g,
+	"SUBCORE_STANDARD_VM_FIXED0425_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0425X725g,
+	"SUBCORE_STANDARD_VM_FIXED0450_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0450X725g,
+	"SUBCORE_STANDARD_VM_FIXED0475_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0475X725g,
+	"SUBCORE_STANDARD_VM_FIXED0500_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0500X725g,
+	"SUBCORE_STANDARD_VM_FIXED0525_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0525X725g,
+	"SUBCORE_STANDARD_VM_FIXED0550_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0550X725g,
+	"SUBCORE_STANDARD_VM_FIXED0575_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0575X725g,
+	"SUBCORE_STANDARD_VM_FIXED0600_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0600X725g,
+	"SUBCORE_STANDARD_VM_FIXED0625_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0625X725g,
+	"SUBCORE_STANDARD_VM_FIXED0650_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0650X725g,
+	"SUBCORE_STANDARD_VM_FIXED0675_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0675X725g,
+	"SUBCORE_STANDARD_VM_FIXED0700_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0700X725g,
+	"SUBCORE_STANDARD_VM_FIXED0725_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0725X725g,
+	"SUBCORE_STANDARD_VM_FIXED0750_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0750X725g,
+	"SUBCORE_STANDARD_VM_FIXED0775_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0775X725g,
+	"SUBCORE_STANDARD_VM_FIXED0800_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0800X725g,
+	"SUBCORE_STANDARD_VM_FIXED0825_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0825X725g,
+	"SUBCORE_STANDARD_VM_FIXED0850_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0850X725g,
+	"SUBCORE_STANDARD_VM_FIXED0875_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0875X725g,
+	"SUBCORE_STANDARD_VM_FIXED0900_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0900X725g,
+	"SUBCORE_STANDARD_VM_FIXED0925_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0925X725g,
+	"SUBCORE_STANDARD_VM_FIXED0950_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0950X725g,
+	"SUBCORE_STANDARD_VM_FIXED0975_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0975X725g,
+	"SUBCORE_STANDARD_VM_FIXED1000_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1000X725g,
+	"SUBCORE_STANDARD_VM_FIXED1025_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1025X725g,
+	"SUBCORE_STANDARD_VM_FIXED1050_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1050X725g,
+	"SUBCORE_STANDARD_VM_FIXED1075_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1075X725g,
+	"SUBCORE_STANDARD_VM_FIXED1100_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1100X725g,
+	"SUBCORE_STANDARD_VM_FIXED1125_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1125X725g,
+	"SUBCORE_STANDARD_VM_FIXED1150_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1150X725g,
+	"SUBCORE_STANDARD_VM_FIXED1175_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1175X725g,
+	"SUBCORE_STANDARD_VM_FIXED1200_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1200X725g,
+	"SUBCORE_STANDARD_VM_FIXED1225_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1225X725g,
+	"SUBCORE_STANDARD_VM_FIXED1250_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1250X725g,
+	"SUBCORE_STANDARD_VM_FIXED1275_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1275X725g,
+	"SUBCORE_STANDARD_VM_FIXED1300_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1300X725g,
+	"SUBCORE_STANDARD_VM_FIXED1325_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1325X725g,
+	"SUBCORE_STANDARD_VM_FIXED1350_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1350X725g,
+	"SUBCORE_STANDARD_VM_FIXED1375_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1375X725g,
+	"SUBCORE_STANDARD_VM_FIXED1400_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1400X725g,
+	"SUBCORE_STANDARD_VM_FIXED1425_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1425X725g,
+	"SUBCORE_STANDARD_VM_FIXED1450_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1450X725g,
+	"SUBCORE_STANDARD_VM_FIXED1475_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1475X725g,
+	"SUBCORE_STANDARD_VM_FIXED1500_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1500X725g,
+	"SUBCORE_STANDARD_VM_FIXED1525_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1525X725g,
+	"SUBCORE_STANDARD_VM_FIXED1550_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1550X725g,
+	"SUBCORE_STANDARD_VM_FIXED1575_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1575X725g,
+	"SUBCORE_STANDARD_VM_FIXED1600_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1600X725g,
+	"SUBCORE_STANDARD_VM_FIXED1625_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1625X725g,
+	"SUBCORE_STANDARD_VM_FIXED1650_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1650X725g,
+	"SUBCORE_STANDARD_VM_FIXED1675_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1675X725g,
+	"SUBCORE_STANDARD_VM_FIXED1700_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1700X725g,
+	"SUBCORE_STANDARD_VM_FIXED1725_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1725X725g,
+	"SUBCORE_STANDARD_VM_FIXED1750_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1750X725g,
+	"SUBCORE_STANDARD_VM_FIXED1775_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1775X725g,
+	"SUBCORE_STANDARD_VM_FIXED1800_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1800X725g,
+	"SUBCORE_STANDARD_VM_FIXED1825_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1825X725g,
+	"SUBCORE_STANDARD_VM_FIXED1850_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1850X725g,
+	"SUBCORE_STANDARD_VM_FIXED1875_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1875X725g,
+	"SUBCORE_STANDARD_VM_FIXED1900_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1900X725g,
+	"SUBCORE_STANDARD_VM_FIXED1925_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1925X725g,
+	"SUBCORE_STANDARD_VM_FIXED1950_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1950X725g,
+	"SUBCORE_STANDARD_VM_FIXED1975_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1975X725g,
+	"SUBCORE_STANDARD_VM_FIXED2000_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2000X725g,
+	"SUBCORE_STANDARD_VM_FIXED2025_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2025X725g,
+	"SUBCORE_STANDARD_VM_FIXED2050_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2050X725g,
+	"SUBCORE_STANDARD_VM_FIXED2075_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2075X725g,
+	"SUBCORE_STANDARD_VM_FIXED2100_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2100X725g,
+	"SUBCORE_STANDARD_VM_FIXED2125_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2125X725g,
+	"SUBCORE_STANDARD_VM_FIXED2150_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2150X725g,
+	"SUBCORE_STANDARD_VM_FIXED2175_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2175X725g,
+	"SUBCORE_STANDARD_VM_FIXED2200_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2200X725g,
+	"SUBCORE_STANDARD_VM_FIXED2225_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2225X725g,
+	"SUBCORE_STANDARD_VM_FIXED2250_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2250X725g,
+	"SUBCORE_STANDARD_VM_FIXED2275_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2275X725g,
+	"SUBCORE_STANDARD_VM_FIXED2300_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2300X725g,
+	"SUBCORE_STANDARD_VM_FIXED2325_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2325X725g,
+	"SUBCORE_STANDARD_VM_FIXED2350_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2350X725g,
+	"SUBCORE_STANDARD_VM_FIXED2375_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2375X725g,
+	"SUBCORE_STANDARD_VM_FIXED2400_X7_25G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2400X725g,
+	"ENTIREHOST_X7_25G":                    CreateInternalVnicDetailsVnicShapeEntirehostX725g,
 	"DYNAMIC_X9_50G":                       CreateInternalVnicDetailsVnicShapeDynamicX950g,
 	"FIXED0040_X9_50G":                     CreateInternalVnicDetailsVnicShapeFixed0040X950g,
 	"FIXED0400_X9_50G":                     CreateInternalVnicDetailsVnicShapeFixed0400X950g,
@@ -2247,6 +3237,82 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"STANDARD_VM_FIXED3800_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed3800X950g,
 	"STANDARD_VM_FIXED3900_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed3900X950g,
 	"STANDARD_VM_FIXED4000_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4000X950g,
+	"STANDARD_VM_FIXED4100_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4100X950g,
+	"STANDARD_VM_FIXED4200_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4200X950g,
+	"STANDARD_VM_FIXED4300_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4300X950g,
+	"STANDARD_VM_FIXED4400_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4400X950g,
+	"STANDARD_VM_FIXED4500_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4500X950g,
+	"STANDARD_VM_FIXED4600_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4600X950g,
+	"STANDARD_VM_FIXED4700_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4700X950g,
+	"STANDARD_VM_FIXED4800_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4800X950g,
+	"STANDARD_VM_FIXED4900_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4900X950g,
+	"STANDARD_VM_FIXED5000_X9_50G":         CreateInternalVnicDetailsVnicShapeStandardVmFixed5000X950g,
+	"A10_GPU_VM_FIXED2400_X9_50G":          CreateInternalVnicDetailsVnicShapeA10GpuVmFixed2400X950g,
+	"A10_GPU_VM_FIXED4800_X9_50G":          CreateInternalVnicDetailsVnicShapeA10GpuVmFixed4800X950g,
+	"VNUMA_VM_FIXED0100_1_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed01001X950g,
+	"VNUMA_VM_FIXED0200_2_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed02002X950g,
+	"VNUMA_VM_FIXED0300_3_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed03003X950g,
+	"VNUMA_VM_FIXED0400_4_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed04004X950g,
+	"VNUMA_VM_FIXED0500_5_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed05005X950g,
+	"VNUMA_VM_FIXED0600_6_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed06006X950g,
+	"VNUMA_VM_FIXED0700_7_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed07007X950g,
+	"VNUMA_VM_FIXED0800_8_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed08008X950g,
+	"VNUMA_VM_FIXED0900_9_X9_50G":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed09009X950g,
+	"VNUMA_VM_FIXED1000_10_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed100010X950g,
+	"VNUMA_VM_FIXED1100_11_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed110011X950g,
+	"VNUMA_VM_FIXED1200_12_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed120012X950g,
+	"VNUMA_VM_FIXED1300_13_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed130013X950g,
+	"VNUMA_VM_FIXED1400_14_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed140014X950g,
+	"VNUMA_VM_FIXED1500_15_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed150015X950g,
+	"VNUMA_VM_FIXED1600_16_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed160016X950g,
+	"VNUMA_VM_FIXED1700_17_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed170017X950g,
+	"VNUMA_VM_FIXED1800_18_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed180018X950g,
+	"VNUMA_VM_FIXED1900_19_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed190019X950g,
+	"VNUMA_VM_FIXED2000_20_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed200020X950g,
+	"VNUMA_VM_FIXED2100_21_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed210021X950g,
+	"VNUMA_VM_FIXED2200_22_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed220022X950g,
+	"VNUMA_VM_FIXED2300_23_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed230023X950g,
+	"VNUMA_VM_FIXED2400_24_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed240024X950g,
+	"VNUMA_VM_FIXED2500_25_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed250025X950g,
+	"VNUMA_VM_FIXED2600_26_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed260026X950g,
+	"VNUMA_VM_FIXED2700_27_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed270027X950g,
+	"VNUMA_VM_FIXED2800_28_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed280028X950g,
+	"VNUMA_VM_FIXED2900_29_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed290029X950g,
+	"VNUMA_VM_FIXED3000_30_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed300030X950g,
+	"VNUMA_VM_FIXED3100_31_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed310031X950g,
+	"VNUMA_VM_FIXED3200_32_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320032X950g,
+	"VNUMA_VM_FIXED3200_33_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320033X950g,
+	"VNUMA_VM_FIXED3200_34_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320034X950g,
+	"VNUMA_VM_FIXED3200_35_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320035X950g,
+	"VNUMA_VM_FIXED3200_36_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320036X950g,
+	"VNUMA_VM_FIXED3200_37_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320037X950g,
+	"VNUMA_VM_FIXED3200_38_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320038X950g,
+	"VNUMA_VM_FIXED3200_39_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320039X950g,
+	"VNUMA_VM_FIXED3200_40_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320040X950g,
+	"VNUMA_VM_FIXED3200_41_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320041X950g,
+	"VNUMA_VM_FIXED3200_42_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320042X950g,
+	"VNUMA_VM_FIXED3200_43_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320043X950g,
+	"VNUMA_VM_FIXED3200_44_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320044X950g,
+	"VNUMA_VM_FIXED3200_45_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320045X950g,
+	"VNUMA_VM_FIXED3200_46_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320046X950g,
+	"VNUMA_VM_FIXED3200_47_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320047X950g,
+	"VNUMA_VM_FIXED3200_48_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320048X950g,
+	"VNUMA_VM_FIXED3200_49_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320049X950g,
+	"VNUMA_VM_FIXED3200_50_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320050X950g,
+	"VNUMA_VM_FIXED3200_51_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320051X950g,
+	"VNUMA_VM_FIXED3200_52_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320052X950g,
+	"VNUMA_VM_FIXED3200_53_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320053X950g,
+	"VNUMA_VM_FIXED3200_54_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320054X950g,
+	"VNUMA_VM_FIXED3200_55_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320055X950g,
+	"VNUMA_VM_FIXED3200_56_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320056X950g,
+	"VNUMA_VM_FIXED3200_57_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320057X950g,
+	"VNUMA_VM_FIXED3200_58_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320058X950g,
+	"VNUMA_VM_FIXED3200_59_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320059X950g,
+	"VNUMA_VM_FIXED3200_60_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320060X950g,
+	"VNUMA_VM_FIXED3200_61_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320061X950g,
+	"VNUMA_VM_FIXED3200_62_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320062X950g,
+	"VNUMA_VM_FIXED3200_63_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320063X950g,
+	"VNUMA_VM_FIXED3200_64_X9_50G":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320064X950g,
 	"SUBCORE_STANDARD_VM_FIXED0025_X9_50G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0025X950g,
 	"SUBCORE_STANDARD_VM_FIXED0050_X9_50G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0050X950g,
 	"SUBCORE_STANDARD_VM_FIXED0075_X9_50G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0075X950g,
@@ -2413,6 +3479,9 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"SUBCORE_STANDARD_VM_FIXED4950_X9_50G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed4950X950g,
 	"SUBCORE_STANDARD_VM_FIXED5000_X9_50G": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed5000X950g,
 	"ENTIREHOST_X9_50G":                    CreateInternalVnicDetailsVnicShapeEntirehostX950g,
+	"DYNAMIC_X9_100G":                      CreateInternalVnicDetailsVnicShapeDynamicX9100g,
+	"DYNAMIC_X10_50G":                      CreateInternalVnicDetailsVnicShapeDynamicX1050g,
+	"DYNAMIC_X10_100G":                     CreateInternalVnicDetailsVnicShapeDynamicX10100g,
 }
 
 var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateInternalVnicDetailsVnicShapeEnum{
@@ -2455,9 +3524,13 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"entirehost_b1_25g":                    CreateInternalVnicDetailsVnicShapeEntirehostB125g,
 	"micro_vm_fixed0048_e1_25g":            CreateInternalVnicDetailsVnicShapeMicroVmFixed0048E125g,
 	"micro_lb_fixed0001_e1_25g":            CreateInternalVnicDetailsVnicShapeMicroLbFixed0001E125g,
+	"vnicaas_fixed0025":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0025,
 	"vnicaas_fixed0200":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0200,
 	"vnicaas_fixed0400":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0400,
+	"vnicaas_fixed0625":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0625,
 	"vnicaas_fixed0700":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed0700,
+	"vnicaas_fixed1250":                    CreateInternalVnicDetailsVnicShapeVnicaasFixed1250,
+	"vnicaas_fwaas_6g_250m":                CreateInternalVnicDetailsVnicShapeVnicaasFwaas6g250m,
 	"vnicaas_nlb_approved_10g":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10g,
 	"vnicaas_nlb_approved_25g":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved25g,
 	"vnicaas_telesis_25g":                  CreateInternalVnicDetailsVnicShapeVnicaasTelesis25g,
@@ -2559,6 +3632,86 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"fixed3900_e4_50g":                     CreateInternalVnicDetailsVnicShapeFixed3900E450g,
 	"fixed4000_e4_50g":                     CreateInternalVnicDetailsVnicShapeFixed4000E450g,
 	"entirehost_e4_50g":                    CreateInternalVnicDetailsVnicShapeEntirehostE450g,
+	"vnuma_vm_fixed0100_1_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed01001E450g,
+	"vnuma_vm_fixed0200_2_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed02002E450g,
+	"vnuma_vm_fixed0300_3_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed03003E450g,
+	"vnuma_vm_fixed0400_4_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed04004E450g,
+	"vnuma_vm_fixed0500_5_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed05005E450g,
+	"vnuma_vm_fixed0600_6_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed06006E450g,
+	"vnuma_vm_fixed0700_7_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed07007E450g,
+	"vnuma_vm_fixed0800_8_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed08008E450g,
+	"vnuma_vm_fixed0900_9_e4_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed09009E450g,
+	"vnuma_vm_fixed1000_10_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed100010E450g,
+	"vnuma_vm_fixed1100_11_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed110011E450g,
+	"vnuma_vm_fixed1200_12_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed120012E450g,
+	"vnuma_vm_fixed1300_13_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed130013E450g,
+	"vnuma_vm_fixed1400_14_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed140014E450g,
+	"vnuma_vm_fixed1500_15_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed150015E450g,
+	"vnuma_vm_fixed1600_16_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed160016E450g,
+	"vnuma_vm_fixed1700_17_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed170017E450g,
+	"vnuma_vm_fixed1800_18_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed180018E450g,
+	"vnuma_vm_fixed1900_19_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed190019E450g,
+	"vnuma_vm_fixed2000_20_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed200020E450g,
+	"vnuma_vm_fixed2100_21_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed210021E450g,
+	"vnuma_vm_fixed2200_22_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed220022E450g,
+	"vnuma_vm_fixed2300_23_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed230023E450g,
+	"vnuma_vm_fixed2400_24_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed240024E450g,
+	"vnuma_vm_fixed2500_25_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed250025E450g,
+	"vnuma_vm_fixed2600_26_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed260026E450g,
+	"vnuma_vm_fixed2700_27_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed270027E450g,
+	"vnuma_vm_fixed2800_28_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed280028E450g,
+	"vnuma_vm_fixed2900_29_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed290029E450g,
+	"vnuma_vm_fixed3000_30_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed300030E450g,
+	"vnuma_vm_fixed3100_31_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed310031E450g,
+	"vnuma_vm_fixed3200_32_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320032E450g,
+	"vnuma_vm_fixed3300_33_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed330033E450g,
+	"vnuma_vm_fixed3400_34_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed340034E450g,
+	"vnuma_vm_fixed3500_35_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed350035E450g,
+	"vnuma_vm_fixed3600_36_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed360036E450g,
+	"vnuma_vm_fixed3700_37_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed370037E450g,
+	"vnuma_vm_fixed3800_38_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed380038E450g,
+	"vnuma_vm_fixed3900_39_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed390039E450g,
+	"vnuma_vm_fixed4000_40_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400040E450g,
+	"vnuma_vm_fixed4000_41_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400041E450g,
+	"vnuma_vm_fixed4000_42_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400042E450g,
+	"vnuma_vm_fixed4000_43_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400043E450g,
+	"vnuma_vm_fixed4000_44_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400044E450g,
+	"vnuma_vm_fixed4000_45_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400045E450g,
+	"vnuma_vm_fixed4000_46_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400046E450g,
+	"vnuma_vm_fixed4000_47_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400047E450g,
+	"vnuma_vm_fixed4000_48_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400048E450g,
+	"vnuma_vm_fixed4000_49_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400049E450g,
+	"vnuma_vm_fixed4000_50_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400050E450g,
+	"vnuma_vm_fixed4000_51_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400051E450g,
+	"vnuma_vm_fixed4000_52_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400052E450g,
+	"vnuma_vm_fixed4000_53_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400053E450g,
+	"vnuma_vm_fixed4000_54_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400054E450g,
+	"vnuma_vm_fixed4000_55_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400055E450g,
+	"vnuma_vm_fixed4000_56_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400056E450g,
+	"vnuma_vm_fixed4000_57_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400057E450g,
+	"vnuma_vm_fixed4000_58_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400058E450g,
+	"vnuma_vm_fixed4000_59_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400059E450g,
+	"vnuma_vm_fixed4000_60_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400060E450g,
+	"vnuma_vm_fixed4000_61_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400061E450g,
+	"vnuma_vm_fixed4000_62_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400062E450g,
+	"vnuma_vm_fixed4000_63_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400063E450g,
+	"vnuma_vm_fixed4000_64_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400064E450g,
+	"vnuma_vm_fixed4000_65_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400065E450g,
+	"vnuma_vm_fixed4000_66_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400066E450g,
+	"vnuma_vm_fixed4000_67_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400067E450g,
+	"vnuma_vm_fixed4000_68_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400068E450g,
+	"vnuma_vm_fixed4000_69_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400069E450g,
+	"vnuma_vm_fixed4000_70_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400070E450g,
+	"vnuma_vm_fixed4000_71_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400071E450g,
+	"vnuma_vm_fixed4000_72_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400072E450g,
+	"vnuma_vm_fixed4000_73_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400073E450g,
+	"vnuma_vm_fixed4000_74_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400074E450g,
+	"vnuma_vm_fixed4000_75_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400075E450g,
+	"vnuma_vm_fixed4000_76_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400076E450g,
+	"vnuma_vm_fixed4000_77_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400077E450g,
+	"vnuma_vm_fixed4000_78_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400078E450g,
+	"vnuma_vm_fixed4000_79_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400079E450g,
+	"vnuma_vm_fixed4000_80_e4_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed400080E450g,
 	"micro_vm_fixed0050_e3_50g":            CreateInternalVnicDetailsVnicShapeMicroVmFixed0050E350g,
 	"micro_vm_fixed0050_e4_50g":            CreateInternalVnicDetailsVnicShapeMicroVmFixed0050E450g,
 	"subcore_vm_fixed0025_e3_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0025E350g,
@@ -2891,6 +4044,250 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"subcore_vm_fixed4900_e4_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4900E450g,
 	"subcore_vm_fixed4950_e4_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4950E450g,
 	"subcore_vm_fixed5000_e4_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed5000E450g,
+	"dynamic_e5_50g":                       CreateInternalVnicDetailsVnicShapeDynamicE550g,
+	"dynamic_e5_100g":                      CreateInternalVnicDetailsVnicShapeDynamicE5100g,
+	"entirehost_e5_50g":                    CreateInternalVnicDetailsVnicShapeEntirehostE550g,
+	"fixed0040_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0040E550g,
+	"fixed0100_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0100E550g,
+	"fixed0200_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0200E550g,
+	"fixed0300_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0300E550g,
+	"fixed0400_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0400E550g,
+	"fixed0500_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0500E550g,
+	"fixed0600_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0600E550g,
+	"fixed0700_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0700E550g,
+	"fixed0800_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0800E550g,
+	"fixed0900_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed0900E550g,
+	"fixed1000_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1000E550g,
+	"fixed1100_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1100E550g,
+	"fixed1200_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1200E550g,
+	"fixed1300_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1300E550g,
+	"fixed1400_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1400E550g,
+	"fixed1500_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1500E550g,
+	"fixed1600_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1600E550g,
+	"fixed1700_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1700E550g,
+	"fixed1800_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1800E550g,
+	"fixed1900_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed1900E550g,
+	"fixed2000_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2000E550g,
+	"fixed2100_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2100E550g,
+	"fixed2200_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2200E550g,
+	"fixed2300_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2300E550g,
+	"fixed2400_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2400E550g,
+	"fixed2500_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2500E550g,
+	"fixed2600_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2600E550g,
+	"fixed2700_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2700E550g,
+	"fixed2800_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2800E550g,
+	"fixed2900_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed2900E550g,
+	"fixed3000_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3000E550g,
+	"fixed3100_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3100E550g,
+	"fixed3200_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3200E550g,
+	"fixed3300_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3300E550g,
+	"fixed3400_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3400E550g,
+	"fixed3500_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3500E550g,
+	"fixed3600_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3600E550g,
+	"fixed3700_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3700E550g,
+	"fixed3800_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3800E550g,
+	"fixed3900_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed3900E550g,
+	"fixed4000_e5_50g":                     CreateInternalVnicDetailsVnicShapeFixed4000E550g,
+	"subcore_vm_fixed0025_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0025E550g,
+	"subcore_vm_fixed0050_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0050E550g,
+	"subcore_vm_fixed0075_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0075E550g,
+	"subcore_vm_fixed0100_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0100E550g,
+	"subcore_vm_fixed0125_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0125E550g,
+	"subcore_vm_fixed0150_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0150E550g,
+	"subcore_vm_fixed0175_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0175E550g,
+	"subcore_vm_fixed0200_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0200E550g,
+	"subcore_vm_fixed0225_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0225E550g,
+	"subcore_vm_fixed0250_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0250E550g,
+	"subcore_vm_fixed0275_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0275E550g,
+	"subcore_vm_fixed0300_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0300E550g,
+	"subcore_vm_fixed0325_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0325E550g,
+	"subcore_vm_fixed0350_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0350E550g,
+	"subcore_vm_fixed0375_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0375E550g,
+	"subcore_vm_fixed0400_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0400E550g,
+	"subcore_vm_fixed0425_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0425E550g,
+	"subcore_vm_fixed0450_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0450E550g,
+	"subcore_vm_fixed0475_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0475E550g,
+	"subcore_vm_fixed0500_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0500E550g,
+	"subcore_vm_fixed0525_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0525E550g,
+	"subcore_vm_fixed0550_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0550E550g,
+	"subcore_vm_fixed0575_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0575E550g,
+	"subcore_vm_fixed0600_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0600E550g,
+	"subcore_vm_fixed0625_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0625E550g,
+	"subcore_vm_fixed0650_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0650E550g,
+	"subcore_vm_fixed0675_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0675E550g,
+	"subcore_vm_fixed0700_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0700E550g,
+	"subcore_vm_fixed0725_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0725E550g,
+	"subcore_vm_fixed0750_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0750E550g,
+	"subcore_vm_fixed0775_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0775E550g,
+	"subcore_vm_fixed0800_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0800E550g,
+	"subcore_vm_fixed0825_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0825E550g,
+	"subcore_vm_fixed0850_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0850E550g,
+	"subcore_vm_fixed0875_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0875E550g,
+	"subcore_vm_fixed0900_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0900E550g,
+	"subcore_vm_fixed0925_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0925E550g,
+	"subcore_vm_fixed0950_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0950E550g,
+	"subcore_vm_fixed0975_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0975E550g,
+	"subcore_vm_fixed1000_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1000E550g,
+	"subcore_vm_fixed1025_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1025E550g,
+	"subcore_vm_fixed1050_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1050E550g,
+	"subcore_vm_fixed1075_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1075E550g,
+	"subcore_vm_fixed1100_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1100E550g,
+	"subcore_vm_fixed1125_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1125E550g,
+	"subcore_vm_fixed1150_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1150E550g,
+	"subcore_vm_fixed1175_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1175E550g,
+	"subcore_vm_fixed1200_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1200E550g,
+	"subcore_vm_fixed1225_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1225E550g,
+	"subcore_vm_fixed1250_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1250E550g,
+	"subcore_vm_fixed1275_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1275E550g,
+	"subcore_vm_fixed1300_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1300E550g,
+	"subcore_vm_fixed1325_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1325E550g,
+	"subcore_vm_fixed1350_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1350E550g,
+	"subcore_vm_fixed1375_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1375E550g,
+	"subcore_vm_fixed1400_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1400E550g,
+	"subcore_vm_fixed1425_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1425E550g,
+	"subcore_vm_fixed1450_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1450E550g,
+	"subcore_vm_fixed1475_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1475E550g,
+	"subcore_vm_fixed1500_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1500E550g,
+	"subcore_vm_fixed1525_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1525E550g,
+	"subcore_vm_fixed1550_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1550E550g,
+	"subcore_vm_fixed1575_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1575E550g,
+	"subcore_vm_fixed1600_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1600E550g,
+	"subcore_vm_fixed1625_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1625E550g,
+	"subcore_vm_fixed1650_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1650E550g,
+	"subcore_vm_fixed1675_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1675E550g,
+	"subcore_vm_fixed1700_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1700E550g,
+	"subcore_vm_fixed1725_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1725E550g,
+	"subcore_vm_fixed1750_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1750E550g,
+	"subcore_vm_fixed1775_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1775E550g,
+	"subcore_vm_fixed1800_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1800E550g,
+	"subcore_vm_fixed1825_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1825E550g,
+	"subcore_vm_fixed1850_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1850E550g,
+	"subcore_vm_fixed1875_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1875E550g,
+	"subcore_vm_fixed1900_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1900E550g,
+	"subcore_vm_fixed1925_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1925E550g,
+	"subcore_vm_fixed1950_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1950E550g,
+	"subcore_vm_fixed1975_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed1975E550g,
+	"subcore_vm_fixed2000_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2000E550g,
+	"subcore_vm_fixed2025_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2025E550g,
+	"subcore_vm_fixed2050_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2050E550g,
+	"subcore_vm_fixed2075_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2075E550g,
+	"subcore_vm_fixed2100_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2100E550g,
+	"subcore_vm_fixed2125_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2125E550g,
+	"subcore_vm_fixed2150_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2150E550g,
+	"subcore_vm_fixed2175_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2175E550g,
+	"subcore_vm_fixed2200_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2200E550g,
+	"subcore_vm_fixed2225_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2225E550g,
+	"subcore_vm_fixed2250_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2250E550g,
+	"subcore_vm_fixed2275_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2275E550g,
+	"subcore_vm_fixed2300_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2300E550g,
+	"subcore_vm_fixed2325_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2325E550g,
+	"subcore_vm_fixed2350_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2350E550g,
+	"subcore_vm_fixed2375_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2375E550g,
+	"subcore_vm_fixed2400_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2400E550g,
+	"subcore_vm_fixed2425_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2425E550g,
+	"subcore_vm_fixed2450_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2450E550g,
+	"subcore_vm_fixed2475_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2475E550g,
+	"subcore_vm_fixed2500_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2500E550g,
+	"subcore_vm_fixed2525_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2525E550g,
+	"subcore_vm_fixed2550_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2550E550g,
+	"subcore_vm_fixed2575_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2575E550g,
+	"subcore_vm_fixed2600_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2600E550g,
+	"subcore_vm_fixed2625_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2625E550g,
+	"subcore_vm_fixed2650_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2650E550g,
+	"subcore_vm_fixed2675_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2675E550g,
+	"subcore_vm_fixed2700_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2700E550g,
+	"subcore_vm_fixed2725_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2725E550g,
+	"subcore_vm_fixed2750_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2750E550g,
+	"subcore_vm_fixed2775_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2775E550g,
+	"subcore_vm_fixed2800_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2800E550g,
+	"subcore_vm_fixed2825_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2825E550g,
+	"subcore_vm_fixed2850_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2850E550g,
+	"subcore_vm_fixed2875_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2875E550g,
+	"subcore_vm_fixed2900_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2900E550g,
+	"subcore_vm_fixed2925_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2925E550g,
+	"subcore_vm_fixed2950_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2950E550g,
+	"subcore_vm_fixed2975_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed2975E550g,
+	"subcore_vm_fixed3000_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3000E550g,
+	"subcore_vm_fixed3025_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3025E550g,
+	"subcore_vm_fixed3050_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3050E550g,
+	"subcore_vm_fixed3075_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3075E550g,
+	"subcore_vm_fixed3100_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3100E550g,
+	"subcore_vm_fixed3125_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3125E550g,
+	"subcore_vm_fixed3150_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3150E550g,
+	"subcore_vm_fixed3175_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3175E550g,
+	"subcore_vm_fixed3200_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3200E550g,
+	"subcore_vm_fixed3225_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3225E550g,
+	"subcore_vm_fixed3250_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3250E550g,
+	"subcore_vm_fixed3275_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3275E550g,
+	"subcore_vm_fixed3300_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3300E550g,
+	"subcore_vm_fixed3325_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3325E550g,
+	"subcore_vm_fixed3350_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3350E550g,
+	"subcore_vm_fixed3375_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3375E550g,
+	"subcore_vm_fixed3400_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3400E550g,
+	"subcore_vm_fixed3425_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3425E550g,
+	"subcore_vm_fixed3450_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3450E550g,
+	"subcore_vm_fixed3475_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3475E550g,
+	"subcore_vm_fixed3500_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3500E550g,
+	"subcore_vm_fixed3525_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3525E550g,
+	"subcore_vm_fixed3550_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3550E550g,
+	"subcore_vm_fixed3575_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3575E550g,
+	"subcore_vm_fixed3600_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3600E550g,
+	"subcore_vm_fixed3625_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3625E550g,
+	"subcore_vm_fixed3650_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3650E550g,
+	"subcore_vm_fixed3675_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3675E550g,
+	"subcore_vm_fixed3700_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3700E550g,
+	"subcore_vm_fixed3725_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3725E550g,
+	"subcore_vm_fixed3750_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3750E550g,
+	"subcore_vm_fixed3775_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3775E550g,
+	"subcore_vm_fixed3800_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3800E550g,
+	"subcore_vm_fixed3825_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3825E550g,
+	"subcore_vm_fixed3850_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3850E550g,
+	"subcore_vm_fixed3875_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3875E550g,
+	"subcore_vm_fixed3900_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3900E550g,
+	"subcore_vm_fixed3925_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3925E550g,
+	"subcore_vm_fixed3950_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3950E550g,
+	"subcore_vm_fixed3975_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed3975E550g,
+	"subcore_vm_fixed4000_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4000E550g,
+	"subcore_vm_fixed4025_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4025E550g,
+	"subcore_vm_fixed4050_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4050E550g,
+	"subcore_vm_fixed4075_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4075E550g,
+	"subcore_vm_fixed4100_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4100E550g,
+	"subcore_vm_fixed4125_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4125E550g,
+	"subcore_vm_fixed4150_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4150E550g,
+	"subcore_vm_fixed4175_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4175E550g,
+	"subcore_vm_fixed4200_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4200E550g,
+	"subcore_vm_fixed4225_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4225E550g,
+	"subcore_vm_fixed4250_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4250E550g,
+	"subcore_vm_fixed4275_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4275E550g,
+	"subcore_vm_fixed4300_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4300E550g,
+	"subcore_vm_fixed4325_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4325E550g,
+	"subcore_vm_fixed4350_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4350E550g,
+	"subcore_vm_fixed4375_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4375E550g,
+	"subcore_vm_fixed4400_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4400E550g,
+	"subcore_vm_fixed4425_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4425E550g,
+	"subcore_vm_fixed4450_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4450E550g,
+	"subcore_vm_fixed4475_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4475E550g,
+	"subcore_vm_fixed4500_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4500E550g,
+	"subcore_vm_fixed4525_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4525E550g,
+	"subcore_vm_fixed4550_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4550E550g,
+	"subcore_vm_fixed4575_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4575E550g,
+	"subcore_vm_fixed4600_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4600E550g,
+	"subcore_vm_fixed4625_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4625E550g,
+	"subcore_vm_fixed4650_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4650E550g,
+	"subcore_vm_fixed4675_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4675E550g,
+	"subcore_vm_fixed4700_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4700E550g,
+	"subcore_vm_fixed4725_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4725E550g,
+	"subcore_vm_fixed4750_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4750E550g,
+	"subcore_vm_fixed4775_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4775E550g,
+	"subcore_vm_fixed4800_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4800E550g,
+	"subcore_vm_fixed4825_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4825E550g,
+	"subcore_vm_fixed4850_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4850E550g,
+	"subcore_vm_fixed4875_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4875E550g,
+	"subcore_vm_fixed4900_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4900E550g,
+	"subcore_vm_fixed4925_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4925E550g,
+	"subcore_vm_fixed4950_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4950E550g,
+	"subcore_vm_fixed4975_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed4975E550g,
+	"subcore_vm_fixed5000_e5_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed5000E550g,
 	"subcore_vm_fixed0020_a1_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0020A150g,
 	"subcore_vm_fixed0040_a1_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0040A150g,
 	"subcore_vm_fixed0060_a1_50g":          CreateInternalVnicDetailsVnicShapeSubcoreVmFixed0060A150g,
@@ -3240,6 +4637,129 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"fixed4000_a1_50g":                     CreateInternalVnicDetailsVnicShapeFixed4000A150g,
 	"fixed5000_telesis_a1_50g":             CreateInternalVnicDetailsVnicShapeFixed5000TelesisA150g,
 	"entirehost_a1_50g":                    CreateInternalVnicDetailsVnicShapeEntirehostA150g,
+	"dynamic_x7_25g":                       CreateInternalVnicDetailsVnicShapeDynamicX725g,
+	"fixed0040_x7_25g":                     CreateInternalVnicDetailsVnicShapeFixed0040X725g,
+	"standard_vm_fixed0100_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0100X725g,
+	"standard_vm_fixed0200_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0200X725g,
+	"standard_vm_fixed0300_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0300X725g,
+	"standard_vm_fixed0400_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0400X725g,
+	"standard_vm_fixed0500_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0500X725g,
+	"standard_vm_fixed0600_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0600X725g,
+	"standard_vm_fixed0700_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0700X725g,
+	"standard_vm_fixed0800_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0800X725g,
+	"standard_vm_fixed0900_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed0900X725g,
+	"standard_vm_fixed1000_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1000X725g,
+	"standard_vm_fixed1100_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1100X725g,
+	"standard_vm_fixed1200_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1200X725g,
+	"standard_vm_fixed1300_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1300X725g,
+	"standard_vm_fixed1400_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1400X725g,
+	"standard_vm_fixed1500_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1500X725g,
+	"standard_vm_fixed1600_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1600X725g,
+	"standard_vm_fixed1700_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1700X725g,
+	"standard_vm_fixed1800_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1800X725g,
+	"standard_vm_fixed1900_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed1900X725g,
+	"standard_vm_fixed2000_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2000X725g,
+	"standard_vm_fixed2100_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2100X725g,
+	"standard_vm_fixed2200_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2200X725g,
+	"standard_vm_fixed2300_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2300X725g,
+	"standard_vm_fixed2400_x7_25g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed2400X725g,
+	"subcore_standard_vm_fixed0025_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0025X725g,
+	"subcore_standard_vm_fixed0050_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0050X725g,
+	"subcore_standard_vm_fixed0075_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0075X725g,
+	"subcore_standard_vm_fixed0100_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0100X725g,
+	"subcore_standard_vm_fixed0125_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0125X725g,
+	"subcore_standard_vm_fixed0150_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0150X725g,
+	"subcore_standard_vm_fixed0175_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0175X725g,
+	"subcore_standard_vm_fixed0200_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0200X725g,
+	"subcore_standard_vm_fixed0225_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0225X725g,
+	"subcore_standard_vm_fixed0250_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0250X725g,
+	"subcore_standard_vm_fixed0275_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0275X725g,
+	"subcore_standard_vm_fixed0300_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0300X725g,
+	"subcore_standard_vm_fixed0325_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0325X725g,
+	"subcore_standard_vm_fixed0350_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0350X725g,
+	"subcore_standard_vm_fixed0375_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0375X725g,
+	"subcore_standard_vm_fixed0400_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0400X725g,
+	"subcore_standard_vm_fixed0425_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0425X725g,
+	"subcore_standard_vm_fixed0450_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0450X725g,
+	"subcore_standard_vm_fixed0475_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0475X725g,
+	"subcore_standard_vm_fixed0500_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0500X725g,
+	"subcore_standard_vm_fixed0525_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0525X725g,
+	"subcore_standard_vm_fixed0550_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0550X725g,
+	"subcore_standard_vm_fixed0575_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0575X725g,
+	"subcore_standard_vm_fixed0600_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0600X725g,
+	"subcore_standard_vm_fixed0625_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0625X725g,
+	"subcore_standard_vm_fixed0650_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0650X725g,
+	"subcore_standard_vm_fixed0675_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0675X725g,
+	"subcore_standard_vm_fixed0700_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0700X725g,
+	"subcore_standard_vm_fixed0725_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0725X725g,
+	"subcore_standard_vm_fixed0750_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0750X725g,
+	"subcore_standard_vm_fixed0775_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0775X725g,
+	"subcore_standard_vm_fixed0800_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0800X725g,
+	"subcore_standard_vm_fixed0825_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0825X725g,
+	"subcore_standard_vm_fixed0850_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0850X725g,
+	"subcore_standard_vm_fixed0875_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0875X725g,
+	"subcore_standard_vm_fixed0900_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0900X725g,
+	"subcore_standard_vm_fixed0925_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0925X725g,
+	"subcore_standard_vm_fixed0950_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0950X725g,
+	"subcore_standard_vm_fixed0975_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0975X725g,
+	"subcore_standard_vm_fixed1000_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1000X725g,
+	"subcore_standard_vm_fixed1025_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1025X725g,
+	"subcore_standard_vm_fixed1050_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1050X725g,
+	"subcore_standard_vm_fixed1075_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1075X725g,
+	"subcore_standard_vm_fixed1100_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1100X725g,
+	"subcore_standard_vm_fixed1125_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1125X725g,
+	"subcore_standard_vm_fixed1150_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1150X725g,
+	"subcore_standard_vm_fixed1175_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1175X725g,
+	"subcore_standard_vm_fixed1200_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1200X725g,
+	"subcore_standard_vm_fixed1225_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1225X725g,
+	"subcore_standard_vm_fixed1250_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1250X725g,
+	"subcore_standard_vm_fixed1275_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1275X725g,
+	"subcore_standard_vm_fixed1300_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1300X725g,
+	"subcore_standard_vm_fixed1325_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1325X725g,
+	"subcore_standard_vm_fixed1350_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1350X725g,
+	"subcore_standard_vm_fixed1375_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1375X725g,
+	"subcore_standard_vm_fixed1400_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1400X725g,
+	"subcore_standard_vm_fixed1425_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1425X725g,
+	"subcore_standard_vm_fixed1450_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1450X725g,
+	"subcore_standard_vm_fixed1475_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1475X725g,
+	"subcore_standard_vm_fixed1500_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1500X725g,
+	"subcore_standard_vm_fixed1525_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1525X725g,
+	"subcore_standard_vm_fixed1550_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1550X725g,
+	"subcore_standard_vm_fixed1575_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1575X725g,
+	"subcore_standard_vm_fixed1600_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1600X725g,
+	"subcore_standard_vm_fixed1625_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1625X725g,
+	"subcore_standard_vm_fixed1650_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1650X725g,
+	"subcore_standard_vm_fixed1675_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1675X725g,
+	"subcore_standard_vm_fixed1700_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1700X725g,
+	"subcore_standard_vm_fixed1725_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1725X725g,
+	"subcore_standard_vm_fixed1750_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1750X725g,
+	"subcore_standard_vm_fixed1775_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1775X725g,
+	"subcore_standard_vm_fixed1800_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1800X725g,
+	"subcore_standard_vm_fixed1825_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1825X725g,
+	"subcore_standard_vm_fixed1850_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1850X725g,
+	"subcore_standard_vm_fixed1875_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1875X725g,
+	"subcore_standard_vm_fixed1900_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1900X725g,
+	"subcore_standard_vm_fixed1925_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1925X725g,
+	"subcore_standard_vm_fixed1950_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1950X725g,
+	"subcore_standard_vm_fixed1975_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed1975X725g,
+	"subcore_standard_vm_fixed2000_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2000X725g,
+	"subcore_standard_vm_fixed2025_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2025X725g,
+	"subcore_standard_vm_fixed2050_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2050X725g,
+	"subcore_standard_vm_fixed2075_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2075X725g,
+	"subcore_standard_vm_fixed2100_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2100X725g,
+	"subcore_standard_vm_fixed2125_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2125X725g,
+	"subcore_standard_vm_fixed2150_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2150X725g,
+	"subcore_standard_vm_fixed2175_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2175X725g,
+	"subcore_standard_vm_fixed2200_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2200X725g,
+	"subcore_standard_vm_fixed2225_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2225X725g,
+	"subcore_standard_vm_fixed2250_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2250X725g,
+	"subcore_standard_vm_fixed2275_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2275X725g,
+	"subcore_standard_vm_fixed2300_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2300X725g,
+	"subcore_standard_vm_fixed2325_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2325X725g,
+	"subcore_standard_vm_fixed2350_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2350X725g,
+	"subcore_standard_vm_fixed2375_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2375X725g,
+	"subcore_standard_vm_fixed2400_x7_25g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed2400X725g,
+	"entirehost_x7_25g":                    CreateInternalVnicDetailsVnicShapeEntirehostX725g,
 	"dynamic_x9_50g":                       CreateInternalVnicDetailsVnicShapeDynamicX950g,
 	"fixed0040_x9_50g":                     CreateInternalVnicDetailsVnicShapeFixed0040X950g,
 	"fixed0400_x9_50g":                     CreateInternalVnicDetailsVnicShapeFixed0400X950g,
@@ -3292,6 +4812,82 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"standard_vm_fixed3800_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed3800X950g,
 	"standard_vm_fixed3900_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed3900X950g,
 	"standard_vm_fixed4000_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4000X950g,
+	"standard_vm_fixed4100_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4100X950g,
+	"standard_vm_fixed4200_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4200X950g,
+	"standard_vm_fixed4300_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4300X950g,
+	"standard_vm_fixed4400_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4400X950g,
+	"standard_vm_fixed4500_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4500X950g,
+	"standard_vm_fixed4600_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4600X950g,
+	"standard_vm_fixed4700_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4700X950g,
+	"standard_vm_fixed4800_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4800X950g,
+	"standard_vm_fixed4900_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed4900X950g,
+	"standard_vm_fixed5000_x9_50g":         CreateInternalVnicDetailsVnicShapeStandardVmFixed5000X950g,
+	"a10_gpu_vm_fixed2400_x9_50g":          CreateInternalVnicDetailsVnicShapeA10GpuVmFixed2400X950g,
+	"a10_gpu_vm_fixed4800_x9_50g":          CreateInternalVnicDetailsVnicShapeA10GpuVmFixed4800X950g,
+	"vnuma_vm_fixed0100_1_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed01001X950g,
+	"vnuma_vm_fixed0200_2_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed02002X950g,
+	"vnuma_vm_fixed0300_3_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed03003X950g,
+	"vnuma_vm_fixed0400_4_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed04004X950g,
+	"vnuma_vm_fixed0500_5_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed05005X950g,
+	"vnuma_vm_fixed0600_6_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed06006X950g,
+	"vnuma_vm_fixed0700_7_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed07007X950g,
+	"vnuma_vm_fixed0800_8_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed08008X950g,
+	"vnuma_vm_fixed0900_9_x9_50g":          CreateInternalVnicDetailsVnicShapeVnumaVmFixed09009X950g,
+	"vnuma_vm_fixed1000_10_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed100010X950g,
+	"vnuma_vm_fixed1100_11_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed110011X950g,
+	"vnuma_vm_fixed1200_12_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed120012X950g,
+	"vnuma_vm_fixed1300_13_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed130013X950g,
+	"vnuma_vm_fixed1400_14_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed140014X950g,
+	"vnuma_vm_fixed1500_15_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed150015X950g,
+	"vnuma_vm_fixed1600_16_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed160016X950g,
+	"vnuma_vm_fixed1700_17_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed170017X950g,
+	"vnuma_vm_fixed1800_18_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed180018X950g,
+	"vnuma_vm_fixed1900_19_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed190019X950g,
+	"vnuma_vm_fixed2000_20_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed200020X950g,
+	"vnuma_vm_fixed2100_21_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed210021X950g,
+	"vnuma_vm_fixed2200_22_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed220022X950g,
+	"vnuma_vm_fixed2300_23_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed230023X950g,
+	"vnuma_vm_fixed2400_24_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed240024X950g,
+	"vnuma_vm_fixed2500_25_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed250025X950g,
+	"vnuma_vm_fixed2600_26_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed260026X950g,
+	"vnuma_vm_fixed2700_27_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed270027X950g,
+	"vnuma_vm_fixed2800_28_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed280028X950g,
+	"vnuma_vm_fixed2900_29_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed290029X950g,
+	"vnuma_vm_fixed3000_30_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed300030X950g,
+	"vnuma_vm_fixed3100_31_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed310031X950g,
+	"vnuma_vm_fixed3200_32_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320032X950g,
+	"vnuma_vm_fixed3200_33_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320033X950g,
+	"vnuma_vm_fixed3200_34_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320034X950g,
+	"vnuma_vm_fixed3200_35_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320035X950g,
+	"vnuma_vm_fixed3200_36_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320036X950g,
+	"vnuma_vm_fixed3200_37_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320037X950g,
+	"vnuma_vm_fixed3200_38_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320038X950g,
+	"vnuma_vm_fixed3200_39_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320039X950g,
+	"vnuma_vm_fixed3200_40_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320040X950g,
+	"vnuma_vm_fixed3200_41_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320041X950g,
+	"vnuma_vm_fixed3200_42_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320042X950g,
+	"vnuma_vm_fixed3200_43_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320043X950g,
+	"vnuma_vm_fixed3200_44_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320044X950g,
+	"vnuma_vm_fixed3200_45_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320045X950g,
+	"vnuma_vm_fixed3200_46_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320046X950g,
+	"vnuma_vm_fixed3200_47_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320047X950g,
+	"vnuma_vm_fixed3200_48_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320048X950g,
+	"vnuma_vm_fixed3200_49_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320049X950g,
+	"vnuma_vm_fixed3200_50_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320050X950g,
+	"vnuma_vm_fixed3200_51_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320051X950g,
+	"vnuma_vm_fixed3200_52_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320052X950g,
+	"vnuma_vm_fixed3200_53_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320053X950g,
+	"vnuma_vm_fixed3200_54_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320054X950g,
+	"vnuma_vm_fixed3200_55_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320055X950g,
+	"vnuma_vm_fixed3200_56_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320056X950g,
+	"vnuma_vm_fixed3200_57_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320057X950g,
+	"vnuma_vm_fixed3200_58_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320058X950g,
+	"vnuma_vm_fixed3200_59_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320059X950g,
+	"vnuma_vm_fixed3200_60_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320060X950g,
+	"vnuma_vm_fixed3200_61_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320061X950g,
+	"vnuma_vm_fixed3200_62_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320062X950g,
+	"vnuma_vm_fixed3200_63_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320063X950g,
+	"vnuma_vm_fixed3200_64_x9_50g":         CreateInternalVnicDetailsVnicShapeVnumaVmFixed320064X950g,
 	"subcore_standard_vm_fixed0025_x9_50g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0025X950g,
 	"subcore_standard_vm_fixed0050_x9_50g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0050X950g,
 	"subcore_standard_vm_fixed0075_x9_50g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed0075X950g,
@@ -3458,6 +5054,9 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"subcore_standard_vm_fixed4950_x9_50g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed4950X950g,
 	"subcore_standard_vm_fixed5000_x9_50g": CreateInternalVnicDetailsVnicShapeSubcoreStandardVmFixed5000X950g,
 	"entirehost_x9_50g":                    CreateInternalVnicDetailsVnicShapeEntirehostX950g,
+	"dynamic_x9_100g":                      CreateInternalVnicDetailsVnicShapeDynamicX9100g,
+	"dynamic_x10_50g":                      CreateInternalVnicDetailsVnicShapeDynamicX1050g,
+	"dynamic_x10_100g":                     CreateInternalVnicDetailsVnicShapeDynamicX10100g,
 }
 
 // GetCreateInternalVnicDetailsVnicShapeEnumValues Enumerates the set of values for CreateInternalVnicDetailsVnicShapeEnum
@@ -3511,9 +5110,13 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"ENTIREHOST_B1_25G",
 		"MICRO_VM_FIXED0048_E1_25G",
 		"MICRO_LB_FIXED0001_E1_25G",
+		"VNICAAS_FIXED0025",
 		"VNICAAS_FIXED0200",
 		"VNICAAS_FIXED0400",
+		"VNICAAS_FIXED0625",
 		"VNICAAS_FIXED0700",
+		"VNICAAS_FIXED1250",
+		"VNICAAS_FWAAS_6G_250M",
 		"VNICAAS_NLB_APPROVED_10G",
 		"VNICAAS_NLB_APPROVED_25G",
 		"VNICAAS_TELESIS_25G",
@@ -3615,6 +5218,86 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"FIXED3900_E4_50G",
 		"FIXED4000_E4_50G",
 		"ENTIREHOST_E4_50G",
+		"VNUMA_VM_FIXED0100_1_E4_50G",
+		"VNUMA_VM_FIXED0200_2_E4_50G",
+		"VNUMA_VM_FIXED0300_3_E4_50G",
+		"VNUMA_VM_FIXED0400_4_E4_50G",
+		"VNUMA_VM_FIXED0500_5_E4_50G",
+		"VNUMA_VM_FIXED0600_6_E4_50G",
+		"VNUMA_VM_FIXED0700_7_E4_50G",
+		"VNUMA_VM_FIXED0800_8_E4_50G",
+		"VNUMA_VM_FIXED0900_9_E4_50G",
+		"VNUMA_VM_FIXED1000_10_E4_50G",
+		"VNUMA_VM_FIXED1100_11_E4_50G",
+		"VNUMA_VM_FIXED1200_12_E4_50G",
+		"VNUMA_VM_FIXED1300_13_E4_50G",
+		"VNUMA_VM_FIXED1400_14_E4_50G",
+		"VNUMA_VM_FIXED1500_15_E4_50G",
+		"VNUMA_VM_FIXED1600_16_E4_50G",
+		"VNUMA_VM_FIXED1700_17_E4_50G",
+		"VNUMA_VM_FIXED1800_18_E4_50G",
+		"VNUMA_VM_FIXED1900_19_E4_50G",
+		"VNUMA_VM_FIXED2000_20_E4_50G",
+		"VNUMA_VM_FIXED2100_21_E4_50G",
+		"VNUMA_VM_FIXED2200_22_E4_50G",
+		"VNUMA_VM_FIXED2300_23_E4_50G",
+		"VNUMA_VM_FIXED2400_24_E4_50G",
+		"VNUMA_VM_FIXED2500_25_E4_50G",
+		"VNUMA_VM_FIXED2600_26_E4_50G",
+		"VNUMA_VM_FIXED2700_27_E4_50G",
+		"VNUMA_VM_FIXED2800_28_E4_50G",
+		"VNUMA_VM_FIXED2900_29_E4_50G",
+		"VNUMA_VM_FIXED3000_30_E4_50G",
+		"VNUMA_VM_FIXED3100_31_E4_50G",
+		"VNUMA_VM_FIXED3200_32_E4_50G",
+		"VNUMA_VM_FIXED3300_33_E4_50G",
+		"VNUMA_VM_FIXED3400_34_E4_50G",
+		"VNUMA_VM_FIXED3500_35_E4_50G",
+		"VNUMA_VM_FIXED3600_36_E4_50G",
+		"VNUMA_VM_FIXED3700_37_E4_50G",
+		"VNUMA_VM_FIXED3800_38_E4_50G",
+		"VNUMA_VM_FIXED3900_39_E4_50G",
+		"VNUMA_VM_FIXED4000_40_E4_50G",
+		"VNUMA_VM_FIXED4000_41_E4_50G",
+		"VNUMA_VM_FIXED4000_42_E4_50G",
+		"VNUMA_VM_FIXED4000_43_E4_50G",
+		"VNUMA_VM_FIXED4000_44_E4_50G",
+		"VNUMA_VM_FIXED4000_45_E4_50G",
+		"VNUMA_VM_FIXED4000_46_E4_50G",
+		"VNUMA_VM_FIXED4000_47_E4_50G",
+		"VNUMA_VM_FIXED4000_48_E4_50G",
+		"VNUMA_VM_FIXED4000_49_E4_50G",
+		"VNUMA_VM_FIXED4000_50_E4_50G",
+		"VNUMA_VM_FIXED4000_51_E4_50G",
+		"VNUMA_VM_FIXED4000_52_E4_50G",
+		"VNUMA_VM_FIXED4000_53_E4_50G",
+		"VNUMA_VM_FIXED4000_54_E4_50G",
+		"VNUMA_VM_FIXED4000_55_E4_50G",
+		"VNUMA_VM_FIXED4000_56_E4_50G",
+		"VNUMA_VM_FIXED4000_57_E4_50G",
+		"VNUMA_VM_FIXED4000_58_E4_50G",
+		"VNUMA_VM_FIXED4000_59_E4_50G",
+		"VNUMA_VM_FIXED4000_60_E4_50G",
+		"VNUMA_VM_FIXED4000_61_E4_50G",
+		"VNUMA_VM_FIXED4000_62_E4_50G",
+		"VNUMA_VM_FIXED4000_63_E4_50G",
+		"VNUMA_VM_FIXED4000_64_E4_50G",
+		"VNUMA_VM_FIXED4000_65_E4_50G",
+		"VNUMA_VM_FIXED4000_66_E4_50G",
+		"VNUMA_VM_FIXED4000_67_E4_50G",
+		"VNUMA_VM_FIXED4000_68_E4_50G",
+		"VNUMA_VM_FIXED4000_69_E4_50G",
+		"VNUMA_VM_FIXED4000_70_E4_50G",
+		"VNUMA_VM_FIXED4000_71_E4_50G",
+		"VNUMA_VM_FIXED4000_72_E4_50G",
+		"VNUMA_VM_FIXED4000_73_E4_50G",
+		"VNUMA_VM_FIXED4000_74_E4_50G",
+		"VNUMA_VM_FIXED4000_75_E4_50G",
+		"VNUMA_VM_FIXED4000_76_E4_50G",
+		"VNUMA_VM_FIXED4000_77_E4_50G",
+		"VNUMA_VM_FIXED4000_78_E4_50G",
+		"VNUMA_VM_FIXED4000_79_E4_50G",
+		"VNUMA_VM_FIXED4000_80_E4_50G",
 		"Micro_VM_Fixed0050_E3_50G",
 		"Micro_VM_Fixed0050_E4_50G",
 		"SUBCORE_VM_FIXED0025_E3_50G",
@@ -3947,6 +5630,250 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"SUBCORE_VM_FIXED4900_E4_50G",
 		"SUBCORE_VM_FIXED4950_E4_50G",
 		"SUBCORE_VM_FIXED5000_E4_50G",
+		"DYNAMIC_E5_50G",
+		"DYNAMIC_E5_100G",
+		"EntireHost_E5_50G",
+		"Fixed0040_E5_50G",
+		"FIXED0100_E5_50G",
+		"FIXED0200_E5_50G",
+		"FIXED0300_E5_50G",
+		"FIXED0400_E5_50G",
+		"FIXED0500_E5_50G",
+		"FIXED0600_E5_50G",
+		"FIXED0700_E5_50G",
+		"FIXED0800_E5_50G",
+		"FIXED0900_E5_50G",
+		"FIXED1000_E5_50G",
+		"FIXED1100_E5_50G",
+		"FIXED1200_E5_50G",
+		"FIXED1300_E5_50G",
+		"FIXED1400_E5_50G",
+		"FIXED1500_E5_50G",
+		"FIXED1600_E5_50G",
+		"FIXED1700_E5_50G",
+		"FIXED1800_E5_50G",
+		"FIXED1900_E5_50G",
+		"FIXED2000_E5_50G",
+		"FIXED2100_E5_50G",
+		"FIXED2200_E5_50G",
+		"FIXED2300_E5_50G",
+		"FIXED2400_E5_50G",
+		"FIXED2500_E5_50G",
+		"FIXED2600_E5_50G",
+		"FIXED2700_E5_50G",
+		"FIXED2800_E5_50G",
+		"FIXED2900_E5_50G",
+		"FIXED3000_E5_50G",
+		"FIXED3100_E5_50G",
+		"FIXED3200_E5_50G",
+		"FIXED3300_E5_50G",
+		"FIXED3400_E5_50G",
+		"FIXED3500_E5_50G",
+		"FIXED3600_E5_50G",
+		"FIXED3700_E5_50G",
+		"FIXED3800_E5_50G",
+		"FIXED3900_E5_50G",
+		"FIXED4000_E5_50G",
+		"SUBCORE_VM_FIXED0025_E5_50G",
+		"SUBCORE_VM_FIXED0050_E5_50G",
+		"SUBCORE_VM_FIXED0075_E5_50G",
+		"SUBCORE_VM_FIXED0100_E5_50G",
+		"SUBCORE_VM_FIXED0125_E5_50G",
+		"SUBCORE_VM_FIXED0150_E5_50G",
+		"SUBCORE_VM_FIXED0175_E5_50G",
+		"SUBCORE_VM_FIXED0200_E5_50G",
+		"SUBCORE_VM_FIXED0225_E5_50G",
+		"SUBCORE_VM_FIXED0250_E5_50G",
+		"SUBCORE_VM_FIXED0275_E5_50G",
+		"SUBCORE_VM_FIXED0300_E5_50G",
+		"SUBCORE_VM_FIXED0325_E5_50G",
+		"SUBCORE_VM_FIXED0350_E5_50G",
+		"SUBCORE_VM_FIXED0375_E5_50G",
+		"SUBCORE_VM_FIXED0400_E5_50G",
+		"SUBCORE_VM_FIXED0425_E5_50G",
+		"SUBCORE_VM_FIXED0450_E5_50G",
+		"SUBCORE_VM_FIXED0475_E5_50G",
+		"SUBCORE_VM_FIXED0500_E5_50G",
+		"SUBCORE_VM_FIXED0525_E5_50G",
+		"SUBCORE_VM_FIXED0550_E5_50G",
+		"SUBCORE_VM_FIXED0575_E5_50G",
+		"SUBCORE_VM_FIXED0600_E5_50G",
+		"SUBCORE_VM_FIXED0625_E5_50G",
+		"SUBCORE_VM_FIXED0650_E5_50G",
+		"SUBCORE_VM_FIXED0675_E5_50G",
+		"SUBCORE_VM_FIXED0700_E5_50G",
+		"SUBCORE_VM_FIXED0725_E5_50G",
+		"SUBCORE_VM_FIXED0750_E5_50G",
+		"SUBCORE_VM_FIXED0775_E5_50G",
+		"SUBCORE_VM_FIXED0800_E5_50G",
+		"SUBCORE_VM_FIXED0825_E5_50G",
+		"SUBCORE_VM_FIXED0850_E5_50G",
+		"SUBCORE_VM_FIXED0875_E5_50G",
+		"SUBCORE_VM_FIXED0900_E5_50G",
+		"SUBCORE_VM_FIXED0925_E5_50G",
+		"SUBCORE_VM_FIXED0950_E5_50G",
+		"SUBCORE_VM_FIXED0975_E5_50G",
+		"SUBCORE_VM_FIXED1000_E5_50G",
+		"SUBCORE_VM_FIXED1025_E5_50G",
+		"SUBCORE_VM_FIXED1050_E5_50G",
+		"SUBCORE_VM_FIXED1075_E5_50G",
+		"SUBCORE_VM_FIXED1100_E5_50G",
+		"SUBCORE_VM_FIXED1125_E5_50G",
+		"SUBCORE_VM_FIXED1150_E5_50G",
+		"SUBCORE_VM_FIXED1175_E5_50G",
+		"SUBCORE_VM_FIXED1200_E5_50G",
+		"SUBCORE_VM_FIXED1225_E5_50G",
+		"SUBCORE_VM_FIXED1250_E5_50G",
+		"SUBCORE_VM_FIXED1275_E5_50G",
+		"SUBCORE_VM_FIXED1300_E5_50G",
+		"SUBCORE_VM_FIXED1325_E5_50G",
+		"SUBCORE_VM_FIXED1350_E5_50G",
+		"SUBCORE_VM_FIXED1375_E5_50G",
+		"SUBCORE_VM_FIXED1400_E5_50G",
+		"SUBCORE_VM_FIXED1425_E5_50G",
+		"SUBCORE_VM_FIXED1450_E5_50G",
+		"SUBCORE_VM_FIXED1475_E5_50G",
+		"SUBCORE_VM_FIXED1500_E5_50G",
+		"SUBCORE_VM_FIXED1525_E5_50G",
+		"SUBCORE_VM_FIXED1550_E5_50G",
+		"SUBCORE_VM_FIXED1575_E5_50G",
+		"SUBCORE_VM_FIXED1600_E5_50G",
+		"SUBCORE_VM_FIXED1625_E5_50G",
+		"SUBCORE_VM_FIXED1650_E5_50G",
+		"SUBCORE_VM_FIXED1675_E5_50G",
+		"SUBCORE_VM_FIXED1700_E5_50G",
+		"SUBCORE_VM_FIXED1725_E5_50G",
+		"SUBCORE_VM_FIXED1750_E5_50G",
+		"SUBCORE_VM_FIXED1775_E5_50G",
+		"SUBCORE_VM_FIXED1800_E5_50G",
+		"SUBCORE_VM_FIXED1825_E5_50G",
+		"SUBCORE_VM_FIXED1850_E5_50G",
+		"SUBCORE_VM_FIXED1875_E5_50G",
+		"SUBCORE_VM_FIXED1900_E5_50G",
+		"SUBCORE_VM_FIXED1925_E5_50G",
+		"SUBCORE_VM_FIXED1950_E5_50G",
+		"SUBCORE_VM_FIXED1975_E5_50G",
+		"SUBCORE_VM_FIXED2000_E5_50G",
+		"SUBCORE_VM_FIXED2025_E5_50G",
+		"SUBCORE_VM_FIXED2050_E5_50G",
+		"SUBCORE_VM_FIXED2075_E5_50G",
+		"SUBCORE_VM_FIXED2100_E5_50G",
+		"SUBCORE_VM_FIXED2125_E5_50G",
+		"SUBCORE_VM_FIXED2150_E5_50G",
+		"SUBCORE_VM_FIXED2175_E5_50G",
+		"SUBCORE_VM_FIXED2200_E5_50G",
+		"SUBCORE_VM_FIXED2225_E5_50G",
+		"SUBCORE_VM_FIXED2250_E5_50G",
+		"SUBCORE_VM_FIXED2275_E5_50G",
+		"SUBCORE_VM_FIXED2300_E5_50G",
+		"SUBCORE_VM_FIXED2325_E5_50G",
+		"SUBCORE_VM_FIXED2350_E5_50G",
+		"SUBCORE_VM_FIXED2375_E5_50G",
+		"SUBCORE_VM_FIXED2400_E5_50G",
+		"SUBCORE_VM_FIXED2425_E5_50G",
+		"SUBCORE_VM_FIXED2450_E5_50G",
+		"SUBCORE_VM_FIXED2475_E5_50G",
+		"SUBCORE_VM_FIXED2500_E5_50G",
+		"SUBCORE_VM_FIXED2525_E5_50G",
+		"SUBCORE_VM_FIXED2550_E5_50G",
+		"SUBCORE_VM_FIXED2575_E5_50G",
+		"SUBCORE_VM_FIXED2600_E5_50G",
+		"SUBCORE_VM_FIXED2625_E5_50G",
+		"SUBCORE_VM_FIXED2650_E5_50G",
+		"SUBCORE_VM_FIXED2675_E5_50G",
+		"SUBCORE_VM_FIXED2700_E5_50G",
+		"SUBCORE_VM_FIXED2725_E5_50G",
+		"SUBCORE_VM_FIXED2750_E5_50G",
+		"SUBCORE_VM_FIXED2775_E5_50G",
+		"SUBCORE_VM_FIXED2800_E5_50G",
+		"SUBCORE_VM_FIXED2825_E5_50G",
+		"SUBCORE_VM_FIXED2850_E5_50G",
+		"SUBCORE_VM_FIXED2875_E5_50G",
+		"SUBCORE_VM_FIXED2900_E5_50G",
+		"SUBCORE_VM_FIXED2925_E5_50G",
+		"SUBCORE_VM_FIXED2950_E5_50G",
+		"SUBCORE_VM_FIXED2975_E5_50G",
+		"SUBCORE_VM_FIXED3000_E5_50G",
+		"SUBCORE_VM_FIXED3025_E5_50G",
+		"SUBCORE_VM_FIXED3050_E5_50G",
+		"SUBCORE_VM_FIXED3075_E5_50G",
+		"SUBCORE_VM_FIXED3100_E5_50G",
+		"SUBCORE_VM_FIXED3125_E5_50G",
+		"SUBCORE_VM_FIXED3150_E5_50G",
+		"SUBCORE_VM_FIXED3175_E5_50G",
+		"SUBCORE_VM_FIXED3200_E5_50G",
+		"SUBCORE_VM_FIXED3225_E5_50G",
+		"SUBCORE_VM_FIXED3250_E5_50G",
+		"SUBCORE_VM_FIXED3275_E5_50G",
+		"SUBCORE_VM_FIXED3300_E5_50G",
+		"SUBCORE_VM_FIXED3325_E5_50G",
+		"SUBCORE_VM_FIXED3350_E5_50G",
+		"SUBCORE_VM_FIXED3375_E5_50G",
+		"SUBCORE_VM_FIXED3400_E5_50G",
+		"SUBCORE_VM_FIXED3425_E5_50G",
+		"SUBCORE_VM_FIXED3450_E5_50G",
+		"SUBCORE_VM_FIXED3475_E5_50G",
+		"SUBCORE_VM_FIXED3500_E5_50G",
+		"SUBCORE_VM_FIXED3525_E5_50G",
+		"SUBCORE_VM_FIXED3550_E5_50G",
+		"SUBCORE_VM_FIXED3575_E5_50G",
+		"SUBCORE_VM_FIXED3600_E5_50G",
+		"SUBCORE_VM_FIXED3625_E5_50G",
+		"SUBCORE_VM_FIXED3650_E5_50G",
+		"SUBCORE_VM_FIXED3675_E5_50G",
+		"SUBCORE_VM_FIXED3700_E5_50G",
+		"SUBCORE_VM_FIXED3725_E5_50G",
+		"SUBCORE_VM_FIXED3750_E5_50G",
+		"SUBCORE_VM_FIXED3775_E5_50G",
+		"SUBCORE_VM_FIXED3800_E5_50G",
+		"SUBCORE_VM_FIXED3825_E5_50G",
+		"SUBCORE_VM_FIXED3850_E5_50G",
+		"SUBCORE_VM_FIXED3875_E5_50G",
+		"SUBCORE_VM_FIXED3900_E5_50G",
+		"SUBCORE_VM_FIXED3925_E5_50G",
+		"SUBCORE_VM_FIXED3950_E5_50G",
+		"SUBCORE_VM_FIXED3975_E5_50G",
+		"SUBCORE_VM_FIXED4000_E5_50G",
+		"SUBCORE_VM_FIXED4025_E5_50G",
+		"SUBCORE_VM_FIXED4050_E5_50G",
+		"SUBCORE_VM_FIXED4075_E5_50G",
+		"SUBCORE_VM_FIXED4100_E5_50G",
+		"SUBCORE_VM_FIXED4125_E5_50G",
+		"SUBCORE_VM_FIXED4150_E5_50G",
+		"SUBCORE_VM_FIXED4175_E5_50G",
+		"SUBCORE_VM_FIXED4200_E5_50G",
+		"SUBCORE_VM_FIXED4225_E5_50G",
+		"SUBCORE_VM_FIXED4250_E5_50G",
+		"SUBCORE_VM_FIXED4275_E5_50G",
+		"SUBCORE_VM_FIXED4300_E5_50G",
+		"SUBCORE_VM_FIXED4325_E5_50G",
+		"SUBCORE_VM_FIXED4350_E5_50G",
+		"SUBCORE_VM_FIXED4375_E5_50G",
+		"SUBCORE_VM_FIXED4400_E5_50G",
+		"SUBCORE_VM_FIXED4425_E5_50G",
+		"SUBCORE_VM_FIXED4450_E5_50G",
+		"SUBCORE_VM_FIXED4475_E5_50G",
+		"SUBCORE_VM_FIXED4500_E5_50G",
+		"SUBCORE_VM_FIXED4525_E5_50G",
+		"SUBCORE_VM_FIXED4550_E5_50G",
+		"SUBCORE_VM_FIXED4575_E5_50G",
+		"SUBCORE_VM_FIXED4600_E5_50G",
+		"SUBCORE_VM_FIXED4625_E5_50G",
+		"SUBCORE_VM_FIXED4650_E5_50G",
+		"SUBCORE_VM_FIXED4675_E5_50G",
+		"SUBCORE_VM_FIXED4700_E5_50G",
+		"SUBCORE_VM_FIXED4725_E5_50G",
+		"SUBCORE_VM_FIXED4750_E5_50G",
+		"SUBCORE_VM_FIXED4775_E5_50G",
+		"SUBCORE_VM_FIXED4800_E5_50G",
+		"SUBCORE_VM_FIXED4825_E5_50G",
+		"SUBCORE_VM_FIXED4850_E5_50G",
+		"SUBCORE_VM_FIXED4875_E5_50G",
+		"SUBCORE_VM_FIXED4900_E5_50G",
+		"SUBCORE_VM_FIXED4925_E5_50G",
+		"SUBCORE_VM_FIXED4950_E5_50G",
+		"SUBCORE_VM_FIXED4975_E5_50G",
+		"SUBCORE_VM_FIXED5000_E5_50G",
 		"SUBCORE_VM_FIXED0020_A1_50G",
 		"SUBCORE_VM_FIXED0040_A1_50G",
 		"SUBCORE_VM_FIXED0060_A1_50G",
@@ -4296,6 +6223,129 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"FIXED4000_A1_50G",
 		"FIXED5000_TELESIS_A1_50G",
 		"ENTIREHOST_A1_50G",
+		"DYNAMIC_X7_25G",
+		"FIXED0040_X7_25G",
+		"STANDARD_VM_FIXED0100_X7_25G",
+		"STANDARD_VM_FIXED0200_X7_25G",
+		"STANDARD_VM_FIXED0300_X7_25G",
+		"STANDARD_VM_FIXED0400_X7_25G",
+		"STANDARD_VM_FIXED0500_X7_25G",
+		"STANDARD_VM_FIXED0600_X7_25G",
+		"STANDARD_VM_FIXED0700_X7_25G",
+		"STANDARD_VM_FIXED0800_X7_25G",
+		"STANDARD_VM_FIXED0900_X7_25G",
+		"STANDARD_VM_FIXED1000_X7_25G",
+		"STANDARD_VM_FIXED1100_X7_25G",
+		"STANDARD_VM_FIXED1200_X7_25G",
+		"STANDARD_VM_FIXED1300_X7_25G",
+		"STANDARD_VM_FIXED1400_X7_25G",
+		"STANDARD_VM_FIXED1500_X7_25G",
+		"STANDARD_VM_FIXED1600_X7_25G",
+		"STANDARD_VM_FIXED1700_X7_25G",
+		"STANDARD_VM_FIXED1800_X7_25G",
+		"STANDARD_VM_FIXED1900_X7_25G",
+		"STANDARD_VM_FIXED2000_X7_25G",
+		"STANDARD_VM_FIXED2100_X7_25G",
+		"STANDARD_VM_FIXED2200_X7_25G",
+		"STANDARD_VM_FIXED2300_X7_25G",
+		"STANDARD_VM_FIXED2400_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0025_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0050_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0075_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0100_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0125_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0150_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0175_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0200_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0225_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0250_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0275_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0300_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0325_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0350_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0375_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0400_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0425_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0450_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0475_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0500_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0525_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0550_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0575_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0600_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0625_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0650_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0675_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0700_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0725_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0750_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0775_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0800_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0825_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0850_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0875_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0900_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0925_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0950_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED0975_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1000_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1025_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1050_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1075_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1100_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1125_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1150_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1175_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1200_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1225_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1250_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1275_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1300_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1325_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1350_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1375_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1400_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1425_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1450_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1475_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1500_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1525_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1550_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1575_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1600_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1625_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1650_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1675_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1700_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1725_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1750_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1775_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1800_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1825_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1850_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1875_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1900_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1925_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1950_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED1975_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2000_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2025_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2050_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2075_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2100_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2125_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2150_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2175_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2200_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2225_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2250_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2275_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2300_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2325_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2350_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2375_X7_25G",
+		"SUBCORE_STANDARD_VM_FIXED2400_X7_25G",
+		"ENTIREHOST_X7_25G",
 		"DYNAMIC_X9_50G",
 		"FIXED0040_X9_50G",
 		"FIXED0400_X9_50G",
@@ -4348,6 +6398,82 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"STANDARD_VM_FIXED3800_X9_50G",
 		"STANDARD_VM_FIXED3900_X9_50G",
 		"STANDARD_VM_FIXED4000_X9_50G",
+		"STANDARD_VM_FIXED4100_X9_50G",
+		"STANDARD_VM_FIXED4200_X9_50G",
+		"STANDARD_VM_FIXED4300_X9_50G",
+		"STANDARD_VM_FIXED4400_X9_50G",
+		"STANDARD_VM_FIXED4500_X9_50G",
+		"STANDARD_VM_FIXED4600_X9_50G",
+		"STANDARD_VM_FIXED4700_X9_50G",
+		"STANDARD_VM_FIXED4800_X9_50G",
+		"STANDARD_VM_FIXED4900_X9_50G",
+		"STANDARD_VM_FIXED5000_X9_50G",
+		"A10_GPU_VM_FIXED2400_X9_50G",
+		"A10_GPU_VM_FIXED4800_X9_50G",
+		"VNUMA_VM_FIXED0100_1_X9_50G",
+		"VNUMA_VM_FIXED0200_2_X9_50G",
+		"VNUMA_VM_FIXED0300_3_X9_50G",
+		"VNUMA_VM_FIXED0400_4_X9_50G",
+		"VNUMA_VM_FIXED0500_5_X9_50G",
+		"VNUMA_VM_FIXED0600_6_X9_50G",
+		"VNUMA_VM_FIXED0700_7_X9_50G",
+		"VNUMA_VM_FIXED0800_8_X9_50G",
+		"VNUMA_VM_FIXED0900_9_X9_50G",
+		"VNUMA_VM_FIXED1000_10_X9_50G",
+		"VNUMA_VM_FIXED1100_11_X9_50G",
+		"VNUMA_VM_FIXED1200_12_X9_50G",
+		"VNUMA_VM_FIXED1300_13_X9_50G",
+		"VNUMA_VM_FIXED1400_14_X9_50G",
+		"VNUMA_VM_FIXED1500_15_X9_50G",
+		"VNUMA_VM_FIXED1600_16_X9_50G",
+		"VNUMA_VM_FIXED1700_17_X9_50G",
+		"VNUMA_VM_FIXED1800_18_X9_50G",
+		"VNUMA_VM_FIXED1900_19_X9_50G",
+		"VNUMA_VM_FIXED2000_20_X9_50G",
+		"VNUMA_VM_FIXED2100_21_X9_50G",
+		"VNUMA_VM_FIXED2200_22_X9_50G",
+		"VNUMA_VM_FIXED2300_23_X9_50G",
+		"VNUMA_VM_FIXED2400_24_X9_50G",
+		"VNUMA_VM_FIXED2500_25_X9_50G",
+		"VNUMA_VM_FIXED2600_26_X9_50G",
+		"VNUMA_VM_FIXED2700_27_X9_50G",
+		"VNUMA_VM_FIXED2800_28_X9_50G",
+		"VNUMA_VM_FIXED2900_29_X9_50G",
+		"VNUMA_VM_FIXED3000_30_X9_50G",
+		"VNUMA_VM_FIXED3100_31_X9_50G",
+		"VNUMA_VM_FIXED3200_32_X9_50G",
+		"VNUMA_VM_FIXED3200_33_X9_50G",
+		"VNUMA_VM_FIXED3200_34_X9_50G",
+		"VNUMA_VM_FIXED3200_35_X9_50G",
+		"VNUMA_VM_FIXED3200_36_X9_50G",
+		"VNUMA_VM_FIXED3200_37_X9_50G",
+		"VNUMA_VM_FIXED3200_38_X9_50G",
+		"VNUMA_VM_FIXED3200_39_X9_50G",
+		"VNUMA_VM_FIXED3200_40_X9_50G",
+		"VNUMA_VM_FIXED3200_41_X9_50G",
+		"VNUMA_VM_FIXED3200_42_X9_50G",
+		"VNUMA_VM_FIXED3200_43_X9_50G",
+		"VNUMA_VM_FIXED3200_44_X9_50G",
+		"VNUMA_VM_FIXED3200_45_X9_50G",
+		"VNUMA_VM_FIXED3200_46_X9_50G",
+		"VNUMA_VM_FIXED3200_47_X9_50G",
+		"VNUMA_VM_FIXED3200_48_X9_50G",
+		"VNUMA_VM_FIXED3200_49_X9_50G",
+		"VNUMA_VM_FIXED3200_50_X9_50G",
+		"VNUMA_VM_FIXED3200_51_X9_50G",
+		"VNUMA_VM_FIXED3200_52_X9_50G",
+		"VNUMA_VM_FIXED3200_53_X9_50G",
+		"VNUMA_VM_FIXED3200_54_X9_50G",
+		"VNUMA_VM_FIXED3200_55_X9_50G",
+		"VNUMA_VM_FIXED3200_56_X9_50G",
+		"VNUMA_VM_FIXED3200_57_X9_50G",
+		"VNUMA_VM_FIXED3200_58_X9_50G",
+		"VNUMA_VM_FIXED3200_59_X9_50G",
+		"VNUMA_VM_FIXED3200_60_X9_50G",
+		"VNUMA_VM_FIXED3200_61_X9_50G",
+		"VNUMA_VM_FIXED3200_62_X9_50G",
+		"VNUMA_VM_FIXED3200_63_X9_50G",
+		"VNUMA_VM_FIXED3200_64_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED0025_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED0050_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED0075_X9_50G",
@@ -4514,6 +6640,9 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"SUBCORE_STANDARD_VM_FIXED4950_X9_50G",
 		"SUBCORE_STANDARD_VM_FIXED5000_X9_50G",
 		"ENTIREHOST_X9_50G",
+		"DYNAMIC_X9_100G",
+		"DYNAMIC_X10_50G",
+		"DYNAMIC_X10_100G",
 	}
 }
 

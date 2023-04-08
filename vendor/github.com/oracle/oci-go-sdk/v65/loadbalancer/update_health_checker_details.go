@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -53,12 +53,14 @@ type UpdateHealthCheckerDetails struct {
 	// Example: `/healthcheck`
 	UrlPath *string `mandatory:"false" json:"urlPath"`
 
-	// description: |
-	// Whether SSL Encryption is used for the Health Check.
-	// If "true", health checks will not use SSL Encryption even if the associated backend set is configured to use SSL Encryption.
-	// If "false", health checks will use SSL Encryption if the associated backend set is configured to use SSL Encryption, otherwise not.
-	// Example: `false`
-	IsDisableSslEncryption *bool `mandatory:"false" json:"isDisableSslEncryption"`
+	// Specifies if health checks should always be done using plain text instead of depending on
+	// whether or not the associated backend set is using SSL.
+	// If "true", health checks will be done using plain text even if the associated backend set is configured
+	// to use SSL.
+	// If "false", health checks will be done using SSL encryption if the associated backend set is configured
+	// to use SSL. If the backend set is not so configured the health checks will be done using plain text.
+	// Example: `true`
+	IsForcePlainText *bool `mandatory:"false" json:"isForcePlainText"`
 }
 
 func (m UpdateHealthCheckerDetails) String() string {

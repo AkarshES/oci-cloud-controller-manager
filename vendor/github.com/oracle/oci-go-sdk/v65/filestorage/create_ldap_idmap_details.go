@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -19,12 +19,6 @@ import (
 // CreateLdapIdmapDetails Mount Target details about the LDAP ID Map configuration.
 type CreateLdapIdmapDetails struct {
 
-	// All LDAP searches are recursive starting at this Base Distinguished user name.
-	BaseDistinguishedUserName *string `mandatory:"true" json:"baseDistinguishedUserName"`
-
-	// All LDAP searches are recursive starting at this Base Distinguished group name.
-	BaseDistinguishedGroupName *string `mandatory:"true" json:"baseDistinguishedGroupName"`
-
 	// Schema type of LDAP account.
 	SchemaType CreateLdapIdmapDetailsSchemaTypeEnum `mandatory:"false" json:"schemaType,omitempty"`
 
@@ -36,6 +30,20 @@ type CreateLdapIdmapDetails struct {
 
 	// Integer for how long to cache if idmap information is missing.
 	NegativeCacheLifetimeSeconds *int `mandatory:"false" json:"negativeCacheLifetimeSeconds"`
+
+	// All LDAP searches are recursive starting at this Base Distinguished user name.
+	BaseDistinguishedUserName *string `mandatory:"false" json:"baseDistinguishedUserName"`
+
+	// All LDAP searches are recursive starting at this Base Distinguished group name.
+	BaseDistinguishedGroupName *string `mandatory:"false" json:"baseDistinguishedGroupName"`
+
+	// All LDAP searches are recursive starting at this user.
+	// Example: `CN=User,DC=domain,DC=com`
+	UserSearchBase *string `mandatory:"false" json:"userSearchBase"`
+
+	// All LDAP searches are recursive starting at this group.
+	// Example: `CN=Group,DC=domain,DC=com`
+	GroupSearchBase *string `mandatory:"false" json:"groupSearchBase"`
 
 	// OCID of the first LDAP Account
 	OutboundConnector1Id *string `mandatory:"false" json:"outboundConnector1Id"`

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -9,6 +9,8 @@
 // documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
 // Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
 // Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// The required permissions are documented in the
+// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -403,6 +405,9 @@ func (client ComputeManagementClient) changeInstancePoolCompartment(ctx context.
 
 // CreateClusterNetwork Creates a cluster network. For more information about cluster networks, see
 // Managing Cluster Networks (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
+// To determine whether capacity is available for a specific shape before you create a cluster network,
+// use the CreateComputeCapacityReport
+// operation.
 func (client ComputeManagementClient) CreateClusterNetwork(ctx context.Context, request CreateClusterNetworkRequest) (response CreateClusterNetworkResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -519,7 +524,10 @@ func (client ComputeManagementClient) createInstanceConfiguration(ctx context.Co
 	return response, err
 }
 
-// CreateInstancePool Create an instance pool.
+// CreateInstancePool Creates an instance pool.
+// To determine whether capacity is available for a specific shape before you create an instance pool,
+// use the CreateComputeCapacityReport
+// operation.
 func (client ComputeManagementClient) CreateInstancePool(ctx context.Context, request CreateInstancePoolRequest) (response CreateInstancePoolResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -1011,12 +1019,15 @@ func (client ComputeManagementClient) getInstancePoolLoadBalancerAttachment(ctx 
 	return response, err
 }
 
-// LaunchInstanceConfiguration Launches an instance from an instance configuration.
+// LaunchInstanceConfiguration Creates an instance from an instance configuration.
 // If the instance configuration does not include all of the parameters that are
-// required to launch an instance, such as the availability domain and subnet ID, you must
-// provide these parameters when you launch an instance from the instance configuration.
+// required to create an instance, such as the availability domain and subnet ID, you must
+// provide these parameters when you create an instance from the instance configuration.
 // For more information, see the InstanceConfiguration
 // resource.
+// To determine whether capacity is available for a specific shape before you create an instance,
+// use the CreateComputeCapacityReport
+// operation.
 func (client ComputeManagementClient) LaunchInstanceConfiguration(ctx context.Context, request LaunchInstanceConfigurationRequest) (response LaunchInstanceConfigurationResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()

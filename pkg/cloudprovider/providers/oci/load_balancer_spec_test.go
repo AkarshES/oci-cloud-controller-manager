@@ -114,6 +114,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -176,6 +177,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -239,6 +241,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -303,6 +306,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -368,6 +372,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -433,6 +438,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -496,6 +502,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -558,6 +565,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -620,6 +628,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -682,6 +691,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -746,6 +756,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -810,6 +821,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -875,6 +887,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -940,6 +953,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1007,6 +1021,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1089,6 +1104,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1103,6 +1119,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1176,6 +1193,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1242,6 +1260,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1308,6 +1327,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1374,6 +1394,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1441,6 +1462,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1522,6 +1544,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(1),
@@ -1590,6 +1613,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1655,6 +1679,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1719,6 +1744,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1784,6 +1810,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1857,6 +1884,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -1970,6 +1998,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 						Backends: []client.GenericBackend{},
 						HealthChecker: &client.GenericHealthChecker{
 							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
 							Port:             common.Int(10256),
 							UrlPath:          common.String("/healthz"),
 							Retries:          common.Int(3),
@@ -3695,6 +3724,7 @@ func Test_getHealthChecker(t *testing.T) {
 			},
 			expected: &client.GenericHealthChecker{
 				Protocol:         "HTTP",
+				IsForcePlainText: common.Bool(false),
 				Port:             common.Int(10256),
 				UrlPath:          common.String("/healthz"),
 				Retries:          common.Int(3),
@@ -3716,6 +3746,7 @@ func Test_getHealthChecker(t *testing.T) {
 			},
 			expected: &client.GenericHealthChecker{
 				Protocol:         "HTTP",
+				IsForcePlainText: common.Bool(false),
 				Port:             common.Int(10256),
 				UrlPath:          common.String("/healthz"),
 				Retries:          common.Int(4),
@@ -3735,6 +3766,7 @@ func Test_getHealthChecker(t *testing.T) {
 			},
 			expected: &client.GenericHealthChecker{
 				Protocol:         "HTTP",
+				IsForcePlainText: common.Bool(false),
 				Port:             common.Int(10256),
 				UrlPath:          common.String("/healthz"),
 				Retries:          common.Int(3),
@@ -3757,6 +3789,7 @@ func Test_getHealthChecker(t *testing.T) {
 			},
 			expected: &client.GenericHealthChecker{
 				Protocol:         "HTTP",
+				IsForcePlainText: common.Bool(false),
 				Port:             common.Int(10256),
 				UrlPath:          common.String("/healthz"),
 				Retries:          common.Int(4),
@@ -3811,6 +3844,27 @@ func Test_getHealthChecker(t *testing.T) {
 			},
 			expected: nil,
 			err:      fmt.Errorf("invalid value for health check interval, should be between %v and %v", NLBHealthCheckIntervalMin, NLBHealthCheckIntervalMax),
+		},
+		"http healthcheck for https backends": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                "lb",
+						ServiceAnnotationLoadBalancerTLSBackendSetSecret: "testSecret",
+					},
+				},
+			},
+			expected: &client.GenericHealthChecker{
+				Protocol:         "HTTP",
+				IsForcePlainText: common.Bool(true),
+				Port:             common.Int(10256),
+				UrlPath:          common.String("/healthz"),
+				Retries:          common.Int(3),
+				TimeoutInMillis:  common.Int(3000),
+				IntervalInMillis: common.Int(10000),
+				ReturnCode:       common.Int(http.StatusOK),
+			},
+			err: nil,
 		},
 	}
 

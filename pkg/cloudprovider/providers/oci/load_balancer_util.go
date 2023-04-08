@@ -203,6 +203,10 @@ func getHealthCheckerChanges(actual *client.GenericHealthChecker, desired *clien
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Protocol", toString(&actual.Protocol), toString(&desired.Protocol)))
 	}
 
+	if toBool(actual.IsForcePlainText) != toBool(desired.IsForcePlainText) {
+		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:IsForcePlainText", toBool(actual.IsForcePlainText), toBool(desired.IsForcePlainText)))
+	}
+
 	return healthCheckerChanges
 }
 
@@ -270,6 +274,7 @@ func healthCheckerToDetails(hc *client.GenericHealthChecker) *client.GenericHeal
 	}
 	return &client.GenericHealthChecker{
 		Protocol:         hc.Protocol,
+		IsForcePlainText: hc.IsForcePlainText,
 		IntervalInMillis: hc.IntervalInMillis,
 		Port:             hc.Port,
 		//ResponseBodyRegex: hc.ResponseBodyRegex,

@@ -1859,17 +1859,19 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 				ResponseBodyRegex: common.String("desired"),
 				Retries:           common.Int(3),
 				ReturnCode:        common.Int(200),
-				TimeoutInMillis:   common.Int(200),
+				TimeoutInMillis:   common.Int(300),
 				UrlPath:           common.String("/desired"),
 				Protocol:          "HTTP",
+				IsForcePlainText:  common.Bool(false),
 			},
 			actual: client.GenericHealthChecker{
 				Port:              common.Int(25),
 				ResponseBodyRegex: common.String("actual"),
 				Retries:           common.Int(2),
-				TimeoutInMillis:   common.Int(300),
+				TimeoutInMillis:   common.Int(200),
 				UrlPath:           common.String("/actual"),
 				Protocol:          "TCP",
+				IsForcePlainText:  common.Bool(true),
 			},
 			expected: []string{
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Port", 25, 20),
@@ -1877,8 +1879,9 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Retries", 2, 3),
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:ReturnCode", 0, 200),
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:TimeoutInMillis", 200, 300),
-				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:UrlPath", "actual", "desired"),
-				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:UrlPath", "TCP", "HTTP"),
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:UrlPath", "/actual", "/desired"),
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Protocol", "TCP", "HTTP"),
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:IsForcePlainText", true, false),
 			},
 		},
 	}
@@ -1886,9 +1889,6 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			changes := getHealthCheckerChanges(&tt.actual, &tt.desired)
-			if len(changes) == len(tt.expected) {
-				return
-			}
 			if !reflect.DeepEqual(changes, tt.expected) {
 				t.Errorf("expected HealthCheckerChanges\n%+v\nbut got\n%+v", tt.expected, changes)
 			}

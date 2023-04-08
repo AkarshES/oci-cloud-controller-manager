@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2022, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -30,8 +30,8 @@ type UpdateSnapshotDetails struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
-	// The UTC time when this snapshot will be deleted. To remove the expirationTime, set this field
-	// to be the min value of DateTime, Date(0) i.e. Thu Jan 01 01:00:00 GMT 1970.
+	// The UTC time when this snapshot will be deleted. To remove the expiration time, set this field to the minimum date-time value using Date(0).
+	// Example: `Thu Jan 01 01:00:00 GMT 1970`
 	ExpirationTime *common.SDKTime `mandatory:"false" json:"expirationTime"`
 }
 
