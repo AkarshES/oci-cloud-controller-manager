@@ -1,5 +1,5 @@
 {
-  "realms" : [ "oc20" ],
+  "realms" : [ "oc19" ],
   "name": "ccm-image-version-mapping",
   "values" : [ {
     "ad" : "all",
