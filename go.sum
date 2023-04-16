@@ -425,6 +425,8 @@ github.com/kubernetes-csi/external-resizer v0.0.0-20220909153723-62048789556f h1
 github.com/kubernetes-csi/external-resizer v0.0.0-20220909153723-62048789556f/go.mod h1:m498CPnoMR6p2yAXa4VcGQ/6D3gY9wcffqGGDkqqvoM=
 github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0 h1:yeuon3bOuOADwiWl2CyYrU4vbmYbAzGLCTscE1yLNHk=
 github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0/go.mod h1:eVY6gNtSrhsblGAqKFDG3CrkCLFAjsDvOpPpt+EaS6k=
+github.com/kubernetes-csi/external-snapshotter/v6 v6.1.0 h1:RTBnO3EEMZfOu8ieWbj6BjzgGDezxzBuzl2ML0jElUg=
+github.com/kubernetes-csi/external-snapshotter/v6 v6.1.0/go.mod h1:T+Qf9VDqaKYBeTjJqItqQEgZ/qcxP0d4g8bsggLXjwI=
 github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-bc2310a04743/go.mod h1:qklhhLq1aX+mtWk9cPHPzaBjWImj5ULL6C7HFJtXQMM=
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=

@@ -49,10 +49,13 @@ const (
 	ClassOCIExt3       = "oci-ext3"
 	ClassOCIXfs        = "oci-xfs"
 	ClassFssDynamic    = "oci-file-storage-test"
+	ClassSnapshot      = "oci-snapshot-sc"
 	FssProvisionerType = "fss.csi.oraclecloud.com"
 	MinVolumeBlock     = "50Gi"
 	MaxVolumeBlock     = "100Gi"
 	VolumeFss          = "1Gi"
+
+	VSClassDefault	   = "oci-snapclass"
 )
 
 var (
@@ -105,6 +108,7 @@ var (
 	reservedIP                   string // Testing public reserved IP feature
 	architecture                 string
 	volumeHandle                 string // The FSS mount volume handle
+	staticSnapshotCompartmentOCID string // Compartment ID for cross compartment snapshot test
 )
 
 func init() {
@@ -160,6 +164,8 @@ func init() {
 	flag.StringVar(&nsgOCIDS, "nsg-ocids", "", "NSG OCIDs to be used to associate to LB")
 	flag.StringVar(&reservedIP, "reserved-ip", "", "Public reservedIP to be used for testing loadbalancer with reservedIP")
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
+
+	flag.StringVar(&staticSnapshotCompartmentOCID, "static-snapshot-compartment-id", "", "Compartment ID for cross compartment snapshot test")
 }
 
 func getDefaultOCIUser() OCIUser {
@@ -291,6 +297,9 @@ type Framework struct {
 	Architecture             string
 
 	VolumeHandle string
+
+	// Compartment ID for cross compartment snapshot test
+	StaticSnapshotCompartmentOcid string
 }
 
 // New creates a new a framework that holds the context of the test
@@ -367,6 +376,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		ReservedIP:               reservedIP,
 		Architecture:             architecture,
 		VolumeHandle:             volumeHandle,
+		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -445,6 +455,8 @@ func (f *Framework) Initialize() {
 	Logf("OCI Mount Target Compartment OCID: %s", f.MntTargetCompartmentOcid)
 	f.VolumeHandle = volumeHandle
 	Logf("FSS Volume Handle is : %s", f.VolumeHandle)
+	f.StaticSnapshotCompartmentOcid = staticSnapshotCompartmentOCID
+	Logf("Static Snapshot Compartment OCID: %s", f.StaticSnapshotCompartmentOcid)
 	f.CMEKKMSKey = cmekKMSKey
 	Logf("CMEK KMS Key: %s", f.CMEKKMSKey)
 	f.NsgOCIDS = nsgOCIDS

@@ -107,6 +107,7 @@ function check_environment () {
         check-env "MNT_TARGET_ID"             $MNT_TARGET_ID
         check-env "MNT_TARGET_SUBNET_ID"      $MNT_TARGET_SUBNET_ID
         check-env "MNT_TARGET_COMPARTMENT_ID" $MNT_TARGET_COMPARTMENT_ID
+        check-env "STATIC_SNAPSHOT_COMPARTMENT_ID" $STATIC_SNAPSHOT_COMPARTMENT_ID
         check-env-k8s-version-index-exist
         if [ -z "$CLUSTER_KUBECONFIG" ]; then
             CLUSTER_KUBECONFIG="/tmp/clusterkubeconfig"
@@ -189,7 +190,8 @@ function run_e2e_tests() {
         --nsg-ocids=${NSG_OCIDS} \
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
-        --volume-handle=${FSS_VOLUME_HANDLE}
+        --volume-handle=${FSS_VOLUME_HANDLE} \
+        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID}
     retval=$?
     rm -f $OCI_KEY_FILE
     return $retval
@@ -211,7 +213,8 @@ function run_e2e_tests_existing_cluster() {
         --nsg-ocids=${NSG_OCIDS} \
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
-        --volume-handle=${FSS_VOLUME_HANDLE}
+        --volume-handle=${FSS_VOLUME_HANDLE} \
+        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID}
     retval=$?
     return $retval
 }
@@ -248,6 +251,7 @@ function setup_arm() {
         export MNT_TARGET_ID=$MNT_TARGET_ID
         export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID
         export MNT_TARGET_COMPARTMENT_ID=$MNT_TARGET_COMPARTMENT_ID
+        export STATIC_SNAPSHOT_COMPARTMENT_ID=$STATIC_SNAPSHOT_COMPARTMENT_ID
         declare_setup "CREATE"
     elif [[ "$#" -ne  "0" && "$1" == "EXIST" ]]; then
         export CLUSTER_KUBECONFIG=$CLUSTER_KUBECONFIG_ARM
@@ -278,6 +282,7 @@ function declare_setup () {
     echo "MNT_TARGET_ID is ${MNT_TARGET_ID}"
     echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
     echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
+    echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
 }
 
 function set_focus () {
@@ -336,6 +341,7 @@ function declare_environment () {
         echo "MNT_TARGET_ID is ${MNT_TARGET_ID}"
         echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
         echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
+        echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
     else
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"
         echo "CLOUD_CONFIG is ${CLOUD_CONFIG}"

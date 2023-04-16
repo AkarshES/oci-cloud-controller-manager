@@ -19,15 +19,18 @@ package framework
 import (
 	"context"
 	"fmt"
+
 	"os"
 	"strings"
 	"time"
 
+	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
+	crdclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -54,7 +57,9 @@ type CloudProviderFramework struct {
 	InitCloudProvider bool                    // Whether to initialise a cloud provider interface for testing
 	CloudProvider     cloudprovider.Interface // Every test has a cloud provider unless initialisation is skipped
 
-	ClientSet clientset.Interface
+	ClientSet 		clientset.Interface
+	SnapClientSet	snapclientset.Interface
+	CRDClientSet    crdclientset.Interface
 
 	CloudProviderConfig *providercfg.Config // If specified, the CloudProviderConfig. This provides information on the configuration of the test cluster.
 	Client              client.Interface    // An OCI client for checking the state of any provisioned OCI infrastructure during testing.
@@ -72,6 +77,8 @@ type CloudProviderFramework struct {
 	BackupIDs          []string
 	StorageClasses     []string
 	VolumeIds          []string
+
+	VolumeSnapshotClasses	[]string
 
 	// To make sure that this framework cleans up after itself, no matter what,
 	// we install a Cleanup action before each test and clear it after.  If we
@@ -213,6 +220,22 @@ func (f *CloudProviderFramework) BeforeEach() {
 		config, err := clientcmd.BuildConfigFromFlags("", clusterkubeconfig)
 		Expect(err).NotTo(HaveOccurred())
 		f.ClientSet, err = clientset.NewForConfig(config)
+		Expect(err).NotTo(HaveOccurred())
+	}
+
+	if f.SnapClientSet == nil {
+		By("Creating a snapshot client")
+		config, err := clientcmd.BuildConfigFromFlags("", clusterkubeconfig)
+		Expect(err).NotTo(HaveOccurred())
+		f.SnapClientSet, err = snapclientset.NewForConfig(config)
+		Expect(err).NotTo(HaveOccurred())
+	}
+
+	if f.CRDClientSet == nil {
+		By("Creating a CRD client")
+		config, err := clientcmd.BuildConfigFromFlags("", clusterkubeconfig)
+		Expect(err).NotTo(HaveOccurred())
+		f.CRDClientSet, err = crdclientset.NewForConfig(config)
 		Expect(err).NotTo(HaveOccurred())
 	}
 
