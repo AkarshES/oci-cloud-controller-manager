@@ -52,6 +52,12 @@ const (
 	// BlockSnapshotRestore is the OCI metric suffix for Block Volume Snapshot Restore
 	BlockSnapshotRestore = "BSNAP_RESTORE"
 
+	// FssAllProvision is the OCI metric suffix for FSS end to end provision
+	FssAllProvision = "FSS_ALL_PROVISION"
+
+	// FssAllDelete is the OCI metric suffix for FSS end to end deletion
+	FssAllDelete = "FSS_ALL_DELETE"
+
 	ResourceOCIDDimension     = "resourceOCID"
 	ComponentDimension        = "component"
 	BackendSetsCountDimension = "backendSetsCount"
