@@ -904,7 +904,7 @@ func (j *PVCTestJig) SanityCheckPV(pvc *v1.PersistentVolumeClaim) {
 	claimCapacity := pvc.Spec.Resources.Requests[v1.ResourceStorage]
 	Expect(pvCapacity.Value()).To(Equal(claimCapacity.Value()), "pvCapacity is not equal to expectedCapacity")
 
-	if strings.Contains(pvc.Name, "fss") {
+	if strings.HasPrefix(pvc.Name, "csi-fss") {
 		expectedAccessModes := []v1.PersistentVolumeAccessMode{v1.ReadWriteMany}
 		Expect(pv.Spec.AccessModes).To(Equal(expectedAccessModes))
 	} else {
