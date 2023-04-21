@@ -103,6 +103,18 @@ locals {
         )
       }
     }
+
+    csi-bv-expansion-enabled = {
+      "default" = {
+        "all" : "true"
+      }
+    }
+
+    fss-csi-driver-enabled = {
+      "default" = {
+        "all" : "true"
+      }
+    }
   }
   global_default_values_by_property = { for property_name, property_value in local.global_default_values : property_name => merge(
     lookup(property_value, "default", {}),
