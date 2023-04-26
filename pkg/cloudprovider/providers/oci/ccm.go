@@ -88,6 +88,8 @@ type CloudProvider struct {
 	instanceCache    cache.Store
 	virtualNodeCache cache.Store
 	metricPusher     *metrics.MetricPusher
+
+	lbLocks *loadBalancerLocks
 }
 
 func (cp *CloudProvider) InstancesV2() (cloudprovider.InstancesV2, bool) {
@@ -156,6 +158,7 @@ func NewCloudProvider(config *providercfg.Config) (cloudprovider.Interface, erro
 		instanceCache:    cache.NewTTLStore(instanceCacheKeyFn, time.Duration(24)*time.Hour),
 		virtualNodeCache: cache.NewTTLStore(virtualNodeCacheKeyFn, time.Duration(24)*time.Hour),
 		metricPusher:     metricPusher,
+		lbLocks:          NewLoadBalancerLocks(),
 	}, nil
 }
 

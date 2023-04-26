@@ -51,6 +51,7 @@ const (
 	NetworkLoadBalancingPolicyTwoTuple   = "TWO_TUPLE"
 	NetworkLoadBalancingPolicyThreeTuple = "THREE_TUPLE"
 	NetworkLoadBalancingPolicyFiveTuple  = "FIVE_TUPLE"
+	LbOperationAlreadyExistsFmt          = "An operation for the %s: %s already exists."
 )
 
 // DefaultLoadBalancerBEProtocol defines the default protocol for load
@@ -123,6 +124,21 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 		metricPusher: cp.metricPusher,
 		config:       cp.config,
 	}, nil
+}
+
+// serviceNotExistsOrDeleted returns true if service has stopped existing or has been marked as Deleted
+func (cp *CloudProvider) serviceDeletedOrDoesNotExist(ctx context.Context, svc *v1.Service) (bool, error) {
+	service, err := cp.kubeclient.CoreV1().Services(svc.Namespace).Get(ctx, svc.Name, metav1.GetOptions{})
+	if err != nil && apierrors.IsNotFound(err) {
+		return true, nil
+	}
+	if err != nil {
+		return true, errors.New("Unable to check if service still exists. Error:" + err.Error())
+	}
+	if service.DeletionTimestamp != nil {
+		return true, nil
+	}
+	return false, nil
 }
 
 var ServiceAccountTokenExpiry = int64(serviceAccountTokenExpiry)
@@ -458,6 +474,22 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	if sa, useWI := service.Annotations[ServiceAnnotationServiceAccountName]; useWI { // When using Workload Identity
 		logger = logger.With("serviceAccount", sa, "nameSpace", service.Namespace)
 	}
+
+	if deleted, err := cp.serviceDeletedOrDoesNotExist(ctx, service); deleted {
+		if err != nil {
+			logger.With(zap.Error(err)).Error("Failed to check if service exists")
+			return nil, errors.Wrap(err, "Failed to check service status")
+		}
+		logger.Info("Service already deleted or no more exists")
+		return nil, errors.New("Service already deleted or no more exists")
+	}
+	loadBalancerService := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
+	if acquired := cp.lbLocks.TryAcquire(loadBalancerService); !acquired {
+		logger.Error("Could not acquire lock for Ensuring Load Balancer")
+		return nil, errors.Errorf(LbOperationAlreadyExistsFmt, loadBalancerType, loadBalancerService)
+	}
+	defer cp.lbLocks.Release(loadBalancerService)
+
 	nodes, err := filterNodes(service, clusterNodes)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to filter provisioned nodes with label selector and virtual nodes")
@@ -1042,6 +1074,13 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 		logger = logger.With("serviceAccount", sa, "nameSpace", service.Namespace)
 	}
 	logger.Debug("Attempting to delete load balancer")
+	loadBalancerService := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
+	if acquired := cp.lbLocks.TryAcquire(loadBalancerService); !acquired {
+		logger.Error("Could not acquire lock for Deleting Load Balancer")
+		return errors.Errorf(LbOperationAlreadyExistsFmt, loadBalancerType, loadBalancerService)
+	}
+	defer cp.lbLocks.Release(loadBalancerService)
+
 	var errorType string
 	var lbMetricDimension string
 
