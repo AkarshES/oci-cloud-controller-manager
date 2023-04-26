@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -80,6 +81,9 @@ const (
 	// Service Account Token expiration in seconds
 	serviceAccountTokenExpiry = 21600 // 6 Hours
 )
+
+// Protects Security Lists against update by multiple LBs in parallel
+var securityListMutex sync.Mutex
 
 // CloudLoadBalancerProvider is an implementation of the cloud-provider struct
 type CloudLoadBalancerProvider struct {
@@ -390,20 +394,18 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 
 	logger.With("loadBalancerID", *lb.Id).Info("Load balancer created")
 	status, err := loadBalancerToStatus(lb)
+
 	if status != nil && len(status.Ingress) > 0 {
 		// If the LB is successfully provisioned then open lb/node subnet seclists egress/ingress.
-		for _, ports := range spec.Ports {
-			if err = spec.securityListManager.Update(ctx, lbSubnets, nodeSubnets, spec.SourceCIDRs, nil, ports, *spec.IsPreserveSource); err != nil {
-				return nil, "", err
-			}
+		// Security List Updates take place in a Global Critical Section
+		if err = updateSecurityListsInCriticalSection(ctx, spec, lbSubnets, nodeSubnets); err != nil {
+			return nil, "", err
 		}
 	}
-
 	if lb.Id != nil {
 		lbOCID = *lb.Id
 	}
 	return status, lbOCID, err
-
 }
 
 // getNodeFilter extracts the node filter based on load balancer type.
@@ -819,13 +821,11 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 		// seclist update when the load balancer was created
 		// We try to update the seclist this way to prevent replication
 		// of seclist reconciliation logic
-		for _, ports := range spec.Ports {
-			if err = spec.securityListManager.Update(ctx, lbSubnets, nodeSubnets, spec.SourceCIDRs, nil, ports, *spec.IsPreserveSource); err != nil {
-				return err
-			}
+		// Security List Updates happen in a Global Critical Section
+		if err = updateSecurityListsInCriticalSection(ctx, spec, lbSubnets, nodeSubnets); err != nil {
+			return err
 		}
 	}
-
 	actions := sortAndCombineActions(logger, backendSetActions, listenerActions)
 	for _, action := range actions {
 		switch a := action.(type) {
@@ -851,6 +851,18 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 			if err != nil {
 				return errors.Wrap(err, "updating listener")
 			}
+		}
+	}
+	return nil
+}
+
+func updateSecurityListsInCriticalSection(ctx context.Context, spec *LBSpec, lbSubnets, nodeSubnets []*core.Subnet) (err error) {
+	securityListMutex.Lock()
+	defer securityListMutex.Unlock()
+
+	for _, ports := range spec.Ports {
+		if err = spec.securityListManager.Update(ctx, lbSubnets, nodeSubnets, spec.SourceCIDRs, nil, ports, *spec.IsPreserveSource); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -1103,7 +1115,11 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 	return nil
 }
 
+// Critical Section for Security List Updates
 func (cp *CloudProvider) cleanupSecListForLoadBalancerDelete(lb *client.GenericLoadBalancer, logger *zap.SugaredLogger, ctx context.Context, service *v1.Service, name string) error {
+	securityListMutex.Lock()
+	defer securityListMutex.Unlock()
+
 	id := *lb.Id
 	ipSet := sets.NewString()
 	for _, backendSet := range lb.BackendSets {
