@@ -3,6 +3,6 @@
   "name": "ccm-image-version-mapping",
   "values" : [ {
     "ad" : "all",
-    "value" : "{\"default\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.22\": \"oke-multiarch-1.22-d9d9e32-257@sha256:c4662e0f9c5512bd3f8617df77b5bc75c91e0a9642272e3232347510f24016b6\", \"v1.23\": \"oke-multiarch-1.23-8352c24-162@sha256:11370c21b8e5b53be2621d99f9949ba5765450bb60cfe498e6759a5acfbd02ad\", \"v1.24\": \"oke-multiarch-1.24-c1ddcee-218@sha256:cc364996140c68c4d96a20573e06b54236e19ee6ba6a936057d574d86695fdcc\", \"v1.25\": \"oke-multiarch-1.25-89a4ede-206@sha256:02c00bfebd3e2fb1c7c1c89e6776226035ceebd560e2b06b0fb5e5d411417431\", \"v1.26\": \"oke-multiarch-1.26-4454daa-100@sha256:2fc8b5c8e02120f82973512aae48d4b1a4194c38d47af88b59ba84b0a197ad86\"}"
+    "value" : "{\"default\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.22\": \"oke-multiarch-1.22-d9d9e32-257@sha256:c4662e0f9c5512bd3f8617df77b5bc75c91e0a9642272e3232347510f24016b6\", \"v1.23\": \"oke-multiarch-1.23-8352c24-162@sha256:11370c21b8e5b53be2621d99f9949ba5765450bb60cfe498e6759a5acfbd02ad\", \"v1.24\": \"oke-multiarch-1.24-c1ddcee-218@sha256:cc364996140c68c4d96a20573e06b54236e19ee6ba6a936057d574d86695fdcc\", \"v1.25\": \"oke-multiarch-1.25-89a4ede-206@sha256:02c00bfebd3e2fb1c7c1c89e6776226035ceebd560e2b06b0fb5e5d411417431\", \"v1.26\": \"oke-multiarch-1.26-d3caa04-137@sha256:3107bb414c2aa6ef3f7242aab00167f1d0d17384d189d717598831c3073503d3\"}"
   } ]
 }
