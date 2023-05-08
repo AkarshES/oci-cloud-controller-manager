@@ -21,6 +21,95 @@ locals {
     // Sample key: dev
     // Sample key: dev.oc1
     // Sample key: dev.oc1.us-ashburn-1
+    "herds" = {
+      env              = "rbaas"
+      oke_tenancy_ocid = "TODO"
+
+      // Configuration for PKI certificate
+      mapi_subdomain          = "mapi-rbaas"
+      certificate_compartment = "" // Defaults to orchestration compartment
+
+      // Spectre Configuration
+      spectre_group_name = "clusters_test"
+
+      // KaaS Configuration
+      kaas_name_format = "oke-rbaas-mp-cell%d"
+
+      // WFaaS Configuration
+      wfaas_name_format = "oke-rbaas-mp-cell%d"
+ 
+      // API instance configuration
+      api_hostclass = "oke-mp-api-rbaas"
+
+      // Worker instance configuration
+      worker_hostclass = "oke-mp-worker-rbaas"
+
+      // Logging configuration
+      api_log_namespace_format     = "oke-rbaas-api-cell%d"
+      monitor_log_namespace_format = "oke-rbaas-monitor-cell%d"
+      worker_log_namespace_format  = "oke-rbaas-worker-cell%d"
+
+      // Generic OKE configuration
+      service_name = "okepldev"
+
+      // SMS Configuration
+      sms_namespace_name_format = "oke-rbaas-mapi-cell%d"
+      oke_secrets_namespace     = "oke-rbaas0"
+
+      // Configuration about other OKE components
+      etcdop_s3compat_bucket = "tkc-etcd-backup-rbaas-0"
+      os_namespace           = "ax8rjegmraam"
+
+      // Alarms configuration
+      alarms_compartment              = "" // Defaults to orchestration compartment
+      alarms_enabled                  = false
+      mapi_api_alarms_enabled         = false
+      mapi_alarms_fleet_format        = "okerbaas.oke-rbaas-mapi-cell%d"
+      mapi_alarms_hostmetrics_fleet   = "okerbaas.oke-mp-api-rbaas"
+      kmon_alarms_enabled             = false
+      kmon_alarms_fleet_format        = "okerbaas.oke-rbaas-kmon-cell%d"
+      worker_alarms_enabled           = false
+      worker_alarms_fleet_format      = "okerbaas.oke-rbaas-wfworker-cell%d"
+      worker_alarms_hostmetrics_fleet = "okerbaas.oke-mp-worker-rbaas"
+
+      // API ODO Configuration
+      api_pool_alias_format = "oke-rbaas-mapi-cell%d"
+      api_app_alias_format  = "oke-rbaas-mapi-cell%d"
+
+      // Monitor ODO Configuration
+      monitor_app_alias_format = "oke-rbaas-kmon-cell%d"
+
+      // Worker ODO Configuration
+      worker_pool_alias_format = "oke-rbaas-mpworker-cell%d"
+      worker_app_alias_format  = "oke-rbaas-wfworker-cell%d"
+
+      // SPLAT - base service already exists because this is still part of oc1
+      splat_service_name_format           = "oke-mapi-cell%d-rbaas"
+      splat_operational_spec_fleet_format = "oke-rbaas-mapi-cell%d"
+      splat_host_header_format            = "oke-rbaas-mapi-cell%d.%s.oci.%s"
+      // The following hardcoded compartment name in api.yaml is replaced with
+      // orchestration compartment OCID for non-production environments
+      splat_compartment_token_to_replace = "ocid1.compartment.oc1..aaaaaaaamhk5oakipanjsuf3g6xrejzsa5e2tgsgugngtr7bo67wygrffkoq"
+      splat_mapi_subdomain_format        = "oke-rbaas-mapi-cell%d"
+      splat_allowed_service_principal    = "okepldev"
+
+      // Configuration for image
+      image_name = local.io_overlay_uek5_images["20210409"].name
+      image_url  = local.io_overlay_uek5_images["20210409"].url
+
+      // T2
+      t2_namespace      = "oci_oke_rbaas"
+      t2_fleet_template = "okerbaas.rbaas-oke-clusters-%s"
+
+      cp_vcn_compartment = "oke-cp-api"
+      pl_vcn_name        = "oke-admin"
+      pl_vcn_compartment = "admin"
+
+      prime_vcn_compartment = "rbaas-0"
+      prime_vcn_name        = "rbaas"
+
+      skip_dns = true
+    }
     "polaris" = {
       env              = "polaris"
       oke_tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxc346rx7oshe74elt6upirg54l62b4iaxalrkc44hqpv4nxq333a"
@@ -302,6 +391,9 @@ locals {
     }
     // For tenancy OCID
     tenancy_info = {
+      rbaas = {
+        oc1 = "okerbaas"
+      }
       dev = {
         oc1 = "ociokedev"
       }
@@ -396,6 +488,12 @@ locals {
       t2_fleet_template     = "oke-prod-v2.polaris-oke-clusters-%s"
       mapi_instance_shape   = "VM.Standard2.2"
       worker_instance_shape = "VM.Standard2.4"
+    }
+
+    "herds.oc1" = {
+      has_mapi_grafana_dashboard = false
+      image_type                 = "E446"
+      worker_instance_count      = 3
     }
 
     "dev.oc1" = {
@@ -629,6 +727,7 @@ locals {
   }
 
   defined_cell_overrides = {
+    "herds.oc1.eu-frankfurt-1.cell0" = {}
     "polaris.oc1.us-sanjose-1.cell0" = {}
     "dev.oc1.us-ashburn-1.cell0"     = {}
     "dev.oc1.eu-frankfurt-1.cell0"   = {}

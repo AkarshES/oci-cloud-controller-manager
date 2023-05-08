@@ -134,7 +134,7 @@ resource "property_definition" property {
 }
 
 resource "property_value" csi_image_version_mapping {
-  for_each = contains(local.current_realms, var.realm) ? merge(
+  for_each = contains(local.current_realms, var.realm) && var.env != "rbaas" ? merge(
     lookup(local.csi_image_version_mapping, "default", {}),
     lookup(local.csi_image_version_mapping, var.env, {}),
     lookup(local.csi_image_version_mapping, "${var.env}.${var.realm}", {})
@@ -148,7 +148,7 @@ resource "property_value" csi_image_version_mapping {
 }
 
 resource "property_value" ccm_image_version_mapping {
-  for_each = contains(local.current_realms, var.realm) ? merge(
+  for_each = contains(local.current_realms, var.realm) && var.env != "rbaas" ? merge(
     lookup(local.ccm_image_version_mapping, "default", {}),
     lookup(local.ccm_image_version_mapping, var.env, {}),
     lookup(local.ccm_image_version_mapping, "${var.env}.${var.realm}", {})
@@ -162,7 +162,7 @@ resource "property_value" ccm_image_version_mapping {
 }
 
 resource "property_value" csi_fss_node_driver_registrar_image_version_mapping {
-  for_each = contains(local.current_realms, var.realm) ? merge(
+  for_each = contains(local.current_realms, var.realm) && var.env != "rbaas" ? merge(
     lookup(local.csi_fss_node_driver_registrar_image_version_mapping, "default", {}),
     lookup(local.csi_fss_node_driver_registrar_image_version_mapping, var.env, {}),
     lookup(local.csi_fss_node_driver_registrar_image_version_mapping, "${var.env}.${var.realm}", {})
@@ -176,7 +176,7 @@ resource "property_value" csi_fss_node_driver_registrar_image_version_mapping {
 }
 
 resource "property_value" csi_fss_node_driver_image_version_mapping {
-  for_each = contains(local.current_realms, var.realm) ? merge(
+  for_each = contains(local.current_realms, var.realm) && var.env != "rbaas" ? merge(
     lookup(local.csi_fss_node_driver_image_version_mapping, "default", {}),
     lookup(local.csi_fss_node_driver_image_version_mapping, var.env, {}),
     lookup(local.csi_fss_node_driver_image_version_mapping, "${var.env}.${var.realm}", {})
