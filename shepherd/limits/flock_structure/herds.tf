@@ -1,93 +1,61 @@
-
-module "dev-oc1-config" {
+module "herds-oc1-config" {
   source               = "./configuration/merged_realm_config"
   flock_config         = local.flock_config
   overrides            = local.overrides
-  qualified_realm_name = "dev.oc1"
-}
-
-module "polaris-oc1-config" {
-  source               = "./configuration/merged_realm_config"
-  flock_config         = local.flock_config
-  overrides            = local.overrides
-  qualified_realm_name = "polaris.oc1"
-}
-
-module "integ-oc1-config" {
-  source               = "./configuration/merged_realm_config"
-  flock_config         = local.flock_config
-  overrides            = local.overrides
-  qualified_realm_name = "integ.oc1"
+  qualified_realm_name = "herds.oc1"
 }
 
 locals {
-  preprod_phases = ["polaris", "dev", "integ"]
-  preprod_scalar = contains(keys(local.prod_realm_by_name), "oc1") ? 1 : 0
-  preprod_cell_overrides = local.preprod_scalar == 1 ? {
-    for key, value in local.cell_overrides : key => value if split(".", key)[0] != "prd" && split(".", key)[0] != "herds" && split(".", key)[1] == "oc1"
+  herds_scalar = contains(keys(local.prod_realm_by_name), "oc1") ? 1 : 0
+  herds_region = ["eu-frankfurt-1"]
+  herds_cell_overrides = local.herds_scalar == 1 ? {
+    for key, value in local.cell_overrides : key => value if split(".", key)[0] == "herds" && split(".", key)[1] == "oc1"
   } : {}
-  preprod_env_setup_ets = local.preprod_scalar == 1 ? {
-    "polaris.oc1" = {
-      cell_count        = 2
-      realm             = "oc1"
-      env               = "polaris"
-      region            = "us-phoenix-1"
-      additional_locals = module.polaris-oc1-config.config
-    },
-    "dev.oc1" = {
+  herds_env_setup_ets = local.herds_scalar == 1 ? {
+    "herds.oc1" = {
       cell_count        = 1
       realm             = "oc1"
-      env               = "dev"
-      region            = "us-ashburn-1"
-      additional_locals = module.dev-oc1-config.config
-    },
-    "integ.oc1" = {
-      cell_count        = 2
-      realm             = "oc1"
-      env               = "integ"
-      region            = "us-ashburn-1"
-      additional_locals = module.integ-oc1-config.config
+      env               = "rbaas"
+      region            = "eu-frankfurt-1"
+      additional_locals = module.herds-oc1-config.config
     }
   } : {}
-  preprod_spectre_setup_ets = local.preprod_scalar == 1 ? {
-    "polaris.oc1" = {
-      realm             = "oc1",
-      env               = "polaris"
-      region            = "us-phoenix-1"
-      additional_locals = module.polaris-oc1-config.config
-    },
-    "dev.oc1" = {
+  herds_spectre_setup_ets = local.herds_scalar == 1 ? {
+    "herds.oc1" = {
       realm             = "oc1"
-      env               = "dev"
+      env               = "rbaas"
       region            = "us-phoenix-1"
-      additional_locals = module.dev-oc1-config.config
-    },
-    "integ.oc1" = {
-      realm             = "oc1"
-      env               = "integ"
-      region            = "us-phoenix-1"
-      additional_locals = module.integ-oc1-config.config
+      additional_locals = module.herds-oc1-config.config
     }
   } : {}
-  preprod_spectre_regional_ets = local.preprod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] != "prd" && split(".", key)[0] != "herds" && split(".", key)[1] == "oc1"]) : toset([])
+  herds_spectre_regional_ets = local.herds_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] == "herds" && split(".", key)[1] == "oc1"]) : toset([])
 }
 
-resource "shepherd_release_phase" "preprod" {
-  count        = local.preprod_scalar * length(local.preprod_phases)
-  name         = "${local.preprod_phases[count.index]}.oc1"
+
+resource "shepherd_release_phase" "herds_oc1" {
+  count        = local.herds_scalar
+  name         = "herds.oc1"
   realm        = "oc1"
   production   = false
-  predecessors = count.index == 0 ? [ shepherd_release_phase.herds_oc1_regional[length(local.herds_region) -1].name ] : ["${local.preprod_phases[count.index - 1]}.oc1"]
+  predecessors = []
 }
 
-resource "shepherd_execution_target" "preprod_et" {
-  for_each                  = local.preprod_cell_overrides
+resource "shepherd_release_phase" "herds_oc1_regional" {
+  count        = local.herds_scalar * length(local.herds_region)
+  name         = "herds.${local.herds_region[count.index]}"
+  realm        = "oc1"
+  production   = false
+  predecessors = [shepherd_release_phase.herds_oc1[0].name]
+}
+
+resource "shepherd_execution_target" "herds_et" {
+  for_each                  = local.herds_cell_overrides
   name                      = each.key
   region                    = split(".", each.key)[2]
   predecessors              = lookup(each.value, "predecessor", "") != "" ? [lookup(each.value, "predecessor", "")] : tonumber(split("cell", each.key)[1]) > 0 ? [format("%s.cell%s", split(".cell", each.key)[0], tonumber(split(".cell", each.key)[1]) - 1)] : []
   phase                     = lookup(merge(each.value, lookup(local.overrides, split(".cell", each.key)[0], {})), "phase", join(".", [split(".", each.key)[0], split(".", each.key)[1]]))
   uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
-  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
+  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, "rbaas", {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
   additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
   alarms_to_watch {
@@ -97,8 +65,8 @@ resource "shepherd_execution_target" "preprod_et" {
   ignored_region_build_capabilities = ["grafana_dashboard"]
 }
 
-resource "shepherd_execution_target" "preprod_env_setup_et" {
-  for_each                          = local.preprod_env_setup_ets
+resource "shepherd_execution_target" "herds_env_setup_et" {
+  for_each                          = local.herds_env_setup_ets
   name                              = format("env.setup.%s", each.key)
   region                            = each.value.region
   phase                             = lookup(each.value, "phase", each.key)
@@ -110,12 +78,12 @@ resource "shepherd_execution_target" "preprod_env_setup_et" {
   ignored_region_build_capabilities = ["grafana_dashboard"]
 }
 
-resource "shepherd_execution_target" "preprod_spectre_setup_et" {
-  for_each                          = local.preprod_spectre_setup_ets
+resource "shepherd_execution_target" "herds_spectre_setup_et" {
+  for_each                          = local.herds_spectre_setup_ets
   name                              = format("spectre.setup.%s", each.key)
   region                            = each.value.region
   phase                             = lookup(each.value, "phase", each.key)
-  predecessors                      = ["env.setup.${each.value.env}.${each.value.realm}"]
+  predecessors                      = ["env.setup.${each.key}"]
   uniquifier                        = format("spectre-setup-%s", replace(each.key, ".", "-"))
   tenancy_name                      = lookup(lookup(local.overrides.tenancy_info, each.value.env, {}), each.value.realm, local.overrides.tenancy_info.default)
   snowflake_config_location         = "spectre_region"
@@ -123,14 +91,14 @@ resource "shepherd_execution_target" "preprod_spectre_setup_et" {
   ignored_region_build_capabilities = ["grafana_dashboard"]
 }
 
-resource "shepherd_execution_target" "preprod_region_values" {
-  for_each                  = local.preprod_spectre_regional_ets
+resource "shepherd_execution_target" "herds_region_values" {
+  for_each                  = local.herds_spectre_regional_ets
   name                      = format("spectre.values.%s", each.key)
   region                    = local.home_region_by_realm[split(".", each.key)[1]]
-  predecessors              = [join(".", [each.key, "cell0"])]
-  phase                     = lookup(merge(lookup(local.overrides, each.key, {})), "phase", join(".", [split(".", each.key)[0], split(".", each.key)[1]]))
+  predecessors              = []
+  phase                     = lookup(merge(lookup(local.overrides, each.key, {})), "phase", join(".", ["herds", split(".", each.key)[2]]))
   uniquifier                = format("spectre-values-%s", lookup(module.merged_cell_config.uniquifiers, join(".", [each.key, "cell0"]), ""))
-  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
+  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, "rbaas", {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = "generic_spectre_region"
   additional_locals = merge({
     limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
@@ -140,4 +108,30 @@ resource "shepherd_execution_target" "preprod_region_values" {
     },
     lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {})
   )
+  scope = format("%s%s", split(".", each.key)[2], "~home-region")
+  labels = {
+    herd = "993ddcbe-99c5-49ac-a791-889537ecb67a"
+  }
+}
+
+resource "shepherd_execution_target" "herds_region_capability" {
+  for_each                  = local.herds_spectre_regional_ets
+  name                      = format("capability.%s", each.key)
+  region                    = split(".", each.key)[2]
+  predecessors              = []
+  phase                     = lookup(merge(lookup(local.overrides, each.key, {})), "phase", join(".", ["herds", split(".", each.key)[2]]))
+  uniquifier                = format("capability-%s", lookup(module.merged_cell_config.uniquifiers, join(".", [each.key, "cell0"]), ""))
+  tenancy_name              = lookup(lookup(local.overrides.tenancy_info, "rbaas", {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
+  snowflake_config_location = "capability_et"
+  labels = {
+    herd = "993ddcbe-99c5-49ac-a791-889537ecb67a"
+  }
+  provider_override {
+    name       = "limit"
+    constraint = ">= 1.0.962"
+  }
+  provider_override {
+    name       = "property"
+    constraint = ">= 1.0.962"
+  }
 }
