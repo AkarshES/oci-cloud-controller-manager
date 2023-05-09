@@ -22,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -125,23 +124,26 @@ func (nic *NodeInfoController) Run(stopCh <-chan struct{}) {
 	wait.Until(nic.runWorker, time.Second, stopCh)
 }
 
-// A function to run the worker which will process items in the queue
+//A function to run the worker which will process items in the queue
 func (nic *NodeInfoController) runWorker() {
 	for nic.processNextItem() {
 
 	}
 }
 
-// Used to sequentially process the keys present in the queue
+//Used to sequentially process the keys present in the queue
 func (nic *NodeInfoController) processNextItem() bool {
+
 	key, quit := nic.queue.Get()
 	if quit {
 		return false
 	}
+
 	defer nic.queue.Done(key)
 
 	err := nic.processItem(key.(string))
-	if err != nil && !apierrors.IsNotFound(err) {
+
+	if err != nil {
 		nic.logger.Errorf("Error processing node %s (will retry): %v", key, err)
 		nic.queue.AddRateLimited(key)
 	} else {
@@ -150,8 +152,8 @@ func (nic *NodeInfoController) processNextItem() bool {
 	return true
 }
 
-// A function which is responsible for adding the fault domain label and CompartmentID annotation to the node if it
-// is not already present. Also cache the instance information
+//A function which is responsible for adding the fault domain label and CompartmentID annotation to the node if it
+//is not already present. Also cache the instance information
 func (nic *NodeInfoController) processItem(key string) error {
 
 	logger := nic.logger.With("node", key)
