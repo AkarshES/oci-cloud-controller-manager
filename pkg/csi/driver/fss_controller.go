@@ -84,15 +84,11 @@ func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateV
 
 	log, response, storageClassParameters, err, done := extractStorageClassParameters(d, log, dimensionsMap, volumeName, req.GetParameters(), startTime)
 	if done {
-		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return response, err
 	}
 
-	log, mountTargetOCID, mountTargetIp, exportSetId, response, err, done := d.getOrCreateMountTarget(ctx, *storageClassParameters, volumeName, log, dimensionsMap)
+	log, mountTargetOCID, mountTargetIp, exportSetId, response, err, done := d.getOrCreateMountTarget(ctx, *storageClassParameters, volumeName, log, dimensionsMap, startTime)
 	if done {
-		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return response, err
 	}
 
@@ -111,26 +107,18 @@ func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateV
 	freeformTags["mountTargetOCID"] = mountTargetOCID
 	freeformTags["exportSetId"] = exportSetId
 
-	log, filesystemOCID, response, err, done := d.getOrCreateFileSystem(ctx, *storageClassParameters, volumeName, log, dimensionsMap)
+	log, filesystemOCID, response, err, done := d.getOrCreateFileSystem(ctx, *storageClassParameters, volumeName, log, dimensionsMap, startTime)
 	if done {
-		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return response, err
 	}
 
-	log, response, err, done = d.getOrCreateExport(ctx, err, *storageClassParameters, filesystemOCID, exportSetId, log, dimensionsMap)
+	log, response, err, done = d.getOrCreateExport(ctx, err, *storageClassParameters, filesystemOCID, exportSetId, log, dimensionsMap, startTime)
 	if done {
-		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return response, err
 	}
 
 	fssVolumeHandle := fmt.Sprintf("%s:%s:%s", filesystemOCID, mountTargetIp, storageClassParameters.exportPath)
 	log.With("volumeID", fssVolumeHandle).Info("All FSS resource successfully created")
-	csiMetricDimension := util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
-	dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-	dimensionsMap[metrics.ResourceOCIDDimension] = fssVolumeHandle
-	metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      fssVolumeHandle,
@@ -164,8 +152,7 @@ func checkForSupportedVolumeCapabilities(volumeCaps []*csi.VolumeCapability) err
 	return nil
 }
 
-func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storageClassParameters StorageClassParameters, volumeName string, log *zap.SugaredLogger, dimensionsMap map[string]string) (*zap.SugaredLogger, string, *csi.CreateVolumeResponse, error, bool) {
-	startTimeFileSystem := time.Now()
+func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storageClassParameters StorageClassParameters, volumeName string, log *zap.SugaredLogger, dimensionsMap map[string]string, startTime time.Time) (*zap.SugaredLogger, string, *csi.CreateVolumeResponse, error, bool) {
 	//make sure this method is idempotent by checking existence of volume with same name.
 	log.Info("searching for existing filesystem")
 	foundConflictingFs, fileSystemSummaries, err := d.client.FSS().GetFileSystemSummaryByDisplayName(context.Background(), storageClassParameters.compartmentOcid, storageClassParameters.availabilityDomain, volumeName)
@@ -183,7 +170,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 		log.With(zap.Error(err)).Error(message)
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, "", nil, status.Errorf(codes.Internal, "%s, error: %s", message, err.Error()), true
 	}
 
@@ -191,7 +178,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 		log.Error("Duplicate File system exists")
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, "", nil, fmt.Errorf("duplicate File system %q exists", volumeName), true
 	}
 
@@ -208,7 +195,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 			log.With(zap.Error(err)).Error("New File System creation failed")
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return nil, "", nil, status.Errorf(codes.Internal, "New File System creation failed, error: %s", err.Error()), true
 		}
 	}
@@ -224,7 +211,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 		log.With(zap.Error(err)).Error("Await File System failed with time out")
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, "", nil, status.Errorf(codes.DeadlineExceeded, "Await File System failed with time out, error: %s", err.Error()), true
 	}
 
@@ -232,12 +219,11 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 	csiMetricDimension := util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
 	dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 	dimensionsMap[metrics.ResourceOCIDDimension] = filesystemOCID
-	metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
+	metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 	return log, filesystemOCID, nil, nil, false
 }
 
-func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storageClassParameters StorageClassParameters, volumeName string, log *zap.SugaredLogger, dimensionsMap map[string]string) (*zap.SugaredLogger, string, string, string, *csi.CreateVolumeResponse, error, bool) {
-	startTimeMountTarget := time.Now()
+func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storageClassParameters StorageClassParameters, volumeName string, log *zap.SugaredLogger, dimensionsMap map[string]string, startTime time.Time) (*zap.SugaredLogger, string, string, string, *csi.CreateVolumeResponse, error, bool) {
 	// Mount Target creation
 	provisionedMountTarget := &fss.MountTarget{}
 	isExistingMountTargetUsed := false
@@ -263,7 +249,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 			log.With(zap.Error(err)).Error(message)
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return log, "", "", "", nil, status.Errorf(codes.Internal, "%s, error: %s", message, err.Error()), true
 		}
 
@@ -271,7 +257,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 			log.Error("Duplicate Mount Target exists")
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return log, "", "", "", nil, status.Errorf(codes.Internal, "duplicate Mount Target %s exists", volumeName), true
 		}
 
@@ -291,7 +277,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 				log.With(zap.Error(err)).Error("New Mount Target creation failed")
 				csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 				dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-				metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+				metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 				return log, "", "", "", nil, status.Errorf(codes.Internal, "New Mount Target creation failed, error: %s", err.Error()), true
 			}
 		}
@@ -309,7 +295,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 		if !isExistingMountTargetUsed {
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		}
 		return log, "", "", "", nil, status.Errorf(codes.DeadlineExceeded, "await mount target to be available failed with time out, error: %s", err.Error()), true
 	}
@@ -320,7 +306,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 		if !isExistingMountTargetUsed {
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		}
 		return log, "", "", "", nil, status.Errorf(codes.Internal, "IP not assigned to mount target"), true
 	}
@@ -332,7 +318,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 		if !isExistingMountTargetUsed {
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		}
 		return log, "", "", "", nil, status.Errorf(codes.Internal, "Failed to fetch Mount Target Private IP from IP ID: %s, error: %s", mountTargetIpId, err.Error()), true
 	}
@@ -343,7 +329,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 		if !isExistingMountTargetUsed {
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		}
 		return log, "", "", "", nil, status.Errorf(codes.Internal, "ExportSetId not assigned to mount target"), true
 	}
@@ -354,13 +340,12 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		dimensionsMap[metrics.ResourceOCIDDimension] = mountTargetOCID
-		metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 	}
 	return log, mountTargetOCID, mountTargetIp, exportSetId, nil, nil, false
 }
 
-func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, storageClassParameters StorageClassParameters, filesystemOCID string, exportSetId string, log *zap.SugaredLogger, dimensionsMap map[string]string) (*zap.SugaredLogger, *csi.CreateVolumeResponse, error, bool) {
-	startTimeExport := time.Now()
+func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, storageClassParameters StorageClassParameters, filesystemOCID string, exportSetId string, log *zap.SugaredLogger, dimensionsMap map[string]string, startTime time.Time) (*zap.SugaredLogger, *csi.CreateVolumeResponse, error, bool) {
 	log.Info("searching for existing export")
 	exportSummary, err := d.client.FSS().FindExport(ctx, filesystemOCID, storageClassParameters.exportPath, exportSetId)
 
@@ -374,7 +359,7 @@ func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, 
 		log.With(zap.Error(err)).Error(message)
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-		metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTimeExport).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return log, nil, status.Errorf(codes.Internal, "%s, error: %s", message, err.Error()), true
 	}
 
@@ -388,7 +373,7 @@ func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, 
 			log.With(zap.Error(err)).Error("New Export creation failed")
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTimeExport).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return log, nil, status.Errorf(codes.Internal, "New Export creation failed, error: %s", err.Error()), true
 		}
 	}
@@ -405,7 +390,7 @@ func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, 
 		log.With(zap.Error(err)).Error("await export failed with time out")
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-		metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTimeExport).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return log, nil, status.Errorf(codes.DeadlineExceeded, "await export failed with time out, error: %s", err.Error()), true
 	}
 
@@ -413,7 +398,7 @@ func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, 
 	csiMetricDimension := util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
 	dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 	dimensionsMap[metrics.ResourceOCIDDimension] = exportId
-	metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTimeExport).Seconds(), dimensionsMap)
+	metrics.SendMetricData(d.metricPusher, metrics.ExportProvision, time.Since(startTime).Seconds(), dimensionsMap)
 	return log, nil, nil, false
 }
 
@@ -435,7 +420,7 @@ func extractStorageClassParameters(d *FSSControllerDriver, log *zap.SugaredLogge
 	if !ok {
 		log.Errorf("AvailabilityDomain not provided in storage class")
 		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		metrics.SendMetricData(d.metricPusher, metrics.MTProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return log, nil, nil, status.Errorf(codes.InvalidArgument, "AvailabilityDomain not provided in storage class"), true
 	}
@@ -444,7 +429,7 @@ func extractStorageClassParameters(d *FSSControllerDriver, log *zap.SugaredLogge
 	if err != nil {
 		log.With(zap.Error(err)).Errorf("invalid available domain: %s or compartmentID: %s", availabilityDomain, compartmentId)
 		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return log, nil, nil, status.Errorf(codes.InvalidArgument, "invalid available domain: %s or compartment ID: %s, error: %s", availabilityDomain, compartmentId, err.Error()), true
 	}
 	availabilityDomain = *ad.Name
@@ -618,7 +603,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 		log.Error("Unable to parse Volume Id")
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid Volume ID provided %s", volumeId)
 	}
 
@@ -632,8 +617,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 		if !client.IsNotFound(err) {
 			log.With(zap.Error(err)).Error("Failed to delete filesystem.")
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-			metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTime).Seconds(), dimensionsMap)
-			metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTDelete, time.Since(startTime).Seconds(), dimensionsMap)
 			return nil, status.Errorf(codes.Internal, "failed to delete filesystem, volumeId: %s ERROR: %v", volumeId, err.Error())
 		} else {
 			log.Info("File system does not exist.")
@@ -665,7 +649,6 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	}
 
 	if isDeleteMountTarget {
-		startTimeMountTarget := time.Now()
 		log = log.With("mountTargetOCID", mountTargetOCID)
 		log.Info("filesystem tagged with mount target ocid, deleting mount target")
 		// first delete Mount Target
@@ -674,15 +657,14 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 			if !client.IsNotFound(err) {
 				log.With(zap.Error(err)).Error("Failed to delete mount target.")
 				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-				metrics.SendMetricData(d.metricPusher, metrics.MTDelete, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
-				metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+				metrics.SendMetricData(d.metricPusher, metrics.MTDelete, time.Since(startTime).Seconds(), dimensionsMap)
 				return nil, status.Errorf(codes.Internal, "failed to delete mount target, mountTargetOcid: %s, error: %s", mountTargetOCID, err.Error())
 			} else {
 				log.Info("Mount Target does not exist.")
 			}
 		} else {
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
-			metrics.SendMetricData(d.metricPusher, metrics.MTDelete, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.MTDelete, time.Since(startTime).Seconds(), dimensionsMap)
 			log.Info("Mount Target is deleted.")
 		}
 	} else {
@@ -690,7 +672,6 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	}
 
 	if exportSetId != "" {
-		startTimeExport := time.Now()
 		log.Infof("searching export with tagged exportSetId %s", exportSetId)
 		exportSummary, err := d.client.FSS().FindExport(ctx, filesystemOcid, exportPath, exportSetId)
 		if err != nil {
@@ -700,8 +681,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 				} else {
 					log.With(zap.Error(err)).Error("Failed to find export.")
 					dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-					metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTimeExport).Seconds(), dimensionsMap)
-					metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+					metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTime).Seconds(), dimensionsMap)
 					return nil, status.Errorf(codes.Internal, "failed to find export, exportPath: %s, error: %s", exportPath, err.Error())
 				}
 			} else {
@@ -713,18 +693,16 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 			if err != nil {
 				log.With(zap.Error(err)).Error("failed to delete export.")
 				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-				metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTimeExport).Seconds(), dimensionsMap)
-				metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+				metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTime).Seconds(), dimensionsMap)
 				return nil, status.Errorf(codes.Internal, "failed to delete export, exportId: %s, error: %s", *exportSummary.Id, err.Error())
 			}
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
-			metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTimeExport).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTime).Seconds(), dimensionsMap)
 			log.Info("Export is deleted.")
 		}
 	} else {
 		log.Info("filesystem not tagged with exportSetId, skip deleting export")
 	}
-	startTimeFileSystem := time.Now()
 	log.Info("deleting file system")
 	// last delete File System
 	err = d.client.FSS().DeleteFileSystem(ctx, filesystemOcid)
@@ -732,8 +710,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 		if !client.IsNotFound(err) {
 			log.With(zap.Error(err)).Error("Failed to delete file system.")
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
-			metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
-			metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTime).Seconds(), dimensionsMap)
 			return nil, status.Errorf(codes.Internal, "failed to delete file system, volumeId: %s, error: %s", volumeId, err.Error())
 		} else {
 			log.Info("File system does not exist")
@@ -741,8 +718,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	} else {
 		log.Info("File system is deleted.")
 		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
-		metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
-		metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
+		metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTime).Seconds(), dimensionsMap)
 	}
 	return &csi.DeleteVolumeResponse{}, nil
 }
