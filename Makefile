@@ -95,8 +95,9 @@ build: build-dirs
 
 .PHONY: build-arm
 build-arm: build-dirs
-	GOOS=$(GOOS) GOARCH=arm64 CGO_ENABLED=0 go build -mod vendor -o dist/arm/oci-csi-node-driver -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" ./cmd/oci-csi-node-driver ;
-	GOOS=$(GOOS) GOARCH=arm64 CGO_ENABLED=0 go build -mod vendor -o dist/arm/oci-flexvolume-driver -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" ./cmd/oci-flexvolume-driver ; \
+	@for component in $(COMPONENT); do \
+		GOOS=$(GOOS) GOARCH=$(ARCH) CGO_ENABLED=1 go build -mod vendor -o dist/arm/$$component -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" ./cmd/$$component ; \
+    done
 
 .PHONY: manifests
 manifests: build-dirs
