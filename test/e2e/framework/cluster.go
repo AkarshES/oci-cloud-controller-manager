@@ -291,13 +291,18 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 			f.DeleteCluster(*cl.Id, true)
 		}
 	}
-
+	isPublicIpEnabled := true
 	request := oke.CreateClusterRequest{
 		CreateClusterDetails: oke.CreateClusterDetails{
 			Name:              &clusterName,
 			CompartmentId:     &f.Compartment1,
 			VcnId:             &f.Vcn,
 			KubernetesVersion: &version,
+			EndpointConfig: &oke.CreateClusterEndpointConfigDetails{
+				SubnetId:          &f.K8sSubnet,
+				NsgIds:            strings.Split(f.NsgOCIDS, ","),
+				IsPublicIpEnabled: &isPublicIpEnabled,
+			},
 			Options: &oke.ClusterCreateOptions{
 				ServiceLbSubnetIds: subnets,
 				KubernetesNetworkConfig: &oke.KubernetesNetworkConfig{
@@ -306,15 +311,6 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 				},
 			},
 		},
-	}
-
-	isPublicIpEnabled := true
-	if f.Architecture == "ARM" {
-		request.CreateClusterDetails.EndpointConfig = &oke.CreateClusterEndpointConfigDetails{
-			SubnetId:          &f.K8sSubnet,
-			NsgIds:            strings.Split(f.NsgOCIDS, ","),
-			IsPublicIpEnabled: &isPublicIpEnabled,
-		}
 	}
 
 	if cfg.KMSKeyID != "" {
