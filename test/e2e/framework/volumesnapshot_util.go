@@ -135,12 +135,19 @@ func (j *PVCTestJig) WaitForVSReadyToUse(ns string, vsName string) error {
 			Logf("Failed to get volume snapshot %q, retrying in %v. Error: %v", vsName, Poll, err)
 			continue
 		} else {
-			if *vs.Status.ReadyToUse == true {
+			if vs.Status == nil {
+				Logf("Failed to read volume snapshot %q status field, retrying in %v", vsName, Poll)
+				continue
+			} else if vs.Status.ReadyToUse == nil {
+				Logf("Failed to read volume snapshot %q status ReadyToUse field, retrying in %v", vsName, Poll)
+				continue
+			} else if *vs.Status.ReadyToUse == true {
 				Logf("VolumeSnapshot %s found and readyToUse=true (%v)", vsName, time.Since(start))
 				return nil
+			} else {
+				Logf("VolumeSnapshot %s found but readyToUse is false instead of true.", vsName)
 			}
 		}
-		Logf("VolumeSnapshot %s found but readyToUse is false instead of true.", vsName)
 	}
 	return fmt.Errorf("VolumeSnapshot %s not in readyToUse true within %v", vsName, DefaultTimeout)
 }
