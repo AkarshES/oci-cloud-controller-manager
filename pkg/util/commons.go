@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/oracle/oci-go-sdk/v65/common"
 	metricErrors "github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -91,4 +92,17 @@ func GetMetricDimensionForComponent(err string, component string) string {
 		return ""
 	}
 	return fmt.Sprintf("%s_%s", component, err)
+}
+
+func GetHttpStatusCode(err error) (int) {
+	statusCode := 200
+	err = metricErrors.Cause(err)
+	if err != nil {
+		if serviceErr, ok := err.(common.ServiceError); ok {
+			statusCode = serviceErr.GetHTTPStatusCode()
+		} else {
+			statusCode = 555 // ¯\_(ツ)_/¯
+		}
+	}
+	return statusCode
 }
