@@ -97,7 +97,7 @@ func (d FSSNodeDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVo
 	mountPoint, err := isMountPoint(mounter, targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			logger.With("StagingTargetPath", targetPath).Infof("mount point does not exist")
+			logger.With("StagingTargetPath", targetPath).Infof("Mount point does not pre-exist, creating now.")
 			// k8s v1.20+ will not create the TargetPath directory
 			// https://github.com/kubernetes/kubernetes/pull/88759
 			// if the path exists already (<v1.20) this is a no op
