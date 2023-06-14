@@ -1350,6 +1350,14 @@ func (j *PVCTestJig) CheckPVExists(pvName string) bool {
 	return true
 }
 
+func (j *PVCTestJig) ChangePVReclaimPolicy(pvName string, newReclaimPolicy string) error {
+	Logf("Changing ReclaimPolicy for PV  %s  to %s.", pvName, newReclaimPolicy)
+	 pvPatchBytes := []byte(fmt.Sprintf("{\"spec\": {\"persistentVolumeReclaimPolicy\": \"%s\"}}",newReclaimPolicy))
+	pv, err := j.KubeClient.CoreV1().PersistentVolumes().Patch(context.Background(), pvName,types.StrategicMergePatchType, pvPatchBytes,  metav1.PatchOptions{})
+	Logf("ReclaimPolicy for PV %s Updated to %s.", pvName, pv.Spec.PersistentVolumeReclaimPolicy)
+	return err
+}
+
 func (j *PVCTestJig) pvNotFound(pvName string) wait.ConditionFunc {
 	return func() (bool, error) {
 		_, err := j.KubeClient.CoreV1().PersistentVolumes().Get(context.Background(), pvName, metav1.GetOptions{})
