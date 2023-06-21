@@ -17,8 +17,8 @@ import (
 	"strings"
 )
 
-// OutboundConnector resource that includes all the information needed to connect, authenticate and gain authorization
-// to perform the account's required functions.
+// OutboundConnector Outbound connectors are used to help File Storage communicate with an external server, such as an LDAP server.
+// An outbound connector contains all the information needed to connect, authenticate, and gain authorization to perform the account's required functions.
 type OutboundConnector interface {
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the compartment that contains the outbound connector.
@@ -55,6 +55,9 @@ type OutboundConnector interface {
 	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	GetDefinedTags() map[string]map[string]interface{}
+
+	// Not used by File Systems but required for SPLAT tag integration.
+	GetSystemTags() map[string]map[string]interface{}
 }
 
 type outboundconnector struct {
@@ -67,6 +70,7 @@ type outboundconnector struct {
 	AvailabilityDomain *string                             `mandatory:"false" json:"availabilityDomain"`
 	FreeformTags       map[string]string                   `mandatory:"false" json:"freeformTags"`
 	DefinedTags        map[string]map[string]interface{}   `mandatory:"false" json:"definedTags"`
+	SystemTags         map[string]map[string]interface{}   `mandatory:"false" json:"systemTags"`
 	ConnectorType      string                              `json:"connectorType"`
 }
 
@@ -89,6 +93,7 @@ func (m *outboundconnector) UnmarshalJSON(data []byte) error {
 	m.AvailabilityDomain = s.Model.AvailabilityDomain
 	m.FreeformTags = s.Model.FreeformTags
 	m.DefinedTags = s.Model.DefinedTags
+	m.SystemTags = s.Model.SystemTags
 	m.ConnectorType = s.Model.ConnectorType
 
 	return err
@@ -151,6 +156,11 @@ func (m outboundconnector) GetFreeformTags() map[string]string {
 //GetDefinedTags returns DefinedTags
 func (m outboundconnector) GetDefinedTags() map[string]map[string]interface{} {
 	return m.DefinedTags
+}
+
+//GetSystemTags returns SystemTags
+func (m outboundconnector) GetSystemTags() map[string]map[string]interface{} {
+	return m.SystemTags
 }
 
 func (m outboundconnector) String() string {

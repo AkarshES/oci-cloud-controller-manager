@@ -23,7 +23,7 @@ import (
 	"net/http"
 )
 
-//ComputeClient a client for Compute
+// ComputeClient a client for Compute
 type ComputeClient struct {
 	common.BaseClient
 	config *common.ConfigurationProvider
@@ -32,6 +32,9 @@ type ComputeClient struct {
 // NewComputeClientWithConfigurationProvider Creates a new default Compute client with the given configuration provider.
 // the configuration provider will be used for the default signer as well as reading the region
 func NewComputeClientWithConfigurationProvider(configProvider common.ConfigurationProvider) (client ComputeClient, err error) {
+	if enabled := common.CheckForEnabledServices("core"); !enabled {
+		return client, fmt.Errorf("the Alloy configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local alloy_config file configured the service you're targeting or contact the cloud provider on the availability of this service")
+	}
 	provider, err := auth.GetGenericConfigurationProvider(configProvider)
 	if err != nil {
 		return client, err
@@ -45,7 +48,8 @@ func NewComputeClientWithConfigurationProvider(configProvider common.Configurati
 
 // NewComputeClientWithOboToken Creates a new default Compute client with the given configuration provider.
 // The obotoken will be added to default headers and signed; the configuration provider will be used for the signer
-//  as well as reading the region
+//
+//	as well as reading the region
 func NewComputeClientWithOboToken(configProvider common.ConfigurationProvider, oboToken string) (client ComputeClient, err error) {
 	baseClient, err := common.NewClientWithOboToken(configProvider, oboToken)
 	if err != nil {
@@ -511,7 +515,7 @@ func (client ComputeClient) changeComputeCapacityReservationCompartment(ctx cont
 }
 
 // ChangeComputeClusterCompartment Moves a compute cluster into a different compartment within the same tenancy.
-// A compute cluster is a remote direct memory access (RDMA) network group.
+// A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a remote direct memory access (RDMA) network group.
 // For information about moving resources between compartments, see
 // Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 func (client ComputeClient) ChangeComputeClusterCompartment(ctx context.Context, request ChangeComputeClusterCompartmentRequest) (response ChangeComputeClusterCompartmentResponse, err error) {
@@ -872,6 +876,65 @@ func (client ComputeClient) createAppCatalogSubscription(ctx context.Context, re
 	return response, err
 }
 
+// CreateBigDataBmToVmInstanceMigration Creates bigData-bm-to-vm-instance-migration for given BM instance
+// A default retry strategy applies to this operation CreateBigDataBmToVmInstanceMigration()
+func (client ComputeClient) CreateBigDataBmToVmInstanceMigration(ctx context.Context, request CreateBigDataBmToVmInstanceMigrationRequest) (response CreateBigDataBmToVmInstanceMigrationResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.createBigDataBmToVmInstanceMigration, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = CreateBigDataBmToVmInstanceMigrationResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = CreateBigDataBmToVmInstanceMigrationResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(CreateBigDataBmToVmInstanceMigrationResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into CreateBigDataBmToVmInstanceMigrationResponse")
+	}
+	return
+}
+
+// createBigDataBmToVmInstanceMigration implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) createBigDataBmToVmInstanceMigration(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/bigDataBmToVmInstanceMigrations", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response CreateBigDataBmToVmInstanceMigrationResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/BigDataBmToVmInstanceMigration/CreateBigDataBmToVmInstanceMigration"
+		err = common.PostProcessServiceError(err, "Compute", "CreateBigDataBmToVmInstanceMigration", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
 // CreateComputeCapacityReport Generates a report of the host capacity within an availability domain that is available for you
 // to create compute instances. Host capacity is the physical infrastructure that resources such as compute
 // instances run on.
@@ -997,12 +1060,16 @@ func (client ComputeClient) createComputeCapacityReservation(ctx context.Context
 	return response, err
 }
 
-// CreateComputeCluster Creates an empty compute cluster, which is a remote direct memory access (RDMA) network group.
+// CreateComputeCluster Creates an empty compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm). A compute cluster
+// is a remote direct memory access (RDMA) network group.
 // After the compute cluster is created, you can use the compute cluster's OCID with the
 // LaunchInstance operation to create instances in the compute cluster.
-// For more information, see Compute Clusters (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm).
-// To create a cluster network that uses intance pools to manage groups of identical instances,
-// see CreateClusterNetwork.
+// The instances must be created in the same compartment and availability domain as the cluster.
+// Use compute clusters when you want to manage instances in the cluster individually, or when you want
+// to use different types of instances in the RDMA network group.
+// If you want predictable capacity for a specific number of identical instances that are managed as a group,
+// create a cluster network that uses instance pools by using the
+// CreateClusterNetwork operation.
 func (client ComputeClient) CreateComputeCluster(ctx context.Context, request CreateComputeClusterRequest) (response CreateComputeClusterResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -1548,8 +1615,10 @@ func (client ComputeClient) deleteComputeCapacityReservation(ctx context.Context
 	return response, err
 }
 
-// DeleteComputeCluster Deletes the compute cluster, which is a remote direct memory access (RDMA) network group.
-// To delete a compute cluster, all instances in the cluster must be deleted first.
+// DeleteComputeCluster Deletes a compute cluster. A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a
+// remote direct memory access (RDMA) network group.
+// Before you delete a compute cluster, first delete all instances in the cluster by using
+// the TerminateInstance operation.
 func (client ComputeClient) DeleteComputeCluster(ctx context.Context, request DeleteComputeClusterRequest) (response DeleteComputeClusterResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -2321,6 +2390,60 @@ func (client ComputeClient) getAppCatalogListingResourceVersion(ctx context.Cont
 	return response, err
 }
 
+// GetBigDataBmToVmInstanceMigration Gets the bigData-bm-to-vm-instance migrations for the given migration id.
+// A default retry strategy applies to this operation GetBigDataBmToVmInstanceMigration()
+func (client ComputeClient) GetBigDataBmToVmInstanceMigration(ctx context.Context, request GetBigDataBmToVmInstanceMigrationRequest) (response GetBigDataBmToVmInstanceMigrationResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getBigDataBmToVmInstanceMigration, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetBigDataBmToVmInstanceMigrationResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetBigDataBmToVmInstanceMigrationResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetBigDataBmToVmInstanceMigrationResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetBigDataBmToVmInstanceMigrationResponse")
+	}
+	return
+}
+
+// getBigDataBmToVmInstanceMigration implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) getBigDataBmToVmInstanceMigration(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/bigDataBmToVmInstanceMigrations/{bigDataBmToVmInstanceMigrationId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response GetBigDataBmToVmInstanceMigrationResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/BigDataBmToVmInstanceMigration/GetBigDataBmToVmInstanceMigration"
+		err = common.PostProcessServiceError(err, "Compute", "GetBigDataBmToVmInstanceMigration", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
 // GetBootVolumeAttachment Gets information about the specified boot volume attachment.
 func (client ComputeClient) GetBootVolumeAttachment(ctx context.Context, request GetBootVolumeAttachmentRequest) (response GetBootVolumeAttachmentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -2427,7 +2550,8 @@ func (client ComputeClient) getComputeCapacityReservation(ctx context.Context, r
 	return response, err
 }
 
-// GetComputeCluster Gets information about the specified compute cluster.
+// GetComputeCluster Gets information about a compute cluster. A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm)
+// is a remote direct memory access (RDMA) network group.
 func (client ComputeClient) GetComputeCluster(ctx context.Context, request GetComputeClusterRequest) (response GetComputeClusterResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -3068,6 +3192,59 @@ func (client ComputeClient) getInstanceConsoleConnection(ctx context.Context, re
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InstanceConsoleConnection/GetInstanceConsoleConnection"
 		err = common.PostProcessServiceError(err, "Compute", "GetInstanceConsoleConnection", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// GetInstanceMaintenanceEvent Gets the maintenance event for the given instance.
+func (client ComputeClient) GetInstanceMaintenanceEvent(ctx context.Context, request GetInstanceMaintenanceEventRequest) (response GetInstanceMaintenanceEventResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getInstanceMaintenanceEvent, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetInstanceMaintenanceEventResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetInstanceMaintenanceEventResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetInstanceMaintenanceEventResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetInstanceMaintenanceEventResponse")
+	}
+	return
+}
+
+// getInstanceMaintenanceEvent implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) getInstanceMaintenanceEvent(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/instanceMaintenanceEvents/{instanceMaintenanceEventId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response GetInstanceMaintenanceEventResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InstanceMaintenanceEvent/GetInstanceMaintenanceEvent"
+		err = common.PostProcessServiceError(err, "Compute", "GetInstanceMaintenanceEvent", apiReferenceLink)
 		return response, err
 	}
 
@@ -3785,6 +3962,60 @@ func (client ComputeClient) listAppCatalogSubscriptions(ctx context.Context, req
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/AppCatalogSubscriptionSummary/ListAppCatalogSubscriptions"
 		err = common.PostProcessServiceError(err, "Compute", "ListAppCatalogSubscriptions", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ListBigDataBmToVmInstanceMigrations List bigData BM to VM instance migration summary that match search criteria
+// A default retry strategy applies to this operation ListBigDataBmToVmInstanceMigrations()
+func (client ComputeClient) ListBigDataBmToVmInstanceMigrations(ctx context.Context, request ListBigDataBmToVmInstanceMigrationsRequest) (response ListBigDataBmToVmInstanceMigrationsResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listBigDataBmToVmInstanceMigrations, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListBigDataBmToVmInstanceMigrationsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListBigDataBmToVmInstanceMigrationsResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListBigDataBmToVmInstanceMigrationsResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListBigDataBmToVmInstanceMigrationsResponse")
+	}
+	return
+}
+
+// listBigDataBmToVmInstanceMigrations implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) listBigDataBmToVmInstanceMigrations(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/bigDataBmToVmInstanceMigrations", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListBigDataBmToVmInstanceMigrationsResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/BigDataBmToVmInstanceMigrationCollection/ListBigDataBmToVmInstanceMigrations"
+		err = common.PostProcessServiceError(err, "Compute", "ListBigDataBmToVmInstanceMigrations", apiReferenceLink)
 		return response, err
 	}
 
@@ -4876,6 +5107,59 @@ func (client ComputeClient) listInstanceFirmwares(ctx context.Context, request c
 	return response, err
 }
 
+// ListInstanceMaintenanceEvents Gets a list of all the maintenance events for the given instance.
+func (client ComputeClient) ListInstanceMaintenanceEvents(ctx context.Context, request ListInstanceMaintenanceEventsRequest) (response ListInstanceMaintenanceEventsResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listInstanceMaintenanceEvents, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListInstanceMaintenanceEventsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListInstanceMaintenanceEventsResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListInstanceMaintenanceEventsResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListInstanceMaintenanceEventsResponse")
+	}
+	return
+}
+
+// listInstanceMaintenanceEvents implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) listInstanceMaintenanceEvents(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/instanceMaintenanceEvents", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListInstanceMaintenanceEventsResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InstanceMaintenanceEventSummary/ListInstanceMaintenanceEvents"
+		err = common.PostProcessServiceError(err, "Compute", "ListInstanceMaintenanceEvents", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
 // ListInstanceScreenshots Lists the last screenshots taken for the specified instance.
 func (client ComputeClient) ListInstanceScreenshots(ctx context.Context, request ListInstanceScreenshotsRequest) (response ListInstanceScreenshotsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -5095,10 +5379,10 @@ func (client ComputeClient) listVnicAttachments(ctx context.Context, request com
 	return response, err
 }
 
-//listvolumeattachment allows to unmarshal list of polymorphic VolumeAttachment
+// listvolumeattachment allows to unmarshal list of polymorphic VolumeAttachment
 type listvolumeattachment []volumeattachment
 
-//UnmarshalPolymorphicJSON unmarshals polymorphic json list of items
+// UnmarshalPolymorphicJSON unmarshals polymorphic json list of items
 func (m *listvolumeattachment) UnmarshalPolymorphicJSON(data []byte) (interface{}, error) {
 	res := make([]VolumeAttachment, len(*m))
 	for i, v := range *m {
@@ -5220,10 +5504,71 @@ func (client ComputeClient) removeImageShapeCompatibilityEntry(ctx context.Conte
 	return response, err
 }
 
-// TerminateInstance Terminates (deletes) the specified instance. Any attached VNICs and volumes are automatically detached
+// RetryBigDataBmToVmInstanceMigration Retry BM to VM instance migration for given migration resource
+// A default retry strategy applies to this operation RetryBigDataBmToVmInstanceMigration()
+func (client ComputeClient) RetryBigDataBmToVmInstanceMigration(ctx context.Context, request RetryBigDataBmToVmInstanceMigrationRequest) (response RetryBigDataBmToVmInstanceMigrationResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.retryBigDataBmToVmInstanceMigration, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RetryBigDataBmToVmInstanceMigrationResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RetryBigDataBmToVmInstanceMigrationResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RetryBigDataBmToVmInstanceMigrationResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RetryBigDataBmToVmInstanceMigrationResponse")
+	}
+	return
+}
+
+// retryBigDataBmToVmInstanceMigration implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) retryBigDataBmToVmInstanceMigration(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/bigDataBmToVmInstanceMigrations/{bigDataBmToVmInstanceMigrationId}/actions/retry", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response RetryBigDataBmToVmInstanceMigrationResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/BigDataBmToVmInstanceMigration/RetryBigDataBmToVmInstanceMigration"
+		err = common.PostProcessServiceError(err, "Compute", "RetryBigDataBmToVmInstanceMigration", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// TerminateInstance Permanently terminates (deletes) the specified instance. Any attached VNICs and volumes are automatically detached
 // when the instance terminates.
 // To preserve the boot volume associated with the instance, specify `true` for `PreserveBootVolumeQueryParam`.
 // To delete the boot volume when the instance is deleted, specify `false` or do not specify a value for `PreserveBootVolumeQueryParam`.
+// To preserve data volumes created with the instance, specify `true` or do not specify a value for `PreserveDataVolumesQueryParam`.
+// To delete the data volumes when the instance itself is deleted, specify `false` for `PreserveDataVolumesQueryParam`.
 // This is an asynchronous operation. The instance's `lifecycleState` changes to TERMINATING temporarily
 // until the instance is completely deleted. After the instance is deleted, the record remains visible in the list of instances
 // with the state TERMINATED for at least 12 hours, but no further action is needed.
@@ -5272,6 +5617,65 @@ func (client ComputeClient) terminateInstance(ctx context.Context, request commo
 	if err != nil {
 		apiReferenceLink := ""
 		err = common.PostProcessServiceError(err, "Compute", "TerminateInstance", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// UpdateBigDataBmToVmInstanceMigration Update the BigDataBmToVmInstanceMigration resource for the given migration id.
+// A default retry strategy applies to this operation UpdateBigDataBmToVmInstanceMigration()
+func (client ComputeClient) UpdateBigDataBmToVmInstanceMigration(ctx context.Context, request UpdateBigDataBmToVmInstanceMigrationRequest) (response UpdateBigDataBmToVmInstanceMigrationResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.updateBigDataBmToVmInstanceMigration, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = UpdateBigDataBmToVmInstanceMigrationResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = UpdateBigDataBmToVmInstanceMigrationResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(UpdateBigDataBmToVmInstanceMigrationResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into UpdateBigDataBmToVmInstanceMigrationResponse")
+	}
+	return
+}
+
+// updateBigDataBmToVmInstanceMigration implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) updateBigDataBmToVmInstanceMigration(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPut, "/bigDataBmToVmInstanceMigrations/{bigDataBmToVmInstanceMigrationId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response UpdateBigDataBmToVmInstanceMigrationResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/BigDataBmToVmInstanceMigration/UpdateBigDataBmToVmInstanceMigration"
+		err = common.PostProcessServiceError(err, "Compute", "UpdateBigDataBmToVmInstanceMigration", apiReferenceLink)
 		return response, err
 	}
 
@@ -5334,7 +5738,12 @@ func (client ComputeClient) updateComputeCapacityReservation(ctx context.Context
 	return response, err
 }
 
-// UpdateComputeCluster Updates the specified compute cluster.
+// UpdateComputeCluster Updates a compute cluster. A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a
+// remote direct memory access (RDMA) network group.
+// To create instances within a compute cluster, use the LaunchInstance
+// operation.
+// To delete instances from a compute cluster, use the TerminateInstance
+// operation.
 func (client ComputeClient) UpdateComputeCluster(ctx context.Context, request UpdateComputeClusterRequest) (response UpdateComputeClusterResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -5777,6 +6186,65 @@ func (client ComputeClient) updateInstanceConsoleConnection(ctx context.Context,
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InstanceConsoleConnection/UpdateInstanceConsoleConnection"
 		err = common.PostProcessServiceError(err, "Compute", "UpdateInstanceConsoleConnection", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// UpdateInstanceMaintenanceEvent Updates the maintenance event for the given instance.
+// A default retry strategy applies to this operation UpdateInstanceMaintenanceEvent()
+func (client ComputeClient) UpdateInstanceMaintenanceEvent(ctx context.Context, request UpdateInstanceMaintenanceEventRequest) (response UpdateInstanceMaintenanceEventResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.updateInstanceMaintenanceEvent, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = UpdateInstanceMaintenanceEventResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = UpdateInstanceMaintenanceEventResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(UpdateInstanceMaintenanceEventResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into UpdateInstanceMaintenanceEventResponse")
+	}
+	return
+}
+
+// updateInstanceMaintenanceEvent implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) updateInstanceMaintenanceEvent(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPut, "/instanceMaintenanceEvents/{instanceMaintenanceEventId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response UpdateInstanceMaintenanceEventResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InstanceMaintenanceEvent/UpdateInstanceMaintenanceEvent"
+		err = common.PostProcessServiceError(err, "Compute", "UpdateInstanceMaintenanceEvent", apiReferenceLink)
 		return response, err
 	}
 

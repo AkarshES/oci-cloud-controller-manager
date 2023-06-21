@@ -66,7 +66,7 @@ type CreateMountTargetDetails struct {
 	// Example: `10.0.3.3`
 	IpAddress *string `mandatory:"false" json:"ipAddress"`
 
-	// Describes whether Idmapping is turned on or off. If on, describes method used to perform ID Mapping
+	// The method used to map a Unix UID to secondary groups, if any.
 	IdmapType MountTargetIdmapTypeEnum `mandatory:"false" json:"idmapType,omitempty"`
 
 	LdapIdmap *CreateLdapIdmapDetails `mandatory:"false" json:"ldapIdmap"`
@@ -95,6 +95,9 @@ type CreateMountTargetDetails struct {
 	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
+
+	// Not used by File Systems but required for SPLAT tag integration.
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
 }
 
 func (m CreateMountTargetDetails) String() string {

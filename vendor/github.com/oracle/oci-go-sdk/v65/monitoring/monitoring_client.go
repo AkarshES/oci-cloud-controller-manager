@@ -20,7 +20,7 @@ import (
 	"net/http"
 )
 
-//MonitoringClient a client for Monitoring
+// MonitoringClient a client for Monitoring
 type MonitoringClient struct {
 	common.BaseClient
 	config *common.ConfigurationProvider
@@ -29,6 +29,9 @@ type MonitoringClient struct {
 // NewMonitoringClientWithConfigurationProvider Creates a new default Monitoring client with the given configuration provider.
 // the configuration provider will be used for the default signer as well as reading the region
 func NewMonitoringClientWithConfigurationProvider(configProvider common.ConfigurationProvider) (client MonitoringClient, err error) {
+	if enabled := common.CheckForEnabledServices("monitoring"); !enabled {
+		return client, fmt.Errorf("the Alloy configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local alloy_config file configured the service you're targeting or contact the cloud provider on the availability of this service")
+	}
 	provider, err := auth.GetGenericConfigurationProvider(configProvider)
 	if err != nil {
 		return client, err
@@ -42,7 +45,8 @@ func NewMonitoringClientWithConfigurationProvider(configProvider common.Configur
 
 // NewMonitoringClientWithOboToken Creates a new default Monitoring client with the given configuration provider.
 // The obotoken will be added to default headers and signed; the configuration provider will be used for the signer
-//  as well as reading the region
+//
+//	as well as reading the region
 func NewMonitoringClientWithOboToken(configProvider common.ConfigurationProvider, oboToken string) (client MonitoringClient, err error) {
 	baseClient, err := common.NewClientWithOboToken(configProvider, oboToken)
 	if err != nil {
@@ -215,6 +219,69 @@ func (client MonitoringClient) createAlarm(ctx context.Context, request common.O
 	return response, err
 }
 
+// CreateAlarmSuppression Creates a dimension-specific suppression for an alarm.
+// For important limits information, see
+// Limits on Monitoring (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Concepts/monitoringoverview.htm#limits).
+// This call is subject to a Monitoring limit that applies to the total number of requests across all alarm operations.
+// Monitoring might throttle this call to reject an otherwise valid request when the total rate of alarm operations exceeds 10 requests,
+// or transactions, per second (TPS) for a given tenancy.
+func (client MonitoringClient) CreateAlarmSuppression(ctx context.Context, request CreateAlarmSuppressionRequest) (response CreateAlarmSuppressionResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.createAlarmSuppression, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = CreateAlarmSuppressionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = CreateAlarmSuppressionResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(CreateAlarmSuppressionResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into CreateAlarmSuppressionResponse")
+	}
+	return
+}
+
+// createAlarmSuppression implements the OCIOperation interface (enables retrying operations)
+func (client MonitoringClient) createAlarmSuppression(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/alarmSuppressions", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response CreateAlarmSuppressionResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/AlarmSuppression/CreateAlarmSuppression"
+		err = common.PostProcessServiceError(err, "Monitoring", "CreateAlarmSuppression", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
 // DeleteAlarm Deletes the specified alarm.
 // For more information, see
 // Deleting an Alarm (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Tasks/delete-alarm.htm).
@@ -268,6 +335,64 @@ func (client MonitoringClient) deleteAlarm(ctx context.Context, request common.O
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/Alarm/DeleteAlarm"
 		err = common.PostProcessServiceError(err, "Monitoring", "DeleteAlarm", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// DeleteAlarmSuppression Deletes the specified alarm suppression.
+// For important limits information, see
+// Limits on Monitoring (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Concepts/monitoringoverview.htm#limits).
+// This call is subject to a Monitoring limit that applies to the total number of requests across all alarm operations.
+// Monitoring might throttle this call to reject an otherwise valid request when the total rate of alarm operations exceeds 10 requests,
+// or transactions, per second (TPS) for a given tenancy.
+func (client MonitoringClient) DeleteAlarmSuppression(ctx context.Context, request DeleteAlarmSuppressionRequest) (response DeleteAlarmSuppressionResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.deleteAlarmSuppression, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = DeleteAlarmSuppressionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = DeleteAlarmSuppressionResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(DeleteAlarmSuppressionResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into DeleteAlarmSuppressionResponse")
+	}
+	return
+}
+
+// deleteAlarmSuppression implements the OCIOperation interface (enables retrying operations)
+func (client MonitoringClient) deleteAlarmSuppression(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/alarmSuppressions/{alarmSuppressionId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response DeleteAlarmSuppressionResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/AlarmSuppression/DeleteAlarmSuppression"
+		err = common.PostProcessServiceError(err, "Monitoring", "DeleteAlarmSuppression", apiReferenceLink)
 		return response, err
 	}
 
@@ -395,6 +520,123 @@ func (client MonitoringClient) getAlarmHistory(ctx context.Context, request comm
 	return response, err
 }
 
+// GetAlarmSuppression Gets the specified alarm suppression.
+// For important limits information, see
+// Limits on Monitoring (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Concepts/monitoringoverview.htm#limits).
+// This call is subject to a Monitoring limit that applies to the total number of requests across all alarm operations.
+// Monitoring might throttle this call to reject an otherwise valid request when the total rate of alarm operations exceeds 10 requests,
+// or transactions, per second (TPS) for a given tenancy.
+func (client MonitoringClient) GetAlarmSuppression(ctx context.Context, request GetAlarmSuppressionRequest) (response GetAlarmSuppressionResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getAlarmSuppression, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetAlarmSuppressionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetAlarmSuppressionResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetAlarmSuppressionResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetAlarmSuppressionResponse")
+	}
+	return
+}
+
+// getAlarmSuppression implements the OCIOperation interface (enables retrying operations)
+func (client MonitoringClient) getAlarmSuppression(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/alarmSuppressions/{alarmSuppressionId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response GetAlarmSuppressionResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/AlarmSuppression/GetAlarmSuppression"
+		err = common.PostProcessServiceError(err, "Monitoring", "GetAlarmSuppression", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ListAlarmSuppressions Lists alarm suppressions for the specified alarm.
+// Only dimension-level suppressions are listed. Alarm-level suppressions are not listed.
+// For important limits information, see
+// Limits on Monitoring (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Concepts/monitoringoverview.htm#limits).
+// This call is subject to a Monitoring limit that applies to the total number of requests across all alarm operations.
+// Monitoring might throttle this call to reject an otherwise valid request when the total rate of alarm operations exceeds 10 requests,
+// or transactions, per second (TPS) for a given tenancy.
+func (client MonitoringClient) ListAlarmSuppressions(ctx context.Context, request ListAlarmSuppressionsRequest) (response ListAlarmSuppressionsResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listAlarmSuppressions, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListAlarmSuppressionsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListAlarmSuppressionsResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListAlarmSuppressionsResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListAlarmSuppressionsResponse")
+	}
+	return
+}
+
+// listAlarmSuppressions implements the OCIOperation interface (enables retrying operations)
+func (client MonitoringClient) listAlarmSuppressions(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/alarmSuppressions", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListAlarmSuppressionsResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/AlarmSuppressionCollection/ListAlarmSuppressions"
+		err = common.PostProcessServiceError(err, "Monitoring", "ListAlarmSuppressions", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
 // ListAlarms Lists the alarms for the specified compartment.
 // For more information, see
 // Listing Alarms (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Tasks/list-alarm.htm).
@@ -458,6 +700,7 @@ func (client MonitoringClient) listAlarms(ctx context.Context, request common.OC
 // ListAlarmsStatus List the status of each alarm in the specified compartment.
 // Status is collective, across all metric streams in the alarm.
 // To list alarm status for each metric stream, use RetrieveDimensionStates.
+// Optionally filter by resource or status value.
 // For more information, see
 // Listing Alarm Statuses (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Tasks/list-alarm-status.htm).
 // For important limits information, see
@@ -767,6 +1010,64 @@ func (client MonitoringClient) retrieveDimensionStates(ctx context.Context, requ
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/AlarmDimensionStatesCollection/RetrieveDimensionStates"
 		err = common.PostProcessServiceError(err, "Monitoring", "RetrieveDimensionStates", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// SummarizeAlarmSuppressionHistory Returns history of suppressions for the specified alarm, including both dimension-specific and and alarm-wide suppressions.
+// For important limits information, see
+// Limits on Monitoring (https://docs.cloud.oracle.com/iaas/Content/Monitoring/Concepts/monitoringoverview.htm#limits).
+// This call is subject to a Monitoring limit that applies to the total number of requests across all alarm operations.
+// Monitoring might throttle this call to reject an otherwise valid request when the total rate of alarm operations exceeds 10 requests,
+// or transactions, per second (TPS) for a given tenancy.
+func (client MonitoringClient) SummarizeAlarmSuppressionHistory(ctx context.Context, request SummarizeAlarmSuppressionHistoryRequest) (response SummarizeAlarmSuppressionHistoryResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.summarizeAlarmSuppressionHistory, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = SummarizeAlarmSuppressionHistoryResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = SummarizeAlarmSuppressionHistoryResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(SummarizeAlarmSuppressionHistoryResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into SummarizeAlarmSuppressionHistoryResponse")
+	}
+	return
+}
+
+// summarizeAlarmSuppressionHistory implements the OCIOperation interface (enables retrying operations)
+func (client MonitoringClient) summarizeAlarmSuppressionHistory(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/alarms/{alarmId}/actions/summarizeAlarmSuppressionHistory", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response SummarizeAlarmSuppressionHistoryResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/monitoring/20180401/AlarmSuppression/SummarizeAlarmSuppressionHistory"
+		err = common.PostProcessServiceError(err, "Monitoring", "SummarizeAlarmSuppressionHistory", apiReferenceLink)
 		return response, err
 	}
 

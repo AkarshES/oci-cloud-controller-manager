@@ -88,6 +88,8 @@ type CloudProviderFramework struct {
 	//
 	// NB: This can fail from the CI when external temrination (e.g. timeouts) occur.
 	cleanupHandle CleanupActionHandle
+
+	ClusterType containerengine.ClusterTypeEnum
 }
 
 // NewDefaultFramework constructs a new e2e test CloudProviderFramework with default options.
@@ -127,6 +129,11 @@ func NewCcmFramework(baseName string, client clientset.Interface, backup bool) *
 	}
 	if isPreUpgradeBool || isPostUpgradeBool {
 		f.SkipNamespaceCreation = true
+	}
+	if strings.ToUpper(clusterType) == "ENHANCED_CLUSTER" {
+		f.ClusterType = containerengine.ClusterTypeEnhancedCluster
+	} else {
+		f.ClusterType = containerengine.ClusterTypeBasicCluster
 	}
 	BeforeEach(f.BeforeEach)
 	AfterEach(f.AfterEach)

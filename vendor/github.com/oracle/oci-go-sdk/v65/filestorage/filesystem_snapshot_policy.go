@@ -16,8 +16,8 @@ import (
 	"strings"
 )
 
-// FilesystemSnapshotPolicy A file system snapshot policy governs policy-based snapshots of associated
-// file systems. It contains a list of snapshot schedules that define the frequency of
+// FilesystemSnapshotPolicy A file system snapshot policy is used to automate snapshot creation and deletion.
+// It contains a list of snapshot schedules that define the frequency of
 // snapshot creation for the associated file systems and the retention period of snapshots taken on schedule.
 // For more information, see Snapshot Scheduling (https://docs.cloud.oracle.com/iaas/Content/File/Tasks/snapshot-policies-and-schedules.htm).
 // To use any of the API operations, you must be authorized in an IAM policy. If you're not authorized, talk to an administrator. If you're an administrator who needs to write policies to give users access, see Getting Started with Policies (https://docs.cloud.oracle.com/iaas/Content/Identity/Concepts/policygetstarted.htm).
@@ -63,6 +63,9 @@ type FilesystemSnapshotPolicy struct {
 	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
+
+	// Not used by File Systems but required for SPLAT tag integration.
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
 }
 
 func (m FilesystemSnapshotPolicy) String() string {
