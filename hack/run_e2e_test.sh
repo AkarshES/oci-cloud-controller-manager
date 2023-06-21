@@ -108,6 +108,7 @@ function check_environment () {
         check-env "MNT_TARGET_SUBNET_ID"      $MNT_TARGET_SUBNET_ID
         check-env "MNT_TARGET_COMPARTMENT_ID" $MNT_TARGET_COMPARTMENT_ID
         check-env "STATIC_SNAPSHOT_COMPARTMENT_ID" $STATIC_SNAPSHOT_COMPARTMENT_ID
+        check-env "CLUSTER_TYPE"              $CLUSTER_TYPE
         check-env-k8s-version-index-exist
         if [ -z "$CLUSTER_KUBECONFIG" ]; then
             CLUSTER_KUBECONFIG="/tmp/clusterkubeconfig"
@@ -119,6 +120,7 @@ function check_environment () {
         check-env "CLUSTER_KUBECONFIG"    $CLUSTER_KUBECONFIG
         check-env "CLOUD_CONFIG"          $CLOUD_CONFIG
         check-env "ADLOCATION"            $ADLOCATION
+        check-env "CLUSTER_TYPE"          $CLUSTER_TYPE
     fi
 }
 
@@ -194,7 +196,8 @@ function run_e2e_tests() {
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
-        --pre-upgrade=${PRE_UPGRADE}
+        --pre-upgrade=${PRE_UPGRADE} \
+        --cluster-type=${CLUSTER_TYPE}
     retval=$?
     rm -f $OCI_KEY_FILE
     return $retval
@@ -220,7 +223,8 @@ function run_e2e_tests_existing_cluster() {
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
-        --pre-upgrade=${PRE_UPGRADE}
+        --pre-upgrade=${PRE_UPGRADE} \
+        --cluster-type=${CLUSTER_TYPE}
     retval=$?
     return $retval
 }
@@ -289,6 +293,7 @@ function declare_setup () {
     echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
     echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
     echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
+    echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
 }
 
 function set_focus () {
@@ -352,9 +357,11 @@ function declare_environment () {
         echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
         echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
         echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
+        echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
     else
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"
         echo "CLOUD_CONFIG is ${CLOUD_CONFIG}"
+        echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
     fi
 
     if [[ $LOCAL_RUN != 1 ]]; then

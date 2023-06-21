@@ -118,6 +118,9 @@ var (
 	isPostUpgradeBool             bool
 	isPreUpgradeString            string
 	isPostUpgradeString           string
+	clusterID                     string              // Ocid of the newly created E2E cluster
+	clusterType                   string              // Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER (Default: BASIC_CLUSTER)
+	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
 )
 
 func init() {
@@ -179,6 +182,8 @@ func init() {
 	flag.StringVar(&isPreUpgradeString, "pre-upgrade", "", "If true pre upgrade testing will be done.")
 	flag.StringVar(&isPostUpgradeString, "post-upgrade", "", "If true post upgrade testing will be done.")
 	flag.StringVar(&namespace, "namespace", "pre-upgrade", "Namespace used for pre-upgrade and post-upgrade testing.")
+
+	flag.StringVar(&clusterType, "cluster-type", "BASIC_CLUSTER", "Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER")
 }
 
 func getDefaultOCIUser() OCIUser {
@@ -253,6 +258,8 @@ type Framework struct {
 	K8sSubnet string
 	// Nodepool subnet
 	NodeSubnet string
+	// Cluster Type
+	ClusterType oke.ClusterTypeEnum
 
 	//k8s version value (eg. v1.10.11, v1.11.8) used when create cluster
 	OkeClusterK8sVersion string
@@ -395,6 +402,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		VolumeHandle:                  volumeHandle,
 		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
 		UpgradeTestingNamespace:       namespace,
+		ClusterType:                   clusterTypeEnum,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -516,6 +524,13 @@ func (f *Framework) Initialize() {
 	Logf("OCI NodeSubnet OCID: %s", f.NodeSubnet)
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
+	if strings.ToUpper(clusterType) == "ENHANCED_CLUSTER" {
+		clusterTypeEnum = oke.ClusterTypeEnhancedCluster
+	} else {
+		clusterTypeEnum = oke.ClusterTypeBasicCluster
+	}
+	f.ClusterType = clusterTypeEnum
+	Logf("Cluster Type: %s", f.ClusterType)
 
 	var err error
 	if isPreUpgradeString != "" {

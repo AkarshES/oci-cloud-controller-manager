@@ -338,6 +338,7 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 					PodsCidr:     &cfg.PodCIDR,
 				},
 			},
+			Type: f.ClusterType,
 		},
 	}
 
@@ -399,7 +400,7 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 	// waits for the cluster.lifecycle state to go ACTIVE
 	wrSucceded := false
 	timeout := 20 * time.Minute
-	clusterID := ""
+	clusterID = ""
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(Poll) {
 		if wrSucceded == false {
 			wrResponse := f.GetWorkRequest(workRequestID)

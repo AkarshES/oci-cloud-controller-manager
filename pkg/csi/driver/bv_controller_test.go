@@ -10,6 +10,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	authv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -49,7 +50,7 @@ func (MockOCIClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }
 
-func (MockOCIClient) LoadBalancer() client.GenericLoadBalancerInterface {
+func (MockOCIClient) LoadBalancer(logger *zap.SugaredLogger, lbType string, tenancy string, token *authv1.TokenRequest) client.GenericLoadBalancerInterface {
 	return &MockLoadBalancerClient{}
 }
 
@@ -78,7 +79,7 @@ func (c *MockBlockStorageClient) AwaitVolumeBackupAvailableOrTimeout(ctx context
 func (c *MockBlockStorageClient) CreateVolumeBackup(ctx context.Context, details core.CreateVolumeBackupDetails) (*core.VolumeBackup, error) {
 	id := "oc1.volumebackup1.xxxx"
 	return &core.VolumeBackup{
-		Id:                 &id,
+		Id: &id,
 	}, nil
 }
 
@@ -88,7 +89,7 @@ func (c *MockBlockStorageClient) DeleteVolumeBackup(ctx context.Context, id stri
 
 func (c *MockBlockStorageClient) GetVolumeBackup(ctx context.Context, id string) (*core.VolumeBackup, error) {
 	return &core.VolumeBackup{
-		Id:                 &id,
+		Id: &id,
 	}, nil
 }
 
@@ -316,7 +317,7 @@ func (c *MockLoadBalancerClient) UpdateNetworkSecurityGroups(context.Context, st
 }
 
 // Networking mocks client VirtualNetwork implementation.
-func (p *MockProvisionerClient) LoadBalancer(string) client.GenericLoadBalancerInterface {
+func (p *MockProvisionerClient) LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) client.GenericLoadBalancerInterface {
 	return &MockLoadBalancerClient{}
 }
 
@@ -1042,9 +1043,9 @@ func TestExtractVolumeParameters(t *testing.T) {
 
 func TestExtractSnapshotParameters(t *testing.T) {
 	tests := map[string]struct {
-		inputParameters 	map[string]string
-		snapshotParameters  SnapshotParameters
-		wantErr           	bool
+		inputParameters    map[string]string
+		snapshotParameters SnapshotParameters
+		wantErr            bool
 	}{
 		"Wrong Backup Type": {
 			inputParameters: map[string]string{
@@ -1096,8 +1097,8 @@ func TestExtractSnapshotParameters(t *testing.T) {
 				backupFreeformTags: `{"foo":"bar"}`,
 			},
 			snapshotParameters: SnapshotParameters{
-				backupType: 	core.CreateVolumeBackupDetailsTypeIncremental,
-				freeformTags: 	map[string]string{"foo": "bar"},
+				backupType:   core.CreateVolumeBackupDetailsTypeIncremental,
+				freeformTags: map[string]string{"foo": "bar"},
 			},
 			wantErr: false,
 		},
@@ -1106,20 +1107,20 @@ func TestExtractSnapshotParameters(t *testing.T) {
 				backupDefinedTags: `{"ns":{"foo":"bar"}}`,
 			},
 			snapshotParameters: SnapshotParameters{
-				backupType: 	core.CreateVolumeBackupDetailsTypeIncremental,
-				definedTags:	map[string]map[string]interface{}{"ns": {"foo": "bar"}},
+				backupType:  core.CreateVolumeBackupDetailsTypeIncremental,
+				definedTags: map[string]map[string]interface{}{"ns": {"foo": "bar"}},
 			},
 			wantErr: false,
 		},
 		"With freeform+defined tags": {
 			inputParameters: map[string]string{
 				backupFreeformTags: `{"foo":"bar"}`,
-				backupDefinedTags: 	`{"ns":{"foo":"bar"}}`,
+				backupDefinedTags:  `{"ns":{"foo":"bar"}}`,
 			},
 			snapshotParameters: SnapshotParameters{
-				backupType: 	core.CreateVolumeBackupDetailsTypeIncremental,
-				freeformTags:	map[string]string{"foo": "bar"},
-				definedTags: 	map[string]map[string]interface{}{"ns": {"foo": "bar"}},
+				backupType:   core.CreateVolumeBackupDetailsTypeIncremental,
+				freeformTags: map[string]string{"foo": "bar"},
+				definedTags:  map[string]map[string]interface{}{"ns": {"foo": "bar"}},
 			},
 			wantErr: false,
 		},
@@ -1151,7 +1152,7 @@ func TestCreateSnapshot(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:   "Error for name not provided for creating snapshot",
+			name: "Error for name not provided for creating snapshot",
 			args: args{
 				ctx: nil,
 				req: &csi.CreateSnapshotRequest{Name: ""},
@@ -1160,11 +1161,11 @@ func TestCreateSnapshot(t *testing.T) {
 			wantErr: errors.New("Volume snapshot name must be provided"),
 		},
 		{
-			name:   "Error for volume snapshot source ID not provided for creating snapshot",
+			name: "Error for volume snapshot source ID not provided for creating snapshot",
 			args: args{
 				ctx: nil,
 				req: &csi.CreateSnapshotRequest{
-					Name: 			"demo",
+					Name:           "demo",
 					SourceVolumeId: "",
 				},
 			},
@@ -1207,7 +1208,7 @@ func TestControllerDriver_DeleteSnapshot(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:   "Error for snapshot OCID missing in delete block volume",
+			name: "Error for snapshot OCID missing in delete block volume",
 			args: args{
 				ctx: nil,
 				req: &csi.DeleteSnapshotRequest{},
@@ -1216,7 +1217,7 @@ func TestControllerDriver_DeleteSnapshot(t *testing.T) {
 			wantErr: errors.New("SnapshotId must be provided"),
 		},
 		{
-			name:   "Delete volume and get empty response",
+			name: "Delete volume and get empty response",
 			args: args{
 				ctx: context.Background(),
 				req: &csi.DeleteSnapshotRequest{SnapshotId: "oc1.volumebackup1.xxxx"},

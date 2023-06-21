@@ -24,12 +24,6 @@ import (
 // CreateSubnetDetails The representation of CreateSubnetDetails
 type CreateSubnetDetails struct {
 
-	// The CIDR IP address range of the subnet. The CIDR must maintain the following rules -
-	// a. The CIDR block is valid and correctly formatted.
-	// b. The new range is within one of the parent VCN ranges.
-	// Example: `10.0.1.0/24`
-	CidrBlock *string `mandatory:"true" json:"cidrBlock"`
-
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment to contain the subnet.
 	CompartmentId *string `mandatory:"true" json:"compartmentId"`
 
@@ -47,6 +41,12 @@ type CreateSubnetDetails struct {
 	// created in that availability domain.
 	// Example: `Uocm:PHX-AD-1`
 	AvailabilityDomain *string `mandatory:"false" json:"availabilityDomain"`
+
+	// The CIDR IP address range of the subnet. The CIDR must maintain the following rules -
+	// a. The CIDR block is valid and correctly formatted.
+	// b. The new range is within one of the parent VCN ranges.
+	// Example: `10.0.1.0/24`
+	CidrBlock *string `mandatory:"false" json:"cidrBlock"`
 
 	// Defined tags for this resource. Each key is predefined and scoped to a
 	// namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
@@ -86,10 +86,10 @@ type CreateSubnetDetails struct {
 	// Example: `2001:0db8:0123:1111::/64`
 	Ipv6CidrBlock *string `mandatory:"false" json:"ipv6CidrBlock"`
 
-	// The list of all IPv6 CIDR blocks (Oracle allocated IPv6 GUA, ULA or private IPv6 CIDR blocks, BYOIPv6 CIDR blocks) for the subnet that meets the following criteria:
-	// - The CIDR blocks must be valid.
-	// - Multiple CIDR blocks must not overlap each other or the on-premises network CIDR block.
-	// - The number of CIDR blocks must not exceed the limit of IPv6 CIDR blocks allowed to a subnet.
+	// The list of all IPv6 prefixes (Oracle allocated IPv6 GUA, ULA or private IPv6 prefixes, BYOIPv6 prefixes) for the subnet that meets the following criteria:
+	// - The prefixes must be valid.
+	// - Multiple prefixes must not overlap each other or the on-premises network prefix.
+	// - The number of prefixes must not exceed the limit of IPv6 prefixes allowed to a subnet.
 	Ipv6CidrBlocks []string `mandatory:"false" json:"ipv6CidrBlocks"`
 
 	// Indicates whether learning mode is enabled for this subnet. The default is `false`.
@@ -119,7 +119,7 @@ type CreateSubnetDetails struct {
 	// If `prohibitPublicIpOnVnic` is set to true, VNICs created in this
 	// subnet cannot have public IP addresses (that is, it's a private
 	// subnet).
-	// If you intend to use an IPv6 CIDR block, you should use the flag `prohibitInternetIngress` to
+	// If you intend to use an IPv6 prefix, you should use the flag `prohibitInternetIngress` to
 	// specify ingress internet traffic behavior of the subnet.
 	// Example: `true`
 	ProhibitPublicIpOnVnic *bool `mandatory:"false" json:"prohibitPublicIpOnVnic"`

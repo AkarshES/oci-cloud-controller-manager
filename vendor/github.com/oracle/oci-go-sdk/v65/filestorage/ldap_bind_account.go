@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-// LdapBindAccount Account details for LDAP bind account from outbound connector.
+// LdapBindAccount Account details for the LDAP bind account used by the outbound connector.
 type LdapBindAccount struct {
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the compartment that contains the outbound connector.
@@ -36,10 +36,10 @@ type LdapBindAccount struct {
 	// Example: `2016-08-25T21:10:29.600Z`
 	TimeCreated *common.SDKTime `mandatory:"true" json:"timeCreated"`
 
-	// Array of server endpoints to use while trying to connect while using LDAP bind account
+	// Array of server endpoints to use when connecting with the LDAP bind account.
 	Endpoints []Endpoint `mandatory:"true" json:"endpoints"`
 
-	// The LDAP Distinguished name of the account.
+	// The LDAP Distinguished Name of the account.
 	BindDistinguishedName *string `mandatory:"true" json:"bindDistinguishedName"`
 
 	// The availability domain the outbound connector is in. May be unset
@@ -57,6 +57,9 @@ type LdapBindAccount struct {
 	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
+
+	// Not used by File Systems but required for SPLAT tag integration.
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the password for the LDAP bind account in the Vault.
 	PasswordSecretId *string `mandatory:"false" json:"passwordSecretId"`
@@ -106,6 +109,11 @@ func (m LdapBindAccount) GetFreeformTags() map[string]string {
 //GetDefinedTags returns DefinedTags
 func (m LdapBindAccount) GetDefinedTags() map[string]map[string]interface{} {
 	return m.DefinedTags
+}
+
+//GetSystemTags returns SystemTags
+func (m LdapBindAccount) GetSystemTags() map[string]map[string]interface{} {
+	return m.SystemTags
 }
 
 func (m LdapBindAccount) String() string {
