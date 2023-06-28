@@ -285,7 +285,7 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 	metricType := util.CSIStorageType
 	if srcSnapshotId != "" {
 		metric = metrics.BlockSnapshotRestore
-		metricType = util.CSIBVSnapshot
+		metricType = util.CSIStorageType
 	}
 
 	if availableDomainShortName == "" {
@@ -874,7 +874,7 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 
 	if req.Name == "" {
 		log.Error("Volume Snapshot name must be provided.")
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, status.Error(codes.InvalidArgument, "Volume snapshot name must be provided")
@@ -883,7 +883,7 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 	sourceVolumeId := req.SourceVolumeId
 	if sourceVolumeId == "" {
 		log.Error("Volume snapshot source ID must be provided")
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, status.Error(codes.InvalidArgument, "Volume snapshot source ID must be provided")
@@ -892,7 +892,7 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 	snapshots, err := d.client.BlockStorage().GetVolumeBackupsByName(ctx, req.Name, d.config.CompartmentID)
 	if err != nil {
 		errorType = util.GetError(err)
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		log.With("service","blockstorage","verb","get","resource","volumeBackup","statusCode",util.GetHttpStatusCode(err)).
@@ -902,7 +902,7 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 
 	if len(snapshots) > 1 {
 		log.Error("Duplicate snapshot %q exists", req.Name)
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, fmt.Errorf("duplicate snapshot %q exists", req.Name)
@@ -912,11 +912,14 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 		//Assigning existing snapshot
 
 		snapshot := snapshots[0]
-		log.Info("Snapshot already created")
+		log.Info("Snapshot already created, checking if lifecycleState is Available")
+
+		log = log.With("volumeBackupId", *snapshot.Id)
+		dimensionsMap[metrics.ResourceOCIDDimension] = *snapshot.Id
 
 		if snapshot.VolumeId != nil && *snapshot.VolumeId != sourceVolumeId {
 			log.Errorf("Snapshot %s exists for another volume with id %s", req.Name, *snapshot.VolumeId)
-			snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIBVSnapshot)
+			snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return nil, status.Errorf(codes.AlreadyExists, "Snapshot %s exists for another volume with id %s", req.Name, *snapshot.VolumeId)
@@ -927,19 +930,24 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 		log.Infof("Checking if backup %v has become available", *snapshot.Id)
 		blockVolumeAvailable, err := isBlockVolumeAvailable(snapshot)
 		if err != nil {
-			log.Errorf("Backup did not become available %q: %v", req.Name, err)
+			log.Errorf("Error while waiting for backup to become available %q: %v", req.Name, err)
 			errorType = util.GetError(err)
-			snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIBVSnapshot)
+			snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(snapshot.TimeRequestReceived.Time).Seconds(), dimensionsMap)
 			return nil, status.Errorf(codes.Internal, "Backup did not become available %q: %v", req.Name, err)
 		}
 
 		if blockVolumeAvailable {
-			log.With("snapshotName", req.Name).Info("Snapshot is created.")
-			snapshotMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.CSIBVSnapshot)
+			log.Info("Snapshot is created and available.")
+			snapshotMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
-			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
+			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(snapshot.TimeRequestReceived.Time).Seconds(), dimensionsMap)
+		} else {
+			log.Infof("Backup has not become available yet, controller will retry")
+			snapshotMetricDimension = util.GetMetricDimensionForComponent(util.BackupCreating, util.CSIStorageType)
+			dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
+			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(snapshot.TimeRequestReceived.Time).Seconds(), dimensionsMap)
 		}
 
 		return &csi.CreateSnapshotResponse{
@@ -956,7 +964,7 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 	snapshotParams, err := extractSnapshotParameters(req.GetParameters())
 	if err != nil {
 		log.With(zap.Error(err)).Error("Failed to parse volumesnapshotclass parameters.")
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, status.Errorf(codes.InvalidArgument, "failed to parse volumesnapshotclass parameters %v", err)
@@ -979,11 +987,14 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 		log.With("service","blockstorage","verb","create","resource","volumeBackup","statusCode",util.GetHttpStatusCode(err)).
 			Errorf("Could not create snapshot %q: %v", req.Name, err)
 		errorType = util.GetError(err)
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, status.Errorf(codes.Internal, "Could not create snapshot %q: %v", req.Name, err)
 	}
+
+	log = log.With("volumeBackupId", *snapshot.Id)
+	dimensionsMap[metrics.ResourceOCIDDimension] = *snapshot.Id
 
 	ts := timestamppb.New(snapshot.TimeCreated.Time)
 
@@ -993,6 +1004,9 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 	if err != nil {
 		if strings.Contains(err.Error(), "timed out") {
 			log.Infof("Backup did not become available immediately after creation, controller will retry")
+			snapshotMetricDimension = util.GetMetricDimensionForComponent(util.BackupCreating, util.CSIStorageType)
+			dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
+			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return &csi.CreateSnapshotResponse{
 				Snapshot: &csi.Snapshot{
 					SnapshotId:     *snapshot.Id,
@@ -1004,9 +1018,9 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 			}, nil
 		} else {
 			log.With("service","blockstorage","verb","get","resource","volumeBackup","statusCode",util.GetHttpStatusCode(err)).
-				Infof("Backup did not become available %q: %v", req.Name, err)
+				Errorf("Error while waiting for backup to become available %q: %v", req.Name, err)
 			errorType = util.GetError(err)
-			snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIBVSnapshot)
+			snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 			metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			log.Errorf("Backup did not become available %q: %v", req.Name, err)
@@ -1014,8 +1028,8 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 		}
 	}
 
-	log.With("snapshotName", req.Name).Info("Snapshot is created.")
-	snapshotMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.CSIBVSnapshot)
+	log.Info("Snapshot is created and available.")
+	snapshotMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
 	dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 	metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotProvision, time.Since(startTime).Seconds(), dimensionsMap)
 
@@ -1041,7 +1055,7 @@ func (d *BlockVolumeControllerDriver) DeleteSnapshot(ctx context.Context, req *c
 	log := d.logger.With("SnapshotId", req.SnapshotId,"csiOperation","deleteSnapshot")
 
 	if req.SnapshotId == "" {
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotDelete, time.Since(startTime).Seconds(), dimensionsMap)
 		log.Errorf("SnapshotID is empty")
@@ -1054,7 +1068,7 @@ func (d *BlockVolumeControllerDriver) DeleteSnapshot(ctx context.Context, req *c
 	err := d.client.BlockStorage().DeleteVolumeBackup(ctx, req.SnapshotId)
 	if err != nil && !k8sapierrors.IsNotFound(err) {
 		errorType = util.GetError(err)
-		snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIBVSnapshot)
+		snapshotMetricDimension = util.GetMetricDimensionForComponent(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotDelete, time.Since(startTime).Seconds(), dimensionsMap)
 		log.With("service","blockstorage","verb","delete","resource","volumeBackup","statusCode",util.GetHttpStatusCode(err)).
@@ -1063,7 +1077,7 @@ func (d *BlockVolumeControllerDriver) DeleteSnapshot(ctx context.Context, req *c
 	}
 
 	log.Info("Snapshot is deleted.")
-	snapshotMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.CSIBVSnapshot)
+	snapshotMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.CSIStorageType)
 	dimensionsMap[metrics.ComponentDimension] = snapshotMetricDimension
 	metrics.SendMetricData(d.metricPusher, metrics.BlockSnapshotDelete, time.Since(startTime).Seconds(), dimensionsMap)
 	return &csi.DeleteSnapshotResponse{}, nil
