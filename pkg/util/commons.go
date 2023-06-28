@@ -27,6 +27,7 @@ const (
 	ErrLimitExceeded = "LIMIT_EXCEEDED"
 	ErrCtxTimeout    = "CTX_TIMEOUT"
 	Success          = "SUCCESS"
+	BackupCreating   = "CREATING"
 
 	// Components generating errors
 	// Load Balancer
@@ -34,8 +35,6 @@ const (
 	// storage types
 	CSIStorageType = "CSI"
 	FVDStorageType = "FVD"
-	// Snapshots
-	CSIBVSnapshot = "BSNAP"
 )
 
 // LookupNodeCompartment returns the compartment OCID for the given nodeName.
