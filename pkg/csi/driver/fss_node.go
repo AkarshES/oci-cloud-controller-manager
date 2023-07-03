@@ -6,8 +6,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	kubeAPI "k8s.io/api/core/v1"
@@ -21,7 +23,11 @@ import (
 const (
 	mountPath   = "mount"
 	FipsEnabled = "1"
+	fssUnmountSemaphoreTimeout = time.Second * 30
+
 )
+
+var fssUnmountSemaphore = semaphore.NewWeighted(int64(4))
 
 // NodeStageVolume mounts the volume to a staging path on the node.
 func (d FSSNodeDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
@@ -245,13 +251,25 @@ func (d FSSNodeDriver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnp
 		logger.With("TargetPath", targetPath).Infof("Not a mount point, removing path")
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
+	logger.Debug("Trying to unmount.")
+	startTime := time.Now()
 
+	fssUnmountSemaphoreCtx, cancel := context.WithTimeout(ctx, fssUnmountSemaphoreTimeout)
+	defer cancel()
+
+	err = fssUnmountSemaphore.Acquire(fssUnmountSemaphoreCtx, 1)
+	if err != nil {
+		logger.With(zap.Error(err)).Errorf("Error aquiring lock during unstage.")
+		return nil, status.Error(codes.Aborted, "To many unmount requests.")
+	}
+	defer fssUnmountSemaphore.Release(1)
+	
+	logger.Info("Unmount started")
 	if err := mounter.Unmount(targetPath); err != nil {
 		logger.With(zap.Error(err)).Error("failed to unmount target path.")
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-
-	logger.With("TargetPath", targetPath).
+	logger.With("UnmountTime", time.Since(startTime).Milliseconds()).With("TargetPath", targetPath).
 		Info("Unmounting volume completed")
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
@@ -283,14 +301,27 @@ func (d FSSNodeDriver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnsta
 	defer d.volumeLocks.Release(req.VolumeId)
 
 	targetPath := req.GetStagingTargetPath()
+	logger.Debug("Trying to unstage.")
+	startTime := time.Now()
 
-	err := d.unmountAndCleanup(logger, targetPath, exportPath, mountTargetIP)
+	fssUnmountSemaphoreCtx, cancel := context.WithTimeout(ctx, fssUnmountSemaphoreTimeout)
+	defer cancel()
+
+	err := fssUnmountSemaphore.Acquire(fssUnmountSemaphoreCtx, 1)
+	if err != nil {
+		logger.With(zap.Error(err)).Errorf("Error aquiring lock during unstage.")
+		return nil, status.Error(codes.Aborted, "To many unmount requests.")
+	}
+	defer fssUnmountSemaphore.Release(1)
+
+	logger.Info("Unstage started.")
+	err = d.unmountAndCleanup(logger, targetPath, exportPath, mountTargetIP)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.With("StagingTargetPath", targetPath).
-		Info("Unmounting volume completed")
+	logger.With("UnstageTime", time.Since(startTime).Milliseconds()).
+		With("StagingTargetPath", targetPath).Info("Unmounting volume completed")
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
@@ -388,7 +419,7 @@ func (d FSSNodeDriver) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetV
 	return nil, status.Error(codes.Unimplemented, "NodeGetVolumeStats is not supported yet")
 }
 
-//NodeExpandVolume returns the expand of the volume
+// NodeExpandVolume returns the expand of the volume
 func (d FSSNodeDriver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeExpandVolume is not supported yet")
 }
