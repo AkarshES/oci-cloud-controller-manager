@@ -16,9 +16,11 @@ variable "leadership_jira_component" {}
 variable "runbook_base" {}
 variable "realm" {}
 variable "ccm_alarms_enabled" {}
+variable "csi_alarms_enabled" {}
 variable "ccm_jira_item" {}
 variable "ccm_alarm_label_format" {}
 variable "ccm_alarms_fleet_format" {}
+variable "csi_dataplane_alarms_fleet_format" {}
 variable "watch_mp_release_label" {}
 variable "skip_mapi_alarms" {}
 variable "skip_kmon_alarms" {}
@@ -43,6 +45,12 @@ locals {
     t2_fleet     = var.realm != "oc1" ? "${local.prod_tenancy_name}.${format(var.ccm_alarms_fleet_format, var.cell_index)}" : format(var.ccm_alarms_fleet_format, var.cell_index)
     lj_namespace = format("oke%s-kmi-%s", var.env_name != "prd" ? "-${var.env_name}" : "", local.cell_name)
   }
+
+  csi = {
+    t2_fleet     = var.realm != "oc1" ? "${local.prod_tenancy_name}.${format(var.csi_dataplane_alarms_fleet_format, var.region_code)}" : format(var.csi_dataplane_alarms_fleet_format, var.region_code)
+    lj_namespace = format("oke%s-kmi-%s", var.env_name != "prd" ? "-${var.env_name}" : "", local.cell_name)
+  }
+
   grafana_uri = {
     oc5 = "https://grafana.us-tacoma-1.oci.oraclerealm5.com"
     oc6 = "https://grafana.us-gov-fortworth-1.oci.oraclerealm.ic.gov"
@@ -52,9 +60,11 @@ locals {
   envSetup                          = var.env_name == "dev" ? var.env_name : "${var.env_name == "prd" ? "prod" : var.env_name}-cell${var.cell_index}"
   grafana_base                      = lookup(local.grafana_uri, var.realm, "https://grafana.oci.oraclecorp.com")
   grafana_ccm_template              = "${local.grafana_base}/d/eaDdAjE7k/cpo-monitoring-calls-made-via-kmi?panelId=66&fullscreen&orgId=1&refresh=30s&from=now-6h&to=now-1m&var-realm=${var.realm}&var-granularity=1h&var-MQLRegion=${var.region}&var-fleet=${local.cell_name}"
+  grafana_csi_template              = "${local.grafana_base}/d/RoO1I0w7k/cpo-monitoring-volumes?&orgId=1&refresh=1m&var-realm=${var.realm}&var-granularity=1h&var-MQLRegion=${var.region}&var-fleet=${local.csi.t2_fleet}"
   is_cp_canary_successful           = data.capability.oci_containerengine_cluster.is_available
   alarms_enabled                    = var.alarms_enabled && local.is_cp_canary_successful
   ccm_alarms_enabled                = var.ccm_alarms_enabled && local.is_cp_canary_successful && var.realm == "oc1"
+  csi_alarms_enabled                = var.csi_alarms_enabled && local.is_cp_canary_successful && var.realm == "oc1"
 }
 
 # Duplicated in non-production
@@ -105,4 +115,35 @@ module "ccm_alarms" {
   lumberjack_cell_compartment = module.orchestration_compartment.ocid
   watch_mp_release_label      = var.watch_mp_release_label
   lumberjack_namespace        = local.ccm.lj_namespace
+}
+
+module "csi_alarms" {
+  source      = "./csi_alarms"
+  skip_alarms = var.skip_kmon_alarms
+
+  compartment_ocid            = module.compartment_lookup.ocid
+  project                     = var.project
+  fleet                       = local.csi.t2_fleet
+  region                      = var.region
+  region_code                 = var.region_code
+  realm                       = var.realm
+  cell                        = local.cell_name
+  env_name                    = var.env_name
+  severity_2                  = var.severity_2
+  severity_3                  = var.severity_3
+  jira_project                = var.jira_project
+  jira_component              = var.jira_component
+  leadership_jira_component   = var.leadership_jira_component
+  ccm_jira_item               = var.ccm_jira_item
+  runbook_base                = var.runbook_base
+  enabled                     = local.alarms_enabled && local.csi_alarms_enabled
+  label                       = format(var.ccm_alarm_label_format, var.cell_index)
+  dashboard                   = local.grafana_csi_template
+  num_of_ads                  = length(keys(module.ad_map.physical_to_logical_map))
+  root_compartment_ocid       = var.root_compartment_ocid
+  cell_name                   = local.cell_name
+  prod_tenancy_name           = local.prod_tenancy_name
+  lumberjack_cell_compartment = module.orchestration_compartment.ocid
+  watch_mp_release_label      = var.watch_mp_release_label
+  lumberjack_namespace        = local.csi.lj_namespace
 }
