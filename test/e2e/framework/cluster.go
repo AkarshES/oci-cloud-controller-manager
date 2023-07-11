@@ -13,6 +13,32 @@ import (
 	oke "github.com/oracle/oci-go-sdk/v65/containerengine"
 )
 
+func (f *Framework) GetUpgradeTestingCluster(k8sVersion string) string {
+	clusterList := f.ListClusters()
+	Logf("Searching for a pre-existing cluster with required k8s version...")
+
+	clusterId := ""
+	for _, clusterSummary := range clusterList {
+		Logf("ClusterName: '%s', ClusterID: '%s', k8sVersion: '%s', LifecycleState: %v", *clusterSummary.Name, *clusterSummary.Id, *clusterSummary.KubernetesVersion, clusterSummary.LifecycleState)
+		if *clusterSummary.KubernetesVersion == k8sVersion && clusterSummary.LifecycleState == oke.ClusterLifecycleStateActive {
+			Logf("Found a cluster with required kubernetes version.\n clusterId: '%s' \n clusterName: '%s'", *clusterSummary.Id, *clusterSummary.Name)
+			Logf("Checking Architecture...")
+
+			if f.Architecture == "AMD" && strings.Contains(*clusterSummary.Name, "AMD") {
+				Logf("Architecture = AMD")
+				clusterId = *clusterSummary.Id
+				break
+			} else if f.Architecture == "ARM" && strings.Contains(*clusterSummary.Name, "ARM") {
+				Logf("Architecture = ARM")
+				clusterId = *clusterSummary.Id
+				break
+			}
+		}
+	}
+
+	return clusterId
+}
+
 // GetClusterOptions requires a clusterOptionId as input (must be "all" right now)
 func (f *Framework) GetClusterOptions(clusterOptionId string) oke.ClusterOptions {
 	ctx, cancel := context.WithTimeout(f.context, f.timeout)
@@ -125,7 +151,7 @@ func (f *Framework) GetCluster(clusterID string) oke.Cluster {
 	return response.Cluster
 }
 
-//GetClusterWithResponse returns the raw GetCluster response for the specified clusterID.
+// GetClusterWithResponse returns the raw GetCluster response for the specified clusterID.
 func (f *Framework) GetClusterWithResponse(clusterID string) (response oke.GetClusterResponse, err error) {
 	ctx, cancel := context.WithTimeout(f.context, f.timeout)
 	defer cancel()
@@ -202,6 +228,13 @@ func (f *Framework) DeleteClusterWithResponse(clusterID string) (response oke.De
 // are created.
 func (f *Framework) CreateCluster() string {
 	clusterName := "TestCluster-" + UniqueID()
+	if isPreUpgradeBool {
+		if f.Architecture == "AMD" {
+			clusterName = "Cluster-AMD-" + UniqueID()
+		} else if f.Architecture == "ARM" {
+			clusterName = "Cluster-ARM-" + UniqueID()
+		}
+	}
 	return f.CreateClusterNamed(clusterName)
 }
 
@@ -244,7 +277,7 @@ func (f *Framework) cleanupClusterAsErrorExpected(wrId string, err common.Servic
 	Failf("Expected error: %v but create cluster succeeded.", err)
 }
 
-//createClusterFromConfig creates a cluster from the given config and returns the raw CreateCluster response.
+// createClusterFromConfig creates a cluster from the given config and returns the raw CreateCluster response.
 func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response oke.CreateClusterResponse, err error) {
 	if cfg == nil {
 		cfg = &ClusterCreateConfig{}

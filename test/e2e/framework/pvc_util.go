@@ -171,10 +171,10 @@ func (j *PVCTestJig) pvcExpandVolume(claim *v1.PersistentVolumeClaim, size strin
 	return pvc
 }
 
-// newPVCTemplate returns the default template for this jig, but
+// NewPVCTemplate returns the default template for this jig, but
 // does not actually create the PVC. The default PVC has the same name
 // as the jig
-func (j *PVCTestJig) newPVCTemplate(namespace, volumeSize, scName, adLabel string) *v1.PersistentVolumeClaim {
+func (j *PVCTestJig) NewPVCTemplate(namespace, volumeSize, scName, adLabel string) *v1.PersistentVolumeClaim {
 	pvc := j.CreatePVCTemplate(namespace, volumeSize)
 	pvc = j.pvcAddAccessMode(pvc, v1.ReadWriteOnce)
 	pvc = j.pvcAddLabelSelector(pvc, adLabel)
@@ -182,10 +182,10 @@ func (j *PVCTestJig) newPVCTemplate(namespace, volumeSize, scName, adLabel strin
 	return pvc
 }
 
-// newPVCTemplateCSI returns the default template for this jig, but
+// NewPVCTemplateCSI returns the default template for this jig, but
 // does not actually create the PVC.  The default PVC has the same name
 // as the jig
-func (j *PVCTestJig) newPVCTemplateCSI(namespace string, volumeSize string, scName string, volumeMode v1.PersistentVolumeMode, accessMode v1.PersistentVolumeAccessMode) *v1.PersistentVolumeClaim {
+func (j *PVCTestJig) NewPVCTemplateCSI(namespace string, volumeSize string, scName string, volumeMode v1.PersistentVolumeMode, accessMode v1.PersistentVolumeAccessMode) *v1.PersistentVolumeClaim {
 	pvc := j.CreatePVCTemplate(namespace, volumeSize)
 	pvc = j.pvcAddAccessMode(pvc, accessMode)
 	pvc = j.pvcAddStorageClassName(pvc, scName)
@@ -204,10 +204,10 @@ func (j *PVCTestJig) newPVCTemplateStaticFSS(namespace, volumeSize, volumeName s
 	return pvc
 }
 
-// newPVCTemplateDynamicFSS returns the default template for this jig, but
+// NewPVCTemplateDynamicFSS returns the default template for this jig, but
 // does not actually create the PVC.  The default PVC has the same name
 // as the jig
-func (j *PVCTestJig) newPVCTemplateDynamicFSS(namespace, volumeSize, scName string) *v1.PersistentVolumeClaim {
+func (j *PVCTestJig) NewPVCTemplateDynamicFSS(namespace, volumeSize, scName string) *v1.PersistentVolumeClaim {
 	pvc := j.CreatePVCTemplate(namespace, volumeSize)
 	pvc = j.pvcAddAccessMode(pvc, v1.ReadWriteMany)
 	pvc = j.pvcAddStorageClassName(pvc, scName)
@@ -265,7 +265,7 @@ func (j *PVCTestJig) UpdatePVCorFail(pvc *v1.PersistentVolumeClaim, tweak func(p
 // before it is created.
 func (j *PVCTestJig) CreatePVCorFail(namespace string, volumeSize string, scName string,
 	adLabel string, tweak func(pvc *v1.PersistentVolumeClaim)) *v1.PersistentVolumeClaim {
-	pvc := j.newPVCTemplate(namespace, volumeSize, scName, adLabel)
+	pvc := j.NewPVCTemplate(namespace, volumeSize, scName, adLabel)
 	return j.CheckPVCorFail(pvc, tweak, namespace, volumeSize)
 }
 
@@ -274,7 +274,7 @@ func (j *PVCTestJig) CreatePVCorFail(namespace string, volumeSize string, scName
 // before it is created.
 func (j *PVCTestJig) CreatePVCorFailCSI(namespace string, volumeSize string, scName string,
 	tweak func(pvc *v1.PersistentVolumeClaim), volumeMode v1.PersistentVolumeMode, accessMode v1.PersistentVolumeAccessMode) *v1.PersistentVolumeClaim {
-	pvc := j.newPVCTemplateCSI(namespace, volumeSize, scName, volumeMode, accessMode)
+	pvc := j.NewPVCTemplateCSI(namespace, volumeSize, scName, volumeMode, accessMode)
 	return j.CheckPVCorFail(pvc, tweak, namespace, volumeSize)
 }
 
@@ -291,7 +291,7 @@ func (j *PVCTestJig) CreatePVCorFailStaticFSS(namespace, volumeName, volumeSize 
 // before it is created.
 func (j *PVCTestJig) CreatePVCorFailDynamicFSS(namespace, volumeSize string, scName string,
 	tweak func(pvc *v1.PersistentVolumeClaim)) *v1.PersistentVolumeClaim {
-	pvc := j.newPVCTemplateDynamicFSS(namespace, volumeSize, scName)
+	pvc := j.NewPVCTemplateDynamicFSS(namespace, volumeSize, scName)
 	return j.CheckPVCorFail(pvc, tweak, namespace, volumeSize)
 }
 
