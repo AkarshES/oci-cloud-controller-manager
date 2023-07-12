@@ -67,13 +67,13 @@ func GetError(err error) string {
 		return ErrCtxTimeout
 	}
 
-	re := regexp.MustCompile(`http status code:\s*(\d+)`)
+	re := regexp.MustCompile(`(?i)http status code:\s*(\d+)`)
 	if match := re.FindStringSubmatch(cause); match != nil {
 		if status, er := strconv.Atoi(match[1]); er == nil {
 			if status >= 500 {
 				return Err5XX
 			} else if status >= 400 {
-				if strings.Contains(cause, "Service error:LimitExceeded") {
+				if strings.Contains(cause, "LimitExceeded") {
 					return ErrLimitExceeded
 				}
 				if status == 429 {
