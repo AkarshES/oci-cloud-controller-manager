@@ -16,16 +16,37 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	sharedfw.Logf("CloudProviderFramework Setup")
 
 	if setupF.EnableCreateCluster {
-		sharedfw.Logf("Creating the cluster...")
-		clusterOCID := setupF.CreateCluster()
-		Expect(clusterOCID).ShouldNot(BeZero())
-		sharedfw.Logf("Cluster OCID is %s", clusterOCID)
+		createUpgradeTestingNodepool := false
+		clusterOCID := ""
+
+		if setupF.IsPostUpgrade {
+			clusterOCID = setupF.GetUpgradeTestingCluster(setupF.OkeClusterK8sVersion)
+			Expect(clusterOCID).ShouldNot(BeZero())
+			sharedfw.Logf("Cluster OCID is %s", clusterOCID)
+
+		} else if setupF.IsPreUpgrade {
+			clusterOCID = setupF.GetUpgradeTestingCluster(setupF.OkeClusterK8sVersion)
+			if clusterOCID == "" {
+				sharedfw.Logf("No cluster with k8s version %s and architecture %s found in Compartment1. Creating new cluster", setupF.OkeClusterK8sVersion, setupF.Architecture)
+				createUpgradeTestingNodepool = true
+			} else {
+				createUpgradeTestingNodepool = !setupF.CheckIfNodepoolExists(clusterOCID)
+			}
+		}
+
+		if clusterOCID == "" {
+			sharedfw.Logf("Creating the cluster...")
+			clusterOCID = setupF.CreateCluster()
+			Expect(clusterOCID).ShouldNot(BeZero())
+			sharedfw.Logf("Cluster OCID is %s", clusterOCID)
+		}
 
 		kubeConfig := setupF.CreateClusterKubeconfigContent(clusterOCID)
 		Expect(setupF.IsNotJsonFormatStr(kubeConfig)).To(BeTrue())
 		Expect(kubeConfig != "").To(BeTrue())
 
 		err := setupF.SaveKubeConfig(kubeConfig)
+		Expect(err).NotTo(HaveOccurred())
 		sharedfw.Logf("Returned Kubeconfig: \n%s", kubeConfig)
 
 		cloudConfig := setupF.CreateCloudConfig()
@@ -34,21 +55,23 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		err = setupF.SaveCloudConfig(cloudConfig)
 		Expect(err).Should(BeNil())
 
-		var ocpus = float32(1.0)
-		var memoryInGBs = float32(6.0)
-		var NodeShapeConfig = oke.CreateNodeShapeConfigDetails{
-			Ocpus:       &ocpus,
-			MemoryInGBs: &memoryInGBs,
-		}
+		if (!setupF.IsPreUpgrade && !setupF.IsPostUpgrade) || createUpgradeTestingNodepool {
+			var ocpus = float32(1.0)
+			var memoryInGBs = float32(6.0)
+			var NodeShapeConfig = oke.CreateNodeShapeConfigDetails{
+				Ocpus:       &ocpus,
+				MemoryInGBs: &memoryInGBs,
+			}
 
-		size := 3
-		nodepool := setupF.CreateNodePool(clusterOCID, setupF.Compartment1, "Oracle-Linux-7.6",
-			setupF.NodeShape, size, setupF.OkeNodePoolK8sVersion,
-			[]string{setupF.NodeSubnet, setupF.NodeSubnet, setupF.NodeSubnet},
-			NodeShapeConfig)
-		Expect(nodepool).ShouldNot(BeNil())
-		sharedfw.Logf(" Created cluster %s with nodepool %s ", clusterOCID, *nodepool.Id)
-		setupF.CrossValidateCluster(clusterOCID, setupF.ValidateChildResources)
+			size := 3
+			nodepool := setupF.CreateNodePool(clusterOCID, setupF.Compartment1, "Oracle-Linux-7.6",
+				setupF.NodeShape, size, setupF.OkeNodePoolK8sVersion,
+				[]string{setupF.NodeSubnet, setupF.NodeSubnet, setupF.NodeSubnet},
+				NodeShapeConfig)
+			Expect(nodepool).ShouldNot(BeNil())
+			sharedfw.Logf(" Created cluster %s with nodepool %s ", clusterOCID, *nodepool.Id)
+			setupF.CrossValidateCluster(clusterOCID, setupF.ValidateChildResources)
+		}
 	} else {
 		sharedfw.Logf("Cluster creation skipped. Running tests with existing cluster.")
 	}
@@ -57,8 +80,10 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 
 var _ = ginkgo.SynchronizedAfterSuite(func() {
 	sharedfw.Logf("Running AfterSuite actions on all node")
-	sharedfw.RunCleanupActions()
-	if setupF.EnableCreateCluster {
-		setupF.CleanAllWithoutWait()
+	if !setupF.IsPostUpgrade && !setupF.IsPreUpgrade {
+		sharedfw.RunCleanupActions()
+		if setupF.EnableCreateCluster {
+			setupF.CleanAllWithoutWait()
+		}
 	}
 }, func() {})

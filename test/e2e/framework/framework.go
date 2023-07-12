@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -35,6 +36,9 @@ const (
 	JobCompletionTimeout       = 5 * time.Minute
 	deploymentAvailableTimeout = 5 * time.Minute
 
+	// Expected number of statefulsets to be created during upgrade testing.
+	ExpectedStatefulSets = 6
+
 	DefaultClusterKubeconfig = "/tmp/clusterkubeconfig"
 	DefaultCloudConfig       = "/tmp/cloudconfig"
 
@@ -55,60 +59,65 @@ const (
 	MaxVolumeBlock     = "100Gi"
 	VolumeFss          = "1Gi"
 
-	VSClassDefault	   = "oci-snapclass"
+	VSClassDefault = "oci-snapclass"
 )
 
 var (
-	okeendpoint                  string
-	defaultOCIUser               string
-	defaultOCIUserFingerprint    string
-	defaultOCIUserKeyFile        string
-	defaultOCIUserPassphrase     string
-	defaultOCITenancy            string
-	defaultOCIRegion             string
-	compartment1                 string
-	vcn                          string
-	lbsubnet1                    string
-	lbsubnet2                    string
-	lbrgnsubnet                  string
-	nodeshape                    string
-	subnet1                      string
-	subnet2                      string
-	subnet3                      string
-	k8ssubnet                    string
-	nodesubnet                   string
-	okeClusterK8sVersionIndex    int
-	okeNodePoolK8sVersionIndex   int
-	pubsshkey                    string
-	flexvolumedrivertestversion  string
-	volumeprovisionertestversion string
-	secretsDir                   string
-	defaultKubeConfig            string
-	delegateGroupID              string
-	instanceCfg                  *DelegationPrincipalConfig
-	enableCreateCluster          bool
-	kmsKeyID                     string
-	adlocation                   string
-	clusterkubeconfig            string // path to kubeconfig file
-	deleteNamespace              bool   // whether or not to delete test namespaces
-	cloudConfigFile              string // path to cloud provider config file
-	nodePortTest                 bool   // whether or not to test the connectivity of node ports.
-	ccmSeclistID                 string // The ocid of the loadbalancer subnet seclist. Optional.
-	k8sSeclistID                 string // The ocid of the k8s worker subnet seclist. Optional.
-	mntTargetOCID                string // Mount Target ID is specified to identify the mount target to be attached to the volumes. Optional.
-	mntTargetSubnetOCID          string // mntTargetSubnetOCID is required for testing MT creation in FSS dynamic
-	mntTargetCompartmentOCID     string // mntTargetCompartmentOCID is required for testing MT cross compartment creation in FSS dynamic
-	nginx                        string // Image for nginx
-	agnhost                      string // Image for agnhost
-	busyBoxImage                 string // Image for busyBoxImage
-	centos                       string // Image for centos
-	imagePullRepo                string // Repo to pull images from. Will pull public images if not specified.
-	cmekKMSKey                   string // KMS key for CMEK testing
-	nsgOCIDS                     string // Testing CCM NSG feature
-	reservedIP                   string // Testing public reserved IP feature
-	architecture                 string
-	volumeHandle                 string // The FSS mount volume handle
+	okeendpoint                   string
+	defaultOCIUser                string
+	defaultOCIUserFingerprint     string
+	defaultOCIUserKeyFile         string
+	defaultOCIUserPassphrase      string
+	defaultOCITenancy             string
+	defaultOCIRegion              string
+	compartment1                  string
+	vcn                           string
+	lbsubnet1                     string
+	lbsubnet2                     string
+	lbrgnsubnet                   string
+	nodeshape                     string
+	subnet1                       string
+	subnet2                       string
+	subnet3                       string
+	k8ssubnet                     string
+	nodesubnet                    string
+	okeClusterK8sVersionIndex     int
+	okeNodePoolK8sVersionIndex    int
+	pubsshkey                     string
+	flexvolumedrivertestversion   string
+	volumeprovisionertestversion  string
+	secretsDir                    string
+	defaultKubeConfig             string
+	delegateGroupID               string
+	instanceCfg                   *DelegationPrincipalConfig
+	enableCreateCluster           bool
+	kmsKeyID                      string
+	adlocation                    string
+	clusterkubeconfig             string // path to kubeconfig file
+	deleteNamespace               bool   // whether or not to delete test namespaces
+	cloudConfigFile               string // path to cloud provider config file
+	nodePortTest                  bool   // whether or not to test the connectivity of node ports.
+	ccmSeclistID                  string // The ocid of the loadbalancer subnet seclist. Optional.
+	k8sSeclistID                  string // The ocid of the k8s worker subnet seclist. Optional.
+	mntTargetOCID                 string // Mount Target ID is specified to identify the mount target to be attached to the volumes. Optional.
+	mntTargetSubnetOCID           string // mntTargetSubnetOCID is required for testing MT creation in FSS dynamic
+	mntTargetCompartmentOCID      string // mntTargetCompartmentOCID is required for testing MT cross compartment creation in FSS dynamic
+	nginx                         string // Image for nginx
+	agnhost                       string // Image for agnhost
+	busyBoxImage                  string // Image for busyBoxImage
+	centos                        string // Image for centos
+	imagePullRepo                 string // Repo to pull images from. Will pull public images if not specified.
+	cmekKMSKey                    string // KMS key for CMEK testing
+	nsgOCIDS                      string // Testing CCM NSG feature
+	reservedIP                    string // Testing public reserved IP feature
+	architecture                  string
+	volumeHandle                  string // The FSS mount volume handle
 	staticSnapshotCompartmentOCID string // Compartment ID for cross compartment snapshot test
+	namespace                     string // Namespace for pre-upgrade and post-upgrade testing
+	isPreUpgradeBool              bool
+	isPostUpgradeBool             bool
+	isPreUpgradeString            string
+	isPostUpgradeString           string
 )
 
 func init() {
@@ -166,6 +175,10 @@ func init() {
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
 
 	flag.StringVar(&staticSnapshotCompartmentOCID, "static-snapshot-compartment-id", "", "Compartment ID for cross compartment snapshot test")
+
+	flag.StringVar(&isPreUpgradeString, "pre-upgrade", "", "If true pre upgrade testing will be done.")
+	flag.StringVar(&isPostUpgradeString, "post-upgrade", "", "If true post upgrade testing will be done.")
+	flag.StringVar(&namespace, "namespace", "pre-upgrade", "Namespace used for pre-upgrade and post-upgrade testing.")
 }
 
 func getDefaultOCIUser() OCIUser {
@@ -300,6 +313,10 @@ type Framework struct {
 
 	// Compartment ID for cross compartment snapshot test
 	StaticSnapshotCompartmentOcid string
+
+	UpgradeTestingNamespace string
+	IsPreUpgrade            bool
+	IsPostUpgrade           bool
 }
 
 // New creates a new a framework that holds the context of the test
@@ -309,7 +326,7 @@ func New() *Framework {
 	return NewWithConfig(&FrameworkConfig{})
 }
 
-//FrameworkConfig helps in passing the configuration options while creating a Framework instance.
+// FrameworkConfig helps in passing the configuration options while creating a Framework instance.
 type FrameworkConfig struct {
 	// authType specifies the framework's authType to be used before initialization.
 	AuthType AuthType
@@ -351,32 +368,33 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		RegionalKubeConfig: defaultKubeConfig,
 		requestHeaders:     map[string]string{},
 
-		timeout:                  3 * time.Minute,
-		context:                  context.Background(),
-		WaitForDeleted:           false,
-		ValidateChildResources:   true,
-		PubSSHKey:                pubsshkey,
-		Vcn:                      vcn,
-		LbSubnet1:                lbsubnet1,
-		LbSubnet2:                lbsubnet2,
-		Lbrgnsubnet:              lbrgnsubnet,
-		Subnet1:                  subnet1,
-		Subnet2:                  subnet2,
-		Subnet3:                  subnet3,
-		K8sSubnet:                k8ssubnet,
-		NodeSubnet:               nodesubnet,
-		NodeShape:                nodeshape,
-		DelegationTargetServices: "oke",
-		AdLocation:               adlocation,
-		MntTargetOcid:            mntTargetOCID,
-		MntTargetSubnetOcid:      mntTargetSubnetOCID,
-		MntTargetCompartmentOcid: mntTargetCompartmentOCID,
-		CMEKKMSKey:               cmekKMSKey,
-		NsgOCIDS:                 nsgOCIDS,
-		ReservedIP:               reservedIP,
-		Architecture:             architecture,
-		VolumeHandle:             volumeHandle,
+		timeout:                       3 * time.Minute,
+		context:                       context.Background(),
+		WaitForDeleted:                false,
+		ValidateChildResources:        true,
+		PubSSHKey:                     pubsshkey,
+		Vcn:                           vcn,
+		LbSubnet1:                     lbsubnet1,
+		LbSubnet2:                     lbsubnet2,
+		Lbrgnsubnet:                   lbrgnsubnet,
+		Subnet1:                       subnet1,
+		Subnet2:                       subnet2,
+		Subnet3:                       subnet3,
+		K8sSubnet:                     k8ssubnet,
+		NodeSubnet:                    nodesubnet,
+		NodeShape:                     nodeshape,
+		DelegationTargetServices:      "oke",
+		AdLocation:                    adlocation,
+		MntTargetOcid:                 mntTargetOCID,
+		MntTargetSubnetOcid:           mntTargetSubnetOCID,
+		MntTargetCompartmentOcid:      mntTargetCompartmentOCID,
+		CMEKKMSKey:                    cmekKMSKey,
+		NsgOCIDS:                      nsgOCIDS,
+		ReservedIP:                    reservedIP,
+		Architecture:                  architecture,
+		VolumeHandle:                  volumeHandle,
 		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
+		UpgradeTestingNamespace:       namespace,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -499,6 +517,27 @@ func (f *Framework) Initialize() {
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
 
+	var err error
+	if isPreUpgradeString != "" {
+		isPreUpgradeBool, err = strconv.ParseBool(isPreUpgradeString)
+		Expect(err).NotTo(HaveOccurred())
+	} else {
+		isPreUpgradeBool = false
+	}
+	f.IsPreUpgrade = isPreUpgradeBool
+	Logf("Pre-upgrade testing flag: %v, %v", f.IsPreUpgrade, isPreUpgradeBool)
+
+	if isPostUpgradeString != "" {
+		isPostUpgradeBool, err = strconv.ParseBool(isPostUpgradeString)
+	} else {
+		isPostUpgradeBool = false
+	}
+	f.IsPostUpgrade = isPostUpgradeBool
+	Logf("Post-upgrade testing flag: %v, %v", f.IsPostUpgrade, isPostUpgradeBool)
+
+	f.UpgradeTestingNamespace = namespace
+	Logf("Upgrade testing namespace: %s", namespace)
+
 	f.OKEEndpoint = okeendpoint
 	if !strings.HasPrefix(okeendpoint, "https://") {
 		f.OKEEndpoint = "https://" + okeendpoint
@@ -599,10 +638,10 @@ func (f *Framework) Initialize() {
 	}
 }
 
-//getK8sVersionValue returns the version value according to version index
-//eg. versions=["1.10.11", "1.11.5"]
-//return 1.10.11 if index=0,
-//return 1.11.5 if index=1, or -1
+// getK8sVersionValue returns the version value according to version index
+// eg. versions=["1.10.11", "1.11.5"]
+// return 1.10.11 if index=0,
+// return 1.11.5 if index=1, or -1
 func getK8sVersionValue(versions []string, index int) string {
 	numVersions := len(versions)
 	if numVersions == 0 {

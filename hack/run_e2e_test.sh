@@ -191,7 +191,10 @@ function run_e2e_tests() {
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
-        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID}
+        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+        --namespace=${NAMESPACE} \
+        --post-upgrade=${POST_UPGRADE} \
+        --pre-upgrade=${PRE_UPGRADE}
     retval=$?
     rm -f $OCI_KEY_FILE
     return $retval
@@ -214,7 +217,10 @@ function run_e2e_tests_existing_cluster() {
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
-        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID}
+        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+        --namespace=${NAMESPACE} \
+        --post-upgrade=${POST_UPGRADE} \
+        --pre-upgrade=${PRE_UPGRADE}
     retval=$?
     return $retval
 }
