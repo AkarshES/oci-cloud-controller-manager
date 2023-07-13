@@ -1,9 +1,0 @@
-{
-  "realms" : [ "oc3" ],
-  "name" : "oci-service-controller-enabled",
-  "values" : [ {
-    "region" : "all",
-    "ad" : "all",
-    "value" : "true"
-  } ]
-}
