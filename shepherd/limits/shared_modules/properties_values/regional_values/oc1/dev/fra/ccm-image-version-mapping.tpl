@@ -1,0 +1,9 @@
+{
+  "realms" : [ "oc1" ],
+  "name": "ccm-image-version-mapping",
+  "region":  "${region}",
+  "values" : [ {
+    "ad" : "all",
+    "value" : "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.19\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.20\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.21\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.22\": \"oke-multiarch-1.22-aa9948e-192@sha256:5bf9fef2c99f2c77fdb8027d8690900c99adef873bde9bcf6cd30db39ce467eb\",\"v1.23\": \"oke-multiarch-1.23-16022dc-95@sha256:2782b14bc755aa839ca68a86591007cf4dfb2c8419be14a5eae94b24a77f1031\",\"v1.24\": \"oke-multiarch-1.24-9448c95-98@sha256:c09599b01eb0127fba552e4c9ade8e5e81ba33f115aac293e42de45929e2fce9\",\"v1.25\": \"oke-multiarch-1.25-f5f27c4-225@sha256:da8a16415ab640a549cb2dcbca310880235ff4e06bcb21893e021e042dd6827e\",\"v1.26\": \"oke-multiarch-1.26-f43f571-160@sha256:50a78791f64a1ce75848d76d8fc4012a59ea3f2bfe8cf63ab06862628ba06720\",\"v1.27\": \"oke-multiarch-1.27-bc782af-23@sha256:aad2b01961f4d17ed67cf16364adc0343495b317b91a1a442a8243d6b9b79b47\"}"
+  } ]
+}
