@@ -23,6 +23,8 @@ import (
 )
 
 // NetworkingTopology Defines the representation of a virtual network topology for a region.
+// See Network Visualizer Documentation (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/network_visualizer.htm) for more information, including
+// conventions and pictures of symbols.
 type NetworkingTopology struct {
 
 	// Lists entities comprising the virtual network topology.
@@ -30,6 +32,11 @@ type NetworkingTopology struct {
 
 	// Lists relationships between entities in the virtual network topology.
 	Relationships []TopologyEntityRelationship `mandatory:"true" json:"relationships"`
+
+	// Lists entities that are limited during ingestion.
+	// The values for the items in the list are the entity type names of the limitedEntities.
+	// Example: `vcn`
+	LimitedEntities []string `mandatory:"true" json:"limitedEntities"`
 
 	// Records when the virtual network topology was created, in RFC3339 (https://tools.ietf.org/html/rfc3339) format for date and time.
 	TimeCreated *common.SDKTime `mandatory:"true" json:"timeCreated"`
@@ -43,6 +50,11 @@ func (m NetworkingTopology) GetEntities() []interface{} {
 //GetRelationships returns Relationships
 func (m NetworkingTopology) GetRelationships() []TopologyEntityRelationship {
 	return m.Relationships
+}
+
+//GetLimitedEntities returns LimitedEntities
+func (m NetworkingTopology) GetLimitedEntities() []string {
+	return m.LimitedEntities
 }
 
 //GetTimeCreated returns TimeCreated
@@ -83,9 +95,10 @@ func (m NetworkingTopology) MarshalJSON() (buff []byte, e error) {
 // UnmarshalJSON unmarshals from json
 func (m *NetworkingTopology) UnmarshalJSON(data []byte) (e error) {
 	model := struct {
-		Entities      []interface{}                `json:"entities"`
-		Relationships []topologyentityrelationship `json:"relationships"`
-		TimeCreated   *common.SDKTime              `json:"timeCreated"`
+		Entities        []interface{}                `json:"entities"`
+		Relationships   []topologyentityrelationship `json:"relationships"`
+		LimitedEntities []string                     `json:"limitedEntities"`
+		TimeCreated     *common.SDKTime              `json:"timeCreated"`
 	}{}
 
 	e = json.Unmarshal(data, &model)
@@ -109,6 +122,11 @@ func (m *NetworkingTopology) UnmarshalJSON(data []byte) (e error) {
 		} else {
 			m.Relationships[i] = nil
 		}
+	}
+
+	m.LimitedEntities = make([]string, len(model.LimitedEntities))
+	for i, n := range model.LimitedEntities {
+		m.LimitedEntities[i] = n
 	}
 
 	m.TimeCreated = model.TimeCreated

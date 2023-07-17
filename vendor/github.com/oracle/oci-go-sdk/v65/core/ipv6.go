@@ -40,7 +40,7 @@ type Ipv6 struct {
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the IPv6.
 	Id *string `mandatory:"true" json:"id"`
 
-	// The IPv6 address of the `IPv6` object. The address is within the IPv6 CIDR block of the VNIC's subnet
+	// The IPv6 address of the `IPv6` object. The address is within the IPv6 prefix of the VNIC's subnet
 	// (see the `ipv6CidrBlock` attribute for the Subnet object.
 	// Example: `2001:0db8:0123:1111:abcd:ef01:2345:6789`
 	IpAddress *string `mandatory:"true" json:"ipAddress"`
@@ -68,6 +68,9 @@ type Ipv6 struct {
 	// predefined name, type, or namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
+
+	// The hostname associated with the IPv6 address. Only the hostname label, not the FQDN.
+	Hostname *string `mandatory:"false" json:"hostname"`
 }
 
 func (m Ipv6) String() string {

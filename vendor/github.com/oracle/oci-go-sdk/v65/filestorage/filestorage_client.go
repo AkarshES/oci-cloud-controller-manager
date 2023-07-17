@@ -18,7 +18,7 @@ import (
 	"net/http"
 )
 
-//FileStorageClient a client for FileStorage
+// FileStorageClient a client for FileStorage
 type FileStorageClient struct {
 	common.BaseClient
 	config *common.ConfigurationProvider
@@ -27,6 +27,9 @@ type FileStorageClient struct {
 // NewFileStorageClientWithConfigurationProvider Creates a new default FileStorage client with the given configuration provider.
 // the configuration provider will be used for the default signer as well as reading the region
 func NewFileStorageClientWithConfigurationProvider(configProvider common.ConfigurationProvider) (client FileStorageClient, err error) {
+	if enabled := common.CheckForEnabledServices("filestorage"); !enabled {
+		return client, fmt.Errorf("the Alloy configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local alloy_config file configured the service you're targeting or contact the cloud provider on the availability of this service")
+	}
 	provider, err := auth.GetGenericConfigurationProvider(configProvider)
 	if err != nil {
 		return client, err
@@ -40,7 +43,8 @@ func NewFileStorageClientWithConfigurationProvider(configProvider common.Configu
 
 // NewFileStorageClientWithOboToken Creates a new default FileStorage client with the given configuration provider.
 // The obotoken will be added to default headers and signed; the configuration provider will be used for the signer
-//  as well as reading the region
+//
+//	as well as reading the region
 func NewFileStorageClientWithOboToken(configProvider common.ConfigurationProvider, oboToken string) (client FileStorageClient, err error) {
 	baseClient, err := common.NewClientWithOboToken(configProvider, oboToken)
 	if err != nil {
@@ -194,7 +198,7 @@ func (client FileStorageClient) changeFilesystemSnapshotPolicyCompartment(ctx co
 	return response, err
 }
 
-// ChangeMountTargetCompartment Moves a mount target and its associated export set into a different compartment within the same tenancy. For information about moving resources between compartments, see Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes)
+// ChangeMountTargetCompartment Moves a mount target and its associated export set or share set into a different compartment within the same tenancy. For information about moving resources between compartments, see Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes)
 func (client FileStorageClient) ChangeMountTargetCompartment(ctx context.Context, request ChangeMountTargetCompartmentRequest) (response ChangeMountTargetCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -247,7 +251,7 @@ func (client FileStorageClient) changeMountTargetCompartment(ctx context.Context
 	return response, err
 }
 
-// ChangeOutboundConnectorCompartment Moves a outbound connector into a different compartment within the same tenancy.
+// ChangeOutboundConnectorCompartment Moves an outbound connector into a different compartment within the same tenancy.
 // For information about moving resources between compartments, see
 // Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes)
 func (client FileStorageClient) ChangeOutboundConnectorCompartment(ctx context.Context, request ChangeOutboundConnectorCompartmentRequest) (response ChangeOutboundConnectorCompartmentResponse, err error) {
@@ -750,7 +754,7 @@ func (client FileStorageClient) createMountTarget(ctx context.Context, request c
 }
 
 // CreateOutboundConnector Creates a new outbound connector in the specified compartment.
-// You can associate a outbound connector with a mount target only when
+// You can associate an outbound connector with a mount target only when
 // they exist in the same availability domain.
 // For information about access control and compartments, see
 // Overview of the IAM
@@ -1015,64 +1019,6 @@ func (client FileStorageClient) createShare(ctx context.Context, request common.
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Share/CreateShare"
 		err = common.PostProcessServiceError(err, "FileStorage", "CreateShare", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// CreateShareSet Creates a new share set in the specified mount target.
-func (client FileStorageClient) CreateShareSet(ctx context.Context, request CreateShareSetRequest) (response CreateShareSetResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.createShareSet, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = CreateShareSetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = CreateShareSetResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(CreateShareSetResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into CreateShareSetResponse")
-	}
-	return
-}
-
-// createShareSet implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) createShareSet(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/shareSets", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response CreateShareSetResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/ShareSet/CreateShareSet"
-		err = common.PostProcessServiceError(err, "FileStorage", "CreateShareSet", apiReferenceLink)
 		return response, err
 	}
 
@@ -1569,59 +1515,6 @@ func (client FileStorageClient) deleteShare(ctx context.Context, request common.
 	return response, err
 }
 
-// DeleteShareSet Deletes the specified share set.
-func (client FileStorageClient) DeleteShareSet(ctx context.Context, request DeleteShareSetRequest) (response DeleteShareSetResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.deleteShareSet, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = DeleteShareSetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = DeleteShareSetResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(DeleteShareSetResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into DeleteShareSetResponse")
-	}
-	return
-}
-
-// deleteShareSet implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) deleteShareSet(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/shareSets/{shareSetId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response DeleteShareSetResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/ShareSet/DeleteShareSet"
-		err = common.PostProcessServiceError(err, "FileStorage", "DeleteShareSet", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // DeleteSnapshot Deletes the specified snapshot.
 func (client FileStorageClient) DeleteSnapshot(ctx context.Context, request DeleteSnapshotRequest) (response DeleteSnapshotResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -1675,11 +1568,8 @@ func (client FileStorageClient) deleteSnapshot(ctx context.Context, request comm
 	return response, err
 }
 
-// DiscardKerberosKeytab Discards the contents of the MountTarget resource's Kerberos Keytab.
-// All keytab entries used by the Mount Target removed as a result of this call.
-// Once the keytab is discarded any new Kerberized NFS I/O to this mount target
-// will be rejected by the mount target. Other Kerberos configuration is unchanged.
-func (client FileStorageClient) DiscardKerberosKeytab(ctx context.Context, request DiscardKerberosKeytabRequest) (response DiscardKerberosKeytabResponse, err error) {
+// DetachClone Detaches the file system from its parent file system
+func (client FileStorageClient) DetachClone(ctx context.Context, request DetachCloneRequest) (response DetachCloneResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
 	if client.RetryPolicy() != nil {
@@ -1688,42 +1578,42 @@ func (client FileStorageClient) DiscardKerberosKeytab(ctx context.Context, reque
 	if request.RetryPolicy() != nil {
 		policy = *request.RetryPolicy()
 	}
-	ociResponse, err = common.Retry(ctx, request, client.discardKerberosKeytab, policy)
+	ociResponse, err = common.Retry(ctx, request, client.detachClone, policy)
 	if err != nil {
 		if ociResponse != nil {
 			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
 				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = DiscardKerberosKeytabResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+				response = DetachCloneResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
 			} else {
-				response = DiscardKerberosKeytabResponse{}
+				response = DetachCloneResponse{}
 			}
 		}
 		return
 	}
-	if convertedResponse, ok := ociResponse.(DiscardKerberosKeytabResponse); ok {
+	if convertedResponse, ok := ociResponse.(DetachCloneResponse); ok {
 		response = convertedResponse
 	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into DiscardKerberosKeytabResponse")
+		err = fmt.Errorf("failed to convert OCIResponse into DetachCloneResponse")
 	}
 	return
 }
 
-// discardKerberosKeytab implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) discardKerberosKeytab(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+// detachClone implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) detachClone(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
 
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/discardKerberosKeytab", binaryReqBody, extraHeaders)
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/actions/detachClone", binaryReqBody, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var response DiscardKerberosKeytabResponse
+	var response DetachCloneResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
 	defer common.CloseBodyIfValid(httpResponse)
 	response.RawResponse = httpResponse
 	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/DiscardKerberosKeytab"
-		err = common.PostProcessServiceError(err, "FileStorage", "DiscardKerberosKeytab", apiReferenceLink)
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/DetachClone"
+		err = common.PostProcessServiceError(err, "FileStorage", "DetachClone", apiReferenceLink)
 		return response, err
 	}
 
@@ -2794,10 +2684,10 @@ func (client FileStorageClient) listMountTargets(ctx context.Context, request co
 	return response, err
 }
 
-//listoutboundconnectorsummary allows to unmarshal list of polymorphic OutboundConnectorSummary
+// listoutboundconnectorsummary allows to unmarshal list of polymorphic OutboundConnectorSummary
 type listoutboundconnectorsummary []outboundconnectorsummary
 
-//UnmarshalPolymorphicJSON unmarshals polymorphic json list of items
+// UnmarshalPolymorphicJSON unmarshals polymorphic json list of items
 func (m *listoutboundconnectorsummary) UnmarshalPolymorphicJSON(data []byte) (interface{}, error) {
 	res := make([]OutboundConnectorSummary, len(*m))
 	for i, v := range *m {
@@ -3080,6 +2970,8 @@ func (client FileStorageClient) listShares(ctx context.Context, request common.O
 // ListSnapshots Lists snapshots of the specified file system, or by file system snapshot policy and compartment,
 // or by file system snapshot policy and file system.
 // If file system ID is not specified, a file system snapshot policy ID and compartment ID must be specified.
+// Users can only sort by time created when listing snapshots by file system snapshot policy ID and compartment ID
+// (sort by name is NOT supported for listing snapshots by policy and compartment).
 func (client FileStorageClient) ListSnapshots(ctx context.Context, request ListSnapshotsRequest) (response ListSnapshotsResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -3188,9 +3080,8 @@ func (client FileStorageClient) modifyRootdirAttributes(ctx context.Context, req
 // PauseFilesystemSnapshotPolicy This operation pauses the scheduled snapshot creation and snapshot deletion of the policy and updates the lifecycle state of the file system
 // snapshot policy from ACTIVE to INACTIVE. When a file system snapshot policy is paused, file systems that are associated with the
 // policy will not have scheduled snapshots created or deleted.
-// If the policy is already paused, or in the INACTIVE state, the
-// policy will remain paused. You can't pause a policy that is in a DELETING, DELETED, FAILED, or CREATING
-// state; attempts to pause a policy in these states result in a 409 conflict error.
+// If the policy is already paused, or in the INACTIVE state, you cannot pause it again. You can't pause a policy
+// that is in a DELETING, DELETED, FAILED, CREATING or INACTIVE state; attempts to pause a policy in these states result in a 409 conflict error.
 func (client FileStorageClient) PauseFilesystemSnapshotPolicy(ctx context.Context, request PauseFilesystemSnapshotPolicyRequest) (response PauseFilesystemSnapshotPolicyResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -3720,7 +3611,7 @@ func (client FileStorageClient) restartStuckDelta(ctx context.Context, request c
 	return response, err
 }
 
-// ShareSetJoinDomain Execute a join domian of the mount target share set to a domain controller for SMB access.
+// ShareSetJoinDomain Perform a join domain operation for the mount target share set to a domain controller for SMB access.
 func (client FileStorageClient) ShareSetJoinDomain(ctx context.Context, request ShareSetJoinDomainRequest) (response ShareSetJoinDomainResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -4048,63 +3939,10 @@ func (client FileStorageClient) targetFileSystemGet(ctx context.Context, request
 	return response, err
 }
 
-// TestOutboundConnector Runs diagnostic test from the specified mount target to server endpoints in the specified outbound connector.
-func (client FileStorageClient) TestOutboundConnector(ctx context.Context, request TestOutboundConnectorRequest) (response TestOutboundConnectorResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.testOutboundConnector, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = TestOutboundConnectorResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = TestOutboundConnectorResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(TestOutboundConnectorResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into TestOutboundConnectorResponse")
-	}
-	return
-}
-
-// testOutboundConnector implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) testOutboundConnector(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/testOutboundConnector", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response TestOutboundConnectorResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/TestOutboundConnector"
-		err = common.PostProcessServiceError(err, "FileStorage", "TestOutboundConnector", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // UnpauseFilesystemSnapshotPolicy This operation unpauses a paused file system snapshot policy and updates the lifecycle state of the file system snapshot policy from
 // INACTIVE to ACTIVE. By default, file system snapshot policies are in the ACTIVE state. When a file system snapshot policy is not paused, or in the ACTIVE state, file systems that are associated with the
 // policy will have snapshots created and deleted according to the schedules defined in the policy.
-// If the policy is already in the ACTIVE state, the policy will remain active. You can't unpause a policy that is in a DELETING, DELETED, FAILED, or CREATING state; attempts to unpause a policy in these states result in a 409 conflict error.
+// If the policy is already in the ACTIVE state, you cannot unpause it. You can't unpause a policy that is in a DELETING, DELETED, FAILED, CREATING, or ACTIVE state; attempts to unpause a policy in these states result in a 409 conflict error.
 func (client FileStorageClient) UnpauseFilesystemSnapshotPolicy(ctx context.Context, request UnpauseFilesystemSnapshotPolicyRequest) (response UnpauseFilesystemSnapshotPolicyResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -4800,61 +4638,8 @@ func (client FileStorageClient) updateSnapshot(ctx context.Context, request comm
 	return response, err
 }
 
-// UploadKerberosKeytab Uploads keytab file to the mount target for use in the data path.
-func (client FileStorageClient) UploadKerberosKeytab(ctx context.Context, request UploadKerberosKeytabRequest) (response UploadKerberosKeytabResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.uploadKerberosKeytab, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UploadKerberosKeytabResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UploadKerberosKeytabResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UploadKerberosKeytabResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UploadKerberosKeytabResponse")
-	}
-	return
-}
-
-// uploadKerberosKeytab implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) uploadKerberosKeytab(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/uploadKerberosKeytab", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UploadKerberosKeytabResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/UploadKerberosKeytab"
-		err = common.PostProcessServiceError(err, "FileStorage", "UploadKerberosKeytab", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // ValidateKeyTabs Validates keytab contents for the secret details passed on the request or validte keytab contents associated with
-// the Mount Target passed in the request. The keytabs are deserialized, the contents are validated for compatibility
+// the mount target passed in the request. The keytabs are deserialized, the contents are validated for compatibility
 // and the principal, key version number and encryption type of each entry is provided as part of the response.
 func (client FileStorageClient) ValidateKeyTabs(ctx context.Context, request ValidateKeyTabsRequest) (response ValidateKeyTabsResponse, err error) {
 	var ociResponse common.OCIResponse

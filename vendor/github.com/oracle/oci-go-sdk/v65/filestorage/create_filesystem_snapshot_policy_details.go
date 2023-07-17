@@ -36,6 +36,11 @@ type CreateFilesystemSnapshotPolicyDetails struct {
 	PolicyPrefix *string `mandatory:"false" json:"policyPrefix"`
 
 	// The list of associated snapshot schedules. A maximum of 10 schedules can be associated with a policy.
+	// If using the CLI, provide the schedule as a list of JSON strings, with the list wrapped in
+	// quotation marks, i.e.
+	// ```
+	//   --schedules '[{"timeZone":"UTC","period":"DAILY","hourOfDay":18},{"timeZone":"UTC","period":"HOURLY"}]'
+	// ```
 	Schedules []SnapshotSchedule `mandatory:"false" json:"schedules"`
 
 	// Free-form tags for this resource. Each tag is a simple key-value pair
@@ -48,6 +53,9 @@ type CreateFilesystemSnapshotPolicyDetails struct {
 	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
+
+	// Not used by File Systems but required for SPLAT tag integration.
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
 }
 
 func (m CreateFilesystemSnapshotPolicyDetails) String() string {

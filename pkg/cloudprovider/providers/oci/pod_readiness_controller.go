@@ -367,7 +367,7 @@ func (clb *CloudLoadBalancerProvider) getBackendSetHealth(ctx context.Context, l
 func (p *PodReadinessController) getLoadBalancerProvider(lbType string) CloudLoadBalancerProvider {
 	return CloudLoadBalancerProvider{
 		client:       p.ociClient,
-		lbClient:     p.ociClient.LoadBalancer(lbType),
+		lbClient:     p.ociClient.LoadBalancer(p.logger, lbType, p.config.Auth.TenancyID, nil),
 		logger:       p.logger,
 		metricPusher: p.metricPusher,
 		config:       p.config,
