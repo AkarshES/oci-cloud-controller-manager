@@ -19,7 +19,7 @@ import (
 // ShareSummary Summary information for specified shares.
 type ShareSummary struct {
 
-	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the share set of this share is in.
+	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the share set that this share is in.
 	ShareSetId *string `mandatory:"true" json:"shareSetId"`
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of this share's file system.
@@ -31,31 +31,20 @@ type ShareSummary struct {
 	// The current state of this share.
 	LifecycleState ShareLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 
-	// Share name used to access the associated file system.
+	// The share name used to access the associated file system.
 	// Avoid entering confidential information.
 	// Example: `mediafiles`
 	ShareName *string `mandatory:"true" json:"shareName"`
 
-	// A short comment description of the Share.
+	// A short comment description of the share.
 	// Avoid entering confidential information.
 	// Example: `accounting`
 	Comment *string `mandatory:"true" json:"comment"`
 
-	// The date and time the share was created, expressed
+	// The date and time that the share was created, expressed
 	// in RFC 3339 (https://tools.ietf.org/rfc/rfc3339) timestamp format.
 	// Example: `2016-08-25T21:10:29.600Z`
 	TimeCreated *common.SDKTime `mandatory:"true" json:"timeCreated"`
-
-	// Free-form tags for this resource. Each tag is a simple key-value pair
-	//  with no predefined name, type, or namespace.
-	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
-	// Example: `{"Department": "Finance"}`
-	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
-
-	// Defined tags for this resource. Each key is predefined and scoped to a namespace.
-	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
-	// Example: `{"Operations": {"CostCenter": "42"}}`
-	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 }
 
 func (m ShareSummary) String() string {

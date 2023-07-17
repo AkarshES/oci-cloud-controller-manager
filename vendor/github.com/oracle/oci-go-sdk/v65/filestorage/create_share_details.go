@@ -19,13 +19,13 @@ import (
 // CreateShareDetails Details for creating the share.
 type CreateShareDetails struct {
 
-	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the share set of this share is in.
+	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the share set that this share is in.
 	ShareSetId *string `mandatory:"true" json:"shareSetId"`
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of this share's file system.
 	FileSystemId *string `mandatory:"true" json:"fileSystemId"`
 
-	// Share name used to access the associated file system.
+	// The share name used to access the associated file system.
 	// Avoid entering confidential information.
 	// Example: `mediafiles`
 	ShareName *string `mandatory:"true" json:"shareName"`
@@ -39,30 +39,19 @@ type CreateShareDetails struct {
 	//           }
 	//        ]
 	//   **Note:** Mount targets do not have Internet-routable IP
-	//   addresses.  Therefore they will not be reachable from the
+	//   addresses. Therefore they will not be reachable from the
 	//   Internet, even if an associated `ClientShareOptions` item has
 	//   a source of `0.0.0.0/0`.
-	//   **If set to the empty array then the share will not be
+	//   **If set to an empty array then the share will not be
 	//   visible to any clients.**
 	//   The share's `shareOptions` can be changed after creation
 	//   using the `UpdateShare` operation.
 	ShareOptions []ClientShareOptions `mandatory:"false" json:"shareOptions"`
 
-	// A short comment description of the Share.
+	// A short comment description of the share.
 	// Avoid entering confidential information.
 	// Example: `accounting`
 	Comment *string `mandatory:"false" json:"comment"`
-
-	// Free-form tags for this resource. Each tag is a simple key-value pair
-	//  with no predefined name, type, or namespace.
-	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
-	// Example: `{"Department": "Finance"}`
-	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
-
-	// Defined tags for this resource. Each key is predefined and scoped to a namespace.
-	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
-	// Example: `{"Operations": {"CostCenter": "42"}}`
-	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 }
 
 func (m CreateShareDetails) String() string {

@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-// ShareSetSummary Summary information for an share set.
+// ShareSetSummary Summary information for a share set.
 type ShareSetSummary struct {
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the compartment that contains the share set.
@@ -41,53 +41,48 @@ type ShareSetSummary struct {
 	// For example, if an SMB server has a DNS name of
 	// register5.store34.california.usa.marks-hats.com, then this particular
 	// server is part of the store34.california.usa.marks-hats.com security
-	// domain which in turn is part of the california.usa.marks-hats.com which
-	// in turn is part of the usa.marks-hats.com
+	// domain, which in turn is part of california.usa.marks-hats.com, which
+	// in turn is part of usa.marks-hats.com,
 	// which in turn is part of the marks-hats.com security domain.
 	// Must be unique across all FQDNs in the subnet and comply
 	// with RFC 952 (https://tools.ietf.org/html/rfc952)
 	// and RFC 1123 (https://tools.ietf.org/html/rfc1123).
 	CustomFqdn *string `mandatory:"true" json:"customFqdn"`
 
-	// Every SMB server (i.e. each mount target) needs a Netbios name in
-	// addition to its fqdn (fully qualified domain name). Normally,
-	// the Netbios name is simply the hostname portion of the fqdn.
+	// Every SMB server (i.e. each mount target) needs a NetBIOS name in
+	// addition to its FQDN (fully qualified domain name). Normally,
+	// the NetBIOS name is simply the hostname portion of the FQDN.
 	// This doesn't work when multiple computers have the same hostname.
 	// For example, a computer called orange.colors.com and a computer
 	// called orange.fruit.org can interfere with each other if they both
-	// use orange as their Netbios name. To avoid problems, at least one
-	// computer can be configured to have a Netbios name that is
-	// not its hostname.
+	// use orange as their NetBIOS name. To avoid problems, configure at least one
+	// computer to have a NetBIOS name that is not its hostname.
 	NetBiosName *string `mandatory:"true" json:"netBiosName"`
 
 	// A read-only property for the connection status between the
 	// mount target and the customer-provided domain controller which
-	// is the domain based on the customFQDN.
-	DomainConnectionStatus *string `mandatory:"true" json:"domainConnectionStatus"`
+	// is the domain based on the custom FQDN.
+	DomainConnectionStatus ShareSetDomainConnectionStatusEnum `mandatory:"true" json:"domainConnectionStatus"`
 
 	// The current state of the share set.
 	LifecycleState ShareSetLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 
-	// The date and time the share set was created, expressed
+	// The date and time that the share set was created, expressed
 	// in RFC 3339 (https://tools.ietf.org/rfc/rfc3339) timestamp format.
 	// Example: `2016-08-25T21:10:29.600Z`
 	TimeCreated *common.SDKTime `mandatory:"true" json:"timeCreated"`
 
-	// The availability domain the share set is in. May be unset
+	// A read-only property that emits the status of the mount target share set's join domain operation
+	// to a domain controller for SMB access.
+	JoinDomainResult *string `mandatory:"true" json:"joinDomainResult"`
+
+	// The availability domain that the share set is in. May be unset
 	// as a blank or NULL value.
 	// Example: `Uocm:PHX-AD-1`
 	AvailabilityDomain *string `mandatory:"false" json:"availabilityDomain"`
 
-	// Free-form tags for this resource. Each tag is a simple key-value pair
-	//  with no predefined name, type, or namespace.
-	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
-	// Example: `{"Department": "Finance"}`
-	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
-
-	// Defined tags for this resource. Each key is predefined and scoped to a namespace.
-	// For more information, see Resource Tags (https://docs.cloud.oracle.com/Content/General/Concepts/resourcetags.htm).
-	// Example: `{"Operations": {"CostCenter": "42"}}`
-	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
+	// A read-only field that's only populated when the join domain operation FAILED.
+	JoinDomainErrorMessage *string `mandatory:"false" json:"joinDomainErrorMessage"`
 }
 
 func (m ShareSetSummary) String() string {
@@ -99,6 +94,9 @@ func (m ShareSetSummary) String() string {
 // Not recommended for calling this function directly
 func (m ShareSetSummary) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
+	if _, ok := GetMappingShareSetDomainConnectionStatusEnum(string(m.DomainConnectionStatus)); !ok && m.DomainConnectionStatus != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for DomainConnectionStatus: %s. Supported values are: %s.", m.DomainConnectionStatus, strings.Join(GetShareSetDomainConnectionStatusEnumStringValues(), ",")))
+	}
 	if _, ok := GetMappingShareSetLifecycleStateEnum(string(m.LifecycleState)); !ok && m.LifecycleState != "" {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetShareSetLifecycleStateEnumStringValues(), ",")))
 	}

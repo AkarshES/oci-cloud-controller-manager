@@ -74,6 +74,10 @@ type CloudProvider struct {
 	NodeLister          listersv1.NodeLister
 	EndpointSliceLister discoverylistersv1.EndpointSliceLister
 
+	// ServiceAccountLister provides a cache to lookup Service Accounts to exchange
+	// with Worker Identity which then can be used to communicate with OCI services.
+	ServiceAccountLister listersv1.ServiceAccountLister
+
 	client     client.Interface
 	kubeclient clientset.Interface
 
@@ -199,6 +203,9 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 	endpointSliceInformer := factory.Discovery().V1().EndpointSlices()
 	go endpointSliceInformer.Informer().Run(wait.NeverStop)
 
+	serviceAccountInformer := factory.Core().V1().ServiceAccounts()
+	go serviceAccountInformer.Informer().Run(wait.NeverStop)
+
 	go nodeInfoController.Run(wait.NeverStop)
 
 	cp.logger.Info("Waiting for node informer cache to sync")
@@ -207,6 +214,7 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 	}
 	cp.NodeLister = nodeInformer.Lister()
 	cp.EndpointSliceLister = endpointSliceInformer.Lister()
+	cp.ServiceAccountLister = serviceAccountInformer.Lister()
 
 	enablePodReadinessController := GetIsFeatureEnabledFromEnv(cp.logger, "ENABLE_POD_READINESS_CONTROLLER", false)
 	if enablePodReadinessController {

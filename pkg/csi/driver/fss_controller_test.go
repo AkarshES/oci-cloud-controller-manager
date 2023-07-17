@@ -2,6 +2,11 @@ package driver
 
 import (
 	"context"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -10,11 +15,8 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/filestorage"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	authv1 "k8s.io/api/authentication/v1"
 	"k8s.io/client-go/kubernetes"
-	"reflect"
-	"strings"
-	"testing"
-	"time"
 )
 
 type MockFileStorageClient struct{}
@@ -181,7 +183,7 @@ func (m MockFSSProvisionerClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }
 
-func (m MockFSSProvisionerClient) LoadBalancer(s string) client.GenericLoadBalancerInterface {
+func (m MockFSSProvisionerClient) LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) client.GenericLoadBalancerInterface {
 	return &MockLoadBalancerClient{}
 }
 

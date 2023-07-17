@@ -75,6 +75,9 @@ type Instance struct {
 	// For more information, see Capacity Reservations (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/reserve-capacity.htm#default).
 	CapacityReservationId *string `mandatory:"false" json:"capacityReservationId"`
 
+	// The OCID of the cluster placement group of the instance.
+	ClusterPlacementGroupId *string `mandatory:"false" json:"clusterPlacementGroupId"`
+
 	// The OCID of the dedicated virtual machine host that the instance is placed on.
 	DedicatedVmHostId *string `mandatory:"false" json:"dedicatedVmHostId"`
 
@@ -125,9 +128,9 @@ type Instance struct {
 	// over iSCSI the same way as the default iPXE script, use the
 	// following iSCSI IP address: 169.254.0.2, and boot volume IQN:
 	// iqn.2015-02.oracle.boot.
-	// If your instance boot volume type is paravirtualized,
+	// If your instance boot volume attachment type is paravirtualized,
 	// the boot volume is attached to the instance through virtio-scsi and no iPXE script is used.
-	// If your instance boot volume type is paravirtualized
+	// If your instance boot volume attachment type is paravirtualized
 	// and you use custom iPXE to network boot into your instance,
 	// the primary boot volume is attached as a data volume through virtio-scsi drive.
 	// For more information about the Bring Your Own Image feature of
@@ -186,7 +189,7 @@ type Instance struct {
 
 	PlatformConfig PlatformConfig `mandatory:"false" json:"platformConfig"`
 
-	// The instance configuration ID for platform agnostic launches. This configuration will specify the possible shapes that can be used to launch this instance.
+	// The OCID of the Instance Configuration used to source launch details for this instance. Any other fields supplied in the instance launch request override the details stored in the Instance Configuration for this instance launch.
 	InstanceConfigurationId *string `mandatory:"false" json:"instanceConfigurationId"`
 }
 
@@ -219,6 +222,7 @@ func (m Instance) ValidateEnumValue() (bool, error) {
 func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 	model := struct {
 		CapacityReservationId      *string                                `json:"capacityReservationId"`
+		ClusterPlacementGroupId    *string                                `json:"clusterPlacementGroupId"`
 		DedicatedVmHostId          *string                                `json:"dedicatedVmHostId"`
 		DefinedTags                map[string]map[string]interface{}      `json:"definedTags"`
 		DisplayName                *string                                `json:"displayName"`
@@ -258,6 +262,8 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 	}
 	var nn interface{}
 	m.CapacityReservationId = model.CapacityReservationId
+
+	m.ClusterPlacementGroupId = model.ClusterPlacementGroupId
 
 	m.DedicatedVmHostId = model.DedicatedVmHostId
 

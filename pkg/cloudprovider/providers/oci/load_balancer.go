@@ -16,10 +16,12 @@ package oci
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
 	"go.uber.org/zap"
+	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -74,6 +76,9 @@ const (
 	lbLifecycleStateActive           = "ACTIVE"
 	lbMaximumNetworkSecurityGroupIds = 5
 	excludeBackendFromLBLabel        = "node.kubernetes.io/exclude-from-external-load-balancers"
+
+	// Service Account Token expiration in seconds
+	serviceAccountTokenExpiry = 21600 // 6 Hours
 )
 
 // CloudLoadBalancerProvider is an implementation of the cloud-provider struct
@@ -85,16 +90,55 @@ type CloudLoadBalancerProvider struct {
 	config       *providercfg.Config
 }
 
-// TODO write a UT for this (prasrira)
-func (cp *CloudProvider) getLoadBalancerProvider(svc *v1.Service) CloudLoadBalancerProvider {
+func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Service) (CloudLoadBalancerProvider, error) {
 	lbType := getLoadBalancerType(svc)
+	name := GetLoadBalancerName(svc)
+	var serviceAccountToken *authv1.TokenRequest
+	var err error
+
+	logger := cp.logger.With("loadBalancerName", name, "loadBalancerType", lbType)
+	logger.Debug("Getting load balancer provider")
+
+	if sa, useWI := svc.Annotations[ServiceAnnotationServiceAccountName]; useWI && sa == "" { // When using Workload Identity
+		return CloudLoadBalancerProvider{}, errors.New("Error fetching service account, empty string provided via " + ServiceAnnotationServiceAccountName)
+	} else if useWI {
+		serviceAccountToken, err = cp.getServiceAccountTokenIfSet(ctx, svc)
+		if err != nil {
+			return CloudLoadBalancerProvider{}, errors.New("Unable to get service account token. Error:" + err.Error())
+		}
+	}
+
+	lbClient := cp.client.LoadBalancer(logger, lbType, cp.config.Auth.TenancyID, serviceAccountToken)
+	if lbClient == nil {
+		return CloudLoadBalancerProvider{}, errors.New(fmt.Sprintf("Error creating Workload Identity based %s Client. Perhaps you are using an OKE BASIC_CLUSTER?", lbType))
+	}
 	return CloudLoadBalancerProvider{
 		client:       cp.client,
-		lbClient:     cp.client.LoadBalancer(lbType),
+		lbClient:     lbClient,
 		logger:       cp.logger,
 		metricPusher: cp.metricPusher,
 		config:       cp.config,
+	}, nil
+}
+
+var ServiceAccountTokenExpiry = int64(serviceAccountTokenExpiry)
+
+// Use Worker Identity RP based Client based on annotation: "oke.oci.oraclecloud.com/use-service-account"
+// if found.
+func (cp *CloudProvider) getServiceAccountTokenIfSet(ctx context.Context, svc *v1.Service) (*authv1.TokenRequest, error) {
+	_, err := cp.ServiceAccountLister.ServiceAccounts(svc.Namespace).Get(svc.Annotations[ServiceAnnotationServiceAccountName])
+	if err != nil {
+		return nil, err
 	}
+
+	tokenRequest := authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: &ServiceAccountTokenExpiry}}
+
+	serviceAccountTokenRequest, err := cp.kubeclient.CoreV1().ServiceAccounts(svc.Namespace).CreateToken(ctx, svc.Annotations[ServiceAnnotationServiceAccountName], &tokenRequest, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return serviceAccountTokenRequest, nil
 }
 
 // GetLoadBalancerName returns the name of the loadbalancer
@@ -107,9 +151,15 @@ func (cp *CloudProvider) GetLoadBalancerName(ctx context.Context, clusterName st
 func (cp *CloudProvider) GetLoadBalancer(ctx context.Context, clusterName string, service *v1.Service) (*v1.LoadBalancerStatus, bool, error) {
 	name := cp.GetLoadBalancerName(ctx, clusterName, service)
 	logger := cp.logger.With("loadBalancerName", name, "loadBalancerType", getLoadBalancerType(service))
+	if sa, useWI := service.Annotations[ServiceAnnotationServiceAccountName]; useWI { // When using Workload Identity
+		logger = logger.With("serviceAccount", sa, "nameSpace", service.Namespace)
+	}
 	logger.Debug("Getting load balancer")
 
-	lbProvider := cp.getLoadBalancerProvider(service)
+	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, name)
 	if err != nil {
 		if client.IsNotFound(err) {
@@ -403,7 +453,9 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	lbName := GetLoadBalancerName(service)
 	loadBalancerType := getLoadBalancerType(service)
 	logger := cp.logger.With("loadBalancerName", lbName, "serviceName", service.Name, "loadBalancerType", loadBalancerType)
-
+	if sa, useWI := service.Annotations[ServiceAnnotationServiceAccountName]; useWI { // When using Workload Identity
+		logger = logger.With("serviceAccount", sa, "nameSpace", service.Namespace)
+	}
 	nodes, err := filterNodes(service, clusterNodes)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to filter provisioned nodes with label selector and virtual nodes")
@@ -434,7 +486,10 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	var errorType string
 	var lbMetricDimension string
 
-	lbProvider := cp.getLoadBalancerProvider(service)
+	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, lbName)
 	if err != nil && !client.IsNotFound(err) {
 		logger.With(zap.Error(err)).Error("Failed to get loadbalancer by name")
@@ -537,8 +592,8 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 			metrics.SendMetricData(cp.metricPusher, getMetric(loadBalancerType, Create), time.Since(startTime).Seconds(), dimensionsMap)
 
 		} else {
-			logger = cp.logger.With("loadBalancerName", lbName, "serviceName", service.Name, "loadBalancerID", newLBOCID, "loadBalancerType", getLoadBalancerType(service))
-			logger.Info("Successfully provisioned loadbalancer")
+			logger.With("loadBalancerID", newLBOCID).
+				Info("Successfully provisioned loadbalancer")
 			lbMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.LoadBalancerType)
 			dimensionsMap[metrics.ComponentDimension] = lbMetricDimension
 			dimensionsMap[metrics.ResourceOCIDDimension] = newLBOCID
@@ -971,13 +1026,19 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 	name := cp.GetLoadBalancerName(ctx, clusterName, service)
 	loadBalancerType := getLoadBalancerType(service)
 	logger := cp.logger.With("loadBalancerName", name, "loadBalancerType", loadBalancerType)
+	if sa, useWI := service.Annotations[ServiceAnnotationServiceAccountName]; useWI { // When using Workload Identity
+		logger = logger.With("serviceAccount", sa, "nameSpace", service.Namespace)
+	}
 	logger.Debug("Attempting to delete load balancer")
 	var errorType string
 	var lbMetricDimension string
 
 	dimensionsMap := make(map[string]string)
 
-	lbProvider := cp.getLoadBalancerProvider(service)
+	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
+	if err != nil {
+		return errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, name)
 	if err != nil {
 		if client.IsNotFound(err) {

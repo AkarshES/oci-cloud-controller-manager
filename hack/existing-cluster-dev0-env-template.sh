@@ -64,6 +64,9 @@ export MNT_TARGET_COMPARTMENT_ID=
 
 export STATIC_SNAPSHOT_COMPARTMENT_ID=
 
+# Workload Identity Principal Feature only available for ENHANCED_CLUSTER
+export CLUSTER_TYPE="ENHANCED_CLUSTER"
+
 # For SKE node, node_info, node_lifecycle controller tests against PDE
 # To setup PDE and point your localhost:25000 to the PDE CP API refer: Refer: https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oke-control-plane/browse/personal-environments/README.md
 # export CE_ENDPOINT_OVERRIDE="http://localhost:25000"

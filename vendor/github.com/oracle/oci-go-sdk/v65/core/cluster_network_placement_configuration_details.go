@@ -65,20 +65,20 @@ type ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum string
 
 // Set of constants representing the allowable values for ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum
 const (
-	ClusterNetworkPlacementConfigurationDetailsPlacementConstraintLowLatencySingleBlock        ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum = "LOW_LATENCY_SINGLE_BLOCK"
-	ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEvenDistributionMultiBlock   ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum = "EVEN_DISTRIBUTION_MULTI_BLOCK"
+	ClusterNetworkPlacementConfigurationDetailsPlacementConstraintSingleTier                   ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum = "SINGLE_TIER"
+	ClusterNetworkPlacementConfigurationDetailsPlacementConstraintSingleBlock                  ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum = "SINGLE_BLOCK"
 	ClusterNetworkPlacementConfigurationDetailsPlacementConstraintPackedDistributionMultiBlock ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum = "PACKED_DISTRIBUTION_MULTI_BLOCK"
 )
 
 var mappingClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum = map[string]ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum{
-	"LOW_LATENCY_SINGLE_BLOCK":        ClusterNetworkPlacementConfigurationDetailsPlacementConstraintLowLatencySingleBlock,
-	"EVEN_DISTRIBUTION_MULTI_BLOCK":   ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEvenDistributionMultiBlock,
+	"SINGLE_TIER":                     ClusterNetworkPlacementConfigurationDetailsPlacementConstraintSingleTier,
+	"SINGLE_BLOCK":                    ClusterNetworkPlacementConfigurationDetailsPlacementConstraintSingleBlock,
 	"PACKED_DISTRIBUTION_MULTI_BLOCK": ClusterNetworkPlacementConfigurationDetailsPlacementConstraintPackedDistributionMultiBlock,
 }
 
 var mappingClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnumLowerCase = map[string]ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum{
-	"low_latency_single_block":        ClusterNetworkPlacementConfigurationDetailsPlacementConstraintLowLatencySingleBlock,
-	"even_distribution_multi_block":   ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEvenDistributionMultiBlock,
+	"single_tier":                     ClusterNetworkPlacementConfigurationDetailsPlacementConstraintSingleTier,
+	"single_block":                    ClusterNetworkPlacementConfigurationDetailsPlacementConstraintSingleBlock,
 	"packed_distribution_multi_block": ClusterNetworkPlacementConfigurationDetailsPlacementConstraintPackedDistributionMultiBlock,
 }
 
@@ -94,8 +94,8 @@ func GetClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnumValues
 // GetClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnumStringValues Enumerates the set of values in String for ClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnum
 func GetClusterNetworkPlacementConfigurationDetailsPlacementConstraintEnumStringValues() []string {
 	return []string{
-		"LOW_LATENCY_SINGLE_BLOCK",
-		"EVEN_DISTRIBUTION_MULTI_BLOCK",
+		"SINGLE_TIER",
+		"SINGLE_BLOCK",
 		"PACKED_DISTRIBUTION_MULTI_BLOCK",
 	}
 }

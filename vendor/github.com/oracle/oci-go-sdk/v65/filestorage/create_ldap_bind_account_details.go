@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-// CreateLdapBindAccountDetails Account details for LDAP bind account to be used in creating outbound connector.
+// CreateLdapBindAccountDetails Account details for the LDAP bind account to be used by mount targets that use this outbound connector.
 type CreateLdapBindAccountDetails struct {
 
 	// The availability domain the outbound connector is in. May be unset
@@ -28,10 +28,10 @@ type CreateLdapBindAccountDetails struct {
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the compartment that contains the outbound connector.
 	CompartmentId *string `mandatory:"true" json:"compartmentId"`
 
-	// Array of server endpoints to use while trying to connect while using LDAP bind account.
+	// Array of server endpoints to use when connecting with the LDAP bind account.
 	Endpoints []Endpoint `mandatory:"true" json:"endpoints"`
 
-	// The LDAP Distinguished name of the bind account.
+	// The LDAP Distinguished Name of the bind account.
 	BindDistinguishedName *string `mandatory:"true" json:"bindDistinguishedName"`
 
 	// A user-friendly name. It does not have to be unique, and it is changeable.
@@ -50,8 +50,8 @@ type CreateLdapBindAccountDetails struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
-	// The password for the LDAP bind account.
-	Password *string `mandatory:"false" json:"password"`
+	// Not used by File Systems but required for SPLAT tag integration.
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
 
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the password for the LDAP bind account in the Vault.
 	PasswordSecretId *string `mandatory:"false" json:"passwordSecretId"`
@@ -83,6 +83,11 @@ func (m CreateLdapBindAccountDetails) GetFreeformTags() map[string]string {
 //GetDefinedTags returns DefinedTags
 func (m CreateLdapBindAccountDetails) GetDefinedTags() map[string]map[string]interface{} {
 	return m.DefinedTags
+}
+
+//GetSystemTags returns SystemTags
+func (m CreateLdapBindAccountDetails) GetSystemTags() map[string]map[string]interface{} {
+	return m.SystemTags
 }
 
 func (m CreateLdapBindAccountDetails) String() string {

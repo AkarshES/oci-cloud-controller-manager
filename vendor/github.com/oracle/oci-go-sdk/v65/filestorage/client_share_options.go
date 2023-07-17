@@ -19,29 +19,28 @@ import (
 // ClientShareOptions SMB share options applied to a specified set of
 // clients. Only governs access through the associated
 // share. Access to the same file system through a different
-// share will be governed
-// by that share's share options.
+// share will be governed by that share's share options.
 type ClientShareOptions struct {
 
-	// Clients these options should apply to. Must be a either
-	// single IPv4 address or single IPv4 CIDR block.
+	// Clients that these options should apply to. Must be either
+	// a single IPv4 address or a single IPv4 CIDR block.
 	// **Note:** Access will also be limited by any applicable VCN
 	// security rules and the ability to route IP packets to the
 	// mount target. Mount targets do not have Internet-routable IP addresses.
 	Source *string `mandatory:"true" json:"source"`
 
 	// Type of access to grant clients using the file system
-	// through this share. If unspecified defaults to `READ_ONLY`.
+	// through this share. If unspecified defaults to `READ_WRITE`.
 	Access ClientShareOptionsAccessEnum `mandatory:"false" json:"access,omitempty"`
 
 	// UID value to remap to when squashing a client UID (see
 	// identitySquash for more details.) If unspecified, defaults
-	// to `65534`.
+	// to `0`.
 	AnonymousUid *int64 `mandatory:"false" json:"anonymousUid"`
 
 	// GID value to remap to when squashing a client GID (see
 	// identitySquash for more details.) If unspecified defaults
-	// to `65534`.
+	// to `0`.
 	AnonymousGid *int64 `mandatory:"false" json:"anonymousGid"`
 }
 
