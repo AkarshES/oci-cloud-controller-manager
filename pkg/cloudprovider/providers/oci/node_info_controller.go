@@ -36,13 +36,17 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
 	"github.com/oracle/oci-go-sdk/v65/core"
+
+	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 )
 
 // metadata labeling for placement info
 const (
+	VirtualNodeRoleLabel      = "node-role.kubernetes.io/virtual-node"
+	VirtualNodeRoleLabelValue = ""
+
 	FaultDomainLabel        = "oci.oraclecloud.com/fault-domain"
 	CompartmentIDAnnotation = "oci.oraclecloud.com/compartment-id"
 	timeout                 = 10 * time.Second
@@ -124,14 +128,14 @@ func (nic *NodeInfoController) Run(stopCh <-chan struct{}) {
 	wait.Until(nic.runWorker, time.Second, stopCh)
 }
 
-//A function to run the worker which will process items in the queue
+// A function to run the worker which will process items in the queue
 func (nic *NodeInfoController) runWorker() {
 	for nic.processNextItem() {
 
 	}
 }
 
-//Used to sequentially process the keys present in the queue
+// Used to sequentially process the keys present in the queue
 func (nic *NodeInfoController) processNextItem() bool {
 
 	key, quit := nic.queue.Get()
@@ -152,8 +156,8 @@ func (nic *NodeInfoController) processNextItem() bool {
 	return true
 }
 
-//A function which is responsible for adding the fault domain label and CompartmentID annotation to the node if it
-//is not already present. Also cache the instance information
+// A function which is responsible for adding the fault domain label and CompartmentID annotation to the node if it
+// is not already present. Also cache the instance information
 func (nic *NodeInfoController) processItem(key string) error {
 
 	logger := nic.logger.With("node", key)
@@ -241,8 +245,8 @@ func getNodePatchBytes(cacheNode *v1.Node, instance *core.Instance, logger *zap.
 
 func getVirtualNodePatchBytes(virtualNode *containerengine.VirtualNode, logger *zap.SugaredLogger) []byte {
 	// Set faultDomain label on VirtualNode
-	logger.Infof("Adding virtual node label from cloud provider: %s=%s", FaultDomainLabel, *virtualNode.FaultDomain)
-	return []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"}}}", FaultDomainLabel, *virtualNode.FaultDomain))
+	logger.Infof("Adding virtual node labels from cloud provider: %s=%s, %s=%s", FaultDomainLabel, *virtualNode.FaultDomain, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue)
+	return []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, *virtualNode.FaultDomain, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue))
 }
 
 func getInstanceByNode(cacheNode *v1.Node, nic *NodeInfoController, logger *zap.SugaredLogger) (*core.Instance, error) {
@@ -309,5 +313,6 @@ func validateNodeHasRequiredLabels(node *v1.Node) bool {
 
 func validateVirtualNodeHasRequiredLabels(node *v1.Node) bool {
 	_, isFaultDomainLabelPresent := node.ObjectMeta.Labels[FaultDomainLabel]
-	return isFaultDomainLabelPresent
+	_, isVirtualNodeRoleLabelPresent := node.ObjectMeta.Labels[VirtualNodeRoleLabel]
+	return isFaultDomainLabelPresent && isVirtualNodeRoleLabelPresent
 }
