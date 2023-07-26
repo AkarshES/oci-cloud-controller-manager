@@ -216,6 +216,9 @@ var _ = Describe("SKE - Instances", func() {
 			// Kubernetes Stable Labels
 			fdZone = node.ObjectMeta.Labels[v1.LabelZoneFailureDomainStable]
 			Expect(fdZone).NotTo(BeEmpty())
+			vnRole, ok := node.ObjectMeta.Labels[oci.VirtualNodeRoleLabel]
+			Expect(ok).To(BeTrue())
+			Expect(vnRole).To(BeEmpty())
 		})
 	})
 })
