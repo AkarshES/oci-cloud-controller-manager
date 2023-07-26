@@ -173,7 +173,7 @@ func TestGetVirtualNode(t *testing.T) {
 				ociClient: MockOCIClient{},
 			},
 			expected: &containerengine.VirtualNode{
-				Id: 			   &virtualNodeId,
+				Id:                &virtualNodeId,
 				VirtualNodePoolId: &virtualNodePoolId,
 			},
 		},
@@ -218,14 +218,40 @@ func TestGetVirtualNodePatchBytes(t *testing.T) {
 		virtualNode        *containerengine.VirtualNode
 		expectedPatchBytes []byte
 	}{
-		"FD label not present": {
+		"FD and Node-Role label not present": {
 			node: &v1.Node{
 				ObjectMeta: metav1.ObjectMeta{},
 			},
 			virtualNode: &containerengine.VirtualNode{
 				FaultDomain: &virtualNodeFD,
 			},
-			expectedPatchBytes: []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"oci.oraclecloud.com/fault-domain\":\"%s\"}}}", virtualNodeFD)),
+			expectedPatchBytes: []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, virtualNodeFD, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue)),
+		},
+		"Node-Role label not present": {
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						FaultDomainLabel: virtualNodeFD,
+					},
+				},
+			},
+			virtualNode: &containerengine.VirtualNode{
+				FaultDomain: &virtualNodeFD,
+			},
+			expectedPatchBytes: []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, virtualNodeFD, VirtualNodeRoleLabel, "")),
+		},
+		"Fault Domain label not present": {
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						VirtualNodeRoleLabel: "",
+					},
+				},
+			},
+			virtualNode: &containerengine.VirtualNode{
+				FaultDomain: &virtualNodeFD,
+			},
+			expectedPatchBytes: []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, virtualNodeFD, VirtualNodeRoleLabel, "")),
 		},
 	}
 	logger := zap.L()
@@ -233,7 +259,7 @@ func TestGetVirtualNodePatchBytes(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			patchedBytes := getVirtualNodePatchBytes(tc.virtualNode, logger.Sugar())
 			if !reflect.DeepEqual(patchedBytes, tc.expectedPatchBytes) {
-				t.Errorf("Expected PatchBytes \n%+v\nbut got\n%+v", tc.expectedPatchBytes, patchedBytes)
+				t.Errorf("Expected PatchBytes \n%+v\nbut got\n%+v", string(tc.expectedPatchBytes), string(patchedBytes))
 			}
 		})
 	}
