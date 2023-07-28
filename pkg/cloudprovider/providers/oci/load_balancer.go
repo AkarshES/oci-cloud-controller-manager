@@ -1055,7 +1055,7 @@ func (cp *CloudProvider) getNodesAndPodsByIPs(ctx context.Context, backendIPs []
 		} else if pod, podExists := ipToPodLookup[ip]; virtualNodeExists && podExists {
 			pods = append(pods, pod)
 		} else {
-			return nil, nil, errors.Errorf("provisioned node or virtual pod was not found by IP %q", ip)
+			cp.logger.With("loadBalancerName", GetLoadBalancerName(service), "serviceName", service.Name, "loadBalancerType", getLoadBalancerType(service)).Errorf("provisioned node or virtual pod was not found by IP %q", ip)
 		}
 	}
 

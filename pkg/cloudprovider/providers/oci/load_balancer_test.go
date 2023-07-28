@@ -1209,7 +1209,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 		"unknown backend IP": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "testservice",
+					Namespace: "ns",
+					Name:      "testservice",
+					UID:       "uid",
 				},
 				Spec: v1.ServiceSpec{
 					Selector: map[string]string{
@@ -1220,7 +1222,7 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 			backendIPs:    []string{"0.0.0.100"},
 			expectedNodes: nil,
 			expectedPods:  nil,
-			wantErr:       true,
+			wantErr:       false,
 		},
 		"provisioned nodes and unknown service label selector": {
 			service: &v1.Service{
@@ -1243,7 +1245,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 		"unknown service label selector": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "testservice",
+					Namespace: "ns",
+					Name:      "testservice",
+					UID:       "uid",
 				},
 				Spec: v1.ServiceSpec{
 					Selector: map[string]string{
@@ -1254,7 +1258,7 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 			backendIPs:    []string{"0.0.0.10"},
 			expectedNodes: nil,
 			expectedPods:  nil,
-			wantErr:       true,
+			wantErr:       false,
 		},
 	}
 
@@ -1263,6 +1267,7 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 		config:     &providercfg.Config{CompartmentID: "testCompartment"},
 		NodeLister: &mockNodeLister{},
 		kubeclient: testclient.NewSimpleClientset(),
+		logger:     zap.L().Sugar(),
 	}
 
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["virtualPod1"], metav1.CreateOptions{})
