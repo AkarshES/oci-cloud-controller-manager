@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	errors2 "github.com/pkg/errors"
 	"math"
 	"sync"
 	"time"
@@ -51,7 +52,8 @@ const (
 	INITIALIZE_NPN_NODE           = "INITIALIZE_NPN_NODE"
 	maxSecondaryPrivateIPsPerVNIC = 31
 	// GetNodeTimeout is the timeout for the node object to be created in Kubernetes
-	GetNodeTimeout = 20 * time.Minute
+	GetNodeTimeout                             = 20 * time.Minute
+	ensureVnicAttachedAndAvailablePollDuration = 2 * time.Minute
 	// RunningInstanceTimeout is the timeout for the instance to reach running state
 	// before we try to attach VNIC(s) to them
 	RunningInstanceTimeout                          = 5 * time.Minute
@@ -76,9 +78,12 @@ var (
 	STATE_BACKOFF     = "BACKOFF"
 	COMPLETED         = "COMPLETED"
 
-	SKIP_SOURCE_DEST_CHECK = true
-	errPrimaryVnicNotFound = errors.New("failed to get primary vnic for instance")
-	errInstanceNotRunning  = errors.New("instance is not in running state")
+	SKIP_SOURCE_DEST_CHECK    = true
+	errPrimaryVnicNotFound    = errors.New("failed to get primary vnic for instance")
+	errInstanceNotRunning     = errors.New("instance is not in running state")
+	errVnicNotAttached        = errors.New("vnic(s) not in attached state yet")
+	errNotEnoughVnicsAttached = errors.New("number of VNICs attached is not equal to required number of VNICs")
+	errVnicNotAvailable       = errors.New("vnic is not available")
 )
 
 // NativePodNetworkReconciler reconciles a NativePodNetwork object
@@ -124,8 +129,9 @@ type endToEndLatencySlice []endToEndLatency
 // SubnetVnic is a struct used to pass around information about a VNIC
 // and the subnet it belongs to
 type SubnetVnic struct {
-	Vnic   *core.Vnic
-	Subnet *core.Subnet
+	Vnic       *core.Vnic
+	Subnet     *core.Subnet
+	Attachment *core.VnicAttachment
 }
 
 type ErrorMetric interface {
@@ -137,7 +143,7 @@ type ConvertToErrorMetric interface {
 	ErrorMetric() []ErrorMetric
 }
 
-func (r NativePodNetworkReconciler) PushMetric(errorArray []ErrorMetric) {
+func (r *NativePodNetworkReconciler) PushMetric(errorArray []ErrorMetric) {
 	averageByReturnCode := computeAveragesByReturnCode(errorArray)
 	if len(errorArray) == 0 {
 		return
@@ -336,27 +342,30 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if requiredAdditionalSecondaryVNICs > 0 {
 		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocateAdditionalVNICsToInstance)
 		additionalVNICAttachments := make([]VnicAttachmentResponse, requiredAdditionalSecondaryVNICs)
-		workqueue.ParallelizeUntil(ctx, requiredAdditionalSecondaryVNICs, requiredAdditionalSecondaryVNICs, func(index int) {
+		for index := 0; index < requiredAdditionalSecondaryVNICs; index++ {
 			startTime := time.Now()
 			vnicAttachment, err := r.OCIClient.Compute().AttachVnic(ctx, npn.Spec.Id, npn.Spec.PodSubnetIds[0], npn.Spec.NetworkSecurityGroupIds, &SKIP_SOURCE_DEST_CHECK)
-			mutex.Lock()
 			additionalVNICAttachments[index].VnicAttachment, additionalVNICAttachments[index].err = vnicAttachment, err
 			if additionalVNICAttachments[index].err != nil {
 				log.Error(additionalVNICAttachments[index].err, "failed to attach VNIC to instance")
+				r.handleError(ctx, req, err, "AttachVNIC")
+				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
+				return ctrl.Result{}, err
 			}
 			additionalVNICAttachments[index].timeTaken = float64(time.Since(startTime).Seconds())
-			if additionalVNICAttachments[index].err == nil {
-				log.WithValues("vnic", additionalVNICAttachments[index].VnicAttachment).Info("VNIC attached to instance")
+			log.WithValues("vnic", additionalVNICAttachments[index].VnicAttachment).Info("VNIC attached to instance")
+
+			if ensured, err := r.ensureVnicAttachedAndAvailable(ctx, &vnicAttachment); !ensured {
+				failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to ensure required additional VNICs"
+				log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).
+					Error(err, failMessage)
+				r.handleError(ctx, req, err, "AttachVNIC")
+				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
+				if errors.Is(err, wait.ErrWaitTimeout) {
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+				}
+				return ctrl.Result{}, err
 			}
-			mutex.Unlock()
-		})
-		err = validateAdditionalVnicAttachments(additionalVNICAttachments)
-		if err != nil {
-			failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to attach required additional VNICs"
-			log.Error(err, failMessage)
-			r.handleError(ctx, req, err, "Attach VNIC")
-			r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
-			return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 		}
 		r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
 		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocatedAdditionalVNICsToInstance)
@@ -372,6 +381,14 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("existingSecondaryVNICs", existingSecondaryVNICs).
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(SecondFetchedExistingSecondaryVNICsForInstance)
+
+	vnicAttached, err := r.validateVnicAttachmentsAreInAttachedState(ctx, *instance.Id, requiredSecondaryVNICs, existingSecondaryVNICs)
+	if vnicAttached == false || err != nil {
+		failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to validate required VNICs"
+		log.Error(err, failMessage)
+		r.handleError(ctx, req, err, "AttachVNIC")
+		return ctrl.Result{}, err
+	}
 
 	log.Info(FetchingPrivateIPsForSecondaryVNICs)
 	existingSecondaryIpsbyVNIC, err := r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
@@ -405,17 +422,15 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		}
 		parallelLog.Info("Need to allocate secondary IPs for VNIC")
 		ipAllocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips)
-		workqueue.ParallelizeUntil(ctx, 8, additionalIpsByVnic[outerIndex].ips, func(innerIndex int) {
+		for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips; innerIndex++ {
 			startTime := time.Now()
 			_, err := r.OCIClient.Networking().CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
 			if err != nil {
 				parallelLog.Error(err, "failed to create private-ip")
 			}
-			mutex.Lock()
 			ipAllocations[innerIndex].err = err
 			ipAllocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
-			mutex.Unlock()
-		})
+		}
 		err = validateVnicIpAllocation(ipAllocations)
 		mutex.Lock()
 		vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, err, ipAllocations}
@@ -550,7 +565,7 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 			log.Error(err, "failed to get subnet for VNIC")
 			return nil, nil, err
 		}
-		existingSecondaryVNICAttachments = append(existingSecondaryVNICAttachments, SubnetVnic{vNIC, subnet})
+		existingSecondaryVNICAttachments = append(existingSecondaryVNICAttachments, SubnetVnic{vNIC, subnet, &vnicAttachment})
 	}
 	return
 }
@@ -680,7 +695,7 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 
 // wait for the Kubernetes object to be created in the cluster so that the owner reference of the NPN CR
 // can be set to the Node object
-func (r NativePodNetworkReconciler) getNodeObjectInCluster(ctx context.Context, cr types.NamespacedName, nodeName string) (*v1.Node, error) {
+func (r *NativePodNetworkReconciler) getNodeObjectInCluster(ctx context.Context, cr types.NamespacedName, nodeName string) (*v1.Node, error) {
 	log := log.FromContext(ctx, "namespacedName", cr).WithValues("nodeName", nodeName)
 	nodeObject := v1.Node{}
 	nodePresentInCluster := func() (bool, error) {
@@ -715,7 +730,7 @@ func (r NativePodNetworkReconciler) getNodeObjectInCluster(ctx context.Context, 
 }
 
 // wait for the compute instance to move to running state
-func (r NativePodNetworkReconciler) waitForInstanceToReachRunningState(ctx context.Context, npn npnv1beta1.NativePodNetwork) error {
+func (r *NativePodNetworkReconciler) waitForInstanceToReachRunningState(ctx context.Context, npn npnv1beta1.NativePodNetwork) error {
 	log := log.FromContext(ctx, "name", npn.Name)
 	log = log.WithValues("instanceId", *npn.Spec.Id)
 
@@ -746,4 +761,69 @@ func (r NativePodNetworkReconciler) waitForInstanceToReachRunningState(ctx conte
 		log.Error(err, "timed out waiting for instance to reach running state")
 	}
 	return err
+}
+
+// ensureVnicAttachedAndAvailable polls until vnic attachment is attached and vnic is available.
+// We might keep waiting for 2 minutes when VNIC attach fails i.e. VNIC Attachment goes to Detaching/Detached
+// and Vnic to Terminated/Terminating states so we error out in those situations and stop retrying
+func (r *NativePodNetworkReconciler) ensureVnicAttachedAndAvailable(ctx context.Context, vnicAttachment *core.VnicAttachment) (ensured bool, err error) {
+	err = wait.PollImmediate(time.Second*5, ensureVnicAttachedAndAvailablePollDuration, func() (bool, error) {
+		log := log.FromContext(ctx)
+		if vnicAttachment.Id == nil {
+			return false, errors.New("vnic attachment Id is nil")
+		}
+		vnicAttachment, err = r.OCIClient.Compute().GetVnicAttachment(ctx, vnicAttachment.Id)
+		if err != nil {
+			return false, err
+		}
+		if vnicAttachment.LifecycleState == core.VnicAttachmentLifecycleStateDetached ||
+			vnicAttachment.LifecycleState == core.VnicAttachmentLifecycleStateDetaching {
+			log.Error(err, "vnic attachment is detaching/detached", "vnicAttachment", vnicAttachment.Id)
+			return false, errors.New("vnic attachment is in detaching/detached state")
+		}
+		if vnicAttachment.VnicId == nil {
+			return false, nil
+		}
+		if vnicAttachment.LifecycleState != core.VnicAttachmentLifecycleStateAttached {
+			log.WithValues("vnicAttachment", vnicAttachment.Id, "LifecycleState", vnicAttachment.LifecycleState).Info("vnic attachment is not in attached state, will retry")
+			return false, nil
+		}
+
+		vNIC, err := r.OCIClient.Networking().GetVNIC(ctx, *vnicAttachment.VnicId)
+		if err != nil {
+			log.Error(err, "failed to ensure vnic attached and available")
+			return false, errors2.Wrap(err, "failed to get VNIC from VNIC attachment")
+		}
+		log = log.WithValues("vnic", vNIC.Id)
+		if vNIC.LifecycleState == core.VnicLifecycleStateTerminating || vNIC.LifecycleState == core.VnicLifecycleStateTerminated {
+			log.Error(err, "vnic is terminating/terminated")
+			return false, errors.New("vnic is in terminating/terminated state")
+		}
+		if vNIC.LifecycleState != core.VnicLifecycleStateAvailable {
+			return false, nil
+		}
+
+		return true, nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// validateVnicAttachmentsAreInAttachedState will validate if the vnics have been attached
+func (r *NativePodNetworkReconciler) validateVnicAttachmentsAreInAttachedState(ctx context.Context, InstanceId string, requiredSecondaryVNICs int, attachedSecondaryVnics []SubnetVnic) (attached bool, err error) {
+	log := log.FromContext(ctx, "instanceId", InstanceId)
+
+	if requiredSecondaryVNICs != len(attachedSecondaryVnics) {
+		return false, errNotEnoughVnicsAttached
+	}
+
+	for _, vnicAttachment := range attachedSecondaryVnics {
+		if ensured, err := r.ensureVnicAttachedAndAvailable(ctx, vnicAttachment.Attachment); !ensured {
+			log.Error(err, "Failed to ensure Vnic is attached & available")
+			return false, err
+		}
+	}
+	return true, nil
 }

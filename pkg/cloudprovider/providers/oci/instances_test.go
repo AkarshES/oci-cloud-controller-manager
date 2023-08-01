@@ -678,6 +678,10 @@ func (c *MockComputeClient) ListVnicAttachments(ctx context.Context, compartment
 	return nil, nil
 }
 
+func (c *MockComputeClient) GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error) {
+	return nil, nil
+}
+
 func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetID *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
 	return core.VnicAttachment{}, nil
 }
