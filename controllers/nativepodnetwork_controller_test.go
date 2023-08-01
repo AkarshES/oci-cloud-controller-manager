@@ -17,7 +17,12 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"errors"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"github.com/oracle/oci-go-sdk/v65/common"
+	"go.uber.org/zap"
+	authv1 "k8s.io/api/authentication/v1"
 	"reflect"
 	"testing"
 
@@ -301,6 +306,442 @@ func TestConvertCoreVNICtoNPNStatus(t *testing.T) {
 			vnics := convertCoreVNICtoNPNStatus(tc.existingSecondaryVNICs, tc.additionalSecondaryIps)
 			if !reflect.DeepEqual(vnics, tc.expected) {
 				t.Errorf("expected npnVNIC to be:\n%+v\nbut got:\n%+v", tc.expected, vnics)
+			}
+		})
+	}
+}
+
+type MockOCIClient struct {
+}
+
+func (c MockOCIClient) LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) client.GenericLoadBalancerInterface {
+	return nil
+}
+
+func (c MockOCIClient) BlockStorage() client.BlockStorageInterface {
+	return nil
+}
+
+func (c MockOCIClient) FSS() client.FileStorageInterface {
+	return nil
+}
+
+func (c MockOCIClient) Identity() client.IdentityInterface {
+	return nil
+}
+
+func (c MockOCIClient) ContainerEngine() client.ContainerEngineInterface {
+	return nil
+}
+
+// MockVirtualNetworkClient mocks VirtualNetwork client implementation
+type MockVirtualNetworkClient struct {
+}
+
+func (c *MockVirtualNetworkClient) GetSubnet(ctx context.Context, id string) (*core.Subnet, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) GetSubnetFromCacheByIP(ip string) (*core.Subnet, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) IsRegionalSubnet(ctx context.Context, id string) (bool, error) {
+	return false, nil
+}
+
+func (c *MockVirtualNetworkClient) GetVcn(ctx context.Context, id string) (*core.Vcn, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) GetSecurityList(ctx context.Context, id string) (core.GetSecurityListResponse, error) {
+	return core.GetSecurityListResponse{}, nil
+}
+
+func (c *MockVirtualNetworkClient) UpdateSecurityList(ctx context.Context, id string, etag string, ingressRules []core.IngressSecurityRule, egressRules []core.EgressSecurityRule) (core.UpdateSecurityListResponse, error) {
+	return core.UpdateSecurityListResponse{}, nil
+}
+
+func (c *MockVirtualNetworkClient) ListPrivateIps(ctx context.Context, vnicId string) ([]core.PrivateIp, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) GetPrivateIp(ctx context.Context, id string) (*core.PrivateIp, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicID string) (*core.PrivateIp, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error) {
+	return nil, nil
+}
+
+// MockComputeClient mocks Compute client implementation
+type MockComputeClient struct{}
+
+func (c *MockComputeClient) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) GetInstanceByNodeName(ctx context.Context, compartmentID, vcnID, nodeName string) (*core.Instance, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetId *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
+	return core.VnicAttachment{}, nil
+}
+
+func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmentID, volumeID string) (core.VolumeAttachment, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) AttachVolume(ctx context.Context, instanceID, volumeID string) (core.VolumeAttachment, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool) (core.VolumeAttachment, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) WaitForVolumeAttached(ctx context.Context, attachmentID string) (core.VolumeAttachment, error) {
+	return nil, nil
+}
+
+func (c *MockComputeClient) DetachVolume(ctx context.Context, id string) error {
+	return nil
+}
+
+func (c *MockComputeClient) WaitForVolumeDetached(ctx context.Context, attachmentID string) error {
+	return nil
+}
+
+func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, compartmentID, volumeID string) (core.VolumeAttachment, error) {
+	return nil, nil
+}
+
+func (MockOCIClient) Compute() client.ComputeInterface {
+	return &MockComputeClient{}
+}
+
+func (MockOCIClient) Networking() client.NetworkingInterface {
+	return &MockVirtualNetworkClient{}
+}
+
+func (c *MockVirtualNetworkClient) GetVNIC(ctx context.Context, id string) (*core.Vnic, error) {
+	vnicCounter++
+	if vnics[id].LifecycleState == core.VnicLifecycleStateProvisioning && vnicCounter%3 == 0 {
+		copy := vnics[id]
+		copy.LifecycleState = core.VnicLifecycleStateAvailable
+		return copy, nil // Available
+	}
+	return vnics[id], nil
+}
+
+func (c *MockComputeClient) ListVnicAttachments(ctx context.Context, compartmentID, instanceID string) ([]core.VnicAttachment, error) {
+	return attachedVnicsList[compartmentID], nil
+}
+
+func (c *MockComputeClient) GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error) {
+	attachmentCounter++
+	resp := vnicAttachments[*vnicAttachmentId]
+	if *resp.Id == "attachmentid5" {
+		resp.LifecycleState = core.VnicAttachmentLifecycleStateDetached // Detached
+	}
+	if attachmentCounter%3 == 0 {
+		resp.LifecycleState = core.VnicAttachmentLifecycleStateAttached // Attached
+	}
+	return &resp, nil
+}
+
+var (
+	vnicAttachments = map[string]core.VnicAttachment{
+		"attachmentid1": {
+			Id:             common.String("attachmentid1"),
+			VnicId:         common.String("vnic1"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid2": {
+			Id:             common.String("attachmentid2"),
+			VnicId:         common.String("vnic2"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid3": {
+			Id:             common.String("attachmentid3"),
+			VnicId:         common.String("vnic3"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid4": {
+			Id:             common.String("attachmentid4"),
+			VnicId:         common.String("vnic4"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid5": {
+			Id:             common.String("attachmentid5"),
+			VnicId:         common.String("vnic5"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid6": {
+			Id:             common.String("attachmentid6"),
+			VnicId:         common.String("vnic6"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid7": {
+			Id:             common.String("attachmentid7"),
+			VnicId:         common.String("vnic7"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+		},
+		"attachmentid8": {
+			Id:             common.String("attachmentid8"),
+			VnicId:         common.String("vnic8"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttaching,
+		},
+		"attachmentid9": {
+			Id:             common.String("attachmentid9"),
+			VnicId:         common.String("vnic9"),
+			LifecycleState: core.VnicAttachmentLifecycleStateDetached,
+		},
+		"attachmentid10": {
+			Id:             common.String("attachmentid10"),
+			VnicId:         common.String("vnic10"),
+			LifecycleState: core.VnicAttachmentLifecycleStateDetached,
+		},
+		"attachmentid11": {
+			Id:             common.String("attachmentid11"),
+			VnicId:         common.String("vnic11"),
+			LifecycleState: core.VnicAttachmentLifecycleStateDetached,
+		},
+		"attachmentid12": {
+			Id:             common.String("attachmentid12"),
+			VnicId:         common.String("vnic12"),
+			LifecycleState: core.VnicAttachmentLifecycleStateAttaching,
+		},
+	}
+	False  = false
+	Subnet = "test-subnet"
+	vnics  = map[string]*core.Vnic{
+		"vnic1": {
+			Id:             common.String("vnic1"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic2": {
+			Id:             common.String("vnic2"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic3": {
+			Id:             common.String("vnic3"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic4": {
+			Id:             common.String("vnic4"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic5": {
+			Id:             common.String("vnic5"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic6": {
+			Id:             common.String("vnic6"),
+			LifecycleState: core.VnicLifecycleStateProvisioning,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic7": {
+			Id:             common.String("vnic7"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic8": {
+			Id:             common.String("vnic8"),
+			LifecycleState: core.VnicLifecycleStateAvailable,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic9": {
+			Id:             common.String("vnic9"),
+			LifecycleState: core.VnicLifecycleStateProvisioning,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic10": {
+			Id:             common.String("vnic10"),
+			LifecycleState: core.VnicLifecycleStateTerminating,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic11": {
+			Id:             common.String("vnic11"),
+			LifecycleState: core.VnicLifecycleStateTerminated,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+		"vnic12": {
+			Id:             nil,
+			LifecycleState: core.VnicLifecycleStateTerminated,
+			IsPrimary:      &False,
+			SubnetId:       &Subnet,
+		},
+	}
+
+	attachedVnicsList = map[string][]core.VnicAttachment{
+		"vnics attached": {
+			{
+				Id:             common.String("attachmentid1"),
+				VnicId:         common.String("vnic1"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+			{
+				Id:             common.String("attachmentid2"),
+				VnicId:         common.String("vnic2"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+			{
+				Id:             common.String("attachmentid3"),
+				VnicId:         common.String("vnic3"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+			{
+				Id:             common.String("attachmentid4"),
+				VnicId:         common.String("vnic4"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+		},
+		"single vnic not attached": {
+			{
+				Id:             common.String("attachmentid6"),
+				VnicId:         common.String("vnic6"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+			{
+				Id:             common.String("attachmentid7"),
+				VnicId:         common.String("vnic7"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+			{
+				Id:             common.String("attachmentid8"),
+				VnicId:         common.String("vnic8"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttaching,
+			},
+		},
+		"vnic in detaching or detached after a while": {
+			{
+				Id:             common.String("attachmentid1"),
+				VnicId:         common.String("vnic1"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+			{
+				Id:             common.String("attachmentid5"),
+				VnicId:         common.String("vnic5"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttaching,
+			},
+		},
+		"vnic not available": {
+			{
+				Id:             common.String("attachmentid11"),
+				VnicId:         common.String("vnic11"),
+				LifecycleState: core.VnicAttachmentLifecycleStateDetached,
+			},
+			{
+				Id:             common.String("attachmentid12"),
+				VnicId:         common.String("vnic12"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttaching,
+			},
+		},
+		"vnic becomes available eventually": {
+			{
+				Id:             common.String("attachmentid6"),
+				VnicId:         common.String("vnic6"),
+				LifecycleState: core.VnicAttachmentLifecycleStateAttached,
+			},
+		},
+	}
+	attachmentCounter = 1
+	vnicCounter       = 1
+)
+
+func TestValidateVnicAttachmentsAreInAttachedState(t *testing.T) {
+	testCases := []struct {
+		name              string
+		in                string
+		compartmentid     string
+		output            bool
+		requiredVnicCount int
+		err               error
+		counter           int
+	}{
+		{
+			name:              "all vnics attached",
+			in:                "instanceid",
+			compartmentid:     "vnics attached",
+			output:            true,
+			requiredVnicCount: 4,
+			err:               nil,
+		},
+		{
+			name:              "one vnic stuck in attaching",
+			in:                "instanceid",
+			compartmentid:     "single vnic not attached",
+			output:            true,
+			requiredVnicCount: 3,
+			err:               nil,
+		},
+		{
+			name:              "vnics in other lifecycle states",
+			in:                "instanceid",
+			compartmentid:     "vnic in detaching or detached after a while",
+			output:            false,
+			requiredVnicCount: 2,
+			err:               errors.New("vnic attachment is in detaching/detached state"),
+		},
+		{
+			name:              "not enough vnic attached",
+			in:                "instanceid",
+			compartmentid:     "vnic not available",
+			output:            false,
+			requiredVnicCount: 2,
+			err:               errNotEnoughVnicsAttached,
+		},
+		{
+			name:              "vnic becomes available eventually",
+			in:                "instanceid",
+			compartmentid:     "vnic becomes available eventually",
+			output:            true,
+			requiredVnicCount: 1,
+			err:               nil,
+		},
+	}
+
+	npn := &NativePodNetworkReconciler{
+		OCIClient: MockOCIClient{},
+	}
+
+	t.Parallel()
+	for _, tt := range testCases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			_, existingSecondaryIpsbyVNIC, _ := npn.getPrimaryAndSecondaryVNICs(context.Background(), tt.compartmentid, tt.in)
+			result, err := npn.validateVnicAttachmentsAreInAttachedState(context.Background(), tt.in, tt.requiredVnicCount, existingSecondaryIpsbyVNIC)
+			if err != nil && err.Error() != tt.err.Error() {
+				t.Errorf("validateVnicAttachmentsAreInAttachedState(%s) got error %s, expected %s", tt.in, err, tt.err)
+			}
+			if !reflect.DeepEqual(result, tt.output) {
+				t.Errorf("validateVnicAttachmentsAreInAttachedState(%s) => %t, want %t", tt.in, result, tt.output)
 			}
 		})
 	}

@@ -158,6 +158,10 @@ func (c *mockComputeClient) ListVnicAttachments(ctx context.Context, request cor
 	return core.ListVnicAttachmentsResponse{}, nil
 }
 
+func (c *mockComputeClient) GetVnicAttachment(ctx context.Context, request core.GetVnicAttachmentRequest) (response core.GetVnicAttachmentResponse, err error) {
+	return response, nil
+}
+
 func (c *mockComputeClient) AttachVnic(ctx context.Context, request core.AttachVnicRequest) (response core.AttachVnicResponse, err error) {
 	return core.AttachVnicResponse{}, nil
 }
