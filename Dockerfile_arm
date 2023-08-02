@@ -1,4 +1,4 @@
-FROM odo-docker-signed-local.artifactory.oci.oraclecorp.com/odx-oke/oke/golang-buildbox:1.19.6-fips-f9488f495286d0430428a403cb43580e175a31fc-81 as builder
+FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-a1727-aarch64:1.19.6-118 as builder
 
 ARG COMPONENT
 
@@ -9,15 +9,13 @@ ADD . $SRC
 
 WORKDIR $SRC
 
-RUN ARCH=arm make clean build-arm
+RUN ARCH=arm64 COMPONENT=${COMPONENT} make clean build-arm
 
 FROM --platform=linux/arm64 ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:7-slim
 
-RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/cardmgmt-ol7-latest-yum-aarch64-local && yum repolist enabled
-
-RUN yum install -y util-linux \
-  && yum install -y e2fsprogs \
+RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/cardmgmt-ol7-latest-yum-aarch64-local && yum repolist enabled \
+  && yum install -y util-linux e2fsprogs \
   && yum install -y xfsprogs \
-  && yum clean all
+  && rm -rf /var/cache/yum
 
-COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/arm/oci-csi-node-driver /usr/local/bin/
+COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/* /usr/local/bin/
