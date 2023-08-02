@@ -17,6 +17,13 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	storagev1 "k8s.io/api/storage/v1"
@@ -25,12 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/component-base/metrics/legacyregistry"
-	"math/rand"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-utils/leaderelection"
@@ -87,7 +88,7 @@ var (
 	nodeDeployment              *ctrl.NodeDeployment
 )
 
-// StartCSIProvisioner main function to start CSI Controller Provisioner
+//StartCSIProvisioner main function to start CSI Controller Provisioner
 func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSIDriver) {
 	var config *rest.Config
 	var err error
