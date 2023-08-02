@@ -977,6 +977,11 @@ func (c *MockNetworkLoadBalancerClient) UpdateNetworkSecurityGroups(ctx context.
 // MockBlockStorageClient mocks BlockStorage client implementation
 type MockBlockStorageClient struct{}
 
+// AwaitVolumeCloneAvailableOrTimeout implements client.BlockStorageInterface.
+func (*MockBlockStorageClient) AwaitVolumeCloneAvailableOrTimeout(ctx context.Context, id string) (*core.Volume, error) {
+	return nil, nil
+}
+
 func (MockBlockStorageClient) AwaitVolumeAvailableORTimeout(ctx context.Context, id string) (*core.Volume, error) {
 	return nil, nil
 }
