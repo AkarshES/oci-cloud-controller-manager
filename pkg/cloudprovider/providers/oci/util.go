@@ -18,6 +18,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -32,6 +33,34 @@ const (
 	virtualNodeOcidDevPrefix   = "ocid1.virtualnodedev."
 	virtualNodeOcidIntegPrefix = "ocid1.virtualnodeinteg."
 )
+
+// Protects Load Balancers against multiple updates in parallel
+type loadBalancerLocks struct {
+	locks sets.String
+	mux   sync.Mutex
+}
+
+func NewLoadBalancerLocks() *loadBalancerLocks {
+	return &loadBalancerLocks{
+		locks: sets.NewString(),
+	}
+}
+
+func (lbl *loadBalancerLocks) TryAcquire(lbname string) bool {
+	lbl.mux.Lock()
+	defer lbl.mux.Unlock()
+	if lbl.locks.Has(lbname) {
+		return false
+	}
+	lbl.locks.Insert(lbname)
+	return true
+}
+
+func (lbl *loadBalancerLocks) Release(lbname string) {
+	lbl.mux.Lock()
+	defer lbl.mux.Unlock()
+	lbl.locks.Delete(lbname)
+}
 
 // MapProviderIDToResourceID parses the provider id and returns the instance ocid.
 func MapProviderIDToResourceID(providerID string) (string, error) {
