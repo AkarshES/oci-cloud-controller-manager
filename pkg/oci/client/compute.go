@@ -35,6 +35,7 @@ type ComputeInterface interface {
 
 	ListVnicAttachments(ctx context.Context, compartmentID, instanceID string) (response []core.VnicAttachment, err error)
 	AttachVnic(ctx context.Context, instanceID, subnetId *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error)
+	GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error)
 
 	VolumeAttachmentInterface
 }
@@ -276,6 +277,24 @@ func (c *client) ListVnicAttachments(ctx context.Context, compartmentID, instanc
 	}
 
 	return vnicAttachments, nil
+}
+
+func (c *client) GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error) {
+	if !c.rateLimiter.Reader.TryAccept() {
+		return nil, RateLimitError(false, "GetVnicAttachment")
+	}
+
+	resp, err := c.compute.GetVnicAttachment(ctx, core.GetVnicAttachmentRequest{
+		VnicAttachmentId: vnicAttachmentId,
+		RequestMetadata:  c.requestMetadata,
+	})
+	incRequestCounter(err, getVerb, vnicAttachmentResource)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return &resp.VnicAttachment, nil
 }
 
 func (c *client) AttachVnic(ctx context.Context, instanceID, subnetId *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
