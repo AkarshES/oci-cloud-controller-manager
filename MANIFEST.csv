@@ -80,3 +80,15 @@ oke-public-cloud-provider-oci                     , oke-multiarch-1.26-29cfa15-1
 oke-public-cloud-provider-oci                     , oke-1.27-bc782af-23
 oke-public-cloud-provider-oci-arm                 , oke-1.27-bc782af-23
 oke-public-cloud-provider-oci                     , oke-multiarch-1.27-bc782af-23
+oke-public-cloud-provider-oci                     , oke-1.24-810431b-342
+oke-public-cloud-provider-oci-arm                 , oke-1.24-810431b-342
+oke-public-cloud-provider-oci                     , oke-multiarch-1.24-810431b-342
+oke-public-cloud-provider-oci                     , oke-1.25-a5065bf-341
+oke-public-cloud-provider-oci-arm                 , oke-1.25-a5065bf-341
+oke-public-cloud-provider-oci                     , oke-multiarch-1.25-a5065bf-341
+oke-public-cloud-provider-oci                     , oke-1.26-a6090e0-216
+oke-public-cloud-provider-oci-arm                 , oke-1.26-a6090e0-216
+oke-public-cloud-provider-oci                     , oke-multiarch-1.26-a6090e0-216
+oke-public-cloud-provider-oci                     , oke-1.27-59312aa-46
+oke-public-cloud-provider-oci-arm                 , oke-1.27-59312aa-46
+oke-public-cloud-provider-oci                     , oke-multiarch-1.27-59312aa-46
