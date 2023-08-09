@@ -240,6 +240,10 @@ func (c *MockComputeClient) ListVnicAttachments(ctx context.Context, compartment
 	return nil, nil
 }
 
+func (c *MockComputeClient) GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error) {
+	return nil, nil
+}
+
 func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetID *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
 	return core.VnicAttachment{}, nil
 }
@@ -248,7 +252,7 @@ func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmen
 	return nil, nil
 }
 
-func (MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool) (core.VolumeAttachment, error) {
 	return nil, nil
 }
 
