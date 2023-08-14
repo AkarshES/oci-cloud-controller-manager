@@ -37,7 +37,7 @@ locals {
 
       // WFaaS Configuration
       wfaas_name_format = "oke-rbaas-mp-cell%d"
- 
+
       // API instance configuration
       api_hostclass = "oke-mp-api-rbaas"
 
@@ -89,9 +89,9 @@ locals {
       splat_host_header_format            = "oke-rbaas-mapi-cell%d.%s.oci.%s"
       // The following hardcoded compartment name in api.yaml is replaced with
       // orchestration compartment OCID for non-production environments
-      splat_compartment_token_to_replace = "ocid1.compartment.oc1..aaaaaaaamhk5oakipanjsuf3g6xrejzsa5e2tgsgugngtr7bo67wygrffkoq"
-      splat_mapi_subdomain_format        = "oke-rbaas-mapi-cell%d"
-      splat_allowed_service_principal    = "okepldev"
+      splat_compartment_token_to_replace  = "ocid1.compartment.oc1..aaaaaaaamhk5oakipanjsuf3g6xrejzsa5e2tgsgugngtr7bo67wygrffkoq"
+      splat_mapi_subdomain_format         = "oke-rbaas-mapi-cell%d"
+      splat_allowed_service_principal     = "okepldev"
 
       // Configuration for image
       image_name = local.io_overlay_uek5_images["20210409"].name
@@ -178,9 +178,9 @@ locals {
       splat_host_header_format            = "oke-polaris-mapi-cell%d.%s.oci.%s"
       // The following hardcoded compartment name in api.yaml is replaced with
       // orchestration compartment OCID for non-production environments
-      splat_compartment_token_to_replace = "ocid1.compartment.oc1..aaaaaaaamhk5oakipanjsuf3g6xrejzsa5e2tgsgugngtr7bo67wygrffkoq"
-      splat_mapi_subdomain_format        = "oke-polaris-mapi-cell%d"
-      splat_allowed_service_principal    = "okepldev"
+      splat_compartment_token_to_replace  = "ocid1.compartment.oc1..aaaaaaaamhk5oakipanjsuf3g6xrejzsa5e2tgsgugngtr7bo67wygrffkoq"
+      splat_mapi_subdomain_format         = "oke-polaris-mapi-cell%d"
+      splat_allowed_service_principal     = "okepldev"
 
       // Configuration for image
       image_name = local.io_overlay_uek5_images["20210409"].name
@@ -242,16 +242,17 @@ locals {
       os_namespace           = "ociokedev"
 
       // Alarms configuration
-      alarms_compartment              = "" // Defaults to orchestration compartment
-      alarms_enabled                  = false
-      mapi_api_alarms_enabled         = false
-      mapi_alarms_fleet_format        = "ociokedev.oke-dev-mapi-cell%d"
-      mapi_alarms_hostmetrics_fleet   = "ociokedev.oke-mp-api-dev"
-      kmon_alarms_enabled             = false
-      kmon_alarms_fleet_format        = "ociokedev.oke-dev-kmon-cell%d"
-      worker_alarms_enabled           = false
-      worker_alarms_fleet_format      = "ociokedev.oke-dev-wfworker-cell%d"
-      worker_alarms_hostmetrics_fleet = "ociokedev.oke-mp-worker-dev"
+      alarms_compartment                = "" // Defaults to orchestration compartment
+      alarms_enabled                    = false
+      mapi_api_alarms_enabled           = false
+      mapi_alarms_fleet_format          = "ociokedev.oke-dev-mapi-cell%d"
+      mapi_alarms_hostmetrics_fleet     = "ociokedev.oke-mp-api-dev"
+      kmon_alarms_enabled               = false
+      kmon_alarms_fleet_format          = "ociokedev.oke-dev-kmon-cell%d"
+      worker_alarms_enabled             = false
+      worker_alarms_fleet_format        = "ociokedev.oke-dev-wfworker-cell%d"
+      worker_alarms_hostmetrics_fleet   = "ociokedev.oke-mp-worker-dev"
+      csi_dataplane_alarms_fleet_format = "dev-oke-clusters-%s-dataplane"
 
       // API ODO Configuration
       api_pool_alias_format = "oke-dev-mapi-cell%d"
@@ -272,9 +273,9 @@ locals {
       splat_public_domain_override        = "oc-test.com"
       // The following hardcoded compartment name in api.yaml is replaced with
       // orchestration compartment OCID for non-production environments
-      splat_compartment_token_to_replace = "ocid1.compartment.oc1..aaaaaaaa25nt3xxdztunf4mtccovffzqe4mjtyjoerraxrlf7wbjrtu4crxq"
-      splat_mapi_subdomain_format        = "oke-dev-mapi-cell%d"
-      splat_allowed_service_principal    = "okedev"
+      splat_compartment_token_to_replace  = "ocid1.compartment.oc1..aaaaaaaa25nt3xxdztunf4mtccovffzqe4mjtyjoerraxrlf7wbjrtu4crxq"
+      splat_mapi_subdomain_format         = "oke-dev-mapi-cell%d"
+      splat_allowed_service_principal     = "okedev"
 
       // Configuration for image
       image_name = local.io_overlay_uek5_images["20201014"].name
@@ -337,20 +338,21 @@ locals {
       os_namespace           = "idqknvtm9e3k"
 
       // Alarms Configuration
-      severity_2                      = 4
-      severity_3                      = 4
-      mapi_availability_severity      = 4
-      mapi_latency_severity           = 4
-      alarms_compartment              = "" // Defaults to orchestration compartment
-      alarms_enabled                  = true
-      mapi_api_alarms_enabled         = true
-      mapi_alarms_fleet_format        = "ociokeinteg.oke-integ-mapi-cell%d"
-      mapi_alarms_hostmetrics_fleet   = "ociokeinteg.oke-mp-api-integ"
-      kmon_alarms_enabled             = true
-      kmon_alarms_fleet_format        = "ociokeinteg.oke-integ-kmon-cell%d"
-      worker_alarms_enabled           = true
-      worker_alarms_fleet_format      = "ociokeinteg.oke-integ-wfworker-cell%d"
-      worker_alarms_hostmetrics_fleet = "ociokeinteg.oke-mp-worker-integ"
+      severity_2                        = 4
+      severity_3                        = 4
+      mapi_availability_severity        = 4
+      mapi_latency_severity             = 4
+      alarms_compartment                = "" // Defaults to orchestration compartment
+      alarms_enabled                    = true
+      mapi_api_alarms_enabled           = true
+      mapi_alarms_fleet_format          = "ociokeinteg.oke-integ-mapi-cell%d"
+      mapi_alarms_hostmetrics_fleet     = "ociokeinteg.oke-mp-api-integ"
+      kmon_alarms_enabled               = true
+      kmon_alarms_fleet_format          = "ociokeinteg.oke-integ-kmon-cell%d"
+      worker_alarms_enabled             = true
+      worker_alarms_fleet_format        = "ociokeinteg.oke-integ-wfworker-cell%d"
+      worker_alarms_hostmetrics_fleet   = "ociokeinteg.oke-mp-worker-integ"
+      csi_dataplane_alarms_fleet_format = "integ-oke-clusters-%s-dataplane"
 
       // ODO Configuration
       api_pool_alias_format    = "oke-integ-mapi-cell%d"
@@ -365,12 +367,12 @@ locals {
       splat_host_header_format            = "oke-integ-mapi-cell%d.%s.oci.%s"
       // The following hardcoded compartment name in api.yaml is replaced with
       // orchestration compartment OCID for non-production environments
-      splat_compartment_token_to_replace = "ocid1.compartment.oc1..aaaaaaaa25nt3xxdztunf4mtccovffzqe4mjtyjoerraxrlf7wbjrtu4crxq"
-      splat_mapi_subdomain_format        = "oke-integ-mapi-cell%d"
-      splat_allowed_service_principal    = "okeinteg"
-      splat_allowed_tenancies            = "boat,ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
-      canary_vcn                         = "ocid1.vcn.oc1.iad.amaaaaaa2qd24aiaiy4a4kyv7x4ilzoamlqovopehhomli23oauzsox4sbsa"
-      canary_cidr                        = "10.0.0.0/26"
+      splat_compartment_token_to_replace  = "ocid1.compartment.oc1..aaaaaaaa25nt3xxdztunf4mtccovffzqe4mjtyjoerraxrlf7wbjrtu4crxq"
+      splat_mapi_subdomain_format         = "oke-integ-mapi-cell%d"
+      splat_allowed_service_principal     = "okeinteg"
+      splat_allowed_tenancies             = "boat,ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
+      canary_vcn                          = "ocid1.vcn.oc1.iad.amaaaaaa2qd24aiaiy4a4kyv7x4ilzoamlqovopehhomli23oauzsox4sbsa"
+      canary_cidr                         = "10.0.0.0/26"
 
       // Configuration for image
       image_name = local.io_overlay_uek5_images["20201116"].name
@@ -429,20 +431,22 @@ locals {
       monitor_log_namespace_format = "oke-monitor-cell%d"
       worker_log_namespace_format  = "oke-worker-cell%d"
       // SMS Configuration
-      oke_secrets_namespace = "oke-prod0"
+      oke_secrets_namespace        = "oke-prod0"
 
       // Alarms configuration
-      alarms_enabled                  = true
-      mapi_api_alarms_enabled         = true
-      mapi_alarms_fleet_format        = "oke-mapi-cell%d"
-      mapi_alarms_hostmetrics_fleet   = "oke-mp-api-prod"
-      kmon_alarms_enabled             = true
-      kmon_alarms_fleet_format        = "oke-kmon-cell%d"
-      worker_alarms_enabled           = true
-      worker_alarms_fleet_format      = "oke-wfworker-cell%d"
-      ccm_alarms_enabled              = true
-      ccm_alarms_fleet_format         = "oke-kmi-cell%d"
-      worker_alarms_hostmetrics_fleet = "oke-mp-worker-prod"
+      alarms_enabled                    = true
+      mapi_api_alarms_enabled           = true
+      mapi_alarms_fleet_format          = "oke-mapi-cell%d"
+      mapi_alarms_hostmetrics_fleet     = "oke-mp-api-prod"
+      kmon_alarms_enabled               = true
+      kmon_alarms_fleet_format          = "oke-kmon-cell%d"
+      worker_alarms_enabled             = true
+      worker_alarms_fleet_format        = "oke-wfworker-cell%d"
+      ccm_alarms_enabled                = true
+      csi_alarms_enabled                = true
+      ccm_alarms_fleet_format           = "oke-kmi-cell%d"
+      csi_dataplane_alarms_fleet_format = "prod-oke-clusters-%s-dataplane"
+      worker_alarms_hostmetrics_fleet   = "oke-mp-worker-prod"
 
       // Integration with other OKE components
       etcdop_s3compat_bucket = "tkc-etcd-backup-prd-0"
@@ -650,21 +654,23 @@ locals {
     }
 
     "prd.oc2" = {
-      splunk_enabled = true
+      splunk_enabled              = true
       // Configuration for image
-      image_name = local.selinux_overlay_uek5_images["20201116"].name
-      image_url  = local.selinux_overlay_uek5_images["20201116"].url
+      image_name                  = local.selinux_overlay_uek5_images["20201116"].name
+      image_url                   = local.selinux_overlay_uek5_images["20201116"].url
       // Configuration for policies and dynamic groups
-      cluster_secrets_compartment = "" // This override to no compartment can be removed once the compartment is provisioned in this realm
+      cluster_secrets_compartment = ""
+      // This override to no compartment can be removed once the compartment is provisioned in this realm
     }
 
     "prd.oc3" = {
-      splunk_enabled = true
+      splunk_enabled              = true
       // Configuration for image
-      image_name = local.selinux_overlay_uek5_images["20201116"].name
-      image_url  = local.selinux_overlay_uek5_images["20201116"].url
+      image_name                  = local.selinux_overlay_uek5_images["20201116"].name
+      image_url                   = local.selinux_overlay_uek5_images["20201116"].url
       // Configuration for policies and dynamic groups
-      cluster_secrets_compartment = "" // This override to no compartment can be removed once the compartment is provisioned in this realm
+      cluster_secrets_compartment = ""
+      // This override to no compartment can be removed once the compartment is provisioned in this realm
     }
 
     "prd.oc4" = {
@@ -697,32 +703,33 @@ locals {
       splunk_enabled = true
       // Configuration for image
       // FIXME: Aseem Bajaj: At the time of provisioning of this cell, fill in the following values from local.selinux_overlay_uek5_images
-      image_name = ""
-      image_url  = ""
+      image_name     = ""
+      image_url      = ""
     }
 
     "prd.oc6" = {
       splunk_enabled = true
       // Configuration for image
       // FIXME: Aseem Bajaj: At the time of provisioning of this cell, fill in the following values from local.selinux_overlay_uek5_images
-      image_name = ""
-      image_url  = ""
+      image_name     = ""
+      image_url      = ""
     }
 
     "prd.oc7" = {
       splunk_enabled = true
       // Configuration for image
       // FIXME: Aseem Bajaj: At the time of provisioning of this cell, fill in the following values from local.selinux_overlay_uek5_images
-      image_name = ""
-      image_url  = ""
+      image_name     = ""
+      image_url      = ""
     }
 
     "prd.oc8" = {
       // Configuration for image
-      image_name = local.selinux_overlay_uek5_images["20201116"].name
-      image_url  = local.selinux_overlay_uek5_images["20201116"].url
+      image_name                  = local.selinux_overlay_uek5_images["20201116"].name
+      image_url                   = local.selinux_overlay_uek5_images["20201116"].url
       // Configuration for policies and dynamic groups
-      cluster_secrets_compartment = "" // This override to no compartment can be removed once the compartment is provisioned in this realm
+      cluster_secrets_compartment = ""
+      // This override to no compartment can be removed once the compartment is provisioned in this realm
     }
   }
 
@@ -732,7 +739,7 @@ locals {
     "dev.oc1.us-ashburn-1.cell0"     = {}
     "dev.oc1.eu-frankfurt-1.cell0"   = {}
     "integ.oc1.us-ashburn-1.cell0"   = {}
-    "integ.oc1.us-ashburn-1.cell1" = {
+    "integ.oc1.us-ashburn-1.cell1"   = {
       predecessor                   = "integ.oc1.us-ashburn-1.cell0"
       enable_kaas_regional_instance = false
       oke_secrets_namespace         = "oke-prime-integ-cell1"
@@ -747,7 +754,7 @@ locals {
       oke_secrets_namespace = "oke-prime-polaris-cell1"
     },
     "polaris.oc5.us-tacoma-1.cell0" = {}
-    "prd.oc1.ap-melbourne-1.cell0" = {
+    "prd.oc1.ap-melbourne-1.cell0"  = {
       predecessor = "env.setup.prd.oc1"
       skip_dns    = true
     }
@@ -875,16 +882,30 @@ locals {
     }
   }
 
-  build_regions = flatten([for region in local.regions_under_build :
-  format("prd.%s.%s.cell0", lookup(local.build_region_to_realm, region.public_name, "oc1"), region.public_name)])
+  build_regions = flatten([
+  for region in local.regions_under_build :
+  format("prd.%s.%s.cell0", lookup(local.build_region_to_realm, region.public_name, "oc1"), region.public_name)
+  ])
 
-  production_regions = flatten([for cell, region in local.shepherd_current_regions :
-    [for cell in range(merge({ cell_count = 1 }, lookup(local.overrides, format("prd.%s.%s", lookup(local.region_to_realm, region.public_name, "oc1"), region.public_name), {})).cell_count) :
-  format("prd.%s.%s.cell%s", lookup(local.region_to_realm, region.public_name, "oc1"), region.public_name, cell)]])
+  production_regions = flatten([
+  for cell, region in local.shepherd_current_regions :
+  [
+  for cell in range(merge({
+    cell_count = 1
+  }, lookup(local.overrides, format("prd.%s.%s", lookup(local.region_to_realm, region.public_name, "oc1"), region.public_name), {})).cell_count) :
+  format("prd.%s.%s.cell%s", lookup(local.region_to_realm, region.public_name, "oc1"), region.public_name, cell)
+  ]
+  ])
 
-  polaris_regions = flatten([for region in ["us-sanjose-1", "us-phoenix-1"] :
-    [for cell in range(merge({ cell_count = 1 }, lookup(local.overrides, format("polaris.%s.%s", lookup(local.region_to_realm, region, "oc1"), "us-sanjose-1"), {})).cell_count) :
-  format("polaris.%s.%s.cell%s", lookup(local.region_to_realm, region, "oc1"), region, cell)]])
+  polaris_regions = flatten([
+  for region in ["us-sanjose-1", "us-phoenix-1"] :
+  [
+  for cell in range(merge({
+    cell_count = 1
+  }, lookup(local.overrides, format("polaris.%s.%s", lookup(local.region_to_realm, region, "oc1"), "us-sanjose-1"), {})).cell_count) :
+  format("polaris.%s.%s.cell%s", lookup(local.region_to_realm, region, "oc1"), region, cell)
+  ]
+  ])
 
   cell_overrides = merge(
     //     Sample key: dev.oc1.us-ashburn-1.cell0
@@ -892,17 +913,18 @@ locals {
     //     This allows creation of relevant ETs
     local.defined_cell_overrides,
     {
-      for region in local.production_regions :
-      region => {} if lookup(local.defined_cell_overrides, region, {}) == {}
+    for region in local.production_regions :
+    region => {} if lookup(local.defined_cell_overrides, region, {}) == {}
     },
     {
-      for region in local.build_regions : region => {
-      phase = "region-build_${split(".", region)[2]}" }
+    for region in local.build_regions : region => {
+      phase = "region-build_${split(".", region)[2]}"
+    }
     },
     {
-      for region in local.polaris_regions :
-      region => {} if lookup(local.defined_cell_overrides, region, {}) == {}
-  })
+    for region in local.polaris_regions :
+    region => {} if lookup(local.defined_cell_overrides, region, {}) == {}
+    })
   cell_override_keys   = keys(local.cell_overrides)
   build_regions_nocell = [for region in local.build_regions : split(".cell", region)[0]]
   spectre_regional_et  = compact(distinct([for key in local.cell_override_keys : split(".cell", key)[0]]))

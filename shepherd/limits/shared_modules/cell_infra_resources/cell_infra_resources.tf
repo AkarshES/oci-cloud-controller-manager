@@ -60,8 +60,10 @@ variable "skip_dns" {}
 variable "image_type" {}
 variable "ccm_jira_item" {}
 variable "ccm_alarms_enabled" {}
+variable "csi_alarms_enabled" {}
 variable "ccm_alarm_label_format" {}
 variable "ccm_alarms_fleet_format" {}
+variable "csi_dataplane_alarms_fleet_format" {}
 
 locals {
   cp_vcn_name = var.env_name == "prd" ? format(var.cp_vcn_name_format,"prod") : format(var.cp_vcn_name_format,var.env_name)
@@ -95,8 +97,10 @@ module "alarms" {
   skip_worker_alarms = var.skip_worker_alarms
   ccm_alarm_label_format = var.ccm_alarm_label_format
   ccm_alarms_enabled = var.ccm_alarms_enabled
+  csi_alarms_enabled = var.csi_alarms_enabled
   ccm_jira_item = var.ccm_jira_item
   ccm_alarms_fleet_format = var.ccm_alarms_fleet_format
+  csi_dataplane_alarms_fleet_format = var.csi_dataplane_alarms_fleet_format
 }
 
 
