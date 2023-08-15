@@ -19,4 +19,11 @@ RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://art
   && yum install -y xfsprogs \
   && rm -rf /var/cache/yum
 
+COPY scripts/encrypt-mount /sbin/encrypt-mount
+COPY scripts/encrypt-umount /sbin/encrypt-umount
+COPY scripts/rpm-host /sbin/rpm-host
+RUN chmod 755 /sbin/encrypt-mount
+RUN chmod 755 /sbin/encrypt-umount
+RUN chmod 755 /sbin/rpm-host
+
 COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/* /usr/local/bin/
