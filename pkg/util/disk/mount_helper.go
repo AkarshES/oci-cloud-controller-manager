@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -28,8 +29,59 @@ import (
 
 const (
 	directoryDeletePollInterval = 5 * time.Second
-	EncryptedUmountCommand      = "umount.oci-fss"
+	EncryptedUmountCommand      = "encrypt-umount"
+
+	EncryptionMountCommand = "encrypt-mount"
+
 )
+
+
+func  MountWithEncrypt(logger *zap.SugaredLogger, source string, target string, fstype string, options []string) error {
+	mountArgs, mountArgsLogStr := MakeMountArgs(source, target, fstype, options)
+	mountArgsLogStr = EncryptionMountCommand + " " + mountArgsLogStr
+
+	logger.Debug("Mounting cmd (%s) with arguments (%s)", EncryptionMountCommand, mountArgsLogStr)
+	command := exec.Command(EncryptionMountCommand, mountArgs...)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		if err.Error() == "wait: no child processes" {
+			if command.ProcessState.Success() {
+				// We don't consider errNoChildProcesses an error if the process itself succeeded (see - k/k issue #103753).
+				return nil
+			}
+			// Rewrite err with the actual exit error of the process.
+			err = &exec.ExitError{ProcessState: command.ProcessState}
+		}
+		logger.Errorf("Mount failed: %v\nMounting command: %s\nMounting arguments: %s\nOutput: %s\n", err, EncryptionMountCommand, mountArgsLogStr, string(output))
+		return fmt.Errorf("mount failed: %v\nMounting command: %s\nMounting arguments: %s\nOutput: %s",
+			err, EncryptionMountCommand, mountArgsLogStr, string(output))
+	}
+	return err
+}
+
+func MakeMountArgs(source, target, fstype string, options []string) (mountArgs []string, mountArgsLogStr string) {
+	// Build mount command as follows:
+	//   mount [$mountFlags] [-t $fstype] [-o $options] [$source] $target
+	mountArgs = []string{}
+	mountArgsLogStr = ""
+
+	if len(fstype) > 0 {
+		mountArgs = append(mountArgs, "-t", fstype)
+		mountArgsLogStr += strings.Join(mountArgs, " ")
+	}
+	if len(options) > 0 {
+		mountArgs = append(mountArgs, "-o", strings.Join(options, ","))
+		mountArgsLogStr += " -o " + strings.Join(options, ",")
+	}
+	if len(source) > 0 {
+		mountArgs = append(mountArgs, source)
+		mountArgsLogStr += " " + source
+	}
+	mountArgs = append(mountArgs, target)
+	mountArgsLogStr += " " + target
+
+	return mountArgs, mountArgsLogStr
+}
 
 // UnmountPath is a common unmount routine that unmounts the given path and
 // deletes the remaining directory if successful.
