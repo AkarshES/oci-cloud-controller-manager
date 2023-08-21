@@ -29,14 +29,14 @@ import (
 
 const (
 	testMinimumVolumeSizeInBytes int64 = 50 * client.GiB
-	testTimeout = 15*time.Second
-	testPollInterval = 5*time.Second
+	testTimeout                        = 15 * time.Second
+	testPollInterval                   = 5 * time.Second
 )
 
 var (
 	inTransitEncryptionEnabled  = true
 	inTransitEncryptionDisabled = false
-	errNotFound = errors.New("not found")
+	errNotFound                 = errors.New("not found")
 	instances                   = map[string]*core.Instance{
 		"inTransitEnabled": {
 			LaunchOptions: &core.LaunchOptions{
@@ -57,25 +57,25 @@ var (
 
 	volumes = map[string]*core.Volume{
 		"volume-in-provisioning-state": {
-			DisplayName: common.String("volume-in-provisioning-state"),
-			LifecycleState: core.VolumeLifecycleStateProvisioning,
-			SizeInMBs: common.Int64(50000),
+			DisplayName:        common.String("volume-in-provisioning-state"),
+			LifecycleState:     core.VolumeLifecycleStateProvisioning,
+			SizeInMBs:          common.Int64(50000),
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id: common.String("volume-in-provisioning-state"),
+			Id:                 common.String("volume-in-provisioning-state"),
 		},
-		"volume-in-available-state":{
-			DisplayName: common.String("volume-in-available-state"),
-			LifecycleState: core.VolumeLifecycleStateAvailable,
-			SizeInMBs: common.Int64(50000),
+		"volume-in-available-state": {
+			DisplayName:        common.String("volume-in-available-state"),
+			LifecycleState:     core.VolumeLifecycleStateAvailable,
+			SizeInMBs:          common.Int64(50000),
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id: common.String("volume-in-available-state"),
+			Id:                 common.String("volume-in-available-state"),
 		},
 		"clone-volume-in-provisioning-state": {
-			DisplayName: common.String("clone-volume-in-provisioning-state"),
-			LifecycleState: core.VolumeLifecycleStateProvisioning,
-			SizeInMBs: common.Int64(50000),
+			DisplayName:        common.String("clone-volume-in-provisioning-state"),
+			LifecycleState:     core.VolumeLifecycleStateProvisioning,
+			SizeInMBs:          common.Int64(50000),
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id: common.String("clone-volume-in-provisioning-state"),
+			Id:                 common.String("clone-volume-in-provisioning-state"),
 		},
 	}
 
@@ -107,7 +107,7 @@ var (
 				},
 			},
 			CapacityRange: &csi.CapacityRange{
-				RequiredBytes: 50000*client.MiB,
+				RequiredBytes: 50000 * client.MiB,
 			},
 			VolumeCapabilities: []*csi.VolumeCapability{{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -128,22 +128,21 @@ var (
 
 	volume_attachments = map[string]*core.IScsiVolumeAttachment{
 		"volume-attachment-stuck-in-detaching-state": {
-			DisplayName: common.String("volume-attachment-stuck-in-detaching-state"),
-			LifecycleState: core.VolumeAttachmentLifecycleStateDetaching,
+			DisplayName:        common.String("volume-attachment-stuck-in-detaching-state"),
+			LifecycleState:     core.VolumeAttachmentLifecycleStateDetaching,
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id: common.String("volume-attachment-stuck-in-detaching-state"),
-			InstanceId: common.String("sample-instance-id"),
+			Id:                 common.String("volume-attachment-stuck-in-detaching-state"),
+			InstanceId:         common.String("sample-instance-id"),
 		},
 		"volume-attachment-stuck-in-attaching-state": {
-			DisplayName: common.String("volume-attachment-stuck-in-attaching-state"),
-			LifecycleState: core.VolumeAttachmentLifecycleStateAttaching,
+			DisplayName:        common.String("volume-attachment-stuck-in-attaching-state"),
+			LifecycleState:     core.VolumeAttachmentLifecycleStateAttaching,
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id: common.String("volume-attachment-stuck-in-attaching-state"),
-			InstanceId: common.String("sample-provider-id"),
+			Id:                 common.String("volume-attachment-stuck-in-attaching-state"),
+			InstanceId:         common.String("sample-provider-id"),
 		},
 	}
 )
-
 
 type MockOCIClient struct{}
 
@@ -171,8 +170,8 @@ func (MockOCIClient) Identity() client.IdentityInterface {
 	return &MockIdentityClient{}
 }
 
-type MockBlockStorageClient struct{
-	bs	util.MockOCIBlockStorageClient
+type MockBlockStorageClient struct {
+	bs util.MockOCIBlockStorageClient
 }
 
 // AwaitVolumeCloneAvailableOrTimeout implements client.BlockStorageInterface.
@@ -275,12 +274,25 @@ func (c *MockBlockStorageClient) GetVolume(ctx context.Context, id string) (*cor
 		}, nil
 	} else if id == "valid_volume_id_valid_old_size_fail" {
 		ad := "zkJl:US-ASHBURN-AD-1"
+		vpuspergb := int64(10)
 		var oldSizeInBytes int64 = 2147483648
 		oldSizeInGB := csi_util.RoundUpSize(oldSizeInBytes, 1*client.GiB)
 		return &core.Volume{
 			Id:                 &id,
 			AvailabilityDomain: &ad,
 			SizeInGBs:          &oldSizeInGB,
+			VpusPerGB:          &vpuspergb,
+		}, nil
+	} else if id == "uhp_volume_id" {
+		ad := "zkJl:US-ASHBURN-AD-1"
+		vpuspergb := int64(40)
+		var oldSizeInBytes int64 = 2147483648
+		oldSizeInGB := csi_util.RoundUpSize(oldSizeInBytes, 1*client.GiB)
+		return &core.Volume{
+			Id:                 &id,
+			AvailabilityDomain: &ad,
+			SizeInGBs:          &oldSizeInGB,
+			VpusPerGB:          &vpuspergb,
 		}, nil
 	} else {
 		return volumes[id], nil
@@ -538,7 +550,7 @@ func (p *MockProvisionerClient) LoadBalancer(*zap.SugaredLogger, string, string,
 	return &MockLoadBalancerClient{}
 }
 
-type MockComputeClient struct{
+type MockComputeClient struct {
 	compute util.MockOCIComputeClient
 }
 
@@ -1027,7 +1039,6 @@ func TestControllerDriver_DeleteVolume(t *testing.T) {
 	}
 }
 
-
 func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 	type args struct {
 		ctx context.Context
@@ -1040,11 +1051,11 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name:   "FindActiveVolumeAttachment times out",
+			name: "FindActiveVolumeAttachment times out",
 			args: args{
 				req: &csi.ControllerPublishVolumeRequest{
 					VolumeId: "find-active-volume-attachment-timeout-volume",
-					NodeId: "sample-node-id",
+					NodeId:   "sample-node-id",
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
 							Mount: &csi.VolumeCapability_MountVolume{},
@@ -1059,11 +1070,11 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 			wantErr: errors.New("context deadline exceeded"),
 		},
 		{
-			name:   "WaitForVolumeAttached times out",
+			name: "WaitForVolumeAttached times out",
 			args: args{
 				req: &csi.ControllerPublishVolumeRequest{
 					VolumeId: "volume-attachment-stuck-in-attaching-state",
-					NodeId: "sample-provider-id",
+					NodeId:   "sample-provider-id",
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
 							Mount: &csi.VolumeCapability_MountVolume{},
@@ -1086,10 +1097,10 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 				KubeClient: &util.MockKubeClient{
 					CoreClient: &util.MockCoreClient{},
 				},
-				logger:     zap.S(),
-				config:     &providercfg.Config{CompartmentID: ""},
-				client:     NewClientProvisioner(nil, &MockBlockStorageClient{}, nil),
-				util:       &csi_util.Util{Logger: logging.Logger().Sugar()},
+				logger: zap.S(),
+				config: &providercfg.Config{CompartmentID: ""},
+				client: NewClientProvisioner(nil, &MockBlockStorageClient{}, nil),
+				util:   &csi_util.Util{Logger: logging.Logger().Sugar()},
 			}}
 			got, err := d.ControllerPublishVolume(ctx, tt.args.req)
 			if tt.wantErr == nil && err != nil {
@@ -1123,7 +1134,7 @@ func TestControllerDriver_ControllerUnpublishVolume(t *testing.T) {
 			args: args{
 				req: &csi.ControllerUnpublishVolumeRequest{
 					VolumeId: "volume-attachment-stuck-in-detaching-state",
-					NodeId: "sample-node-id",
+					NodeId:   "sample-node-id",
 				},
 			},
 			want:    nil,
@@ -1134,7 +1145,7 @@ func TestControllerDriver_ControllerUnpublishVolume(t *testing.T) {
 			args: args{
 				req: &csi.ControllerUnpublishVolumeRequest{
 					VolumeId: "find-volume-attachment-timeout",
-					NodeId: "sample-node-id",
+					NodeId:   "sample-node-id",
 				},
 			},
 			want:    nil,
@@ -1149,10 +1160,10 @@ func TestControllerDriver_ControllerUnpublishVolume(t *testing.T) {
 				KubeClient: &util.MockKubeClient{
 					CoreClient: &util.MockCoreClient{},
 				},
-				logger:     zap.S(),
-				config:     &providercfg.Config{CompartmentID: ""},
-				client:     NewClientProvisioner(nil, &MockBlockStorageClient{}, nil),
-				util:       &csi_util.Util{Logger: logging.Logger().Sugar()},
+				logger: zap.S(),
+				config: &providercfg.Config{CompartmentID: ""},
+				client: NewClientProvisioner(nil, &MockBlockStorageClient{}, nil),
+				util:   &csi_util.Util{Logger: logging.Logger().Sugar()},
 			}}
 			got, err := d.ControllerUnpublishVolume(ctx, tt.args.req)
 			if tt.wantErr == nil && err != nil {
@@ -1248,6 +1259,24 @@ func TestControllerDriver_ControllerExpandVolume(t *testing.T) {
 			want:    nil,
 			wantErr: errors.New("Update volume failed"),
 		},
+		{
+			name:   "Uhp volume expand success in ControllerExpandVolume",
+			fields: fields{},
+			args: args{
+				ctx: nil,
+				req: &csi.ControllerExpandVolumeRequest{
+					VolumeId: "uhp_volume_id",
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: int64(csi_util.MaximumVolumeSizeInBytes),
+					},
+				},
+			},
+			want: &csi.ControllerExpandVolumeResponse{
+				CapacityBytes:         int64(csi_util.MaximumVolumeSizeInBytes),
+				NodeExpansionRequired: true,
+			},
+			wantErr: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1262,7 +1291,9 @@ func TestControllerDriver_ControllerExpandVolume(t *testing.T) {
 			if tt.wantErr == nil && err != nil {
 				t.Errorf("got error %q, want none", err)
 			}
-			if tt.wantErr != nil && !strings.Contains(err.Error(), tt.wantErr.Error()) {
+			if tt.wantErr != nil && err == nil {
+				t.Errorf("want error %q, got none", tt.wantErr)
+			} else if tt.wantErr != nil && !strings.Contains(err.Error(), tt.wantErr.Error()) {
 				t.Errorf("want error %q to include %q", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -1529,9 +1560,9 @@ func TestExtractVolumeParameters(t *testing.T) {
 			volumeParameters: VolumeParameters{
 				diskEncryptionKey:   "",
 				attachmentParameter: make(map[string]string),
-				vpusPerGB:           10,
+				vpusPerGB:           40,
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		"if invalid parameter for performance level then return error": {
 			storageParameters: map[string]string{

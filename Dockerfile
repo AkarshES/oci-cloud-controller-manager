@@ -27,6 +27,7 @@ COPY scripts/encrypt-mount /sbin/encrypt-mount
 COPY scripts/encrypt-umount /sbin/encrypt-umount
 COPY scripts/rpm-host /sbin/rpm-host
 COPY scripts/chroot-bash /sbin/chroot-bash
+
 RUN chmod 755 /sbin/encrypt-mount
 RUN chmod 755 /sbin/encrypt-umount
 RUN chmod 755 /sbin/rpm-host

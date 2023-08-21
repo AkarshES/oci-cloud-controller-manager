@@ -54,7 +54,7 @@ const (
 	DataSourceVolumeSnapshotAPIGroup = "snapshot.storage.k8s.io"
 	DataSourceVolumePVCKind          = "PersistentVolumeClaim"
 
-	FsTypeLustre 					 = "lustre"
+	FsTypeLustre = "lustre"
 )
 
 // PVCTestJig is a jig to help create PVC tests.
@@ -206,6 +206,7 @@ func (j *PVCTestJig) NewPVCTemplateCSI(namespace string, volumeSize string, scNa
 	pvc = j.pvcAddVolumeMode(pvc, volumeMode)
 	return pvc
 }
+
 // newPVCTemplateStaticFSS returns the default template for this jig, but
 // does not actually create the PVC.  The default PVC has the same name
 // as the jig
@@ -333,7 +334,6 @@ func (j *PVCTestJig) CreatePVCorFailStaticLustre(namespace, volumeName, volumeSi
 	return j.CheckPVCorFail(pvc, tweak, namespace, volumeSize)
 }
 
-
 // CreatePVCorFailDynamicFSS creates a new claim based on the jig's
 // defaults. Callers can provide a function to tweak the claim object
 // before it is created.
@@ -407,7 +407,6 @@ func (j *PVCTestJig) CreateAndAwaitPVCOrFailStaticLustre(namespace, volumeName, 
 	pvc := j.CreatePVCorFailStaticLustre(namespace, volumeName, volumeSize, tweak)
 	return j.CheckAndAwaitPVCOrFail(pvc, namespace, v1.ClaimBound)
 }
-
 
 // CreateAndAwaitPVCOrFailCSI creates a new PVC based on the
 // jig's defaults, waits for it to become ready, and then sanity checks it and
@@ -534,7 +533,6 @@ func (j *PVCTestJig) pvAddMountOptions(pv *v1.PersistentVolume,
 	return pv
 }
 
-
 // newPVTemplateFSS returns the default template for this jig, but
 // does not actually create the PV.  The default PV has the same name
 // as the jig
@@ -567,16 +565,15 @@ func (j *PVCTestJig) newPVTemplateLustre(namespace, volumeHandle string, mountOp
 
 	pv = j.pvAddPersistentVolumeSource(pv, v1.PersistentVolumeSource{
 		CSI: &v1.CSIPersistentVolumeSource{
-			Driver:       driver.LustreDriverName,
-			VolumeHandle: volumeHandle,
-			FSType: FsTypeLustre,
+			Driver:           driver.LustreDriverName,
+			VolumeHandle:     volumeHandle,
+			FSType:           FsTypeLustre,
 			VolumeAttributes: pvVolumeAttributes,
 		},
 	})
 
 	return pv
 }
-
 
 // newPVTemplateCSI returns the default template for this jig, but
 // does not actually create the PV.  The default PV has the same name
@@ -638,7 +635,6 @@ func (j *PVCTestJig) CreatePVorFailLustre(namespace, volumeHandle string, mountO
 	}
 	return result
 }
-
 
 // CreatePVorFail creates a new claim based on the jig's
 // defaults. Callers can provide a function to tweak the claim object
@@ -740,6 +736,61 @@ func (j *PVCTestJig) NewPodForCSI(name string, namespace string, claimName strin
 			NodeSelector: map[string]string{
 				plugin.LabelZoneFailureDomain: adLabel,
 			},
+		},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		Failf("Pod %q Create API error: %v", pod.Name, err)
+	}
+
+	// Waiting for pod to be running
+	err = j.waitTimeoutForPodRunningInNamespace(pod.Name, namespace, slowPodStartTimeout)
+	if err != nil {
+		Failf("Pod %q is not Running: %v", pod.Name, err)
+	}
+	zap.S().With(pod.Namespace).With(pod.Name).Info("CSI POD is created.")
+	return pod.Name
+}
+
+// newPODTemplate returns the default template for this jig,
+// creates the Pod. Attaches PVC to the Pod which is created by CSI
+func (j *PVCTestJig) NewPodWithLabels(name string, namespace string, claimName string, labels map[string]string) string {
+	By("Creating a pod with the claiming PVC created by CSI")
+
+	pod, err := j.KubeClient.CoreV1().Pods(namespace).Create(context.Background(), &v1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Pod",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: j.Name,
+			Namespace:    namespace,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name:    name,
+					Image:   centos,
+					Command: []string{"/bin/sh"},
+					Args:    []string{"-c", "echo 'Hello World' > /data/testdata.txt; while true; do echo $(date -u) >> /data/out.txt; sleep 5; done"},
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "persistent-storage",
+							MountPath: "/data",
+						},
+					},
+				},
+			},
+			Volumes: []v1.Volume{
+				{
+					Name: "persistent-storage",
+					VolumeSource: v1.VolumeSource{
+						PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+							ClaimName: claimName,
+						},
+					},
+				},
+			},
+			NodeSelector: map[string]string{},
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
@@ -1592,3 +1643,54 @@ func (j *PVCTestJig) InitialiseSnapClient(snapClient snapclientset.Interface) {
 	return
 }
 
+func (j *PVCTestJig) VerifyMultipathEnabled(ctx context.Context, client ocicore.ComputeClient, pvcName string, ns string, compartmentId string) {
+	pvc, err := j.KubeClient.CoreV1().PersistentVolumeClaims(ns).Get(context.Background(), pvcName, metav1.GetOptions{})
+	if err != nil {
+		Failf("Error getting pvc %s: %v", pvcName, err)
+	}
+	pvName := pvc.Spec.VolumeName
+	Logf("Found pvc %s bound to pv %s", pvcName, pvName)
+	pv, err := j.KubeClient.CoreV1().PersistentVolumes().Get(context.Background(), pvName, metav1.GetOptions{})
+	if err != nil {
+		Failf("Error getting pv %s: %v", pvName, err)
+	}
+	if pv.Spec.CSI == nil || pv.Spec.CSI.VolumeHandle == "" {
+		Failf("Unable to find volume ID in pv object")
+	}
+	volumeId := pv.Spec.CSI.VolumeHandle
+
+	request := ocicore.ListVolumeAttachmentsRequest{
+		CompartmentId: &compartmentId,
+		VolumeId:      &volumeId,
+	}
+
+	vaList, err := client.ListVolumeAttachments(ctx, request)
+	if err != nil {
+		Failf("Error listing volume attachments: %v", err)
+	}
+
+	if len(vaList.Items) == 0 {
+		Failf("No volume attachments found for volume %v", volumeId)
+	}
+
+	isMultipath := vaList.Items[0].GetIsMultipath()
+
+	if *isMultipath {
+		Logf("Verified that the given volume is attached with multipath enabled")
+	} else {
+		Failf("No volume attachments found for volume %v", volumeId)
+	}
+}
+
+func (j *PVCTestJig) GetVolumeNameFromPVC(pvcName string, ns string) string {
+	pvc, err := j.KubeClient.CoreV1().PersistentVolumeClaims(ns).Get(context.Background(), pvcName, metav1.GetOptions{})
+	if err != nil {
+		Failf("Error getting pvc %s: %v", pvcName, err)
+	}
+	if pvc.Spec.VolumeName == "" {
+		Failf("Could not obtain pv name from pvc %s", pvcName)
+	}
+	pvName := pvc.Spec.VolumeName
+	Logf("Found pvc %s bound to pv %s", pvcName, pvName)
+	return pvName
+}
