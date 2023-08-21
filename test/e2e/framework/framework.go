@@ -51,6 +51,7 @@ const (
 	ClassOCILowCost    = "oci-bv-low"
 	ClassOCIBalanced   = "oci-bal"
 	ClassOCIHigh       = "oci-bv-high"
+	ClassOCIUHP        = "oci-uhp"
 	ClassOCIKMS        = "oci-kms"
 	ClassOCIExt3       = "oci-ext3"
 	ClassOCIXfs        = "oci-xfs"
@@ -61,7 +62,8 @@ const (
 	MaxVolumeBlock     = "100Gi"
 	VolumeFss          = "1Gi"
 
-	VSClassDefault = "oci-snapclass"
+	VSClassDefault    = "oci-snapclass"
+	NodeHostnameLabel = "kubernetes.io/hostname"
 )
 
 var (
@@ -115,9 +117,10 @@ var (
 	reservedIP                    string // Testing public reserved IP feature
 	architecture                  string
 	volumeHandle                  string // The FSS mount volume handle
-	lustreVolumeHandle			  string // The Lustre mount volume handle
+	lustreVolumeHandle            string // The Lustre mount volume handle
 	lustreSubnetCidr              string // The Lustre Subnet Cidr
 	staticSnapshotCompartmentOCID string // Compartment ID for cross compartment snapshot test
+	createUhpNodepool             bool   // Creates UHP nodepool instead of normal nodepool
 	namespace                     string // Namespace for pre-upgrade and post-upgrade testing
 	isPreUpgradeBool              bool
 	isPostUpgradeBool             bool
@@ -186,6 +189,7 @@ func init() {
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
 
 	flag.StringVar(&staticSnapshotCompartmentOCID, "static-snapshot-compartment-id", "", "Compartment ID for cross compartment snapshot test")
+	flag.BoolVar(&createUhpNodepool, "create-uhp-nodepool", false, "Creates UHP nodepool instead of normal nodepool")
 
 	flag.StringVar(&isPreUpgradeString, "pre-upgrade", "", "If true pre upgrade testing will be done.")
 	flag.StringVar(&isPostUpgradeString, "post-upgrade", "", "If true post upgrade testing will be done.")
@@ -325,13 +329,14 @@ type Framework struct {
 	ReservedIP               string
 	Architecture             string
 
-	VolumeHandle string
+	VolumeHandle       string
 	LustreVolumeHandle string
 
 	LustreSubnetCidr string
 
 	// Compartment ID for cross compartment snapshot test
 	StaticSnapshotCompartmentOcid string
+	CreateUhpNodepool             bool
 
 	UpgradeTestingNamespace string
 	IsPreUpgrade            bool
@@ -415,6 +420,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		LustreVolumeHandle:            lustreVolumeHandle,
 		LustreSubnetCidr:              lustreSubnetCidr,
 		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
+		CreateUhpNodepool:             createUhpNodepool,
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
 	}
@@ -501,6 +507,8 @@ func (f *Framework) Initialize() {
 	Logf("Lustre Subnet CIDR is : %s", f.LustreSubnetCidr)
 	f.StaticSnapshotCompartmentOcid = staticSnapshotCompartmentOCID
 	Logf("Static Snapshot Compartment OCID: %s", f.StaticSnapshotCompartmentOcid)
+	f.CreateUhpNodepool = createUhpNodepool
+	Logf("Create Uhp Nodepool: %v", f.CreateUhpNodepool)
 	f.CMEKKMSKey = cmekKMSKey
 	Logf("CMEK KMS Key: %s", f.CMEKKMSKey)
 	f.NsgOCIDS = nsgOCIDS
@@ -893,4 +901,18 @@ func (f *Framework) setImages() {
 		nginx = Nginx
 		centos = Centos
 	}
+}
+
+func (f *CloudProviderFramework) GetCompartmentId(setupF Framework) string {
+	compartmentId := ""
+	if setupF.Compartment1 != "" {
+		compartmentId = setupF.Compartment1
+	} else if f.CloudProviderConfig.CompartmentID != "" {
+		compartmentId = f.CloudProviderConfig.CompartmentID
+	} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+		compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+	} else {
+		Failf("Compartment Id undefined.")
+	}
+	return compartmentId
 }
