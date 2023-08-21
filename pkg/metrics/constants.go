@@ -70,4 +70,5 @@ const (
 	ResourceOCIDDimension     = "resourceOCID"
 	ComponentDimension        = "component"
 	BackendSetsCountDimension = "backendSetsCount"
+	VolumeVpusPerGBDimension  = "vpusPerGB"
 )
