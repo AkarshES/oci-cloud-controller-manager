@@ -125,7 +125,12 @@ func (d FSSNodeDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVo
 	}
 
 	source := fmt.Sprintf("%s:%s", mountTargetIP, exportPath)
-	err = mounter.Mount(source, targetPath, fsType, options)
+
+	if encryptInTransit {
+		err = disk.MountWithEncrypt(logger, source, targetPath, fsType, options)
+	} else {
+		err = mounter.Mount(source, targetPath, fsType, options)
+	}
 	if err != nil {
 		logger.With(zap.Error(err)).Error("failed to mount volume to staging target path.")
 		return nil, status.Error(codes.Internal, err.Error())
