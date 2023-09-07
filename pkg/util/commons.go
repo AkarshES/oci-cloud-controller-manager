@@ -93,7 +93,7 @@ func GetMetricDimensionForComponent(err string, component string) string {
 	return fmt.Sprintf("%s_%s", component, err)
 }
 
-func GetHttpStatusCode(err error) (int) {
+func GetHttpStatusCode(err error) int {
 	statusCode := 200
 	err = metricErrors.Cause(err)
 	if err != nil {

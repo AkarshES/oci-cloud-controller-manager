@@ -35,6 +35,7 @@ const (
 
 	JobCompletionTimeout       = 5 * time.Minute
 	deploymentAvailableTimeout = 5 * time.Minute
+	CloneAvailableTimeout      = 10 * time.Minute
 
 	// Expected number of statefulsets to be created during upgrade testing.
 	ExpectedStatefulSets = 6

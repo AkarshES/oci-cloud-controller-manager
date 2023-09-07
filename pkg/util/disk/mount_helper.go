@@ -24,7 +24,9 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"k8s.io/kubernetes/pkg/volume/util/hostutil"
 	"k8s.io/mount-utils"
+	utilexec "k8s.io/utils/exec"
 )
 
 const (
@@ -32,11 +34,9 @@ const (
 	EncryptedUmountCommand      = "encrypt-umount"
 
 	EncryptionMountCommand = "encrypt-mount"
-
 )
 
-
-func  MountWithEncrypt(logger *zap.SugaredLogger, source string, target string, fstype string, options []string) error {
+func MountWithEncrypt(logger *zap.SugaredLogger, source string, target string, fstype string, options []string) error {
 	mountArgs, mountArgsLogStr := MakeMountArgs(source, target, fstype, options)
 	mountArgsLogStr = EncryptionMountCommand + " " + mountArgsLogStr
 
@@ -149,4 +149,70 @@ func UnmountWithEncrypt(logger *zap.SugaredLogger, target string) error {
 	}
 	logger.Debugf("unmount output: %v", string(output))
 	return nil
+}
+
+func getDiskFormat(ex utilexec.Interface, disk string, logger *zap.SugaredLogger) (string, error) {
+	args := []string{"-p", "-s", "TYPE", "-s", "PTTYPE", "-o", "export", disk}
+	logger.With(disk).Infof("Attempting to determine if disk %q is formatted using blkid with args: %q", disk, args)
+	dataOut, err := ex.Command("blkid", args...).CombinedOutput()
+	output := string(dataOut)
+	logger.Infof("Output: %q", output)
+
+	if err != nil {
+		if exit, ok := err.(utilexec.ExitError); ok {
+			if exit.ExitStatus() == 2 {
+				// Disk device is unformatted.
+				// For `blkid`, if the specified token (TYPE/PTTYPE, etc) was
+				// not found, or no (specified) devices could be identified, an
+				// exit code of 2 is returned.
+				return "", nil
+			}
+		}
+		logger.With(disk).Errorf("Could not determine if disk %q is formatted (%v)", disk, err)
+		return "", err
+	}
+
+	var fstype, pttype string
+
+	lines := strings.Split(output, "\n")
+	for _, l := range lines {
+		if len(l) <= 0 {
+			// Ignore empty line.
+			continue
+		}
+		cs := strings.Split(l, "=")
+		if len(cs) != 2 {
+			return "", fmt.Errorf("blkid returns invalid output: %s", output)
+		}
+		// TYPE is filesystem type, and PTTYPE is partition table type, according
+		// to https://www.kernel.org/pub/linux/utils/util-linux/v2.21/libblkid-docs/.
+		if cs[0] == "TYPE" {
+			fstype = cs[1]
+		} else if cs[0] == "PTTYPE" {
+			pttype = cs[1]
+		}
+	}
+
+	if len(pttype) > 0 {
+		logger.With(disk).Infof("Disk %s detected partition table type: %s", disk, pttype)
+		// Returns a special non-empty string as filesystem type, then kubelet
+		// will not format it.
+		return "unknown data, probably partitions", nil
+	}
+
+	return fstype, nil
+}
+
+func deviceOpened(pathname string, logger *zap.SugaredLogger) (bool, error) {
+	hostUtil := hostutil.NewHostUtil()
+	exists, err := hostUtil.PathExists(pathname)
+	if err != nil {
+		logger.With(zap.Error(err)).Errorf("Failed to find is path exists %s", pathname)
+		return false, err
+	}
+	if !exists {
+		logger.Infof("Path does not exist %s", pathname)
+		return false, nil
+	}
+	return hostUtil.DeviceOpened(pathname)
 }
