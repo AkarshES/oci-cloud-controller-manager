@@ -16,7 +16,7 @@ import (
 	"k8s.io/kubernetes/pkg/volume"
 	"k8s.io/kubernetes/pkg/volume/util/hostutil"
 
-	"github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
+	csi_util "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util/disk"
 )
@@ -24,7 +24,7 @@ import (
 const (
 	maxVolumesPerNode               = 32
 	volumeOperationAlreadyExistsFmt = "An operation for the volume: %s already exists."
-	FSTypeXfs						= "xfs"
+	FSTypeXfs                       = "xfs"
 )
 
 // NodeStageVolume mounts the volume to a staging path on the node.
@@ -174,6 +174,17 @@ func (d BlockVolumeNodeDriver) NodeStageVolume(ctx context.Context, req *csi.Nod
 		if !hasMountOption(options, "nouuid") {
 			options = append(options, "nouuid")
 		}
+	}
+
+	existingFs, err := mountHandler.GetDiskFormat(devicePath)
+	if err != nil {
+		logger.With("devicePath", devicePath, zap.Error(err)).Error("GetDiskFormatFailed")
+	}
+
+	if existingFs != "" && existingFs != fsType {
+		returnError := fmt.Sprintf("FS Type mismatch detected. The existing fs type on the volume: %q doesn't match the requested fs type: %q. Please change fs type in PV to match the existing fs type.", existingFs, fsType)
+		logger.Error(returnError)
+		return nil, status.Error(codes.Internal, returnError)
 	}
 
 	logger.With("devicePath", devicePath,
@@ -380,7 +391,7 @@ func (d BlockVolumeNodeDriver) NodePublishVolume(ctx context.Context, req *csi.N
 		}
 
 		if needsResize {
-			logger.Info("Starting to expand volume restored from snapshot")
+			logger.Info("Starting to expand volume to requested size")
 
 			requestedSize, err := strconv.ParseInt(req.PublishContext[newSize], 10, 64)
 			if err != nil {
@@ -392,24 +403,24 @@ func (d BlockVolumeNodeDriver) NodePublishVolume(ctx context.Context, req *csi.N
 			var devicePath string
 
 			switch attachment {
-				case attachmentTypeISCSI:
-					scsiInfo, err := csi_util.ExtractISCSIInformation(req.PublishContext)
-					if err != nil {
-						logger.With(zap.Error(err)).Error("Failed to get SCSI info from publish context.")
-						return nil, status.Error(codes.InvalidArgument, "PublishContext is invalid.")
-					}
+			case attachmentTypeISCSI:
+				scsiInfo, err := csi_util.ExtractISCSIInformation(req.PublishContext)
+				if err != nil {
+					logger.With(zap.Error(err)).Error("Failed to get SCSI info from publish context.")
+					return nil, status.Error(codes.InvalidArgument, "PublishContext is invalid.")
+				}
 
-					// Get the device path using the publish context
-					devicePath = csi_util.GetDevicePath(scsiInfo)
-				case attachmentTypeParavirtualized:
-					devicePath, ok = req.PublishContext[device]
-					if !ok {
-						logger.Error("Unable to get the device from the attribute list")
-						return nil, status.Error(codes.InvalidArgument, "Unable to get the device from the attribute list")
-					}
-				default:
-					logger.Error("unknown attachment type. supported attachment types are iscsi and paravirtualized")
-					return nil, status.Error(codes.InvalidArgument, "unknown attachment type. supported attachment types are iscsi and paravirtualized")
+				// Get the device path using the publish context
+				devicePath = csi_util.GetDevicePath(scsiInfo)
+			case attachmentTypeParavirtualized:
+				devicePath, ok = req.PublishContext[device]
+				if !ok {
+					logger.Error("Unable to get the device from the attribute list")
+					return nil, status.Error(codes.InvalidArgument, "Unable to get the device from the attribute list")
+				}
+			default:
+				logger.Error("unknown attachment type. supported attachment types are iscsi and paravirtualized")
+				return nil, status.Error(codes.InvalidArgument, "unknown attachment type. supported attachment types are iscsi and paravirtualized")
 			}
 
 			logger.With("devicePath", devicePath).Infof("Extracted device path")
@@ -615,7 +626,7 @@ func (d BlockVolumeNodeDriver) NodeGetVolumeStats(ctx context.Context, req *csi.
 	}, nil
 }
 
-//NodeExpandVolume returns the expand of the volume
+// NodeExpandVolume returns the expand of the volume
 func (d BlockVolumeNodeDriver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {

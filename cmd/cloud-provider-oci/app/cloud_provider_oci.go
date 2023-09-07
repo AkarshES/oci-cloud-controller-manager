@@ -161,6 +161,7 @@ manager and oci volume provisioner. It embeds the cloud specific control loops s
 	csiFlagSet.DurationVar(&csioption.Resync, "csi-resync", 10*time.Minute, "Resync interval of the controller.")
 	csiFlagSet.DurationVar(&csioption.Timeout, "csi-timeout", 15*time.Second, "Timeout for waiting for attaching or detaching the volume.")
 	csiFlagSet.BoolVar(&csioption.EnableResizer, "csi-bv-expansion-enabled", false, "Enables go routine csi-resizer.")
+	csiFlagSet.UintVar(&csioption.FinalizerThreads, "cloning-protection-threads", 1, "Number of simultaneously running threads, handling cloning finalizer removal")
 	csiFlagSet.Var(utilflag.NewMapStringBool(&csioption.FeatureGates), "csi-feature-gates", "A set of key=value pairs that describe feature gates for alpha/experimental features. ")
 
 	verflag.AddFlags(namedFlagSets.FlagSet("global"))

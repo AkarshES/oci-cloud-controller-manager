@@ -72,6 +72,11 @@ func (MockOCIClient) Identity() client.IdentityInterface {
 
 type MockBlockStorageClient struct{}
 
+// AwaitVolumeCloneAvailableOrTimeout implements client.BlockStorageInterface.
+func (c *MockBlockStorageClient) AwaitVolumeCloneAvailableOrTimeout(ctx context.Context, id string) (*core.Volume, error) {
+	return &core.Volume{}, nil
+}
+
 func (c *MockBlockStorageClient) AwaitVolumeBackupAvailableOrTimeout(ctx context.Context, id string) (*core.VolumeBackup, error) {
 	return &core.VolumeBackup{}, nil
 }
