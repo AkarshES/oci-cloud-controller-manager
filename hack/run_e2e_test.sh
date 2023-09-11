@@ -190,6 +190,7 @@ function run_e2e_tests() {
         --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
         --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
         --nsg-ocids=${NSG_OCIDS} \
+        --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
@@ -218,6 +219,7 @@ function run_e2e_tests_existing_cluster() {
         --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
         --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
         --nsg-ocids=${NSG_OCIDS} \
+        --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
@@ -291,6 +293,7 @@ function declare_setup () {
     echo "OCI_NODESUBNET is ${OCI_NODESUBNET}"
     echo "NODE_SHAPE is ${NODE_SHAPE}"
     echo "NSG_OCIDS is ${NSG_OCIDS}"
+    echo "BACKEND_NSG_OCIDS is ${BACKEND_NSG_OCIDS}"
     echo "ADLOCATION is ${ADLOCATION}"
     echo "MNT_TARGET_ID is ${MNT_TARGET_ID}"
     echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
