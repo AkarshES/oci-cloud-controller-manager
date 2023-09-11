@@ -95,6 +95,9 @@ func newSecurityListManager(logger *zap.SugaredLogger, client client.Interface, 
 	case ManagementModeNone:
 		logger.Infof("Security list management mode: %q. Not managing security lists.", ManagementModeNone)
 		return &securityListManagerNOOP{}
+	case RuleManagementModeNsg:
+		logger.Infof("Security rule management mode: %q. Not managing security lists.", RuleManagementModeNsg)
+		return &securityListManagerNOOP{}
 	default:
 		logger.Infof("Security list management mode: %q. Managing all security lists.", ManagementModeAll)
 		return &defaultSecurityListManager{baseSecurityListManager: baseMgr}
@@ -214,10 +217,13 @@ type defaultSecurityListManager struct {
 // Update the security list rules associated with the listener and backends.
 //
 // Ingress rules added:
-// 		from source cidrs to lb subnets on the listener port
-// 		from LB subnets to backend subnets on the backend port
+//
+//	from source cidrs to lb subnets on the listener port
+//	from LB subnets to backend subnets on the backend port
+//
 // Egress rules added:
-// 		from LB subnets to backend subnets on the backend port
+//
+//	from LB subnets to backend subnets on the backend port
 func (s *defaultSecurityListManager) Update(ctx context.Context, lbSubnets []*core.Subnet, backendSubnets []*core.Subnet, sourceCIDRs []string, actualPorts *portSpec, desiredPorts portSpec, isPreserveSource bool) error {
 	if err := s.updateLoadBalancerRules(ctx, lbSubnets, backendSubnets, sourceCIDRs, actualPorts, desiredPorts); err != nil {
 		return err
@@ -252,7 +258,8 @@ type frontendSecurityListManager struct {
 // Update the ingress security list rules associated with the listener.
 //
 // Ingress rules added:
-// 		from source cidrs to lb subnets on the listener port
+//
+//	from source cidrs to lb subnets on the listener port
 func (s *frontendSecurityListManager) Update(ctx context.Context, lbSubnets []*core.Subnet, _ []*core.Subnet, sourceCIDRs []string, actualPorts *portSpec, desiredPorts portSpec, isPreserveSource bool) error {
 	noSubnets := []*core.Subnet{}
 	return s.updateLoadBalancerRules(ctx, lbSubnets, noSubnets, sourceCIDRs, actualPorts, desiredPorts)

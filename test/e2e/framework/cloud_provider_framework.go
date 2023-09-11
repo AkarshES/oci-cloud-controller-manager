@@ -90,6 +90,8 @@ type CloudProviderFramework struct {
 	cleanupHandle CleanupActionHandle
 
 	ClusterType containerengine.ClusterTypeEnum
+	// Backend Nsg ocids test
+	BackendNsgOcids string
 }
 
 // NewDefaultFramework constructs a new e2e test CloudProviderFramework with default options.
@@ -134,6 +136,9 @@ func NewCcmFramework(baseName string, client clientset.Interface, backup bool) *
 		f.ClusterType = containerengine.ClusterTypeEnhancedCluster
 	} else {
 		f.ClusterType = containerengine.ClusterTypeBasicCluster
+	}
+	if backendNsgIds != "" {
+		f.BackendNsgOcids = backendNsgIds
 	}
 	BeforeEach(f.BeforeEach)
 	AfterEach(f.AfterEach)

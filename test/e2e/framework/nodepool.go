@@ -346,6 +346,10 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		}
 	}
 
+	if f.BackendNsgOcid != "" {
+		nodeConfigDetails.NsgIds = strings.Split(f.BackendNsgOcid, ",")
+	}
+
 	imageId = ""
 	imageName = ""
 	var nonGPUImageFound = false
