@@ -2989,3 +2989,138 @@ func CreateHealthCheckScript(healthCheckNodePort int, ips []string, path string,
 
 	return script
 }
+
+var _ = Describe("Mixed Cluster - scale managed and virtual pods", func() {
+	baseName := "service"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	basicTestArray := []struct {
+		lbType              string
+		creationAnnotations map[string]string
+	}{
+		{
+			"lb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerShape:    "10Mbps",
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+			},
+		},
+		{
+			"nlb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal:                   "true",
+			},
+		},
+	}
+	Context("[cloudprovider][cloudprovider-ske][ccm][lb][mixed-cluster]", func() {
+		It("should create and delete lb backends as managed and virtual pods are scaled in a Mixed cluster", func() {
+			if f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+				Skip("Skipping test as Cluster is not Enhanced. (Env var: CLUSTER_TYPE)")
+			}
+			for _, test := range basicTestArray {
+				By("Running test for: " + test.lbType)
+				serviceName := "scale-" + test.lbType + "-test"
+				ns := f.Namespace.Name
+
+				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+				managedNodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+				if len(managedNodes.Items) == 0 {
+					Skip("Skipping test as no schedulable managed node found in the provided cluster. This test targets mixed clusters.")
+				}
+				virtualNodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+				if len(virtualNodes.Items) == 0 {
+					Skip("Skipping test as no schedulable virtual node found in the provided cluster. This test targets mixed clusters.")
+				}
+				loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+				if len(managedNodes.Items) > sharedfw.LargeClusterMinNodesNumber || len(virtualNodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+					loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+				}
+				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+					s.Spec.Type = v1.ServiceTypeLoadBalancer
+					s.ObjectMeta.Annotations = test.creationAnnotations
+				})
+
+				By("creating a virtual pod to be part of the TCP service " + serviceName)
+				rc := jig.RunOrFail(ns, func(rc *v1.ReplicationController) {
+					var replicas int32 = int32(len(managedNodes.Items)+len(virtualNodes.Items)) + 3
+					rc.Spec.Replicas = &replicas
+					rc.Spec.Template.Spec.TopologySpreadConstraints = []v1.TopologySpreadConstraint{
+						{
+							MaxSkew:           1,
+							TopologyKey:       "kubernetes.io/hostname",
+							WhenUnsatisfiable: "DoNotSchedule",
+							LabelSelector: &metav1.LabelSelector{
+								MatchLabels: jig.Labels,
+							},
+						},
+					}
+				})
+
+				mixedPodCount := *rc.Spec.Replicas
+				sharedfw.Logf("Number of pods in the service: %d", mixedPodCount)
+
+				By("waiting for the TCP service to have a load balancer")
+				// Wait for the load balancer to be created asynchronously
+				tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+				jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+				tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+				sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+				lbName := cloudprovider.GetLoadBalancerName(tcpService)
+				sharedfw.Logf("LB Name is %s", lbName)
+				ctx := context.TODO()
+				compartmentId := ""
+				if setupF.Compartment1 != "" {
+					compartmentId = setupF.Compartment1
+				} else if f.CloudProviderConfig.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.CompartmentID
+				} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+				} else {
+					sharedfw.Failf("Compartment Id undefined.")
+				}
+
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				sharedfw.ExpectNoError(err)
+
+				By("waiting for the LB backends to match pods on mixed cluster")
+				err = f.VerifyLoadBalancerBackendSetsWithPodsOnMixedCluster(tcpService, ns, *loadBalancer.Id, test.lbType)
+				sharedfw.ExpectNoError(err)
+
+				By("scaling up pods")
+				sharedfw.Logf("Scaling pods from %d to %d", mixedPodCount, mixedPodCount+2)
+				mixedPodCount += 2
+				jig.UpdateReplicationControllerOrFail(ns, rc.Name, func(rc *v1.ReplicationController) {
+					rc.Spec.Replicas = &mixedPodCount
+				})
+				By("waiting for the LB backends to match pods on mixed cluster")
+				err = f.VerifyLoadBalancerBackendSetsWithPodsOnMixedCluster(tcpService, ns, *loadBalancer.Id, test.lbType)
+				sharedfw.ExpectNoError(err)
+
+				By("scaling down pods")
+				sharedfw.Logf("Scaling pods from %d to %d", mixedPodCount, mixedPodCount-1)
+				mixedPodCount -= 1
+				jig.UpdateReplicationControllerOrFail(ns, rc.Name, func(rc *v1.ReplicationController) {
+					rc.Spec.Replicas = &mixedPodCount
+				})
+
+				By("waiting for the LB backends to match pods on mixed cluster")
+				err = f.VerifyLoadBalancerBackendSetsWithPodsOnMixedCluster(tcpService, ns, *loadBalancer.Id, test.lbType)
+				sharedfw.ExpectNoError(err)
+
+				By("changing TCP service back to type=ClusterIP")
+				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+					s.Spec.Type = v1.ServiceTypeClusterIP
+					s.Spec.Ports[0].NodePort = 0
+				})
+				// Wait for the load balancer to be destroyed asynchronously
+				tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, int(tcpService.Spec.Ports[0].Port), loadBalancerCreateTimeout)
+				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+			}
+		})
+	})
+})
