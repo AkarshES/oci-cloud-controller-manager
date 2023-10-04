@@ -77,7 +77,7 @@ func newEndpointSlice(name string, serviceName string) *discovery.EndpointSlice 
 	}
 }
 
-//Wrap newService so that you don't have to call default arguments again and again.
+// Wrap newService so that you don't have to call default arguments again and again.
 func defaultExternalService() *v1.Service {
 	return newService("external-balancer", types.UID("123"), v1.ServiceTypeLoadBalancer)
 }
@@ -1003,14 +1003,15 @@ func TestProcessServiceDeletion(t *testing.T) {
 
 // Test cases:
 // index    finalizer    timestamp    wantLB  |  clean-up
-//   0         0           0            0     |   false    (No finalizer, no clean up)
-//   1         0           0            1     |   false    (Ignored as same with case 0)
-//   2         0           1            0     |   false    (Ignored as same with case 0)
-//   3         0           1            1     |   false    (Ignored as same with case 0)
-//   4         1           0            0     |   true
-//   5         1           0            1     |   false
-//   6         1           1            0     |   true    (Service is deleted, needs clean up)
-//   7         1           1            1     |   true    (Ignored as same with case 6)
+//
+//	0         0           0            0     |   false    (No finalizer, no clean up)
+//	1         0           0            1     |   false    (Ignored as same with case 0)
+//	2         0           1            0     |   false    (Ignored as same with case 0)
+//	3         0           1            1     |   false    (Ignored as same with case 0)
+//	4         1           0            0     |   true
+//	5         1           0            1     |   false
+//	6         1           1            0     |   true    (Service is deleted, needs clean up)
+//	7         1           1            1     |   true    (Ignored as same with case 6)
 func TestNeedsCleanup(t *testing.T) {
 	testCases := []struct {
 		desc               string
@@ -1224,10 +1225,10 @@ func TestNeedsUpdate(t *testing.T) {
 	}
 }
 
-//All the test cases for ServiceCache uses a single cache, these below test cases should be run in order,
-//as tc1 (addCache would add elements to the cache)
-//and tc2 (delCache would remove element from the cache without it adding automatically)
-//Please keep this in mind while adding new test cases.
+// All the test cases for ServiceCache uses a single cache, these below test cases should be run in order,
+// as tc1 (addCache would add elements to the cache)
+// and tc2 (delCache would remove element from the cache without it adding automatically)
+// Please keep this in mind while adding new test cases.
 func TestServiceCache(t *testing.T) {
 
 	//ServiceCache a common service cache for all the test cases
@@ -1334,7 +1335,7 @@ func TestServiceCache(t *testing.T) {
 	}
 }
 
-//Test a utility functions as it's not easy to unit test nodeSyncInternal directly
+// Test a utility functions as it's not easy to unit test nodeSyncInternal directly
 func TestNodeSlicesEqualForLB(t *testing.T) {
 	numNodes := 10
 	nArray := make([]*v1.Node, numNodes)
@@ -1819,42 +1820,107 @@ func TestMarkAndUnmarkFullSync(t *testing.T) {
 	}
 }
 
-func TestEnqueueServiceForEndpointSlice(t *testing.T) {
+func TestEnqueueServiceForEndpointSliceUpdate(t *testing.T) {
 	testCases := []struct {
-		desc              string
-		virtualNodeExists bool
-		enqueueService    bool
+		desc                       string
+		curEndPointSliceType       string
+		oldEndPointSliceType       string
+		serviceType                string
+		virtualPodExists           bool
+		virtualNodeExists          bool
+		enqueueService             bool
+		mixedClusterSupportEnabled bool
 	}{
 		{
-			desc:              "Virtual node exists",
-			virtualNodeExists: true,
-			enqueueService:    true,
+			desc:                 "Virtual node does not exist",
+			curEndPointSliceType: "endpointSliceRegular",
+			serviceType:          "regularService",
+			virtualNodeExists:    false,
+			enqueueService:       false,
 		},
 		{
-			desc:              "Virtual node does not exist",
-			virtualNodeExists: false,
-			enqueueService:    false,
+			desc:                 "Virtual node exist",
+			curEndPointSliceType: "endpointSliceRegular",
+			serviceType:          "regularService",
+			virtualNodeExists:    true,
+			enqueueService:       true,
+		},
+		{
+			desc:                       "Virtual pod exists",
+			curEndPointSliceType:       "endpointSliceMixed",
+			oldEndPointSliceType:       "endpointSliceMixed",
+			serviceType:                "mixedService",
+			virtualPodExists:           true,
+			enqueueService:             true,
+			mixedClusterSupportEnabled: true,
+		},
+		{
+			desc:                       "Only virtual pod exist",
+			curEndPointSliceType:       "endpointSliceVirtual",
+			oldEndPointSliceType:       "endpointSliceVirtual",
+			serviceType:                "virtualService",
+			virtualPodExists:           true,
+			enqueueService:             true,
+			mixedClusterSupportEnabled: true,
+		},
+		{
+			desc:                       "Virtual pod does not exist when mixed cluster support enabled",
+			curEndPointSliceType:       "endpointSliceRegular",
+			oldEndPointSliceType:       "endpointSliceRegular",
+			serviceType:                "regularService",
+			virtualPodExists:           false,
+			enqueueService:             false,
+			mixedClusterSupportEnabled: true,
+		},
+		{
+			desc:                       "Last virtual pod got removed",
+			curEndPointSliceType:       "endpointSliceRegular",
+			oldEndPointSliceType:       "endpointSliceVirtual",
+			serviceType:                "regularService",
+			virtualPodExists:           false,
+			enqueueService:             true,
+			mixedClusterSupportEnabled: true,
 		},
 	}
 
-	serviceName := "service-owning-endpointslice"
-	testSvc := newService(serviceName, "service-owning-endpointslice-uid", v1.ServiceTypeLoadBalancer)
-	testEndpointSlice := newEndpointSlice("basic-endpointslice", serviceName)
-
 	for _, testCase := range testCases {
 		t.Run(testCase.desc, func(t *testing.T) {
+			curEndpointSlice := endpointSliceList[testCase.curEndPointSliceType]
+			oldEndpointSlice := endpointSliceList[testCase.oldEndPointSliceType]
+			testSvc := &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testCase.serviceType,
+				},
+				Spec: v1.ServiceSpec{
+					Type: v1.ServiceTypeLoadBalancer,
+				},
+			}
+			serviceList[testCase.serviceType] = testSvc
 			fakeInformerFactory := informers.NewSharedInformerFactory(&fake.Clientset{}, 0*time.Second)
 			fakeInformerFactory.Core().V1().Services().Informer().GetStore().Add(testSvc)
 			if testCase.virtualNodeExists {
 				fakeInformerFactory.Core().V1().Nodes().Informer().GetStore().Add(&v1.Node{Spec: v1.NodeSpec{ProviderID: virtualNodeOcidPrefix + ".xyz"}})
 			}
+			if testCase.virtualPodExists {
+				fakeInformerFactory.Core().V1().Pods().Informer().GetStore().Add(podList["virtualPod1"])
+				fakeInformerFactory.Core().V1().Pods().Informer().GetStore().Add(podList["virtualPod2"])
+			}
+			if testCase.serviceType != "virtualService" {
+				fakeInformerFactory.Core().V1().Pods().Informer().GetStore().Add(podList["regularPod1"])
+				fakeInformerFactory.Core().V1().Pods().Informer().GetStore().Add(podList["regularPod2"])
+			}
+
 			controller, _, _ := newServiceController(func(controller *ServiceController) {
-				controller.serviceLister = fakeInformerFactory.Core().V1().Services().Lister()
-				controller.nodeLister = fakeInformerFactory.Core().V1().Nodes().Lister()
+				controller.serviceLister = &mockServiceLister{}
+				if testCase.mixedClusterSupportEnabled {
+					controller.nodeLister = &mockNodeLister{}
+					controller.mixedClustersEnabled = testCase.mixedClusterSupportEnabled
+				} else {
+					controller.nodeLister = fakeInformerFactory.Core().V1().Nodes().Lister()
+				}
 			})
 
-			controller.enqueueServiceForEndpointSlice(testEndpointSlice)
-			time.Sleep(500 * time.Millisecond)
+			controller.enqueueServiceForEndpointSliceUpdate(curEndpointSlice, oldEndpointSlice)
 			if (controller.queue.Len() > 0) != testCase.enqueueService {
 				t.Fatalf("unexpected service enqueue")
 			}
@@ -1867,6 +1933,50 @@ func TestEnqueueServiceForEndpointSlice(t *testing.T) {
 				if keyExpected != keyGot.(string) {
 					t.Fatalf("get service key error, expected: %s, got: %s", keyExpected, keyGot.(string))
 				}
+			}
+		})
+	}
+}
+
+func TestVirtualPodExistsInEndpointSlice(t *testing.T) {
+	testCases := []struct {
+		desc              string
+		endPointSliceType string
+		serviceType       string
+		virtualPodExists  bool
+		enqueueService    bool
+	}{
+		{
+			desc:              "Virtual pod exists",
+			endPointSliceType: "endpointSliceMixed",
+			virtualPodExists:  true,
+		},
+		{
+			desc:              "Only virtual pod exist",
+			endPointSliceType: "endpointSliceVirtual",
+			virtualPodExists:  true,
+		},
+		{
+			desc:              "Virtual pod does not exist",
+			endPointSliceType: "endpointSliceRegular",
+			virtualPodExists:  false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.desc, func(t *testing.T) {
+			testEndpointSlice := endpointSliceList[testCase.endPointSliceType]
+			controller, _, _ := newServiceController(func(controller *ServiceController) {
+				controller.serviceLister = &mockServiceLister{}
+				controller.nodeLister = &mockNodeLister{}
+			})
+			nodesMap, err := GetNodesMap(&mockNodeLister{})
+			if err != nil {
+				t.Fatalf("error listing Nodes")
+			}
+			exists := controller.virtualPodExistsInEndpointSlice(testEndpointSlice, nodesMap)
+			if exists != testCase.virtualPodExists {
+				t.Errorf("Expected \n%+v\nbut got\n%+v", testCase.virtualPodExists, !testCase.virtualPodExists)
 			}
 		})
 	}
@@ -1957,12 +2067,10 @@ func TestEndpointsChanged(t *testing.T) {
 			changed: false,
 		},
 		{
-			desc: "both empty",
-			curEndpoints: []discovery.Endpoint{
-			},
-			oldEndpoints: []discovery.Endpoint{
-			},
-			changed: false,
+			desc:         "both empty",
+			curEndpoints: []discovery.Endpoint{},
+			oldEndpoints: []discovery.Endpoint{},
+			changed:      false,
 		},
 		{
 			desc: "endpoints changed with empty addresses",
