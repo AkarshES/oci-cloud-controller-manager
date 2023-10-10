@@ -1,5 +1,5 @@
 {
-  "realms" : [ "oc1" ],
+  "realms" : [ "oc24" ],
   "name": "csi-image-version-mapping",
   "values" : [ {
     "ad" : "all",
