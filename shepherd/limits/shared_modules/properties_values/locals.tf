@@ -3,12 +3,26 @@ locals {
     "oc1" = {
       "ccm-image-version-mapping" = {
         overrides = [
-          // pm tenancy
+          // canary tenancy
+          {
+            regions      = ["kix"]
+            env          = "prd"
+            value        = "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",  \"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\", \"v1.19\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.20\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.21\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.22\": \"oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db\", \"v1.23\": \"oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8\", \"v1.24\": \"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e\", \"v1.25\": \"v1.25-f1ae2f635ad-2170@sha256:65c616a592162928f0f85e19b3f3564056bf717577b1ee859e96358af4e0ee69\", \"v1.26\": \"v1.26-3e5bbc3314d-2149@sha256:a47df8d8ca2faa8c5b00b93a04b822c6fc6b4978024910ed95b4a330b58aab12\", \"v1.27\": \"v1.27-75a708e7486-2171@sha256:dde76c1bf8cf70335303e5b4b8b618995a7698f79ea21b4522ec2afa3597cca6\"}"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatxzd3axgkv7gybg2dtii3ecaetdg42wwx3x723bi6j55dgi3a7uq"
+          },
+          // pm tenancy - Rishi
           {
             regions      = ["phx"]
             env          = "prd"
             value        = "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",  \"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\", \"v1.19\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.20\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.21\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.22\": \"oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db\", \"v1.23\": \"oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8\", \"v1.24\": \"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e\", \"v1.25\": \"v1.25-f1ae2f635ad-2170@sha256:65c616a592162928f0f85e19b3f3564056bf717577b1ee859e96358af4e0ee69\", \"v1.26\": \"v1.26-3e5bbc3314d-2149@sha256:a47df8d8ca2faa8c5b00b93a04b822c6fc6b4978024910ed95b4a330b58aab12\", \"v1.27\": \"v1.27-75a708e7486-2171@sha256:dde76c1bf8cf70335303e5b4b8b618995a7698f79ea21b4522ec2afa3597cca6\"}"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa5gtuu5ao3rl7tdj4fqe445ou3uvyn64c3muvnkigi2a72drw3rya"
+          },
+          // pm tenancy - Ajay
+          {
+            regions      = ["phx"]
+            env          = "prd"
+            value        = "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",  \"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",  \"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\", \"v1.19\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.20\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.21\": \"oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b\", \"v1.22\": \"oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db\", \"v1.23\": \"oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8\", \"v1.24\": \"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e\", \"v1.25\": \"v1.25-f1ae2f635ad-2170@sha256:65c616a592162928f0f85e19b3f3564056bf717577b1ee859e96358af4e0ee69\", \"v1.26\": \"v1.26-3e5bbc3314d-2149@sha256:a47df8d8ca2faa8c5b00b93a04b822c6fc6b4978024910ed95b4a330b58aab12\", \"v1.27\": \"v1.27-75a708e7486-2171@sha256:dde76c1bf8cf70335303e5b4b8b618995a7698f79ea21b4522ec2afa3597cca6\"}"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaahtpus42trsydumzx22r2ii2zdviq2sbwlrpwnhcqpe34okjsoyua"
           },
           // telesis tenancy
           {
@@ -21,12 +35,26 @@ locals {
       },
       "csi-image-version-mapping" = {
         overrides = [
-          // pm tenancy
+          // canary tenancy
+          {
+            regions      = ["kix"]
+            env          = "prd"
+            value        = "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.19\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.20\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.21\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.22\": \"oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689\",\"v1.23\": \"oke-multiarch-1.23-4c65264-146@sha256:defa64f16f0a16b84f3009cd6d902e4ce547dff68d3a5b85e510749d982de164\",\"v1.24\": \"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e\", \"v1.25\": \"v1.25-f1ae2f635ad-2170@sha256:65c616a592162928f0f85e19b3f3564056bf717577b1ee859e96358af4e0ee69\", \"v1.26\": \"v1.26-3e5bbc3314d-2149@sha256:a47df8d8ca2faa8c5b00b93a04b822c6fc6b4978024910ed95b4a330b58aab12\", \"v1.27\": \"v1.27-75a708e7486-2171@sha256:dde76c1bf8cf70335303e5b4b8b618995a7698f79ea21b4522ec2afa3597cca6\"}"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatxzd3axgkv7gybg2dtii3ecaetdg42wwx3x723bi6j55dgi3a7uq"
+          },
+          // pm tenancy - Rishi
           {
             regions      = ["phx"]
             env          = "prd"
             value        = "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.19\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.20\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.21\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.22\": \"oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689\",\"v1.23\": \"oke-multiarch-1.23-4c65264-146@sha256:defa64f16f0a16b84f3009cd6d902e4ce547dff68d3a5b85e510749d982de164\",\"v1.24\": \"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e\", \"v1.25\": \"v1.25-f1ae2f635ad-2170@sha256:65c616a592162928f0f85e19b3f3564056bf717577b1ee859e96358af4e0ee69\", \"v1.26\": \"v1.26-3e5bbc3314d-2149@sha256:a47df8d8ca2faa8c5b00b93a04b822c6fc6b4978024910ed95b4a330b58aab12\", \"v1.27\": \"v1.27-75a708e7486-2171@sha256:dde76c1bf8cf70335303e5b4b8b618995a7698f79ea21b4522ec2afa3597cca6\"}"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa5gtuu5ao3rl7tdj4fqe445ou3uvyn64c3muvnkigi2a72drw3rya"
+          },
+          // pm tenancy - Ajay
+          {
+            regions      = ["phx"]
+            env          = "prd"
+            value        = "{\"default\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.16\": \"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78\",\"v1.17\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.18\": \"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9\",\"v1.19\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.20\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.21\": \"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa\",\"v1.22\": \"oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689\",\"v1.23\": \"oke-multiarch-1.23-4c65264-146@sha256:defa64f16f0a16b84f3009cd6d902e4ce547dff68d3a5b85e510749d982de164\",\"v1.24\": \"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e\", \"v1.25\": \"v1.25-f1ae2f635ad-2170@sha256:65c616a592162928f0f85e19b3f3564056bf717577b1ee859e96358af4e0ee69\", \"v1.26\": \"v1.26-3e5bbc3314d-2149@sha256:a47df8d8ca2faa8c5b00b93a04b822c6fc6b4978024910ed95b4a330b58aab12\", \"v1.27\": \"v1.27-75a708e7486-2171@sha256:dde76c1bf8cf70335303e5b4b8b618995a7698f79ea21b4522ec2afa3597cca6\"}"
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaahtpus42trsydumzx22r2ii2zdviq2sbwlrpwnhcqpe34okjsoyua"
           },
           // telesis tenancy
           {
