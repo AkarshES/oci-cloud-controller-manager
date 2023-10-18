@@ -1,4 +1,4 @@
-FROM odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-a1727-x86_64:1.19.6-118 as builder
+FROM odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493-x86_64:1.19.13-188 as builder
 
 ARG COMPONENT
 ARG SRC_DIRS
