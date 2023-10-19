@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-a1727-aarch64:1.19.6-118 as builder
+FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493-aarch64:1.19.13-188 as builder
 
 ARG COMPONENT
 
