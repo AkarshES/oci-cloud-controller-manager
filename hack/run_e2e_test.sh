@@ -193,6 +193,7 @@ function run_e2e_tests() {
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
+        --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
@@ -220,6 +221,7 @@ function run_e2e_tests_existing_cluster() {
         --reserved-ip=${RESERVED_IP} \
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
+        --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
@@ -258,6 +260,7 @@ function setup_arm() {
         export NSG_OCIDS=$NSG_OCIDS_ARM
         export OKE_ENDPOINT=$OKE_ENDPOINT_ARM
         export FSS_VOLUME_HANDLE=$FSS_VOLUME_HANDLE_ARM
+        export LUSTRE_VOLUME_HANDLE=$LUSTRE_VOLUME_HANDLE_ARM
         export MNT_TARGET_ID=$MNT_TARGET_ID
         export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID
         export MNT_TARGET_COMPARTMENT_ID=$MNT_TARGET_COMPARTMENT_ID
