@@ -52,6 +52,8 @@ const (
 	DataSourceVolumeSnapshotKind     = "VolumeSnapshot"
 	DataSourceVolumeSnapshotAPIGroup = "snapshot.storage.k8s.io"
 	DataSourceVolumePVCKind          = "PersistentVolumeClaim"
+
+	FsTypeLustre 					 = "lustre"
 )
 
 // PVCTestJig is a jig to help create PVC tests.
@@ -203,6 +205,16 @@ func (j *PVCTestJig) NewPVCTemplateCSI(namespace string, volumeSize string, scNa
 	pvc = j.pvcAddVolumeMode(pvc, volumeMode)
 	return pvc
 }
+// newPVCTemplateStaticFSS returns the default template for this jig, but
+// does not actually create the PVC.  The default PVC has the same name
+// as the jig
+func (j *PVCTestJig) newPVCTemplateStaticLustre(namespace, volumeSize, volumeName string) *v1.PersistentVolumeClaim {
+	pvc := j.CreatePVCTemplate(namespace, volumeSize)
+	pvc = j.pvcAddAccessMode(pvc, v1.ReadWriteMany)
+	pvc = j.pvcAddStorageClassName(pvc, "")
+	pvc = j.pvcAddVolumeName(pvc, volumeName)
+	return pvc
+}
 
 // newPVCTemplateStaticFSS returns the default template for this jig, but
 // does not actually create the PVC.  The default PVC has the same name
@@ -312,6 +324,15 @@ func (j *PVCTestJig) CreatePVCorFailStaticFSS(namespace, volumeName, volumeSize 
 	return j.CheckPVCorFail(pvc, tweak, namespace, volumeSize)
 }
 
+// CreatePVCorFailStaticLustre creates a new claim based on the jig's
+// defaults. Callers can provide a function to tweak the claim object
+// before it is created.
+func (j *PVCTestJig) CreatePVCorFailStaticLustre(namespace, volumeName, volumeSize string, tweak func(pvc *v1.PersistentVolumeClaim)) *v1.PersistentVolumeClaim {
+	pvc := j.newPVCTemplateStaticLustre(namespace, volumeSize, volumeName)
+	return j.CheckPVCorFail(pvc, tweak, namespace, volumeSize)
+}
+
+
 // CreatePVCorFailDynamicFSS creates a new claim based on the jig's
 // defaults. Callers can provide a function to tweak the claim object
 // before it is created.
@@ -376,6 +397,16 @@ func (j *PVCTestJig) CreateAndAwaitPVCOrFailStaticFSS(namespace, volumeName, vol
 	pvc := j.CreatePVCorFailStaticFSS(namespace, volumeName, volumeSize, tweak)
 	return j.CheckAndAwaitPVCOrFail(pvc, namespace, v1.ClaimBound)
 }
+
+// CreateAndAwaitPVCOrFailStaticLustre creates a new PVC based on the
+// jig's defaults, waits for it to become ready, and then sanity checks it and
+// its dependant resources. Callers can provide a function to tweak the
+// PVC object before it is created.
+func (j *PVCTestJig) CreateAndAwaitPVCOrFailStaticLustre(namespace, volumeName, volumeSize string, tweak func(pvc *v1.PersistentVolumeClaim)) *v1.PersistentVolumeClaim {
+	pvc := j.CreatePVCorFailStaticLustre(namespace, volumeName, volumeSize, tweak)
+	return j.CheckAndAwaitPVCOrFail(pvc, namespace, v1.ClaimBound)
+}
+
 
 // CreateAndAwaitPVCOrFailCSI creates a new PVC based on the
 // jig's defaults, waits for it to become ready, and then sanity checks it and
@@ -523,6 +554,26 @@ func (j *PVCTestJig) newPVTemplateFSS(namespace, volumeHandle, enableIntransitEn
 	return pv
 }
 
+// newPVTemplateLustre returns the default template for this jig, but
+// does not actually create the PV.  The default PV has the same name
+// as the jig
+func (j *PVCTestJig) newPVTemplateLustre(namespace, volumeHandle string, mountOptions []string) *v1.PersistentVolume {
+	pv := j.CreatePVTemplate(namespace, driver.LustreDriverName, "", "Retain")
+	pv = j.pvAddVolumeMode(pv, v1.PersistentVolumeFilesystem)
+	pv = j.pvAddAccessMode(pv, v1.ReadWriteMany)
+	pv = j.pvAddMountOptions(pv, mountOptions)
+	pv = j.pvAddPersistentVolumeSource(pv, v1.PersistentVolumeSource{
+		CSI: &v1.CSIPersistentVolumeSource{
+			Driver:       driver.LustreDriverName,
+			VolumeHandle: volumeHandle,
+			FSType: FsTypeLustre,
+		},
+	})
+
+	return pv
+}
+
+
 // newPVTemplateCSI returns the default template for this jig, but
 // does not actually create the PV.  The default PV has the same name
 // as the jig
@@ -570,6 +621,20 @@ func (j *PVCTestJig) CreatePVorFailFSS(namespace, volumeHandle, encryptInTransit
 	}
 	return result
 }
+
+// CreatePVorFailLustre creates a new claim based on the jig's
+// defaults. Callers can provide a function to tweak the claim object
+// before it is created.
+func (j *PVCTestJig) CreatePVorFailLustre(namespace, volumeHandle string, mountOptions []string) *v1.PersistentVolume {
+	pv := j.newPVTemplateLustre(namespace, volumeHandle, mountOptions)
+
+	result, err := j.KubeClient.CoreV1().PersistentVolumes().Create(context.Background(), pv, metav1.CreateOptions{})
+	if err != nil {
+		Failf("Failed to create persistent volume claim %q: %v", pv.Name, err)
+	}
+	return result
+}
+
 
 // CreatePVorFail creates a new claim based on the jig's
 // defaults. Callers can provide a function to tweak the claim object
@@ -989,7 +1054,7 @@ func (j *PVCTestJig) SanityCheckPV(pvc *v1.PersistentVolumeClaim) {
 	claimCapacity := pvc.Spec.Resources.Requests[v1.ResourceStorage]
 	Expect(pvCapacity.Value()).To(Equal(claimCapacity.Value()), "pvCapacity is not equal to expectedCapacity")
 
-	if strings.HasPrefix(pvc.Name, "csi-fss") {
+	if strings.HasPrefix(pvc.Name, "csi-fss") || strings.HasPrefix(pvc.Name, "csi-lustre") {
 		expectedAccessModes := []v1.PersistentVolumeAccessMode{v1.ReadWriteMany}
 		Expect(pv.Spec.AccessModes).To(Equal(expectedAccessModes))
 	} else {
@@ -1236,8 +1301,10 @@ func (j *PVCTestJig) CheckSinglePodReadWrite(namespace string, pvcName string, c
 	By("check if the file exists")
 	j.CheckFileExists(namespace, podName, "/data", fileName)
 
-	By("Check Mount Options")
-	j.CheckMountOptions(namespace, podName, "/data", expectedMountOptions)
+	if strings.HasPrefix(pvcName, "csi-fss") {
+		By("Check NFS Mount Options")
+		j.CheckMountOptions(namespace, podName, "/data", expectedMountOptions)
+	}
 
 	By("Creating Pod that can read contents of existing file")
 	j.NewPodForCSIFSSRead(string(uid), namespace, pvcName, fileName, checkEncryption)
@@ -1520,3 +1587,4 @@ func (j *PVCTestJig) InitialiseSnapClient(snapClient snapclientset.Interface) {
 	j.SnapClient = snapClient
 	return
 }
+
