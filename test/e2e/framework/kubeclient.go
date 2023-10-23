@@ -673,6 +673,13 @@ func GetReadySchedulableVirtualNodesOrDie(c clientset.Interface) (nodes *v1.Node
 	})
 	return nodes
 }
+func GetReadySchedulableManagedNodesOrDie(c clientset.Interface) (nodes *v1.NodeList) {
+	nodes = waitListSchedulableNodesOrDie(c)
+	FilterNodes(nodes, func(node v1.Node) bool {
+		return !cloudprovider.IsVirtualNodeId(node.Spec.ProviderID) && isNodeSchedulable(&node) && isNodeUntainted(&node)
+	})
+	return nodes
+}
 
 func newExecPodSpec(ns, generateName string) *v1.Pod {
 	immediate := int64(0)

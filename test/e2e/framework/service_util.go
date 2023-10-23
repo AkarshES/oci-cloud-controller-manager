@@ -1020,8 +1020,26 @@ func (f *CloudProviderFramework) VerifyLoadBalancerBackendSetsWithVirtualPods(se
 	return gerrors.Errorf("Timeout waiting for LB backends to be as expected.")
 }
 
-func (f *CloudProviderFramework) getVirtualPodsIPs(service *v1.Service, namespace string) (map[string]v1.Pod, error) {
-	ipMap := make(map[string]v1.Pod)
+func (f *CloudProviderFramework) VerifyLoadBalancerBackendSetsWithPodsOnMixedCluster(service *v1.Service, namespace, loadBalancerId, lbType string) error {
+	managedNodeAndVirtualPodIPs, err := f.getVirtualPodsAndManagedNodesIPs(service, namespace)
+	if err != nil {
+		return err
+	}
+	for start := time.Now(); time.Since(start) < 5*time.Minute; time.Sleep(5 * time.Second) {
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		if err != nil {
+			return err
+		}
+		if verifyLoadBalancerBackendSetsMatch(loadBalancer.BackendSets, managedNodeAndVirtualPodIPs) {
+			Logf("LB backends match virtual pods targeted by service")
+			return nil
+		}
+		Logf("LB backends do not match virtual pods targeted by service - will retry")
+	}
+	return gerrors.Errorf("Timeout waiting for LB backends to be as expected.")
+}
+func (f *CloudProviderFramework) getVirtualPodsIPs(service *v1.Service, namespace string) (map[string]interface{}, error) {
+	ipMap := make(map[string]interface{})
 	pods, err := f.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -1033,13 +1051,24 @@ func (f *CloudProviderFramework) getVirtualPodsIPs(service *v1.Service, namespac
 			return nil, err
 		}
 		if cloudprovider.IsVirtualNode(node) && selector.Matches(labels.Set(pod.ObjectMeta.GetLabels())) {
-			ipMap[pod.Status.PodIP] = pod
+			ipMap[pod.Status.PodIP] = struct{}{}
 		}
 	}
 	return ipMap, nil
 }
 
-func verifyLoadBalancerBackendSetsMatch(backendSets map[string]client.GenericBackendSetDetails, podIPMap map[string]v1.Pod) bool {
+func (f *CloudProviderFramework) getVirtualPodsAndManagedNodesIPs(service *v1.Service, namespace string) (map[string]interface{}, error) {
+	ipMap, err := f.getVirtualPodsIPs(service, namespace)
+	if err != nil {
+		return nil, err
+	}
+	nodes := GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+	for _, node := range nodes.Items {
+		ipMap[node.Name] = struct{}{}
+	}
+	return ipMap, nil
+}
+func verifyLoadBalancerBackendSetsMatch(backendSets map[string]client.GenericBackendSetDetails, podIPMap map[string]interface{}) bool {
 	for _, backendSetDetails := range backendSets {
 		if len(backendSetDetails.Backends) != len(podIPMap) {
 			return false
