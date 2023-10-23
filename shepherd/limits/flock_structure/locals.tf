@@ -738,6 +738,7 @@ locals {
     "polaris.oc1.us-sanjose-1.cell0" = {}
     "dev.oc1.us-ashburn-1.cell0"     = {}
     "dev.oc1.eu-frankfurt-1.cell0"   = {}
+    "dev.oc1.us-phoenix-1.cell0"     = {}
     "integ.oc1.us-ashburn-1.cell0"   = {}
     "integ.oc1.us-ashburn-1.cell1"   = {
       predecessor                   = "integ.oc1.us-ashburn-1.cell0"
