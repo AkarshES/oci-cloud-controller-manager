@@ -17,6 +17,7 @@ FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:7-slim
 RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/io-ol7-latest-yum-local && yum repolist enabled \
   && yum install -y util-linux e2fsprogs \
   && yum install -y xfsprogs \
+  && yum update -y \
   && rm -rf /var/cache/yum
 
 COPY scripts/encrypt-mount /sbin/encrypt-mount
