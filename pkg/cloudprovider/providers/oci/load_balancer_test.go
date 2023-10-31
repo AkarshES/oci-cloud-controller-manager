@@ -24,13 +24,10 @@ import (
 
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
-	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	testclient "k8s.io/client-go/kubernetes/fake"
-	corelisters "k8s.io/client-go/listers/core/v1"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -761,9 +758,11 @@ func TestCloudProvider_getLoadBalancerProvider(t *testing.T) {
 			},
 		})
 
-	factory := informers.NewSharedInformerFactoryWithOptions(kc, 0*time.Second, informers.WithNamespace("ns"))
+	factory := informers.NewSharedInformerFactoryWithOptions(kc, time.Second, informers.WithNamespace("ns"))
 	serviceAccountInformer := factory.Core().V1().ServiceAccounts()
 	go serviceAccountInformer.Informer().Run(wait.NeverStop)
+
+	time.Sleep(time.Second)
 
 	cp := &CloudProvider{
 		client:               MockOCIClient{},
@@ -986,9 +985,6 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 						ServiceAnnotationLoadBalancerSecurityListManagementMode: "All",
 					},
 				},
-				Spec: v1.ServiceSpec{
-					Selector: map[string]string{"hello": "world"},
-				},
 			},
 			err:     "",
 			wantErr: false,
@@ -1049,8 +1045,7 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 					Name: "testservice", Namespace: "kube-system",
 				},
 			}),
-		lbLocks:   NewLoadBalancerLocks(),
-		PodLister: &mockPodLister{},
+		lbLocks: NewLoadBalancerLocks(),
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1122,14 +1117,11 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 			},
 		},
 	}
-
 	cp := &CloudProvider{
 		NodeLister:          &mockNodeLister{},
 		EndpointSliceLister: &mockEndpointSliceLister{},
-		PodLister:           &mockPodLister{},
 		kubeclient:          testclient.NewSimpleClientset(),
 	}
-
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["regularPod1"], metav1.CreateOptions{})
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["regularPod2"], metav1.CreateOptions{})
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["virtualPod1"], metav1.CreateOptions{})
@@ -1276,7 +1268,6 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 		NodeLister: &mockNodeLister{},
 		kubeclient: testclient.NewSimpleClientset(),
 		logger:     zap.L().Sugar(),
-		PodLister:  &mockPodLister{},
 	}
 
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["virtualPod1"], metav1.CreateOptions{})
@@ -1307,37 +1298,4 @@ func assertError(actual, expected error) bool {
 		return expected == actual
 	}
 	return actual.Error() == expected.Error()
-}
-
-type mockPodLister struct{}
-
-func (s *mockPodLister) List(selector labels.Selector) (ret []*v1.Pod, err error) {
-	return []*v1.Pod{}, nil
-}
-
-func (s *mockPodLister) Pods(namespace string) corelisters.PodNamespaceLister {
-	return &mockPodNamespaceLister{}
-}
-
-type mockPodNamespaceLister struct{}
-
-func (s *mockPodNamespaceLister) List(selector labels.Selector) (ret []*v1.Pod, err error) {
-	var pods []*v1.Pod
-	for _, po := range podList {
-		if selector != nil {
-			if selector.Matches(labels.Set(po.ObjectMeta.GetLabels())) {
-				pods = append(pods, po)
-			}
-		} else {
-			pods = append(pods, po)
-		}
-	}
-	return pods, nil
-}
-
-func (s *mockPodNamespaceLister) Get(name string) (ret *v1.Pod, err error) {
-	if po, ok := podList[name]; ok {
-		return po, nil
-	}
-	return nil, k8errors.NewNotFound(v1.Resource("pod"), name)
 }
