@@ -41,7 +41,7 @@ resource "telemetry_alarm" "csi_block_volume_attaching_timeout" {
   query = "(OKE.CPO.PV_ATTACH[60m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
   severity = var.severity_3
   is_enabled = var.enabled
-  pending_duration = "PT5M"
+  pending_duration = "PT30M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - More than 10 persistent volumes are timing out on attach
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 90)}]
