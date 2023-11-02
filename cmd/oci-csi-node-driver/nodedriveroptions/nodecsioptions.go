@@ -26,13 +26,17 @@ type NodeCSIOptions struct {
 	Master     string
 	Kubeconfig string
 
-	ConnectionTimeout          time.Duration
-	CsiAddress                 string // Used for Block Volume CSI driver
-	KubeletRegistrationPath    string // Used for Block Volume CSI driver
-	EnableFssDriver            bool
-	FssCsiAddress              string
-	FssKubeletRegistrationPath string
-	FssEndpoint                string
+	ConnectionTimeout             time.Duration
+	CsiAddress                    string // Used for Block Volume CSI driver
+	KubeletRegistrationPath       string // Used for Block Volume CSI driver
+	EnableFssDriver               bool
+	FssCsiAddress                 string
+	FssKubeletRegistrationPath    string
+	FssEndpoint                   string
+	OnlyEnableLustreDriver        bool
+	LustreCsiAddress              string
+	LustreKubeletRegistrationPath string
+	LustreEndpoint                string
 }
 
 type NodeOptions struct {

@@ -132,6 +132,8 @@ export RESERVED_IP="144.25.98.32"
 # format is FileSystemOCID:serverIP:path
 export FSS_VOLUME_HANDLE="ocid1.filesystem.oc1.iad.aaaaaaaaaaa5wj2infqwillqojxwiotjmfsc2ylefuzqaaaa:10.0.10.104:/FileSystem-20210820-0454-50"
 export FSS_VOLUME_HANDLE_ARM="ocid1.filesystem.oc1.iad.aaaaaaaaaac2cd4dnfqwillqojxwiotjmfsc2ylefuzaaaaa:10.0.10.207:/FileSystem-20220203-1305-48"
+export LUSTRE_VOLUME_HANDLE=""
+export LUSTRE_VOLUME_HANDLE_ARM=""
 export MNT_TARGET_ID=
 export MNT_TARGET_SUBNET_ID=
 export MNT_TARGET_COMPARTMENT_ID=
