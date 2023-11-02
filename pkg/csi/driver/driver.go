@@ -38,6 +38,11 @@ const (
 	// FSSDriverVersion is the version of the CSI driver
 	FSSDriverVersion = "0.1.0"
 
+	// LustreDriverName defines the driver name to be used in Kubernetes
+	LustreDriverName = "lustre.csi.oraclecloud.com"
+
+	// LustreDriverVersion is the version of the CSI driver
+	LustreDriverVersion = "0.1.0"
 	// Default config file path
 	configFilePath = "/etc/oci/config.yaml"
 )
@@ -47,6 +52,8 @@ type CSIDriver string
 const (
 	BV  CSIDriver = "BV"
 	FSS CSIDriver = "FSS"
+
+	Lustre CSIDriver = "Lustre"
 )
 
 //Driver implements only Identity interface and embed Controller and Node interface.
@@ -99,6 +106,10 @@ type BlockVolumeNodeDriver struct {
 
 // FSSNodeDriver extends NodeDriver
 type FSSNodeDriver struct {
+	NodeDriver
+}
+
+type LustreNodeDriver struct {
 	NodeDriver
 }
 
@@ -176,6 +187,9 @@ func GetNodeDriver(name string, nodeID string, kubeClientSet kubernetes.Interfac
 	if name == FSSDriverName {
 		return FSSNodeDriver{NodeDriver: newNodeDriver(nodeID, kubeClientSet, logger)}
 	}
+	if name == LustreDriverName {
+		return LustreNodeDriver{NodeDriver: newNodeDriver(nodeID, kubeClientSet, logger)}
+	}
 	return nil
 }
 
@@ -236,6 +250,9 @@ func (d *Driver) GetNodeDriver() csi.NodeServer {
 	}
 	if d.name == FSSDriverName {
 		return d.nodeDriver.(FSSNodeDriver)
+	}
+	if d.name == LustreDriverName {
+		return d.nodeDriver.(LustreNodeDriver)
 	}
 	return nil
 }

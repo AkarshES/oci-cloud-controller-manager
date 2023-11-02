@@ -73,6 +73,8 @@ type FSSVolumeHandler struct {
 	FsExportPath         string
 }
 
+
+
 func (u *Util) LookupNodeID(k kubernetes.Interface, nodeName string) (string, error) {
 	n, err := k.CoreV1().Nodes().Get(context.Background(), nodeName, metav1.GetOptions{})
 	if err != nil {
@@ -472,4 +474,28 @@ func ValidateFssId(id string) *FSSVolumeHandler {
 		return volumeHandler
 	}
 	return volumeHandler
+}
+
+//Ex. volume handle :  10.112.10.6@tcp1:/fsname
+// volume handle : <MGS NID>[:<MGS NID>]:/<fsname>
+func ValidateLustreVolumeId(lusterVolumeId string) bool {
+	const minNumOfParamsFromVolumeHandle = 2
+
+	splits := strings.Split(lusterVolumeId, ":")
+	if len(splits) < minNumOfParamsFromVolumeHandle {
+		return false
+	}
+
+	for i := 0; i < len(splits)-1; i++ {
+		parts := strings.Split(splits[i], "@")
+		ip := parts[0]
+		if net.ParseIP(ip) == nil {
+			return false
+		}
+	}
+	//last part in volume handle which is fsname should start with "/"
+	if !strings.HasPrefix(splits[len(splits)-1], "/") {
+		return false
+	}
+	return true
 }

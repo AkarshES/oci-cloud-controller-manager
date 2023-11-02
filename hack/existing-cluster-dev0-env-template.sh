@@ -57,7 +57,8 @@ export SCOPE="BOTH"
 # format is FileSystemOCID:serverIP:path
 export FSS_VOLUME_HANDLE=""
 export FSS_VOLUME_HANDLE_ARM=""
-
+export LUSTRE_VOLUME_HANDLE=""
+export LUSTRE_VOLUME_HANDLE_ARM=""
 export MNT_TARGET_ID=""
 export MNT_TARGET_SUBNET_ID=
 export MNT_TARGET_COMPARTMENT_ID=
