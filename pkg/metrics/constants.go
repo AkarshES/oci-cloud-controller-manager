@@ -19,6 +19,13 @@ const (
 	// NLBPodReadinessSync is the OCI metric suffix for NLB pod readiness sync
 	NLBPodReadinessSync = "NLB_PODREADINESS_SYNC"
 
+	// NSGProvision is the OCI metric suffix for NLB provision
+	NSGProvision = "NSG_PROVISION"
+	// NSGUpdate is the OCI metric suffix for NLB update
+	NSGUpdate = "NSG_UPDATE"
+	// NSGDelete is the OCI metric suffix for NLB delete
+	NSGDelete = "NSG_DELETE"
+
 	// PVProvision is the OCI metric suffix for PV provision
 	PVProvision = "PV_PROVISION"
 	// PVAttach is the OCI metric suffix for PV attach

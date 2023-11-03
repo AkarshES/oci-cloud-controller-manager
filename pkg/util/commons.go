@@ -32,6 +32,7 @@ const (
 	// Components generating errors
 	// Load Balancer
 	LoadBalancerType = "LB"
+	NSGType          = "NSG"
 	// storage types
 	CSIStorageType = "CSI"
 	FVDStorageType = "FVD"
