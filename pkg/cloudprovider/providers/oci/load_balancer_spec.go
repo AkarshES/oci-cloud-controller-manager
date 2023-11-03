@@ -37,6 +37,7 @@ import (
 const (
 	LB                        = "lb"
 	NLB                       = "nlb"
+	NSG                       = "NSG"
 	LBHealthCheckIntervalMin  = 1000
 	LBHealthCheckIntervalMax  = 1800000
 	NLBHealthCheckIntervalMin = 10000
@@ -150,6 +151,14 @@ const (
 	// ServiceAnnotationServiceAccountName is a service annotation to select Service Account to be used to
 	// exchange for Workload Identity Token which can then be used for LB/NLB Client to communicate to OCI LB/NLB API.
 	ServiceAnnotationServiceAccountName = "oci.oraclecloud.com/workload-service-account"
+
+	// ServiceAnnotationLoadBalancerSecurityRuleManagementMode is a Service annotation for
+	// specifying the security rule management mode ("SL-All", "SL-Frontend", "NSG", "None") that configures how security lists are managed by the CCM
+	ServiceAnnotationLoadBalancerSecurityRuleManagementMode = "oci.oraclecloud.com/security-rule-management-mode"
+
+	// ServiceAnnotationBackendSecurityRuleManagement is a service annotation to denote management of backend Network Security Group(s)
+	// ingress / egress security rules for a given kubernetes service could be either LB or NLB
+	ServiceAnnotationBackendSecurityRuleManagement = "oci.oraclecloud.com/oci-backend-network-security-group"
 )
 
 // NLB specific annotations
@@ -253,12 +262,26 @@ type SSLConfig struct {
 	sslSecretReader
 }
 
+type ManagedNetworkSecurityGroup struct {
+	nsgRuleManagementMode string
+	frontendNsgId         string
+	backendNsgId          []string
+}
+
 func requiresCertificate(svc *v1.Service) bool {
 	if svc.Annotations[ServiceAnnotationLoadBalancerType] == NLB {
 		return false
 	}
 	_, ok := svc.Annotations[ServiceAnnotationLoadBalancerSSLPorts]
 	return ok
+}
+
+func requiresNsgManagement(svc *v1.Service) bool {
+	manageNSG := strings.ToLower(svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode])
+	if manageNSG == "nsg" {
+		return true
+	}
+	return false
 }
 
 // NewSSLConfig constructs a new SSLConfig.
@@ -283,24 +306,25 @@ func NewSSLConfig(secretListenerString string, secretBackendSetString string, se
 // LBSpec holds the data required to build a OCI load balancer from a
 // kubernetes service.
 type LBSpec struct {
-	Type                    string
-	Name                    string
-	Shape                   string
-	FlexMin                 *int
-	FlexMax                 *int
-	Subnets                 []string
-	Internal                bool
-	Listeners               map[string]client.GenericListener
-	BackendSets             map[string]client.GenericBackendSetDetails
-	LoadBalancerIP          string
-	IsPreserveSource        *bool
-	Ports                   map[string]portSpec
-	SourceCIDRs             []string
-	SSLConfig               *SSLConfig
-	securityListManager     securityListManager
-	NetworkSecurityGroupIds []string
-	FreeformTags            map[string]string
-	DefinedTags             map[string]map[string]interface{}
+	Type                        string
+	Name                        string
+	Shape                       string
+	FlexMin                     *int
+	FlexMax                     *int
+	Subnets                     []string
+	Internal                    bool
+	Listeners                   map[string]client.GenericListener
+	BackendSets                 map[string]client.GenericBackendSetDetails
+	LoadBalancerIP              string
+	IsPreserveSource            *bool
+	Ports                       map[string]portSpec
+	SourceCIDRs                 []string
+	SSLConfig                   *SSLConfig
+	securityListManager         securityListManager
+	ManagedNetworkSecurityGroup *ManagedNetworkSecurityGroup
+	NetworkSecurityGroupIds     []string
+	FreeformTags                map[string]string
+	DefinedTags                 map[string]map[string]interface{}
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -362,34 +386,44 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
-	secListManagerMode, err := getSecurityListManagementMode(svc)
+	ruleManagementMode, managedNsg, err := getRuleManagementMode(svc)
 	if err != nil {
 		return nil, err
+	}
+
+	backendNsgOcids, err := getManagedBackendNSG(svc)
+	if err != nil {
+		return nil, err
+	}
+
+	if managedNsg != nil && ruleManagementMode == RuleManagementModeNsg && len(backendNsgOcids) != 0 {
+		managedNsg.backendNsgId = backendNsgOcids
 	}
 
 	lbType := getLoadBalancerType(svc)
 
 	return &LBSpec{
-		Type:                    lbType,
-		Name:                    GetLoadBalancerName(svc),
-		Shape:                   shape,
-		FlexMin:                 flexShapeMinMbps,
-		FlexMax:                 flexShapeMaxMbps,
-		Internal:                internal,
-		Subnets:                 subnets,
-		Listeners:               listeners,
-		BackendSets:             backendSets,
-		LoadBalancerIP:          loadbalancerIP,
-		IsPreserveSource:        &isPreserveSource,
-		Ports:                   ports,
-		SSLConfig:               sslConfig,
-		SourceCIDRs:             sourceCIDRs,
-		NetworkSecurityGroupIds: networkSecurityGroupIds,
-		service:                 svc,
-		nodes:                   provisionedNodes,
-		securityListManager:     secListFactory(secListManagerMode),
-		FreeformTags:            lbTags.FreeformTags,
-		DefinedTags:             lbTags.DefinedTags,
+		Type:                        lbType,
+		Name:                        GetLoadBalancerName(svc),
+		Shape:                       shape,
+		FlexMin:                     flexShapeMinMbps,
+		FlexMax:                     flexShapeMaxMbps,
+		Internal:                    internal,
+		Subnets:                     subnets,
+		Listeners:                   listeners,
+		BackendSets:                 backendSets,
+		LoadBalancerIP:              loadbalancerIP,
+		IsPreserveSource:            &isPreserveSource,
+		Ports:                       ports,
+		SSLConfig:                   sslConfig,
+		SourceCIDRs:                 sourceCIDRs,
+		NetworkSecurityGroupIds:     networkSecurityGroupIds,
+		ManagedNetworkSecurityGroup: managedNsg,
+		service:                     svc,
+		nodes:                       provisionedNodes,
+		securityListManager:         secListFactory(ruleManagementMode),
+		FreeformTags:                lbTags.FreeformTags,
+		DefinedTags:                 lbTags.DefinedTags,
 	}, nil
 }
 
@@ -418,6 +452,74 @@ func getSecurityListManagementMode(svc *v1.Service) (string, error) {
 	default:
 		return svc.Annotations[ServiceAnnotationLoadBalancerSecurityListManagementMode], nil
 	}
+}
+
+func getRuleManagementMode(svc *v1.Service) (string, *ManagedNetworkSecurityGroup, error) {
+
+	knownRuleManagementModes := map[string]struct{}{
+		RuleManagementModeSlAll:      struct{}{},
+		RuleManagementModeSlFrontend: struct{}{},
+		RuleManagementModeNsg:        struct{}{},
+		ManagementModeNone:           struct{}{},
+	}
+
+	nsg := ManagedNetworkSecurityGroup{
+		nsgRuleManagementMode: ManagementModeNone,
+		frontendNsgId:         "",
+		backendNsgId:          []string{},
+	}
+
+	annotationExists := false
+	var annotationValue string
+	annotationValue, annotationExists = svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode]
+	if !annotationExists {
+		secListMode, err := getSecurityListManagementMode(svc)
+		return secListMode, &nsg, err
+	}
+
+	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeSlAll) {
+		return ManagementModeAll, &nsg, nil
+	}
+	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeSlFrontend) {
+		return ManagementModeFrontend, &nsg, nil
+	}
+
+	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeNsg) {
+		nsg = ManagedNetworkSecurityGroup{
+			nsgRuleManagementMode: RuleManagementModeNsg,
+			frontendNsgId:         "",
+			backendNsgId:          []string{},
+		}
+		return RuleManagementModeNsg, &nsg, nil
+	}
+
+	if _, ok := knownRuleManagementModes[annotationValue]; !ok {
+		return ManagementModeNone, &nsg, fmt.Errorf("invalid value: %s provided for annotation: %s", annotationValue, ServiceAnnotationLoadBalancerSecurityRuleManagementMode)
+	}
+
+	return ManagementModeNone, &nsg, nil
+}
+
+func getManagedBackendNSG(svc *v1.Service) ([]string, error) {
+	backendNsgList := make([]string, 0)
+	var networkSecurityGroupIds string
+	var nsgAnnotationString string
+	var ok bool
+	networkSecurityGroupIds, ok = svc.Annotations[ServiceAnnotationBackendSecurityRuleManagement]
+	nsgAnnotationString = ServiceAnnotationBackendSecurityRuleManagement
+	if !ok || networkSecurityGroupIds == "" {
+		return backendNsgList, nil
+	}
+	numOfNsgIds := 0
+	for _, nsgOCID := range RemoveDuplicatesFromList(strings.Split(strings.ReplaceAll(networkSecurityGroupIds, " ", ""), ",")) {
+		numOfNsgIds++
+		if nsgOCID != "" {
+			backendNsgList = append(backendNsgList, nsgOCID)
+			continue
+		}
+		return nil, fmt.Errorf("invalid NetworkSecurityGroups OCID: [%s] provided for annotation: %s", networkSecurityGroupIds, nsgAnnotationString)
+	}
+	return backendNsgList, nil
 }
 
 // Certificates builds a map of required SSL certificates.
