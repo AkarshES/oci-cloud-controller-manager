@@ -83,6 +83,16 @@ type virtualNetworkClient interface {
 	ListPrivateIps(ctx context.Context, request core.ListPrivateIpsRequest) (response core.ListPrivateIpsResponse, err error)
 	CreatePrivateIp(ctx context.Context, request core.CreatePrivateIpRequest) (response core.CreatePrivateIpResponse, err error)
 	GetPublicIpByIpAddress(ctx context.Context, request core.GetPublicIpByIpAddressRequest) (response core.GetPublicIpByIpAddressResponse, err error)
+
+	GetNetworkSecurityGroup(ctx context.Context, request core.GetNetworkSecurityGroupRequest) (response core.GetNetworkSecurityGroupResponse, err error)
+	CreateNetworkSecurityGroup(ctx context.Context, request core.CreateNetworkSecurityGroupRequest) (response core.CreateNetworkSecurityGroupResponse, err error)
+	UpdateNetworkSecurityGroup(ctx context.Context, request core.UpdateNetworkSecurityGroupRequest) (response core.UpdateNetworkSecurityGroupResponse, err error)
+	DeleteNetworkSecurityGroup(ctx context.Context, request core.DeleteNetworkSecurityGroupRequest) (response core.DeleteNetworkSecurityGroupResponse, err error)
+
+	AddNetworkSecurityGroupSecurityRules(ctx context.Context, request core.AddNetworkSecurityGroupSecurityRulesRequest) (response core.AddNetworkSecurityGroupSecurityRulesResponse, err error)
+	RemoveNetworkSecurityGroupSecurityRules(ctx context.Context, request core.RemoveNetworkSecurityGroupSecurityRulesRequest) (response core.RemoveNetworkSecurityGroupSecurityRulesResponse, err error)
+	ListNetworkSecurityGroupSecurityRules(ctx context.Context, request core.ListNetworkSecurityGroupSecurityRulesRequest) (response core.ListNetworkSecurityGroupSecurityRulesResponse, err error)
+	UpdateNetworkSecurityGroupSecurityRules(ctx context.Context, request core.UpdateNetworkSecurityGroupSecurityRulesRequest) (response core.UpdateNetworkSecurityGroupSecurityRulesResponse, err error)
 }
 
 type loadBalancerClient interface {

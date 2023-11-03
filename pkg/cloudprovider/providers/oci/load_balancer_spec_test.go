@@ -135,7 +135,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"defaults-nlb-cluster-policy": {
@@ -198,7 +199,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"defaults-nlb-local-policy": {
@@ -262,7 +264,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"internal with default subnet": {
@@ -327,7 +330,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"internal with overridden regional subnet1": {
@@ -393,7 +397,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"internal with overridden regional subnet2": {
@@ -459,7 +464,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"internal with no default subnets provide subnet1 via annotation": {
@@ -523,7 +529,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"use default subnet in case of no subnet overrides via annotation": {
@@ -586,7 +593,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"no default subnets provide subnet1 via annotation as regional-subnet": {
@@ -649,7 +657,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"no default subnets provide subnet2 via annotation": {
@@ -712,7 +721,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"override default subnet via subnet1 annotation as regional subnet": {
@@ -777,7 +787,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"override default subnet via subnet2 annotation as regional subnet": {
@@ -842,7 +853,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"override default subnet via subnet1 and subnet2 annotation": {
@@ -908,7 +920,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		//"security list manager annotation":
@@ -974,7 +987,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"custom idle connection timeout": {
@@ -1042,7 +1056,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"custom proxy protocol version w/o timeout for multiple listeners": {
@@ -1144,7 +1159,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"custom proxy protocol version and timeout": {
@@ -1214,7 +1230,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"protocol annotation set to http": {
@@ -1281,7 +1298,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"protocol annotation set to tcp": {
@@ -1348,7 +1366,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"protocol annotation empty": {
@@ -1415,7 +1434,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"LBSpec returned with proper SSLConfiguration": {
@@ -1488,7 +1508,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 				SSLConfig: &SSLConfig{
 					Ports:                   sets.NewInt(443),
 					ListenerSSLSecretName:   listenerSecret,
@@ -1565,7 +1586,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"flex shape": {
@@ -1634,7 +1656,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"valid loadbalancer policy": {
@@ -1700,7 +1723,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"default loadbalancer policy": {
@@ -1765,7 +1789,8 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 		"load balancer with reserved ip": {
@@ -1831,8 +1856,9 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
-				LoadBalancerIP:      "10.0.0.0",
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				LoadBalancerIP:              "10.0.0.0",
 			},
 		},
 		"defaults with tags": {
@@ -1905,9 +1931,10 @@ func TestNewLBSpecSuccess(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
-				FreeformTags:        map[string]string{"cluster": "resource", "unique": "tag"},
-				DefinedTags:         map[string]map[string]interface{}{"namespace": {"owner": "team", "key": "value"}},
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				FreeformTags:                map[string]string{"cluster": "resource", "unique": "tag"},
+				DefinedTags:                 map[string]map[string]interface{}{"namespace": {"owner": "team", "key": "value"}},
 			},
 		},
 	}
@@ -1935,6 +1962,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
+
 			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.clusterTags, nil)
 			if err != nil {
 				t.Error(err)
@@ -2019,7 +2047,8 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 						HealthCheckerPort: 10256,
 					},
 				},
-				securityListManager: newSecurityListManagerNOOP(),
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
 			},
 		},
 	}
@@ -2047,6 +2076,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
+
 			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.clusterTags, nil)
 			if err != nil {
 				t.Error(err)
@@ -2599,6 +2629,44 @@ func TestRequiresCertificate(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			result := requiresCertificate(&v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: tc.annotations,
+				},
+			})
+			if result != tc.expected {
+				t.Error("Did not get the correct result")
+			}
+		})
+	}
+}
+
+func TestRequiresFrontendNsg(t *testing.T) {
+	testCases := map[string]struct {
+		expected    bool
+		annotations map[string]string
+	}{
+		"Contains annotation for NSG Rule management": {
+			expected: true,
+			annotations: map[string]string{
+				ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+			},
+		},
+		"Does not contain annotation for NSG Rule management": {
+			expected:    false,
+			annotations: make(map[string]string, 0),
+		},
+		"Contains annotation (NLB) for NSG Rule management": {
+			expected: true,
+			annotations: map[string]string{
+				ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+				ServiceAnnotationLoadBalancerType:                       "nlb",
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			result := requiresNsgManagement(&v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: tc.annotations,
 				},
@@ -4050,6 +4118,361 @@ func Test_getSecurityListManagementMode(t *testing.T) {
 			}
 			if !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("Expected Security List Mode \n%+v\nbut got\n%+v", tc.expected, result)
+			}
+		})
+	}
+}
+
+func Test_getRuleManagementMode(t *testing.T) {
+	testCases := map[string]struct {
+		service  *v1.Service
+		expected string
+		nsg      *ManagedNetworkSecurityGroup
+		error    error
+	}{
+		"defaults": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			expected: "",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"lb mode None": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "None",
+					},
+				},
+			},
+			expected: "None",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"lb mode all": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "SL-All",
+					},
+				},
+			},
+			expected: "All",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"lb mode frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "SL-Frontend",
+					},
+				},
+			},
+			expected: "Frontend",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"lb mode nsg frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+			},
+			expected: "NSG",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: "NSG",
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"defaults-nlb": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+			},
+			expected: "None",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"nlb mode None": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       "nlb",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "None",
+					},
+				},
+			},
+			expected: "None",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"nlb mode all": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       "nlb",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "SL-All",
+					},
+				},
+			},
+			expected: "All",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"nlb mode frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       "nlb",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "SL-Frontend",
+					},
+				},
+			},
+			expected: "Frontend",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"nlb mode nsg": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       "nlb",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+			},
+			expected: "NSG",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: "NSG",
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"lb mode precedence": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityListManagementMode: "All",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+			},
+			expected: "NSG",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: "NSG",
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"nlb mode precedence": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              "nlb",
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode:        "NSG",
+					},
+				},
+			},
+			expected: "NSG",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: "NSG",
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"case does not matter nsg": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              "nlb",
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode:        "nsg",
+					},
+				},
+			},
+			expected: "NSG",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: "NSG",
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"case does not matter sl-all": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              "nlb",
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode:        "sl-all",
+					},
+				},
+			},
+			expected: "All",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"case does not matter sl-frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              "nlb",
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode:        "sl-frontend",
+					},
+				},
+			},
+			expected: "Frontend",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+		},
+		"invalid values should return none": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              "nlb",
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "random",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode:        "random",
+					},
+				},
+			},
+			expected: "None",
+			nsg: &ManagedNetworkSecurityGroup{
+				nsgRuleManagementMode: ManagementModeNone,
+				frontendNsgId:         "",
+				backendNsgId:          []string{},
+			},
+			error: fmt.Errorf("invalid value: %s provided for annotation: oci.oraclecloud.com/security-rule-management-mode",
+				"random"),
+		},
+	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			result, nsg, err := getRuleManagementMode(tc.service)
+			if err != nil {
+				if !reflect.DeepEqual(err, tc.error) {
+					t.Errorf("Expected Security List Mode \n%+v\nbut got\n%+v", tc.error, err)
+				}
+			}
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Errorf("Expected Security List Mode \n%+v\nbut got\n%+v", tc.expected, result)
+			}
+			if !reflect.DeepEqual(nsg, tc.nsg) {
+				t.Errorf("Expected Nsg values \n%+v\nbut got\n%+v", tc.nsg, nsg)
+			}
+		})
+	}
+}
+
+func Test_getBackendNetworkSecurityGroups(t *testing.T) {
+	testCases := map[string]struct {
+		service *v1.Service
+		nsgList []string
+		err     error
+	}{
+		"empty ServiceAnnotationLoadBalancerNetworkSecurityGroups annotation": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationBackendSecurityRuleManagement: "",
+					},
+				},
+			},
+			nsgList: []string{},
+			err:     nil,
+		},
+		"no ServiceAnnotationBackendSecurityRuleManagement annotation": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			nsgList: []string{},
+			err:     nil,
+		},
+		"ServiceAnnotationBackendSecurityRuleManagement update annotation": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationBackendSecurityRuleManagement: "ocid1.networksecuritygroup.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					},
+				},
+			},
+			nsgList: []string{"ocid1.networksecuritygroup.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			err:     nil,
+		},
+		"ServiceAnnotationBackendSecurityRuleManagement more than 5": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationBackendSecurityRuleManagement: "ocid1,ocid2,ocid3,ocid4,ocid5,ocid6",
+					},
+				},
+			},
+			nsgList: []string{"ocid1", "ocid2", "ocid3", "ocid4", "ocid5", "ocid6"},
+			err:     nil,
+		},
+		"ServiceAnnotationBackendSecurityRuleManagement duplicate NSG OCIDS": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationBackendSecurityRuleManagement: "ocid1,ocid2, ocid1",
+					},
+				},
+			},
+			nsgList: []string{"ocid1", "ocid2"},
+			err:     nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			nsgList, err := getManagedBackendNSG(tc.service)
+			if err != nil && err.Error() != tc.err.Error() {
+				t.Errorf("Expected  NSG List error\n%+v\nbut got\n%+v", tc.err, err)
+			}
+			if !reflect.DeepEqual(nsgList, tc.nsgList) {
+				t.Errorf("Expected NSG List\n%+v\nbut got\n%+v", tc.nsgList, nsgList)
 			}
 		})
 	}
