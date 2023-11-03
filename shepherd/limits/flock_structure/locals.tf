@@ -715,14 +715,6 @@ locals {
       image_url      = ""
     }
 
-    "prd.oc7" = {
-      splunk_enabled = true
-      // Configuration for image
-      // FIXME: Aseem Bajaj: At the time of provisioning of this cell, fill in the following values from local.selinux_overlay_uek5_images
-      image_name     = ""
-      image_url      = ""
-    }
-
     "prd.oc8" = {
       // Configuration for image
       image_name                  = local.selinux_overlay_uek5_images["20201116"].name
@@ -863,9 +855,6 @@ locals {
     }
     "prd.oc6.us-gov-sterling-2.cell0" = {
       predecessor = "prd.oc6.us-gov-fortworth-1.cell0"
-    }
-    "prd.oc7.us-gov-sterling-1.cell0" = {
-      predecessor = "env.setup.prd.oc7"
     }
     "prd.oc8.ap-chiyoda-1.cell0" = {
       predecessor = "env.setup.prd.oc8"

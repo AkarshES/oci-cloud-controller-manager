@@ -54,7 +54,6 @@ locals {
   grafana_uri = {
     oc5 = "https://grafana.us-tacoma-1.oci.oraclerealm5.com"
     oc6 = "https://grafana.us-gov-fortworth-1.oci.oraclerealm.ic.gov"
-    oc7 = "https://grafana.us-gov-sterling-1.oci.oci.ic.gov"
   }
 
   envSetup                          = var.env_name == "dev" ? var.env_name : "${var.env_name == "prd" ? "prod" : var.env_name}-cell${var.cell_index}"

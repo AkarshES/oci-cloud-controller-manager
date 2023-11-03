@@ -42,7 +42,7 @@ locals {
     // environment, realm, region or cell
     // Please note:
     // oc1 (all pre-YNY regions), & oc4 (LTN) are on IO Overlay Image
-    // oc1 (YNY and later regions), oc2, oc3, oc4 (BRS), oc5, oc6, oc7 and oc8 are on SELinux-Enabled Overlay Image
+    // oc1 (YNY and later regions), oc2, oc3, oc4 (BRS), oc5, oc6 and oc8 are on SELinux-Enabled Overlay Image
     image_name = ""
     image_url  = ""
     // Alarms Configuration

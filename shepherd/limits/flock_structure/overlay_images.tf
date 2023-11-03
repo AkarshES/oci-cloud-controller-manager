@@ -20,7 +20,7 @@ locals {
     }
   }
   // From https://confluence.oci.oraclecorp.com/pages/viewpage.action?spaceKey=COM&title=Latest+Releases#tab-SELinux-Enabled+Overlay+Image
-  // oc1 (YNY and later regions), oc2, oc3, oc4 (BRS), oc5, oc6, oc7 and oc8 are on SELinux-Enabled Overlay Image
+  // oc1 (YNY and later regions), oc2, oc3, oc4 (BRS), oc5, oc6 and oc8 are on SELinux-Enabled Overlay Image
   selinux_overlay_uek5_images = {
     "20201116" = {
       name : "ol79-x86_64-lvm-20201116-UEK5-75G-C6A1-PV"
