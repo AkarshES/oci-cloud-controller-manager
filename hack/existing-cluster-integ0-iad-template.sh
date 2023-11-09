@@ -70,6 +70,9 @@ export FSS_VOLUME_HANDLE_ARM="ocid1.filesystem.oc1.iad.aaaaaaaaaabwooosnfqwillqo
 export MNT_TARGET_ID="ocid1.mounttarget.oc1.iad.aaaaacvippy7r7n4nfqwillqojxwiotjmfsc2ylefuyqaaaa"
 export MNT_TARGET_SUBNET_ID="ocid1.subnet.oc1.iad.aaaaaaaapntwxrvyrnawcmhviwxwmf2vjdsigg32577rkqwrjzihypehgsta"
 export MNT_TARGET_COMPARTMENT_ID="ocid1.compartment.oc1..aaaaaaaayt3yoxoggojnw5ym3qzd3ayzsbrugdgrjwovkphovctgmyk7vb4q"
+export LUSTRE_VOLUME_HANDLE=""
+export LUSTRE_VOLUME_HANDLE_ARM=""
+export LUSTRE_SUBNET_CIDR=""
 
 export STATIC_SNAPSHOT_COMPARTMENT_ID=
 
