@@ -40,11 +40,11 @@ resource "telemetry_alarm" "cloud_provider_oci_container_restarts" {
   fleet = var.fleet
   display_name = "${var.fleet}-cloud-provider-oci-restarts in ${var.region}"
   query = "OKE.KMI.HostAgent.Pod.Container.Restarts[10m]{name=\"cloud-provider-oci\"}.groupBy(clusterId,resourceId).filter(x=>x>0).max().groupBy(clusterId).filter(x=>x>10).count().filter(x => x==1)"
-  severity = var.severity_3
+  severity = var.severity_4
   dedupe_key = "CpoRestartsForSingleKmi"
   is_enabled = var.enabled
   is_dedupe_key_cross_region = local.cross_region_dedupe
-  pending_duration = "PT5M"
+  pending_duration = "PT30M"
   body = <<EOT
 OKE.KMI.HostAgent.Pod.Container.Restarts - cloud-provider-oci container is continuously restarting on 1 out of 3 KMI
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 630)}]
