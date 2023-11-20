@@ -1,4 +1,4 @@
-FROM docker-remote.artifactory.oci.oraclecorp.com/oraclelinux:7-slim
+FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:7-slim
 
 #install latest oci cli from yum repo
 #ARG OCI_CLI_VERSION
