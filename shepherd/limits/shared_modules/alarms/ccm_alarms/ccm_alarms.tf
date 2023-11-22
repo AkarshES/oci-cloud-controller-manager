@@ -12,6 +12,7 @@ variable "cell" {}
 variable "env_name" {}
 variable "severity_2" {}
 variable "severity_3" {}
+variable "severity_4" {}
 variable "jira_project" {}
 variable "jira_component" {}
 variable "leadership_jira_component" {}

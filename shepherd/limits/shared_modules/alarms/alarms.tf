@@ -99,6 +99,7 @@ module "ccm_alarms" {
   env_name                    = var.env_name
   severity_2                  = var.severity_2
   severity_3                  = var.severity_3
+  severity_4                  = var.severity_4
   jira_project                = var.jira_project
   jira_component              = var.jira_component
   leadership_jira_component   = var.leadership_jira_component
