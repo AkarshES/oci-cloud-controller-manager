@@ -29,6 +29,10 @@ resource "shepherd_execution_target" "prod_build_spectre_region_et" {
     manage_definitions     = "false"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, each.key), "spectre_group_name")
   }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }
 
 resource "shepherd_execution_target" "prod_build_region_et" {

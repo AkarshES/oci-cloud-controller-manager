@@ -102,4 +102,8 @@ resource "shepherd_execution_target" "polaris_onsr_region_values" {
     },
     lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {})
   )
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }
