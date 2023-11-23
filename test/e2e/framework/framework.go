@@ -128,6 +128,7 @@ var (
 	isPostUpgradeString           string
 	clusterID                     string              // Ocid of the newly created E2E cluster
 	clusterType                   string              // Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER (Default: BASIC_CLUSTER)
+	enableParallelRun			  bool
 	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
 )
 
@@ -196,6 +197,7 @@ func init() {
 	flag.StringVar(&namespace, "namespace", "pre-upgrade", "Namespace used for pre-upgrade and post-upgrade testing.")
 
 	flag.StringVar(&clusterType, "cluster-type", "BASIC_CLUSTER", "Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER")
+	flag.BoolVar(&enableParallelRun, "enable-parallel-run", true, "Enables parallel running of test suite")
 }
 
 func getDefaultOCIUser() OCIUser {

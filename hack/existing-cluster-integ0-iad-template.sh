@@ -75,6 +75,7 @@ export LUSTRE_VOLUME_HANDLE_ARM=""
 export LUSTRE_SUBNET_CIDR=""
 
 export STATIC_SNAPSHOT_COMPARTMENT_ID=
+export ENABLE_PARALLEL_RUN=true
 
 # Workload Identity Principal Feature only available for ENHANCED_CLUSTER
 export CLUSTER_TYPE="ENHANCED_CLUSTER"

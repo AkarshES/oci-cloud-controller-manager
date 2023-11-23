@@ -86,6 +86,7 @@ run_tests() {
           -e OKE_TEST_COMMAND \
           -e STATIC_SNAPSHOT_COMPARTMENT_ID \
           -e CREATE_UHP_NODEPOOL \
+          -e ENABLE_PARALLEL_RUN \
           oke-ccm-e2e-tests-pop /bin/bash -c "./images/e2e-tests/e2e_pop_run.sh" 2>&1
 }
 
