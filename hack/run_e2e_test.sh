@@ -109,6 +109,7 @@ function check_environment () {
         check-env "MNT_TARGET_COMPARTMENT_ID" $MNT_TARGET_COMPARTMENT_ID
         check-env "STATIC_SNAPSHOT_COMPARTMENT_ID" $STATIC_SNAPSHOT_COMPARTMENT_ID
         check-env "CREATE_UHP_NODEPOOL"       $CREATE_UHP_NODEPOOL
+        check-env "ENABLE_PARALLEL_RUN"       $ENABLE_PARALLEL_RUN
         check-env "CLUSTER_TYPE"              $CLUSTER_TYPE
         check-env-k8s-version-index-exist
         if [ -z "$CLUSTER_KUBECONFIG" ]; then
@@ -153,87 +154,174 @@ function run_e2e_tests() {
 	  E2E_NODE_COUNT=1
 	fi
 
-	echo "Starting tests with node count: ${E2E_NODE_COUNT}"
-    ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
-        test/e2e/cloud-provider-oci -- \
-        --okeendpoint=${OKE_ENDPOINT} \
-        --ociuser=${OCI_USER} \
-        --ocifingerprint=${OCI_FINGERPRINT} \
-        --ocikeyfile=${OCI_KEY_FILE} \
-        --ocikeypassphrase=${OCI_KEY_PASSPHRASE} \
-        --ocitenancy=${OCI_TENANCY} \
-        --ociregion=${OCI_REGION} \
-        --compartment1=${COMPARTMENT} \
-        --vcn=${VCN} \
-        --lbsubnet1=${LBSUBNET1} \
-        --lbsubnet2=${LBSUBNET2} \
-        --lbrgnsubnet=${LBRGNSUBNET} \
-        --nodeshape=${NODE_SHAPE} \
-        --subnet1=${OCI_SUBNET1} \
-        --subnet2=${OCI_SUBNET2} \
-        --subnet3=${OCI_SUBNET3} \
-        --k8ssubnet=${OCI_K8SSUBNET} \
-        --nodesubnet=${OCI_NODESUBNET} \
-        --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
-        --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
-        --pubsshkey="${PUB_SSHKEY}" \
-        --secrets-dir=${SECRETS_LOCAL} \
-        --kubeconfig_file="${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}/kubeconfig.TNL" \
-        --delegate-group-id=${DELEGATION_GROUP_ID} \
-        --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
-        --adlocation=${ADLOCATION} \
-        --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
-        --cloud-config=${CLOUD_CONFIG} \
-        --delete-namespace=${DELETE_NAMESPACE} \
-        --image-pull-repo=${IMAGE_PULL_REPO} \
-        --cmek-kms-key=${CMEK_KMS_KEY} \
-        --mnt-target-id=${MNT_TARGET_ID} \
-        --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
-        --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
-        --nsg-ocids=${NSG_OCIDS} \
-        --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
-        --reserved-ip=${RESERVED_IP} \
-        --architecture=${ARCHITECTURE} \
-        --volume-handle=${FSS_VOLUME_HANDLE} \
-        --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
-        --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
-        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
-        --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
-        --namespace=${NAMESPACE} \
-        --post-upgrade=${POST_UPGRADE} \
-        --pre-upgrade=${PRE_UPGRADE} \
-        --cluster-type=${CLUSTER_TYPE}
+    if [ "$ENABLE_PARALLEL_RUN" == "true" ] || [ "$ENABLE_PARALLEL_RUN" == "TRUE" ]; then
+        ginkgo -v -p -progress --trace "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
+                test/e2e/cloud-provider-oci -- \
+                --okeendpoint=${OKE_ENDPOINT} \
+                --ociuser=${OCI_USER} \
+                --ocifingerprint=${OCI_FINGERPRINT} \
+                --ocikeyfile=${OCI_KEY_FILE} \
+                --ocikeypassphrase=${OCI_KEY_PASSPHRASE} \
+                --ocitenancy=${OCI_TENANCY} \
+                --ociregion=${OCI_REGION} \
+                --compartment1=${COMPARTMENT} \
+                --vcn=${VCN} \
+                --lbsubnet1=${LBSUBNET1} \
+                --lbsubnet2=${LBSUBNET2} \
+                --lbrgnsubnet=${LBRGNSUBNET} \
+                --nodeshape=${NODE_SHAPE} \
+                --subnet1=${OCI_SUBNET1} \
+                --subnet2=${OCI_SUBNET2} \
+                --subnet3=${OCI_SUBNET3} \
+                --k8ssubnet=${OCI_K8SSUBNET} \
+                --nodesubnet=${OCI_NODESUBNET} \
+                --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
+                --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
+                --pubsshkey="${PUB_SSHKEY}" \
+                --secrets-dir=${SECRETS_LOCAL} \
+                --kubeconfig_file="${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}/kubeconfig.TNL" \
+                --delegate-group-id=${DELEGATION_GROUP_ID} \
+                --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
+                --adlocation=${ADLOCATION} \
+                --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
+                --cloud-config=${CLOUD_CONFIG} \
+                --delete-namespace=${DELETE_NAMESPACE} \
+                --image-pull-repo=${IMAGE_PULL_REPO} \
+                --cmek-kms-key=${CMEK_KMS_KEY} \
+                --mnt-target-id=${MNT_TARGET_ID} \
+                --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
+                --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
+                --nsg-ocids=${NSG_OCIDS} \
+                --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --reserved-ip=${RESERVED_IP} \
+                --architecture=${ARCHITECTURE} \
+                --volume-handle=${FSS_VOLUME_HANDLE} \
+                --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
+                --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
+                --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
+                --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
+                --namespace=${NAMESPACE} \
+                --post-upgrade=${POST_UPGRADE} \
+                --pre-upgrade=${PRE_UPGRADE} \
+                --cluster-type=${CLUSTER_TYPE}
+    else
+        ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
+                test/e2e/cloud-provider-oci -- \
+                --okeendpoint=${OKE_ENDPOINT} \
+                --ociuser=${OCI_USER} \
+                --ocifingerprint=${OCI_FINGERPRINT} \
+                --ocikeyfile=${OCI_KEY_FILE} \
+                --ocikeypassphrase=${OCI_KEY_PASSPHRASE} \
+                --ocitenancy=${OCI_TENANCY} \
+                --ociregion=${OCI_REGION} \
+                --compartment1=${COMPARTMENT} \
+                --vcn=${VCN} \
+                --lbsubnet1=${LBSUBNET1} \
+                --lbsubnet2=${LBSUBNET2} \
+                --lbrgnsubnet=${LBRGNSUBNET} \
+                --nodeshape=${NODE_SHAPE} \
+                --subnet1=${OCI_SUBNET1} \
+                --subnet2=${OCI_SUBNET2} \
+                --subnet3=${OCI_SUBNET3} \
+                --k8ssubnet=${OCI_K8SSUBNET} \
+                --nodesubnet=${OCI_NODESUBNET} \
+                --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
+                --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
+                --pubsshkey="${PUB_SSHKEY}" \
+                --secrets-dir=${SECRETS_LOCAL} \
+                --kubeconfig_file="${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}/kubeconfig.TNL" \
+                --delegate-group-id=${DELEGATION_GROUP_ID} \
+                --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
+                --adlocation=${ADLOCATION} \
+                --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
+                --cloud-config=${CLOUD_CONFIG} \
+                --delete-namespace=${DELETE_NAMESPACE} \
+                --image-pull-repo=${IMAGE_PULL_REPO} \
+                --cmek-kms-key=${CMEK_KMS_KEY} \
+                --mnt-target-id=${MNT_TARGET_ID} \
+                --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
+                --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
+                --nsg-ocids=${NSG_OCIDS} \
+                --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --reserved-ip=${RESERVED_IP} \
+                --architecture=${ARCHITECTURE} \
+                --volume-handle=${FSS_VOLUME_HANDLE} \
+                --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
+                --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
+                --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
+                --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
+                --namespace=${NAMESPACE} \
+                --post-upgrade=${POST_UPGRADE} \
+                --pre-upgrade=${PRE_UPGRADE} \
+                --cluster-type=${CLUSTER_TYPE}
+    fi
     retval=$?
     rm -f $OCI_KEY_FILE
     return $retval
 }
 
 function run_e2e_tests_existing_cluster() {
-    ginkgo -v -progress --trace "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
-        test/e2e/cloud-provider-oci -- \
-        --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
-        --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
-        --cloud-config=${CLOUD_CONFIG} \
-        --adlocation=${ADLOCATION} \
-        --delete-namespace=${DELETE_NAMESPACE} \
-        --image-pull-repo=${IMAGE_PULL_REPO} \
-        --cmek-kms-key=${CMEK_KMS_KEY} \
-        --mnt-target-id=${MNT_TARGET_ID} \
-        --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
-        --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
-        --nsg-ocids=${NSG_OCIDS} \
-        --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
-        --reserved-ip=${RESERVED_IP} \
-        --architecture=${ARCHITECTURE} \
-        --volume-handle=${FSS_VOLUME_HANDLE} \
-        --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
-        --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
-        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
-        --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
-        --namespace=${NAMESPACE} \
-        --post-upgrade=${POST_UPGRADE} \
-        --pre-upgrade=${PRE_UPGRADE} \
-        --cluster-type=${CLUSTER_TYPE}
+    if [[ -z "${E2E_NODE_COUNT}" ]]; then
+        E2E_NODE_COUNT=1
+    fi
+
+    if [ "$ENABLE_PARALLEL_RUN" == "true" ] || [ "$ENABLE_PARALLEL_RUN" == "TRUE" ]; then
+        ginkgo -v -p -progress --trace "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
+                test/e2e/cloud-provider-oci -- \
+                --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
+                --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
+                --cloud-config=${CLOUD_CONFIG} \
+                --adlocation=${ADLOCATION} \
+                --delete-namespace=${DELETE_NAMESPACE} \
+                --image-pull-repo=${IMAGE_PULL_REPO} \
+                --cmek-kms-key=${CMEK_KMS_KEY} \
+                --mnt-target-id=${MNT_TARGET_ID} \
+                --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
+                --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
+                --nsg-ocids=${NSG_OCIDS} \
+                --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --reserved-ip=${RESERVED_IP} \
+                --architecture=${ARCHITECTURE} \
+                --volume-handle=${FSS_VOLUME_HANDLE} \
+                --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
+                --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
+                --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
+                --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
+                --namespace=${NAMESPACE} \
+                --post-upgrade=${POST_UPGRADE} \
+                --pre-upgrade=${PRE_UPGRADE} \
+                --cluster-type=${CLUSTER_TYPE}
+    else
+        ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
+                        test/e2e/cloud-provider-oci -- \
+                        --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
+                        --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
+                        --cloud-config=${CLOUD_CONFIG} \
+                        --adlocation=${ADLOCATION} \
+                        --delete-namespace=${DELETE_NAMESPACE} \
+                        --image-pull-repo=${IMAGE_PULL_REPO} \
+                        --cmek-kms-key=${CMEK_KMS_KEY} \
+                        --mnt-target-id=${MNT_TARGET_ID} \
+                        --mnt-target-subnet-id=${MNT_TARGET_SUBNET_ID} \
+                        --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
+                        --nsg-ocids=${NSG_OCIDS} \
+                        --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                        --reserved-ip=${RESERVED_IP} \
+                        --architecture=${ARCHITECTURE} \
+                        --volume-handle=${FSS_VOLUME_HANDLE} \
+                        --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
+                        --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
+                        --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                        --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
+                        --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
+                        --namespace=${NAMESPACE} \
+                        --post-upgrade=${POST_UPGRADE} \
+                        --pre-upgrade=${PRE_UPGRADE} \
+                        --cluster-type=${CLUSTER_TYPE}
+    fi
     retval=$?
     return $retval
 }
@@ -273,6 +361,7 @@ function setup_arm() {
         export MNT_TARGET_COMPARTMENT_ID=$MNT_TARGET_COMPARTMENT_ID
         export STATIC_SNAPSHOT_COMPARTMENT_ID=$STATIC_SNAPSHOT_COMPARTMENT_ID
         export CREATE_UHP_NODEPOOL=$CREATE_UHP_NODEPOOL
+        export ENABLE_PARALLEL_RUN=$ENABLE_PARALLEL_RUN
         declare_setup "CREATE"
     elif [[ "$#" -ne  "0" && "$1" == "EXIST" ]]; then
         export CLUSTER_KUBECONFIG=$CLUSTER_KUBECONFIG_ARM
@@ -306,6 +395,7 @@ function declare_setup () {
     echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
     echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
     echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
+    echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
 }
 
@@ -371,6 +461,7 @@ function declare_environment () {
         echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
         echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
         echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
+        echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
         echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
     else
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"

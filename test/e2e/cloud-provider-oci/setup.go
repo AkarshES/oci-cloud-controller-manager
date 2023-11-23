@@ -75,7 +75,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 				sharedfw.Logf(" Created cluster %s with nodepool %s ", clusterOCID, *nodepool.Id)
 			} else {
 				var ocpus = float32(16.0)
-				var memoryInGBs = float32(32.0)
+				var memoryInGBs = float32(16.0)
 				var NodeShapeConfig = oke.CreateNodeShapeConfigDetails{
 					Ocpus:       &ocpus,
 					MemoryInGBs: &memoryInGBs,
@@ -99,9 +99,12 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		sharedfw.Logf("Cluster creation skipped. Running tests with existing cluster.")
 	}
 	return nil
-}, func(data []byte) {})
+	}, func(data []byte) {
+		setupF = sharedfw.New()
+	},
+)
 
-var _ = ginkgo.SynchronizedAfterSuite(func() {
+var _ = ginkgo.SynchronizedAfterSuite(func() {}, func() {
 	sharedfw.Logf("Running AfterSuite actions on all node")
 	if !setupF.IsPostUpgrade && !setupF.IsPreUpgrade {
 		sharedfw.RunCleanupActions()
@@ -109,4 +112,4 @@ var _ = ginkgo.SynchronizedAfterSuite(func() {
 			setupF.CleanAllWithoutWait()
 		}
 	}
-}, func() {})
+})

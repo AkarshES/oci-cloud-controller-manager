@@ -39,7 +39,7 @@ var _ = Describe("Lustre Static", func() {
 
 			//BV
 			bvPVCJig := framework.NewPVCTestJig(f.ClientSet, "csi-bv-e2e-test")
-			scName := f.CreateStorageClassOrFail(framework.ClassOCICSI, "blockvolume.csi.oraclecloud.com", nil, bvPVCJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			scName := f.CreateStorageClassOrFail(framework.ClassOCICSI, "blockvolume.csi.oraclecloud.com", nil, bvPVCJig.Labels, "WaitForFirstConsumer", true, "Delete", nil)
 			bvPVC := bvPVCJig.CreateAndAwaitPVCOrFailCSI(f.Namespace.Name, framework.MinVolumeBlock, scName, nil, v1.PersistentVolumeFilesystem, v1.ReadWriteOnce, v1.ClaimPending)
 
 			//FSS
