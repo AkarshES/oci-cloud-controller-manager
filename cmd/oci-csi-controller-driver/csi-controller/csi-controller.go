@@ -74,9 +74,13 @@ func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 	// controller for block volume
 	logger.Info("starting csi-controller go routine for BV")
 	go csicontrollerdriver.StartControllerDriver(csioptions, driver.BV)
+
+	//setting operation timeout to 240 seconds for FSS driver (used for CreateVolume/DeleteVolume gRPCs)
+	csioptions.OperationTimeout = 240 * time.Second
 	// controller for fss
 	logger.Info("starting csi-controller go routine for FSS")
 	go csicontrollerdriver.StartControllerDriver(csioptions, driver.FSS)
+
 	<-stopCh
 	return nil
 }
