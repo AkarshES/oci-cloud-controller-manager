@@ -195,6 +195,7 @@ function run_e2e_tests() {
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
         --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
+        --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
@@ -224,6 +225,7 @@ function run_e2e_tests_existing_cluster() {
         --architecture=${ARCHITECTURE} \
         --volume-handle=${FSS_VOLUME_HANDLE} \
         --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
+        --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
