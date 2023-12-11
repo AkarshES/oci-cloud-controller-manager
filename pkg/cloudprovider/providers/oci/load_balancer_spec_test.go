@@ -668,7 +668,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 					Name:      "testservice",
 					UID:       "test-uid",
 					Annotations: map[string]string{
-						ServiceAnnotationLoadBalancerSubnet2: "annotation-two",
+						ServiceAnnotationLoadBalancerSubnet2: "regional-subnet",
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -686,7 +686,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				Type:     "lb",
 				Shape:    "100Mbps",
 				Internal: false,
-				Subnets:  []string{"", "annotation-two"},
+				Subnets:  []string{"regional-subnet"},
 				Listeners: map[string]client.GenericListener{
 					"TCP-80": client.GenericListener{
 						Name:                  common.String("TCP-80"),
@@ -2101,6 +2101,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 		clusterTags    *providercfg.InitialTags
 	}{
 		"unsupported udp protocol": {
+			defaultSubnetOne: "one",
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
 					Ports: []v1.ServicePort{
@@ -2111,6 +2112,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 			expectedErrMsg: "invalid service: OCI load balancers do not support UDP",
 		},
 		"unsupported session affinity": {
+			defaultSubnetOne: "one",
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
 					SessionAffinity: v1.ServiceAffinityClientIP,
@@ -2180,7 +2182,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 					//add security list mananger in spec
 				},
 			},
-			expectedErrMsg: "a configuration for subnet1 must be specified for an internal load balancer",
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
 		},
 		"internal lb with empty subnet1 annotation": {
 			service: &v1.Service{
@@ -2190,7 +2192,6 @@ func TestNewLBSpecFailure(t *testing.T) {
 					UID:       "test-uid",
 					Annotations: map[string]string{
 						ServiceAnnotationLoadBalancerInternal: "true",
-						ServiceAnnotationLoadBalancerSubnet1:  "",
 					},
 				},
 				Spec: v1.ServiceSpec{
@@ -2199,7 +2200,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 					//add security list mananger in spec
 				},
 			},
-			expectedErrMsg: "a configuration for subnet1 must be specified for an internal load balancer",
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
 		},
 		"non boolean internal lb": {
 			service: &v1.Service{
@@ -2282,6 +2283,8 @@ func TestNewLBSpecFailure(t *testing.T) {
 			expectedErrMsg: `loadbalancer policy "not-valid-loadbalancer-policy" is not valid`,
 		},
 		"invalid loadBalancerIP format": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
 					LoadBalancerIP:  "non-ip-format",
@@ -2330,6 +2333,108 @@ func TestNewLBSpecFailure(t *testing.T) {
 				},
 			},
 			expectedErrMsg: "failed to parse defined tags annotation: invalid character 'w' looking for beginning of value",
+		},
+		"empty subnets": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:   "kube-system",
+					Name:        "testservice",
+					UID:         "test-uid",
+					Annotations: map[string]string{},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{Protocol: v1.ProtocolTCP},
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"empty strings for subnets": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:   "kube-system",
+					Name:        "testservice",
+					UID:         "test-uid",
+					Annotations: map[string]string{},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{Protocol: v1.ProtocolTCP},
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"empty string for subnet1 annotation": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "",
+						ServiceAnnotationLoadBalancerSubnet2: "annotation-two",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{Protocol: v1.ProtocolTCP},
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"default string for cloud config subnet2": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "random",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "",
+						ServiceAnnotationLoadBalancerSubnet2: "",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{Protocol: v1.ProtocolTCP},
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"regional string for subnet2 annotation": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "",
+						ServiceAnnotationLoadBalancerSubnet2: "",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{Protocol: v1.ProtocolTCP},
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
 		},
 	}
 
@@ -5296,6 +5401,264 @@ func Test_getBackendSetNamePortMap(t *testing.T) {
 			got := getBackendSetNamePortMap(tc.in)
 			if !reflect.DeepEqual(got, tc.out) {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.out, got)
+			}
+		})
+	}
+}
+
+func Test_getOciLoadBalancerSubnets(t *testing.T) {
+	testCases := map[string]struct {
+		defaultSubnetOne string
+		defaultSubnetTwo string
+		service          *v1.Service
+		expectedErrMsg   string
+		subnets          []string
+	}{
+		"empty subnets": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"empty strings for subnets": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"empty string for subnet1 annotation": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "",
+						ServiceAnnotationLoadBalancerSubnet2: "annotation-two",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"default string for cloud config subnet2": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "random",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "",
+						ServiceAnnotationLoadBalancerSubnet2: "",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"regional string for subnet2 annotation": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "",
+						ServiceAnnotationLoadBalancerSubnet2: "",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for creating a load balancer",
+		},
+		"subnets passed via cloud config": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			subnets: []string{"one", "two"},
+		},
+		"subnets passed via annotation": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "annotation-one",
+						ServiceAnnotationLoadBalancerSubnet2: "annotation-two",
+					},
+				},
+			},
+			subnets: []string{"annotation-one", "annotation-two"},
+		},
+		"regional subnet passed via subnet1 annotation": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "regional-subnet",
+						ServiceAnnotationLoadBalancerSubnet2: "annotation-two",
+					},
+				},
+			},
+			subnets: []string{"regional-subnet"},
+		},
+		"regional subnet passed via subnet2 annotation": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSubnet1: "annotation-one",
+						ServiceAnnotationLoadBalancerSubnet2: "regional-subnet",
+					},
+				},
+			},
+			subnets: []string{"regional-subnet"},
+		},
+	}
+	cp := &CloudProvider{
+		client: MockOCIClient{},
+		config: &providercfg.Config{CompartmentID: "testCompartment"},
+	}
+
+	for name, tc := range testCases {
+		logger := zap.L()
+		t.Run(name, func(t *testing.T) {
+			cp.config = &providercfg.Config{
+				LoadBalancer: &providercfg.LoadBalancerConfig{
+					Subnet1: tc.defaultSubnetOne,
+					Subnet2: tc.defaultSubnetTwo,
+				},
+			}
+			subnets, err := cp.getOciLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			if !reflect.DeepEqual(subnets, tc.subnets) {
+				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.subnets, subnets)
+			}
+			if err != nil && err.Error() != tc.expectedErrMsg {
+				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)
+			}
+		})
+	}
+}
+
+func Test_getNetworkLoadbalancerSubnets(t *testing.T) {
+	testCases := map[string]struct {
+		defaultSubnetOne string
+		defaultSubnetTwo string
+		service          *v1.Service
+		expectedErrMsg   string
+		subnets          []string
+	}{
+		"empty subnets": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for a network load balancer",
+		},
+		"empty strings for subnets": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for a network load balancer",
+		},
+		"empty string for nlb subnet annotation": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:          "nlb",
+						ServiceAnnotationNetworkLoadBalancerSubnet: "",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for a network load balancer",
+		},
+		"default string for cloud config subnet2": {
+			defaultSubnetOne: "",
+			defaultSubnetTwo: "random",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+			},
+			expectedErrMsg: "a subnet must be specified for a network load balancer",
+		},
+		"subnet for nlb annotation": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:          "nlb",
+						ServiceAnnotationNetworkLoadBalancerSubnet: "annotation-one",
+					},
+				},
+			},
+			subnets: []string{"annotation-one"},
+		},
+		"subnets passed via cloud config": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+			},
+			subnets: []string{"one"},
+		},
+		"subnets passed via annotation": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+			},
+			subnets: []string{"one"},
+		},
+	}
+	cp := &CloudProvider{
+		client: MockOCIClient{},
+		config: &providercfg.Config{CompartmentID: "testCompartment"},
+	}
+
+	for name, tc := range testCases {
+		logger := zap.L()
+		t.Run(name, func(t *testing.T) {
+			cp.config = &providercfg.Config{
+				LoadBalancer: &providercfg.LoadBalancerConfig{
+					Subnet1: tc.defaultSubnetOne,
+					Subnet2: tc.defaultSubnetTwo,
+				},
+			}
+			subnets, err := cp.getNetworkLoadbalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			if !reflect.DeepEqual(subnets, tc.subnets) {
+				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.subnets, subnets)
+			}
+			if err != nil && err.Error() != tc.expectedErrMsg {
+				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)
 			}
 		})
 	}
