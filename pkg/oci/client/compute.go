@@ -301,7 +301,7 @@ func (c *client) AttachVnic(ctx context.Context, instanceID, subnetId *string, n
 	if !c.rateLimiter.Reader.TryAccept() {
 		return response, RateLimitError(false, "AttachVnic")
 	}
-
+	assignPublicIp := false
 	requestMetadata := getDefaultRequestMetadata(c.requestMetadata)
 	resp, err := c.compute.AttachVnic(ctx, core.AttachVnicRequest{
 		AttachVnicDetails: core.AttachVnicDetails{
@@ -309,6 +309,7 @@ func (c *client) AttachVnic(ctx context.Context, instanceID, subnetId *string, n
 				SubnetId:            subnetId,
 				NsgIds:              stringPointerToStringSlice(nsgIds),
 				SkipSourceDestCheck: skipSourceDestCheck,
+				AssignPublicIp:      &assignPublicIp,
 			},
 			InstanceId: instanceID,
 		},
