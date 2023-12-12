@@ -200,6 +200,7 @@ var (
 				Annotations: map[string]string{
 					CompartmentIDAnnotation: "default",
 				},
+				Name: "default",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "default",
@@ -210,6 +211,7 @@ var (
 				Annotations: map[string]string{
 					CompartmentIDAnnotation: "compartment1",
 				},
+				Name: "instance1",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "instance1",
@@ -220,6 +222,7 @@ var (
 				Annotations: map[string]string{
 					CompartmentIDAnnotation: "compartment1",
 				},
+				Name: "instanceWithAddress1",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "instanceWithAddress1",
@@ -238,6 +241,7 @@ var (
 				Annotations: map[string]string{
 					CompartmentIDAnnotation: "compartment1",
 				},
+				Name: "instanceWithAddress2",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "instanceWithAddress2",
@@ -256,6 +260,7 @@ var (
 				Annotations: map[string]string{
 					VirtualNodePoolIdAnnotation: "vnpId",
 				},
+				Name: "virtualNodeDefault",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "ocid1.virtualnode.oc1.iad.default",
@@ -266,6 +271,7 @@ var (
 				Annotations: map[string]string{
 					VirtualNodePoolIdAnnotation: "vnpId",
 				},
+				Name: "virtualNodeZoneTest",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "ocid1.virtualnode.oc1.iad.zonetest",
@@ -276,6 +282,7 @@ var (
 				Annotations: map[string]string{
 					VirtualNodePoolIdAnnotation: "vnpId",
 				},
+				Name: "virtualNodeNonCache",
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "ocid1.virtualnode.oc1.iad.noncache",
@@ -345,6 +352,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.9"},
+					NodeName:  common.String("virtualNodeDefault"),
 				},
 				{
 					TargetRef: &v1.ObjectReference{
@@ -355,6 +363,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.10"},
+					NodeName:  common.String("virtualNodeDefault"),
 				},
 			},
 		},
@@ -374,6 +383,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.19"},
+					NodeName:  common.String("default"),
 				},
 				{
 					TargetRef: &v1.ObjectReference{
@@ -384,6 +394,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.20"},
+					NodeName:  common.String("default"),
 				},
 			},
 		},
@@ -404,6 +415,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.9"},
+					NodeName:  common.String("virtualNodeDefault"),
 				},
 				{
 					TargetRef: &v1.ObjectReference{
@@ -414,6 +426,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.19"},
+					NodeName:  common.String("default"),
 				},
 				{
 					TargetRef: &v1.ObjectReference{
@@ -424,6 +437,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.10"},
+					NodeName:  common.String("virtualNodeDefault"),
 				},
 				{
 					TargetRef: &v1.ObjectReference{
@@ -434,6 +448,7 @@ var (
 						Ready: &ready,
 					},
 					Addresses: []string{"0.0.0.20"},
+					NodeName:  common.String("default"),
 				},
 			},
 		},

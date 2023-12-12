@@ -18,11 +18,13 @@ package oci
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -137,6 +139,9 @@ type ServiceController struct {
 	nodeSyncCh chan interface{}
 	// needFullSync indicates if the nodeSyncInternal will do a full node sync on all LB services.
 	needFullSync bool
+
+	// Feature gate for mixed cluster support in CCM
+	mixedClustersEnabled bool
 }
 
 // NewServiceController returns a new service controller to keep cloud provider service resources
@@ -174,7 +179,8 @@ func NewServiceController(
 		clusterName:                     clusterName,
 		queue:                           workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(minRetryDelay, maxRetryDelay), "service"),
 		// nodeSyncCh has a size 1 buffer. Only one pending sync signal would be cached.
-		nodeSyncCh: make(chan interface{}, 1),
+		nodeSyncCh:           make(chan interface{}, 1),
+		mixedClustersEnabled: GetIsFeatureEnabledFromEnv(zap.L().Sugar(), "ENABLE_MIXED_CLUSTERS_SUPPORT", false),
 	}
 
 	serviceInformer.Informer().AddEventHandlerWithResyncPeriod(
@@ -241,7 +247,7 @@ func NewServiceController(
 				if !ok {
 					return
 				}
-				s.enqueueServiceForEndpointSlice(endpointSlice)
+				s.enqueueServiceForEndpointSliceUpdate(endpointSlice, nil)
 			},
 			UpdateFunc: func(old, cur interface{}) {
 				oldEndpointSlice, ok := old.(*discovery.EndpointSlice)
@@ -259,12 +265,12 @@ func NewServiceController(
 				curSvcName := curEndpointSlice.Labels[discovery.LabelServiceName]
 				oldSvcName := oldEndpointSlice.Labels[discovery.LabelServiceName]
 				if curSvcName != oldSvcName {
-					s.enqueueServiceForEndpointSlice(curEndpointSlice)
-					s.enqueueServiceForEndpointSlice(oldEndpointSlice)
+					s.enqueueServiceForEndpointSliceUpdate(curEndpointSlice, nil)
+					s.enqueueServiceForEndpointSliceUpdate(oldEndpointSlice, nil)
 					return
 				}
 				if endpointsChanged(curEndpointSlice.Endpoints, oldEndpointSlice.Endpoints) {
-					s.enqueueServiceForEndpointSlice(curEndpointSlice)
+					s.enqueueServiceForEndpointSliceUpdate(curEndpointSlice, oldEndpointSlice)
 				}
 			},
 			DeleteFunc: func(old interface{}) {
@@ -272,7 +278,7 @@ func NewServiceController(
 				if !ok {
 					return
 				}
-				s.enqueueServiceForEndpointSlice(endpointSlice)
+				s.enqueueServiceForEndpointSliceUpdate(endpointSlice, nil)
 			},
 		},
 	)
@@ -303,20 +309,45 @@ func (s *ServiceController) enqueueService(obj interface{}) {
 	}
 	s.queue.Add(key)
 }
+func (s *ServiceController) enqueueServiceForEndpointSliceUpdate(targetEndpointSlice, oldEndpointSlice *discovery.EndpointSlice) {
+	/* TODO: Keeping Support for Mixed Clusters behind feature gate since there some uncovered edge cases.
+	 *  One rare edge case is possible where the VN is deleted before the endpoint is deleted,
+	 *  in this case get node would fail for the corresponding endpoint and service enqueue won't happen
+	 */
+	if s.mixedClustersEnabled {
+		nodesMap, err := GetNodesMap(s.nodeLister)
+		if err != nil {
+			runtime.HandleError(fmt.Errorf("couldn't determine nodes in the cluster: %v", err))
+		}
+		targetVirtualPodExists := s.virtualPodExistsInEndpointSlice(targetEndpointSlice, nodesMap)
+		if oldEndpointSlice != nil {
+			oldVirtualPodExists := s.virtualPodExistsInEndpointSlice(oldEndpointSlice, nodesMap)
+
+			// Virtual pods neither exist before nor do they exist now
+			if !targetVirtualPodExists && !oldVirtualPodExists {
+				return
+			}
+		} else if !targetVirtualPodExists {
+			return
+		}
+	} else {
+		virtualNodeExists, err := VirtualNodeExists(s.nodeLister)
+		if err != nil {
+			runtime.HandleError(fmt.Errorf("couldn't determine if a virtual node exists in the cluster: %v", err))
+			return
+		}
+		if !virtualNodeExists {
+			// We don't want to queue a service that fronts non-virtual pods when there is an endpointslice event,
+			// only virtual pods are added as backends
+			return
+		}
+	}
+	s.enqueueServiceForEndpointSlice(targetEndpointSlice)
+}
 
 // enqueueServiceForEndpointSlice attempts to queue the corresponding Service for
 // the provided EndpointSlice.
 func (s *ServiceController) enqueueServiceForEndpointSlice(endpointSlice *discovery.EndpointSlice) {
-	virtualNodeExists, err := VirtualNodeExists(s.nodeLister)
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't determine if a virtual node exists in the cluster: %v", err))
-		return
-	}
-	if !virtualNodeExists {
-		// We don't want to queue a service that fronts non-virtual pods when there is an endpointslice event,
-		// only virtual pods are added as backends
-		return
-	}
 	serviceName, ok := endpointSlice.Labels[discovery.LabelServiceName]
 	if !ok || serviceName == "" {
 		runtime.HandleError(fmt.Errorf("couldn't get service name for EndpointSlice %s", endpointSlice.Name))
@@ -335,6 +366,39 @@ func (s *ServiceController) enqueueServiceForEndpointSlice(endpointSlice *discov
 	// queue after delay of endpointUpdatesBatchPeriod
 	// this effectively batches endpointslice updates
 	s.queue.AddAfter(key, s.endpointSliceUpdatesBatchPeriod)
+}
+
+// virtualPodExistsInEndpointSlice returns true if the given endpointSlice contains a pod
+// that is scheduled on a virtual node
+func (s *ServiceController) virtualPodExistsInEndpointSlice(endpointSlice *discovery.EndpointSlice, nodesMap map[string]*v1.Node) bool {
+	limitLog := false
+	for _, e := range endpointSlice.Endpoints {
+		if e.TargetRef == nil {
+			b, err := json.Marshal(e)
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("target ref was nil for an Endpoint which could not be parsed"))
+			}
+			runtime.HandleError(fmt.Errorf("target ref was nil for Endpoint: %s", string(b)))
+			continue
+		}
+		if e.TargetRef.Kind == "Pod" {
+			if nodeName := e.NodeName; nodeName != nil {
+				node, exist := nodesMap[*nodeName]
+				if !exist {
+					if !limitLog && e.Hostname != nil {
+						runtime.HandleError(fmt.Errorf("node object does not exist: %s. Pod with hostname %s is probably unschedulable", *nodeName, *e.Hostname))
+						limitLog = true
+					}
+					continue
+				}
+
+				if IsVirtualNode(node) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // Run starts a background goroutine that watches for changes to services that
@@ -793,6 +857,7 @@ func nodeSlicesEqualForLB(x, y []*v1.Node) bool {
 func (s *ServiceController) getNodeConditionPredicate() NodeConditionPredicate {
 	return func(node *v1.Node) bool {
 		if IsVirtualNode(node) {
+			// We don't want to trigger a reconciliation for Virtual Node add/update/delete
 			return false
 		}
 
