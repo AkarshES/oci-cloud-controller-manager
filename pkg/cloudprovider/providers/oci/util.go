@@ -122,12 +122,22 @@ func VirtualNodeExists(nodeLister listersv1.NodeLister) (bool, error) {
 	for _, node := range nodeList {
 		if IsVirtualNode(node) {
 			return true, nil
-		} else {
-			//TODO: Change this when clusters with mixed node pools are introduced, we will need to check every node
-			return false, nil
 		}
 	}
 	return false, nil
+}
+
+// GetNodeMap returns a map of nodes in the cluster indexed by node name
+func GetNodesMap(nodeLister listersv1.NodeLister) (nodeMap map[string]*api.Node, err error) {
+	nodeList, err := nodeLister.List(labels.Everything())
+	if err != nil {
+		return
+	}
+	nodeMap = make(map[string]*api.Node)
+	for _, node := range nodeList {
+		nodeMap[node.Name] = node
+	}
+	return
 }
 
 func GetIsFeatureEnabledFromEnv(logger *zap.SugaredLogger, featureName string, defaultValue bool) bool {

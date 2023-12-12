@@ -73,6 +73,7 @@ type CloudProvider struct {
 	// we use the node lister to go from IP -> node / provider id -> ... -> subnet
 	NodeLister          listersv1.NodeLister
 	EndpointSliceLister discoverylistersv1.EndpointSliceLister
+	PodLister           listersv1.PodLister
 
 	// ServiceAccountLister provides a cache to lookup Service Accounts to exchange
 	// with Worker Identity which then can be used to communicate with OCI services.
@@ -203,6 +204,9 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 	serviceInformer := factory.Core().V1().Services()
 	go serviceInformer.Informer().Run(wait.NeverStop)
 
+	podInformer := factory.Core().V1().Pods()
+	go podInformer.Informer().Run(wait.NeverStop)
+
 	endpointSliceInformer := factory.Discovery().V1().EndpointSlices()
 	go endpointSliceInformer.Informer().Run(wait.NeverStop)
 
@@ -212,22 +216,17 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 	go nodeInfoController.Run(wait.NeverStop)
 
 	cp.logger.Info("Waiting for node informer cache to sync")
-	if !cache.WaitForCacheSync(wait.NeverStop, nodeInformer.Informer().HasSynced, serviceInformer.Informer().HasSynced, endpointSliceInformer.Informer().HasSynced) {
+	if !cache.WaitForCacheSync(wait.NeverStop, nodeInformer.Informer().HasSynced, serviceInformer.Informer().HasSynced, endpointSliceInformer.Informer().HasSynced, podInformer.Informer().HasSynced, serviceAccountInformer.Informer().HasSynced) {
 		utilruntime.HandleError(fmt.Errorf("Timed out waiting for informers to sync"))
 	}
 	cp.NodeLister = nodeInformer.Lister()
 	cp.EndpointSliceLister = endpointSliceInformer.Lister()
 	cp.ServiceAccountLister = serviceAccountInformer.Lister()
+	cp.PodLister = podInformer.Lister()
 
 	enablePodReadinessController := GetIsFeatureEnabledFromEnv(cp.logger, "ENABLE_POD_READINESS_CONTROLLER", false)
 	if enablePodReadinessController {
-		podInformer := factory.Core().V1().Pods()
-		go podInformer.Informer().Run(wait.NeverStop)
-
-		cp.logger.Info("Waiting for pod informer cache to sync")
-		if !cache.WaitForCacheSync(wait.NeverStop, podInformer.Informer().HasSynced) {
-			utilruntime.HandleError(fmt.Errorf("timed out waiting for pod informer to sync"))
-		}
+		cp.logger.Info("Pod readiness controller is enabled")
 
 		podReadinessController := NewPodReadinessController(
 			cp.kubeclient,
@@ -318,6 +317,7 @@ func StartOciServiceControllerWrapper(initContext cloudControllerManager.Control
 }
 
 func startOciServiceController(ctx context.Context, initContext cloudControllerManager.ControllerInitContext, completedConfig *config.CompletedConfig, cloud cloudprovider.Interface) (controller.Interface, bool, error) {
+
 	// Start the service controller
 	serviceController, err := NewServiceController(
 		cloud,

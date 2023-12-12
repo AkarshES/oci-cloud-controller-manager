@@ -110,18 +110,6 @@ func (p *PodReadinessController) Run(workers int, stopCh <-chan struct{}) {
 }
 
 func (p *PodReadinessController) pusher() {
-	virtualNodeExists, err := VirtualNodeExists(p.nodeLister)
-	if err != nil {
-		p.logger.With(zap.Error(err)).Error("failed check if virtual nodes exist")
-		return
-	}
-
-	if !virtualNodeExists {
-		// TODO: Revisit when mixed clusters are supported
-		p.logger.Debug("virtual nodes don't exist, skipping pod readiness sync")
-		return
-	}
-
 	services, err := p.serviceLister.List(labels.Everything())
 	if err != nil {
 		p.logger.With(zap.Error(err)).Error("unable to list services")
@@ -202,7 +190,7 @@ func (p *PodReadinessController) sync(key string) error {
 		return err
 	}
 
-	if len(backendSets) < 1 {
+	if len(backendSets) == 0 {
 		logger.Debugf("pods of service %s are ready, pod readiness sync is not needed", service.Name)
 		return nil
 	}
@@ -257,34 +245,30 @@ func (p *PodReadinessController) sync(key string) error {
 
 		backendsMap := getBackendsMap(backendSet)
 		podReadinessCondition := getPodReadinessCondition(service.Namespace, service.Name, backendSetName)
-		backendHealthMap := getBackendHealthMap(backendSetHealth, podReadinessCondition)
+		unhealthyBackendMap := getUnhealthyBackendMap(backendSetHealth, podReadinessCondition)
 
 		for _, pod := range pods {
-			if _, ok := backendsMap[pod.Status.PodIP]; !ok {
-				// Pod has not been added to the backend set yet
-				logger.Debugf("pod has not been added yet:%s", pod.Status.PodIP)
-				continue
-			}
-
-			node, err := p.nodeLister.Get(pod.Spec.NodeName)
-			if err != nil {
-				if apierrors.IsNotFound(err) {
-					logger.Infof("node %s has been deleted, skipping pod", pod.Spec.NodeName)
-					continue
-				}
-				return err
-			}
-			if !IsVirtualNode(node) {
-				// TODO: Revisit when mixed clusters are supported
-				continue
-			}
-
 			if !hasReadinessGate(pod, podReadinessCondition) {
 				continue
 			}
 
+			if _, ok := backendsMap[pod.Status.PodIP]; !ok {
+				node, err := p.nodeLister.Get(pod.Spec.NodeName)
+				if err != nil {
+					logger.Error("could not retrieve node %s", pod.Spec.NodeName)
+					continue
+				}
+
+				// Check if virtual pod
+				if IsVirtualNode(node) {
+					// Pod has not been added to the backend set yet
+					logger.Debugf("pod has not been added yet:%s", pod.Status.PodIP)
+					continue
+				}
+			}
+
 			backendName := fmt.Sprintf("%s:%d", pod.Status.PodIP, servicePort.NodePort)
-			if err := p.ensurePodReadinessCondition(logger, backendHealthMap, backendName, pod, podReadinessCondition); err != nil {
+			if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
 				logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
 				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
 				metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
@@ -439,39 +423,43 @@ func getBackendsMap(backendSet client.GenericBackendSetDetails) map[string]struc
 	return m
 }
 
-func getBackendHealthMap(backendSetHealth *client.GenericBackendSetHealth, conditionType v1.PodConditionType) map[string]v1.PodCondition {
-	backendHealthMap := make(map[string]v1.PodCondition)
+func getUnhealthyBackendMap(backendSetHealth *client.GenericBackendSetHealth, conditionType v1.PodConditionType) map[string]v1.PodCondition {
+	unhealthyBackendMap := make(map[string]v1.PodCondition)
 
 	for _, backend := range backendSetHealth.UnknownStateBackendNames {
-		backendHealthMap[backend] = v1.PodCondition{
+		unhealthyBackendMap[backend] = v1.PodCondition{
 			Type:   conditionType,
 			Reason: "backend health is UNKNOWN",
 			Status: v1.ConditionFalse,
 		}
 	}
 	for _, backend := range backendSetHealth.WarningStateBackendNames {
-		backendHealthMap[backend] = v1.PodCondition{
+		unhealthyBackendMap[backend] = v1.PodCondition{
 			Type:   conditionType,
 			Reason: "backend health is WARNING",
 			Status: v1.ConditionFalse,
 		}
 	}
 	for _, backend := range backendSetHealth.CriticalStateBackendNames {
-		backendHealthMap[backend] = v1.PodCondition{
+		unhealthyBackendMap[backend] = v1.PodCondition{
 			Type:   conditionType,
 			Reason: "backend health is CRITICAL",
 			Status: v1.ConditionFalse,
 		}
 	}
 
-	return backendHealthMap
+	return unhealthyBackendMap
 }
 
 func getUpdatedPodCondition(backendHealthMap map[string]v1.PodCondition, condType v1.PodConditionType, backendName string) v1.PodCondition {
 	if cond, exists := backendHealthMap[backendName]; exists {
 		return cond
 	}
-	// Return healthy condition
+
+	// For virtual pods, if their corresponding backend is healthy they will not have an entry in the backendHealthMap,
+	// we return a healthy condition
+	// For regular pods, since they are not added as backends, they will not have an entry in the backendHealthMap,
+	// we return a healthy condition
 	return v1.PodCondition{
 		Type:   condType,
 		Status: v1.ConditionTrue,
@@ -486,21 +474,6 @@ func (p *PodReadinessController) getBackendSetsNeedSync(service *v1.Service, pod
 		podReadinessCondition := getPodReadinessCondition(service.Namespace, service.Name, backendSetName)
 
 		for _, pod := range pods {
-			node, err := p.nodeLister.Get(pod.Spec.NodeName)
-			if err != nil {
-				if apierrors.IsNotFound(err) {
-					p.logger.Infof("node %s has been deleted, skipping pod", pod.Spec.NodeName)
-					continue
-				}
-				return nil, err
-			}
-
-			// Check if virtual pod
-			if !IsVirtualNode(node) {
-				// TODO: Revisit when mixed clusters are supported
-				continue
-			}
-
 			// Check if pod has readiness gate
 			if !hasReadinessGate(pod, podReadinessCondition) {
 				continue
