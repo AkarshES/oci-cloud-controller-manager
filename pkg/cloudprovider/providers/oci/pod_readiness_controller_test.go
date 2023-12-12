@@ -106,7 +106,7 @@ func Test_getBackendHealthMap(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			got := getBackendHealthMap(tc.backendSetHealth, conditionType)
+			got := getUnhealthyBackendMap(tc.backendSetHealth, conditionType)
 			if !reflect.DeepEqual(got, tc.out) {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.out, got)
 			}
@@ -720,6 +720,121 @@ func Test_getBackendSetsNeedSync(t *testing.T) {
 			out: map[string]v1.ServicePort{},
 		},
 		{
+			desc: "pods are on managed nodes",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "svc1",
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     80,
+						},
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     81,
+						},
+					},
+				},
+			},
+			pods: []*v1.Pod{
+				{
+					Spec: v1.PodSpec{
+						ReadinessGates: []v1.PodReadinessGate{
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-80"),
+							},
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-81"),
+							},
+						},
+					},
+				},
+				{
+					Spec: v1.PodSpec{
+						ReadinessGates: []v1.PodReadinessGate{
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-80"),
+							},
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-81"),
+							},
+						},
+					},
+				},
+			},
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+				"TCP-81": {
+					Protocol: v1.ProtocolTCP,
+					Port:     81,
+				},
+			},
+		},
+		{
+			desc: "pods are on mixed nodes (managed and virtual)",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "svc1",
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     80,
+						},
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     81,
+						},
+					},
+				},
+			},
+			pods: []*v1.Pod{
+				{
+					Spec: v1.PodSpec{
+						ReadinessGates: []v1.PodReadinessGate{
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-80"),
+							},
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-81"),
+							},
+						},
+					},
+				},
+				{
+					Spec: v1.PodSpec{
+						NodeName: "virtualNodeDefault",
+						ReadinessGates: []v1.PodReadinessGate{
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-80"),
+							},
+							{
+								ConditionType: getPodReadinessCondition("default", "svc1", "TCP-81"),
+							},
+						},
+					},
+				},
+			},
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+				"TCP-81": {
+					Protocol: v1.ProtocolTCP,
+					Port:     81,
+				},
+			},
+		},
+		{
 			desc: "pods are not on virtual nodes",
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
@@ -765,7 +880,16 @@ func Test_getBackendSetsNeedSync(t *testing.T) {
 					},
 				},
 			},
-			out: nil,
+			out: map[string]v1.ServicePort{
+				"TCP-80": {
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+				},
+				"TCP-81": {
+					Protocol: v1.ProtocolTCP,
+					Port:     81,
+				},
+			},
 		},
 		{
 			desc: "one pod is on virtual node and other is not",
@@ -827,12 +951,12 @@ func Test_getBackendSetsNeedSync(t *testing.T) {
 		},
 	}
 
-	prc := &PodReadinessController{
-		nodeLister: &mockNodeLister{},
-	}
-
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
+			prc := &PodReadinessController{
+				nodeLister: &mockNodeLister{},
+			}
+
 			out, _ := prc.getBackendSetsNeedSync(tc.service, tc.pods)
 			if !reflect.DeepEqual(out, tc.out) {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.out, out)
@@ -857,7 +981,7 @@ func Test_pusher(t *testing.T) {
 			services: []*v1.Service{
 				serviceList["default"],
 			},
-			itemExists: false,
+			itemExists: true,
 		},
 		{
 			desc: "virtual nodes exists",

@@ -470,6 +470,18 @@ func filterNodes(svc *v1.Service, nodes []*v1.Node) ([]*v1.Node, error) {
 	return filteredNodes, nil
 }
 
+// filterProvisionedNodes returns a list of provisioned nodes in the provided list of nodes
+func filterProvisionedNodes(nodes []*v1.Node) []*v1.Node {
+	var filteredNodes []*v1.Node
+	for _, n := range nodes {
+		if !IsVirtualNode(n) {
+			filteredNodes = append(filteredNodes, n)
+		}
+	}
+
+	return filteredNodes
+}
+
 // EnsureLoadBalancer creates a new load balancer or updates the existing one.
 // Returns the status of the balancer (i.e it's public IP address if one exists).
 func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, clusterNodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
@@ -496,7 +508,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
-	nodes, err := filterNodes(service, clusterNodes)
+	provisionedSvcNodes, err := filterNodes(service, clusterNodes)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to filter provisioned nodes with label selector and virtual nodes")
 		return nil, err
@@ -519,7 +531,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		}
 	}
 
-	logger.With("provisioned nodes", len(nodes), "virtual pods", len(virtualPods)).Info("Ensuring load balancer")
+	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods)).Info("Ensuring load balancer")
 
 	dimensionsMap := make(map[string]string)
 
@@ -612,7 +624,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		return nil, err
 	}
 
-	spec, err := NewLBSpec(logger, service, nodes, virtualPods, subnets, sslConfig, cp.securityListManagerFactory, cp.config.Tags, lb)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, subnets, sslConfig, cp.securityListManagerFactory, cp.config.Tags, lb)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -801,15 +813,17 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		}
 	}
 
-	// Service controller provided empty nodes list
-	// TODO: Revisit this condition when clusters with mixed node pools are introduced, possibly add len(virtualPods) == 0 check
-	if len(nodes) == 0 && !virtualNodeExists {
+	// Service controller provided empty provisioned nodes list
+	if len(clusterNodes) == 0 && !virtualNodeExists {
 		// List all nodes in the cluster
 		nodeList, err := cp.NodeLister.List(labels.Everything())
 		if err != nil {
 			logger.With(zap.Error(err)).Error("Failed to check if all backend nodes are not ready, error listing nodes")
 			return nil, err
 		}
+
+		// Filter out only provisioned nodes
+		nodeList = filterProvisionedNodes(nodeList)
 
 		if len(nodeList) == 0 {
 			logger.Info("Cluster has zero nodes, continue reconciling")
@@ -1169,14 +1183,14 @@ func (cp *CloudProvider) getNodesAndPodsByIPs(ctx context.Context, backendIPs []
 	}
 
 	if virtualNodeExists {
-		listOptions := metav1.ListOptions{LabelSelector: labels.Set(service.Spec.Selector).AsSelector().String()}
-		podList, err := cp.kubeclient.CoreV1().Pods(service.Namespace).List(ctx, listOptions)
+		labelSelector := labels.Set(service.Spec.Selector).AsSelector()
+		podList, err := cp.PodLister.Pods(service.Namespace).List(labelSelector)
 		if err != nil {
 			return nil, nil, err
 		}
-		for i := range podList.Items {
-			ip := podList.Items[i].Status.PodIP
-			ipToPodLookup[ip] = &podList.Items[i]
+		for i := range podList {
+			ip := podList[i].Status.PodIP
+			ipToPodLookup[ip] = podList[i]
 		}
 	}
 
@@ -1556,7 +1570,7 @@ func (cp *CloudProvider) checkAllBackendNodesNotReady(nodeList []*v1.Node) bool 
 	return true
 }
 
-// getVirtualPodsOfService returns pods scheduled on virtual nodes from a slice of endpointSlices
+// getVirtualPodsOfService returns pods scheduled on virtual nodes fronted by the given Service
 func (cp *CloudProvider) getVirtualPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service) ([]*v1.Pod, error) {
 	endpointSlices, err := cp.getEndpointSlicesForService(service)
 	if err != nil {
@@ -1572,7 +1586,7 @@ func (cp *CloudProvider) getVirtualPodsOfService(ctx context.Context, logger *za
 					continue
 				}
 
-				pod, err := cp.kubeclient.CoreV1().Pods(es.Namespace).Get(ctx, e.TargetRef.Name, metav1.GetOptions{})
+				pod, err := cp.PodLister.Pods(es.Namespace).Get(e.TargetRef.Name)
 				if err != nil {
 					if apierrors.IsNotFound(err) {
 						logger.With(zap.Error(err)).Errorf("Pod object does not exist: %s", e.TargetRef.Name)
