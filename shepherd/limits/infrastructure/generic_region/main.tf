@@ -35,6 +35,8 @@ module "cell_resources" {
   severity_4                        = lookup(local.execution_target.additional_locals, "severity_4", 4)
   jira_project                      = lookup(local.execution_target.additional_locals, "jira_project", "OKE")
   jira_component                    = lookup(local.execution_target.additional_locals, "jira_component", "Management Plane")
+  okenp_jira_project                = lookup(local.execution_target.additional_locals, "jira_project", "OKENP")
+  okenp_jira_component              = lookup(local.execution_target.additional_locals, "jira_component", "Volumes")
   leadership_jira_component         = lookup(local.execution_target.additional_locals, "leadership_jira_component", "Leadership")
   runbook_base                      = lookup(local.execution_target.additional_locals, "runbook_base", "https://devops.oci.oraclecorp.com/runbooks/OKE/oke-how-tos")
   alarms_enabled                    = lookup(local.execution_target.additional_locals, "alarms_enabled", false)
@@ -61,10 +63,11 @@ module "cell_resources" {
   skip_dns                          = lookup(local.execution_target.additional_locals, "skip_dns", false)
   ccm_alarm_label_format            = lookup(local.execution_target.additional_locals, "ccm_alarm_label_format", "oke-kmi-cell%d")
   ccm_alarms_fleet_format           = lookup(local.execution_target.additional_locals, "ccm_alarms_fleet_format", "oke-kmi-cell%d")
-  csi_dataplane_alarms_fleet_format = lookup(local.execution_target.additional_locals, "csi_dataplane_alarms_fleet_format", "prod-oke-clusters-%s-dataplane")
+  csi_dataplane_alarms_fleet_format = lookup(local.execution_target.additional_locals, "csi_dataplane_alarms_fleet_format", "prod-oke-clusters-%s-dataplane%s")
   ccm_alarms_enabled                = lookup(local.execution_target.additional_locals, "ccm_alarms_enabled", true)
   csi_alarms_enabled                = lookup(local.execution_target.additional_locals, "csi_alarms_enabled", true)
   ccm_jira_item                     = lookup(local.execution_target.additional_locals, "ccm_jira_item", "KMI")
+  csi_jira_item                     = lookup(local.execution_target.additional_locals, "csi_jira_item", "CSI")
   has_mapi_grafana_dashboard        = ""
 }
 

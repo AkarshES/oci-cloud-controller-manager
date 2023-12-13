@@ -64,6 +64,9 @@ variable "csi_alarms_enabled" {}
 variable "ccm_alarm_label_format" {}
 variable "ccm_alarms_fleet_format" {}
 variable "csi_dataplane_alarms_fleet_format" {}
+variable "csi_jira_item" {}
+variable "okenp_jira_component" {}
+variable "okenp_jira_project" {}
 
 locals {
   cp_vcn_name = var.env_name == "prd" ? format(var.cp_vcn_name_format,"prod") : format(var.cp_vcn_name_format,var.env_name)
@@ -101,6 +104,9 @@ module "alarms" {
   ccm_jira_item = var.ccm_jira_item
   ccm_alarms_fleet_format = var.ccm_alarms_fleet_format
   csi_dataplane_alarms_fleet_format = var.csi_dataplane_alarms_fleet_format
+  csi_jira_item = var.csi_jira_item
+  okenp_jira_component = var.okenp_jira_component
+  okenp_jira_project = var.okenp_jira_project
 }
 
 

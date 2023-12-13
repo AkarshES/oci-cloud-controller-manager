@@ -252,7 +252,8 @@ locals {
       worker_alarms_enabled             = false
       worker_alarms_fleet_format        = "ociokedev.oke-dev-wfworker-cell%d"
       worker_alarms_hostmetrics_fleet   = "ociokedev.oke-mp-worker-dev"
-      csi_dataplane_alarms_fleet_format = "dev-oke-clusters-%s-dataplane"
+      ccm_alarms_fleet_format           = "ociokedev.oke-kmi-cell%d"
+      csi_dataplane_alarms_fleet_format = "dev-oke-clusters-%s-dataplane%s"
 
       // API ODO Configuration
       api_pool_alias_format = "oke-dev-mapi-cell%d"
@@ -352,7 +353,8 @@ locals {
       worker_alarms_enabled             = true
       worker_alarms_fleet_format        = "ociokeinteg.oke-integ-wfworker-cell%d"
       worker_alarms_hostmetrics_fleet   = "ociokeinteg.oke-mp-worker-integ"
-      csi_dataplane_alarms_fleet_format = "integ-oke-clusters-%s-dataplane"
+      ccm_alarms_fleet_format           = "ociokeinteg.oke-kmi-cell%d"
+      csi_dataplane_alarms_fleet_format = "integ-oke-clusters-%s-dataplane%s"
 
       // ODO Configuration
       api_pool_alias_format    = "oke-integ-mapi-cell%d"
@@ -445,7 +447,7 @@ locals {
       ccm_alarms_enabled                = true
       csi_alarms_enabled                = true
       ccm_alarms_fleet_format           = "oke-kmi-cell%d"
-      csi_dataplane_alarms_fleet_format = "prod-oke-clusters-%s-dataplane"
+      csi_dataplane_alarms_fleet_format = "prod-oke-clusters-%s-dataplane%s"
       worker_alarms_hostmetrics_fleet   = "oke-mp-worker-prod"
 
       // Integration with other OKE components
@@ -730,7 +732,11 @@ locals {
     "polaris.oc1.us-sanjose-1.cell0" = {}
     "dev.oc1.us-ashburn-1.cell0"     = {}
     "dev.oc1.eu-frankfurt-1.cell0"   = {}
-    "dev.oc1.us-phoenix-1.cell0"     = {}
+    "dev.oc1.us-phoenix-1.cell0"     = {
+      predecessor = "dev.oc1.us-ashburn-1.cell0"
+      image_name  = local.io_overlay_uek5_images["20210111"].name
+      image_url   = local.io_overlay_uek5_images["20210111"].url
+    }
     "integ.oc1.us-ashburn-1.cell0"   = {}
     "integ.oc1.us-ashburn-1.cell1"   = {
       predecessor                   = "integ.oc1.us-ashburn-1.cell0"
