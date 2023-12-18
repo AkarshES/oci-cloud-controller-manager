@@ -172,5 +172,9 @@ resource "shepherd_execution_target" "region_values" {
     manage_definitions     = "false"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"])), "spectre_group_name")
   }, lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {}))
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }
 
