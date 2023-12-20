@@ -23,28 +23,27 @@ import (
 	"sync"
 	"time"
 
-	errors2 "github.com/pkg/errors"
-
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	npnv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/core"
+	errors2 "github.com/pkg/errors"
 )
 
 const (
@@ -292,6 +291,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err != nil || instance.Id == nil {
 		failReason, failMessage = "GetInstanceFailed", "failed to get OCI compute instance"
 		log.WithValues("instanceId", *npn.Spec.Id).Error(err, failMessage)
+		r.handleError(ctx, req, err, "GetInstance")
 		return ctrl.Result{}, err
 	}
 	log = log.WithValues("instanceId", *instance.Id)
@@ -345,6 +345,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			vnicAttachment, err := r.OCIClient.Compute().AttachVnic(ctx, npn.Spec.Id, npn.Spec.PodSubnetIds[0], npn.Spec.NetworkSecurityGroupIds, &SKIP_SOURCE_DEST_CHECK)
 			additionalVNICAttachments[index].VnicAttachment, additionalVNICAttachments[index].err = vnicAttachment, err
 			if additionalVNICAttachments[index].err != nil {
+				failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to attach VNIC to instance: "+additionalVNICAttachments[index].err.Error()
 				log.Error(additionalVNICAttachments[index].err, "failed to attach VNIC to instance")
 				r.handleError(ctx, req, err, "AttachVNIC")
 				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
@@ -429,7 +430,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			ipAllocations[innerIndex].err = err
 			ipAllocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
 		}
-		err = validateVnicIpAllocation(ipAllocations)
+		err := validateVnicIpAllocation(ipAllocations)
 		mutex.Lock()
 		vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, err, ipAllocations}
 		mutex.Unlock()
@@ -522,6 +523,7 @@ func (r *NativePodNetworkReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Recorder = mgr.GetEventRecorderFor("nativepodnetwork")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&npnv1beta1.NativePodNetwork{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 20, CacheSyncTimeout: time.Hour}).
 		Complete(r)
 }
