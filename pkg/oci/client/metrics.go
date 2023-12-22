@@ -60,7 +60,7 @@ const (
 	nsgRuleResource             resource = "network_security_group_rules"
 	publicReservedIPResource    resource = "public_reserved_ip"
 	virtualNodeResource         resource = "virtual_node"
-	snapshotResource            resource = "snapshot"
+	volumeBackupResource		resource = "volumeBackup"
 )
 
 type verb string
