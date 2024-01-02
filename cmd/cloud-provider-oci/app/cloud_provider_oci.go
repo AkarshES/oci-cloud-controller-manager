@@ -315,11 +315,10 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 			}
 
 			if err = (&controllers.NativePodNetworkReconciler{
-				Client:           mgr.GetClient(),
-				Scheme:           mgr.GetScheme(),
-				MetricPusher:     metricPusher,
-				OCIClient:        ociClient,
-				TimeTakenTracker: make(map[string]time.Time),
+				Client:       mgr.GetClient(),
+				Scheme:       mgr.GetScheme(),
+				MetricPusher: metricPusher,
+				OCIClient:    ociClient,
 			}).SetupWithManager(mgr); err != nil {
 				npnSetupLog.Error(err, "unable to create controller", "controller", "NativePodNetwork")
 				os.Exit(1)
