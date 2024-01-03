@@ -94,7 +94,7 @@ var _ = Describe("Service [Slow]", func() {
 
 				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
 
-				nodeIP := sharedfw.PickNodeIP(jig.Client) // for later
+				nodeIP := ""
 
 				loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
 				loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
@@ -163,6 +163,7 @@ var _ = Describe("Service [Slow]", func() {
 				sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
 
 				if f.NodePortTest {
+					nodeIP = sharedfw.PickNodeIP(jig.Client)
 					By("hitting the TCP service's NodePort")
 					jig.TestReachableHTTP(false, nodeIP, tcpNodePort, sharedfw.KubeProxyLagTimeout)
 				}
@@ -295,7 +296,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 
 				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
 
-				nodeIP := sharedfw.PickNodeIP(jig.Client) // for later
+				nodeIP := ""
 
 				loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
 				loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
@@ -339,6 +340,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 				sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
 
 				if f.NodePortTest {
+					nodeIP = sharedfw.PickNodeIP(jig.Client) // for later
 					By("hitting the TCP service's NodePort")
 					jig.TestReachableHTTP(false, nodeIP, tcpNodePort, sharedfw.KubeProxyLagTimeout)
 				}
