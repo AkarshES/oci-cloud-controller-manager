@@ -55,10 +55,14 @@ func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 	// provisioner for block volume
 	logger.Info("starting csi-provisioner go routine for BV")
 	go csiprovisioner.StartCSIProvisioner(csioptions, driver.BV)
+	//setting operation timeout to 240 seconds for FSS driver (used for CreateVolume/DeleteVolume gRPCs)
+	csioptions.OperationTimeout = 240 * time.Second
 	// provisioner for fss
 	logger.Info("starting csi-provisioner go routine for FSS")
 	go csiprovisioner.StartCSIProvisioner(csioptions, driver.FSS)
 
+	//setting timeout to 200 seconds for BV driver (used for ControllerPublish/ControllerUnpublish/ControllerExpand gRPCs)
+	csioptions.Timeout = 200 * time.Second
 	logger.Info("starting csi-attacher go routine for BV")
 	go csiattacher.StartCSIAttacher(csioptions)
 	if csioptions.EnableResizer {
@@ -74,9 +78,11 @@ func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 	// controller for block volume
 	logger.Info("starting csi-controller go routine for BV")
 	go csicontrollerdriver.StartControllerDriver(csioptions, driver.BV)
+
 	// controller for fss
 	logger.Info("starting csi-controller go routine for FSS")
 	go csicontrollerdriver.StartControllerDriver(csioptions, driver.FSS)
+
 	<-stopCh
 	return nil
 }
