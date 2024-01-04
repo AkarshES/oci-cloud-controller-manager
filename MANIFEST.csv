@@ -83,3 +83,6 @@ oke-public-cloud-provider-oci                     , v1.27-8b5017ef4e2-18
 oke-public-cloud-provider-oci-linux_x86_64        , v1.28-93003cd8515-11
 oke-public-cloud-provider-oci-linux_arm64_v8      , v1.28-93003cd8515-11
 oke-public-cloud-provider-oci                     , v1.28-93003cd8515-11
+oke-public-cloud-provider-oci-linux_x86_64        , v1.28-94e5f680ebe-3
+oke-public-cloud-provider-oci-linux_arm64_v8      , v1.28-94e5f680ebe-3
+oke-public-cloud-provider-oci                     , v1.28-94e5f680ebe-3
