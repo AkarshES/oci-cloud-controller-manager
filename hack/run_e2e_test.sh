@@ -108,6 +108,7 @@ function check_environment () {
         check-env "MNT_TARGET_SUBNET_ID"      $MNT_TARGET_SUBNET_ID
         check-env "MNT_TARGET_COMPARTMENT_ID" $MNT_TARGET_COMPARTMENT_ID
         check-env "STATIC_SNAPSHOT_COMPARTMENT_ID" $STATIC_SNAPSHOT_COMPARTMENT_ID
+        check-env "CREATE_UHP_NODEPOOL"       $CREATE_UHP_NODEPOOL
         check-env "CLUSTER_TYPE"              $CLUSTER_TYPE
         check-env-k8s-version-index-exist
         if [ -z "$CLUSTER_KUBECONFIG" ]; then
@@ -197,6 +198,7 @@ function run_e2e_tests() {
         --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
         --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+        --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
         --pre-upgrade=${PRE_UPGRADE} \
@@ -227,6 +229,7 @@ function run_e2e_tests_existing_cluster() {
         --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
         --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+        --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
         --pre-upgrade=${PRE_UPGRADE} \
@@ -269,6 +272,7 @@ function setup_arm() {
         export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID
         export MNT_TARGET_COMPARTMENT_ID=$MNT_TARGET_COMPARTMENT_ID
         export STATIC_SNAPSHOT_COMPARTMENT_ID=$STATIC_SNAPSHOT_COMPARTMENT_ID
+        export CREATE_UHP_NODEPOOL=$CREATE_UHP_NODEPOOL
         declare_setup "CREATE"
     elif [[ "$#" -ne  "0" && "$1" == "EXIST" ]]; then
         export CLUSTER_KUBECONFIG=$CLUSTER_KUBECONFIG_ARM
@@ -301,6 +305,7 @@ function declare_setup () {
     echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
     echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
     echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
+    echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
 }
 
@@ -365,6 +370,7 @@ function declare_environment () {
         echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
         echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
         echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
+        echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
         echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
     else
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"

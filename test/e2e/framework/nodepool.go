@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"os"
 	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
-
 	"github.com/oracle/oci-go-sdk/v65/common"
 	oke "github.com/oracle/oci-go-sdk/v65/containerengine"
+	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
 var (
@@ -573,4 +574,30 @@ func (f *Framework) WaitForActiveStateInNodePool(nodePoolID string) *oke.NodePoo
 // version2 means use Nodeconfigdetails to scale.
 func IsVersion2NodePool(pool *oke.NodePool) bool {
 	return pool.QuantityPerSubnet == nil || *pool.QuantityPerSubnet == 0
+}
+
+func (f *Framework) EnableBVMPluginOnNodepool(np *oke.NodePool) {
+	agentDisabled := false
+	pluginName := "Block Volume Management"
+	for _, node := range np.Nodes {
+		ctx := context.Background()
+		request := core.UpdateInstanceRequest{
+			InstanceId: node.Id,
+			UpdateInstanceDetails: core.UpdateInstanceDetails{
+				AgentConfig: &core.UpdateInstanceAgentConfigDetails{
+					IsManagementDisabled: &agentDisabled,
+					PluginsConfig: []core.InstanceAgentPluginConfigDetails{
+						{
+							Name:         &pluginName,
+							DesiredState: core.InstanceAgentPluginConfigDetailsDesiredStateEnabled,
+						},
+					},
+				},
+			},
+		}
+		_, err := f.computeClient.UpdateInstance(ctx, request)
+		if err != nil {
+			Failf("Error enabling block volume management plugin on node %s: %v", *(node.Id), err)
+		}
+	}
 }
