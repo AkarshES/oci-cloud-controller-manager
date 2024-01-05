@@ -359,3 +359,12 @@ func (j *PVCTestJig) podNotFound(podName, namespace string) wait.ConditionFunc {
 		return false, nil
 	}
 }
+
+func (j *PVCTestJig) GetNodeHostnameFromPod(podName, namespace string) string {
+	pod, err := j.KubeClient.CoreV1().Pods(namespace).Get(context.Background(), podName, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		Failf("Failed to get pod %q: %v", podName, err)
+	}
+	hostName := pod.Labels[NodeHostnameLabel]
+	return hostName
+}
