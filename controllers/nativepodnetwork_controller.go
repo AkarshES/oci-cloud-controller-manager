@@ -19,10 +19,11 @@ package controllers
 import (
 	"context"
 	"errors"
-	errors2 "github.com/pkg/errors"
 	"math"
 	"sync"
 	"time"
+
+	errors2 "github.com/pkg/errors"
 
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -92,7 +93,7 @@ type NativePodNetworkReconciler struct {
 	Scheme           *runtime.Scheme
 	MetricPusher     *metrics.MetricPusher
 	OCIClient        ociclient.Interface
-	TimeTakenTracker map[string]time.Time
+	TimeTakenTracker sync.Map
 	Recorder         record.EventRecorder
 }
 
@@ -261,10 +262,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}()
 
 	log := log.FromContext(ctx)
-	if _, ok := r.TimeTakenTracker[req.Name]; !ok {
-		r.TimeTakenTracker[req.Name] = time.Now()
-	}
-	startTime := r.TimeTakenTracker[req.Name]
+	startTime, _ := r.TimeTakenTracker.LoadOrStore(req.Name, time.Now())
 	mutex := sync.Mutex{}
 	if err := r.Get(ctx, req.NamespacedName, &npn); err != nil {
 		log.Error(err, "unable to fetch NativePodNetwork")
@@ -513,7 +511,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 	log.Info("NativePodNetwork CR reconciled successfully")
 
-	r.PushMetric(endToEndLatencySlice{{time.Since(startTime).Seconds()}}.ErrorMetric())
+	r.PushMetric(endToEndLatencySlice{{time.Since(startTime.(time.Time)).Seconds()}}.ErrorMetric())
 	return ctrl.Result{}, nil
 }
 
