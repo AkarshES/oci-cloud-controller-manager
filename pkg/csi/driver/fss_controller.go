@@ -61,7 +61,7 @@ type StorageClassParameters struct {
 
 func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	startTime := time.Now()
-	var log = d.logger.With("volumeName", req.Name, "csiOperation","create")
+	var log = d.logger.With("volumeName", req.Name, "csiOperation", "create")
 
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "CreateVolume Name must be provided")
@@ -180,7 +180,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 		} else {
 			message = "failed to check existence of File System"
 		}
-		log.With("service","fss","verb","get","resource","fileSystem","statusCode",util.GetHttpStatusCode(err)).
+		log.With("service", "fss", "verb", "get", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 			With(zap.Error(err)).Error(message)
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
@@ -206,7 +206,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 		// Creating new file system
 		provisionedFileSystem, err = provisionFileSystem(ctx, log, d.client, volumeName, storageClassParameters)
 		if err != nil {
-			log.With("service","fss","verb","create","resource","fileSystem","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "fss", "verb", "create", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error("New File System creation failed")
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
@@ -221,7 +221,7 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 	log = log.With("fssID", filesystemOCID)
 	_, err = d.client.FSS().AwaitFileSystemActive(ctx, log, *provisionedFileSystem.Id)
 	if err != nil {
-		log.With("service","fss","verb","get","resource","fileSystem","statusCode",util.GetHttpStatusCode(err)).
+		log.With("service", "fss", "verb", "get", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 			With(zap.Error(err)).Error("Await File System failed with time out")
 		csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
@@ -261,7 +261,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 			} else {
 				message = "failed to check existence of Mount Target"
 			}
-			log.With("service","fss","verb","get","resource","mountTarget","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "fss", "verb", "get", "resource", "mountTarget", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error(message)
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
@@ -290,7 +290,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 			// Creating new mount target
 			provisionedMountTarget, err = provisionMountTarget(ctx, log, d.client, volumeName, storageClassParameters)
 			if err != nil {
-				log.With("service","fss","verb","create","resource","mountTarget","statusCode",util.GetHttpStatusCode(err)).
+				log.With("service", "fss", "verb", "create", "resource", "mountTarget", "statusCode", util.GetHttpStatusCode(err)).
 					With(zap.Error(err)).Error("New Mount Target creation failed")
 				csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 				dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
@@ -306,7 +306,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 	log = log.With("mountTargetID", mountTargetOCID)
 	activeMountTarget, err := d.client.FSS().AwaitMountTargetActive(ctx, log, *provisionedMountTarget.Id)
 	if err != nil {
-		log.With("service","fss","verb","get","resource","mountTarget","statusCode",util.GetHttpStatusCode(err)).
+		log.With("service", "fss", "verb", "get", "resource", "mountTarget", "statusCode", util.GetHttpStatusCode(err)).
 			With(zap.Error(err)).Error("await mount target to be available failed with time out")
 		if !isExistingMountTargetUsed {
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
@@ -330,7 +330,7 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 	log.Infof("getting private IP of mount target from mountTargetIpId %s", mountTargetIpId)
 	privateIpObject, err := d.client.Networking().GetPrivateIp(ctx, mountTargetIpId)
 	if err != nil {
-		log.With("service","vcn","verb","get","resource","privateIp","statusCode",util.GetHttpStatusCode(err)).
+		log.With("service", "vcn", "verb", "get", "resource", "privateIp", "statusCode", util.GetHttpStatusCode(err)).
 			With(zap.Error(err)).Error("Failed to fetch Mount Target Private IP from IP ID: %s", mountTargetIpId)
 		if !isExistingMountTargetUsed {
 			csiMetricDimension := util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
@@ -383,7 +383,7 @@ func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, 
 
 	provisionedExport := &fss.Export{}
 	if exportSummary != nil {
-		provisionedExport = &fss.Export{Id: exportSummary.ExportSetId}
+		provisionedExport = &fss.Export{Id: exportSummary.Id}
 	} else {
 		// Creating new export
 		provisionedExport, err = provisionExport(ctx, log, d.client, filesystemOCID, exportSetId, storageClassParameters)
@@ -418,7 +418,7 @@ func (d *FSSControllerDriver) getOrCreateExport(ctx context.Context, err error, 
 	return log, nil, nil, false
 }
 
-func extractStorageClassParameters(ctx context.Context,d *FSSControllerDriver, log *zap.SugaredLogger, dimensionsMap map[string]string, volumeName string, parameters map[string]string, startTime time.Time) (*zap.SugaredLogger, *csi.CreateVolumeResponse, *StorageClassParameters, error, bool) {
+func extractStorageClassParameters(ctx context.Context, d *FSSControllerDriver, log *zap.SugaredLogger, dimensionsMap map[string]string, volumeName string, parameters map[string]string, startTime time.Time) (*zap.SugaredLogger, *csi.CreateVolumeResponse, *StorageClassParameters, error, bool) {
 
 	storageClassParameters := &StorageClassParameters{
 		encryptInTransit: "false",
@@ -601,7 +601,7 @@ func provisionExport(ctx context.Context, log *zap.SugaredLogger, c client.Inter
 func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	startTime := time.Now()
 	volumeId := req.GetVolumeId()
-	log := d.logger.With("volumeID", volumeId, "csiOperation","delete")
+	log := d.logger.With("volumeID", volumeId, "csiOperation", "delete")
 	dimensionsMap := make(map[string]string)
 	dimensionsMap[metrics.ResourceOCIDDimension] = req.VolumeId
 	volumeHandler := csi_util.ValidateFssId(volumeId)
@@ -620,15 +620,15 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	fileSystem, err := d.client.FSS().GetFileSystem(ctx, filesystemOcid)
 	if err != nil {
 		if !client.IsNotFound(err) {
-			log.With("service","fss","verb","get","resource","fileSystem","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "fss", "verb", "get", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error("Failed to delete filesystem.")
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTime).Seconds(), dimensionsMap)
 			metrics.SendMetricData(d.metricPusher, metrics.FssAllDelete, time.Since(startTime).Seconds(), dimensionsMap)
 			return nil, status.Errorf(codes.Internal, "failed to delete filesystem, volumeId: %s ERROR: %v", volumeId, err.Error())
-		} else {
-			log.Info("File system does not exist.")
 		}
+		log.Info("File system does not exist.")
+		return &csi.DeleteVolumeResponse{}, nil
 	}
 
 	compartmentID := *fileSystem.CompartmentId
@@ -663,7 +663,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 		err = d.client.FSS().DeleteMountTarget(ctx, mountTargetOCID)
 		if err != nil {
 			if !client.IsNotFound(err) {
-				log.With("service","fss","verb","delete","resource","mountTarget","statusCode",util.GetHttpStatusCode(err)).
+				log.With("service", "fss", "verb", "delete", "resource", "mountTarget", "statusCode", util.GetHttpStatusCode(err)).
 					With(zap.Error(err)).Error("Failed to delete mount target.")
 				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 				metrics.SendMetricData(d.metricPusher, metrics.MTDelete, time.Since(startTimeMountTarget).Seconds(), dimensionsMap)
@@ -690,7 +690,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 				if exportSummary != nil {
 					log.Infof("export %s is in state %s", *exportSummary.Id, exportSummary.LifecycleState)
 				} else {
-					log.With("service","fss","verb","get","resource","export","statusCode",util.GetHttpStatusCode(err)).
+					log.With("service", "fss", "verb", "get", "resource", "export", "statusCode", util.GetHttpStatusCode(err)).
 						With(zap.Error(err)).Error("Failed to find export.")
 					dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 					metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTimeExport).Seconds(), dimensionsMap)
@@ -704,7 +704,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 			log.Infof("deleting export with exportId %s", *exportSummary.Id)
 			err = d.client.FSS().DeleteExport(ctx, *exportSummary.Id)
 			if err != nil {
-				log.With("service","fss","verb","delete","resource","export","statusCode",util.GetHttpStatusCode(err)).
+				log.With("service", "fss", "verb", "delete", "resource", "export", "statusCode", util.GetHttpStatusCode(err)).
 					With(zap.Error(err)).Error("failed to delete export.")
 				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 				metrics.SendMetricData(d.metricPusher, metrics.ExportDelete, time.Since(startTimeExport).Seconds(), dimensionsMap)
@@ -724,7 +724,7 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	err = d.client.FSS().DeleteFileSystem(ctx, filesystemOcid)
 	if err != nil {
 		if !client.IsNotFound(err) {
-			log.With("service","fss","verb","delete","resource","fileSystem","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "fss", "verb", "delete", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error("Failed to delete file system.")
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.CSIStorageType)
 			metrics.SendMetricData(d.metricPusher, metrics.FSSDelete, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
@@ -801,7 +801,7 @@ func (d *FSSControllerDriver) ValidateVolumeCapabilities(ctx context.Context, re
 	log.Info("Fetching filesystem")
 	fileSystem, err := d.client.FSS().GetFileSystem(ctx, filesystemOcid)
 	if err != nil {
-		log.With("service","fss","verb","get","resource","fileSystem","statusCode",util.GetHttpStatusCode(err)).
+		log.With("service", "fss", "verb", "get", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 			With(zap.Error(err)).Error("File system not found.")
 		return nil, status.Errorf(codes.NotFound, "File system not found. error: %s", err.Error())
 	}
@@ -829,7 +829,7 @@ func (d *FSSControllerDriver) ValidateVolumeCapabilities(ctx context.Context, re
 		log.Info("filesystem tagged with mount target ocid, getting mount target")
 		mountTarget, err = d.client.FSS().GetMountTarget(ctx, mountTargetOCID)
 		if err != nil && !client.IsNotFound(err) {
-			log.With("service","fss","verb","get","resource","mountTarget","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "fss", "verb", "get", "resource", "mountTarget", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error("failed to get mount target")
 			return nil, status.Errorf(codes.NotFound, "failed to get mount target, error: %s", err.Error())
 		}
@@ -840,7 +840,7 @@ func (d *FSSControllerDriver) ValidateVolumeCapabilities(ctx context.Context, re
 		log = log.With("mountTargetIpId", mountTargetIpId)
 		privateIpObject, err := d.client.Networking().GetPrivateIp(ctx, mountTargetIpId)
 		if err != nil {
-			log.With("service","vcn","verb","get","resource","privateIp","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "vcn", "verb", "get", "resource", "privateIp", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Errorf("Failed to fetch Mount Target Private IP from IP ID: %s", mountTargetIpId)
 			return nil, status.Errorf(codes.NotFound, "Failed to fetch Mount Target Private IP from IP ID: %s, error: %s", mountTargetIpId, err.Error())
 		}
@@ -860,7 +860,7 @@ func (d *FSSControllerDriver) ValidateVolumeCapabilities(ctx context.Context, re
 		log.Infof("searching export with tagged exportSetId %s", exportSetId)
 		exportSummary, err = d.client.FSS().FindExport(ctx, filesystemOcid, exportPath, exportSetId)
 		if err != nil {
-			log.With("service","fss","verb","get","resource","export","statusCode",util.GetHttpStatusCode(err)).
+			log.With("service", "fss", "verb", "get", "resource", "export", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error("export not found.")
 			return nil, status.Errorf(codes.NotFound, "export not found. error: %s", err.Error())
 		}
