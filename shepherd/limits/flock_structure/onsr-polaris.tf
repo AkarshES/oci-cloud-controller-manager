@@ -53,7 +53,7 @@ resource "shepherd_execution_target" "polaris_onsr_et" {
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
   additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
   alarms_to_watch {
-    compartment_name = format("cell%d:cell%d.mp:cell%d.mp.orchestration", split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1]) # This is a compartment in the tenancy above
+    compartment_name = "assets"
     labels           = [format(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "watch_mp_release_label_format"), split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1])]
   }
   ignored_region_build_capabilities = ["grafana_dashboard"]
@@ -70,6 +70,10 @@ resource "shepherd_execution_target" "polaris_onsr_env_setup_et" {
   snowflake_config_location         = "generic_tenancy"
   additional_locals                 = merge(each.value.additional_locals, { cell_count : each.value.cell_count })
   ignored_region_build_capabilities = ["grafana_dashboard"]
+  alarms_to_watch {
+    compartment_name = "assets"
+    labels = [ for idx in range(each.value.cell_count) : format("oke-mp-release-cells%s",idx)]
+  }
 }
 
 resource "shepherd_execution_target" "polaris_onsr_spectre_setup_et" {
@@ -83,6 +87,10 @@ resource "shepherd_execution_target" "polaris_onsr_spectre_setup_et" {
   snowflake_config_location         = "spectre_region"
   additional_locals                 = each.value.additional_locals
   ignored_region_build_capabilities = ["grafana_dashboard"]
+  alarms_to_watch {
+    compartment_name = "assets"
+    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+  }
 }
 
 resource "shepherd_execution_target" "polaris_onsr_region_values" {
@@ -105,5 +113,9 @@ resource "shepherd_execution_target" "polaris_onsr_region_values" {
   provider_override {
     name = "null"
     constraint = ">= 0.1"
+  }
+  alarms_to_watch {
+    compartment_name = "assets"
+    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
   }
 }

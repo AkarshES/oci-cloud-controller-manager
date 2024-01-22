@@ -33,6 +33,10 @@ resource "shepherd_execution_target" "prod_build_spectre_region_et" {
     name = "null"
     constraint = ">= 0.1"
   }
+  alarms_to_watch {
+    compartment_name = "assets"
+    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+  }
 }
 
 resource "shepherd_execution_target" "prod_build_region_et" {
@@ -47,8 +51,10 @@ resource "shepherd_execution_target" "prod_build_region_et" {
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
   additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
   alarms_to_watch {
-    compartment_name = format("cell%d:cell%d.mp:cell%d.mp.orchestration", split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1]) # This is a compartment in the tenancy above
-    labels           = [format(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "watch_mp_release_label_format"), split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1])]
+    compartment_name = "assets"
+    # updated compartment name
+    #compartment_name = format("cell%d:cell%d.mp:cell%d.mp.orchestration", split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1]) # This is a compartment in the tenancy above
+    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
   }
   ignored_region_build_capabilities = ["grafana_dashboard"]
 }
