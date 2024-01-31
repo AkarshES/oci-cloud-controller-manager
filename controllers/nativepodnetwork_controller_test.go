@@ -19,12 +19,13 @@ package controllers
 import (
 	"context"
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"go.uber.org/zap"
 	authv1 "k8s.io/api/authentication/v1"
-	"reflect"
-	"testing"
 
 	"github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
@@ -336,6 +337,10 @@ func (c MockOCIClient) ContainerEngine() client.ContainerEngineInterface {
 
 // MockVirtualNetworkClient mocks VirtualNetwork client implementation
 type MockVirtualNetworkClient struct {
+}
+
+func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
 }
 
 func (c *MockVirtualNetworkClient) CreateNetworkSecurityGroup(ctx context.Context, compartmentId, vcnId, displayName, lbId string) (*core.NetworkSecurityGroup, error) {

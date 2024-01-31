@@ -55,12 +55,13 @@ const (
 	mountTargetResource         resource = "mount_target"
 	exportResource              resource = "export"
 	privateIPResource           resource = "private_ip"
+	ipv6IPResource              resource = "ipv6_ip"
 	availabilityDomainResource  resource = "availability_domain"
 	nsgResource                 resource = "network_security_groups"
 	nsgRuleResource             resource = "network_security_group_rules"
 	publicReservedIPResource    resource = "public_reserved_ip"
 	virtualNodeResource         resource = "virtual_node"
-	volumeBackupResource		resource = "volumeBackup"
+	volumeBackupResource        resource = "volumeBackup"
 )
 
 type verb string

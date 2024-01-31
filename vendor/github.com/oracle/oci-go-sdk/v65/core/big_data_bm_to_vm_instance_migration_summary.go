@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -50,14 +50,14 @@ type BigDataBmToVmInstanceMigrationSummary struct {
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 
-	// The OCID of the VM instance that BigDataBmToVmInstanceMigration event migrated to.
-	TargetInstanceId *string `mandatory:"false" json:"targetInstanceId"`
+	// The time at which the BigDataBmToVmInstanceMigration requested.
+	TimeRequested *common.SDKTime `mandatory:"false" json:"timeRequested"`
 
-	// The image OCID.
-	TargetImageId *string `mandatory:"false" json:"targetImageId"`
+	// The time at which the BigDataBmToVmInstanceMigration started.
+	TimeCreated *common.SDKTime `mandatory:"false" json:"timeCreated"`
 
-	// The shape name.
-	TargetShape *string `mandatory:"false" json:"targetShape"`
+	// The time at which the BigDataBmToVmInstanceMigration completed.
+	TimeCompleted *common.SDKTime `mandatory:"false" json:"timeCompleted"`
 }
 
 func (m BigDataBmToVmInstanceMigrationSummary) String() string {

@@ -332,7 +332,7 @@ github.com/opencontainers/go-digest
 ## explicit; go 1.19
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/pkg/pwalkdir
-# github.com/oracle/oci-go-sdk/v65 v65.2.0 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.43.0-p.0.20230711221337-6d708be342aa
+# github.com/oracle/oci-go-sdk/v65 v65.2.0 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.62.0-p
 ## explicit; go 1.13
 github.com/oracle/oci-go-sdk/v65/common
 github.com/oracle/oci-go-sdk/v65/common/auth
@@ -1656,7 +1656,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 ## explicit; go 1.12
 sigs.k8s.io/yaml
 # github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
-# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.43.0-p.0.20230711221337-6d708be342aa
+# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.62.0-p
 # github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.16.0
 # k8s.io/api => k8s.io/api v0.28.2
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.2
