@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 
 package common
@@ -56,25 +56,29 @@ var OciRealmSpecificServiceEndpointTemplateEnabled *bool = nil
 // OciSdkEnabledServicesMap is a list of services that are enabled, default is an empty list which means all services are enabled
 var OciSdkEnabledServicesMap map[string]bool
 
-// OciAlloyConfigFilePathEnvVar is the environment variable name for the OCI Alloy Config File Path
-const OciAlloyConfigFilePathEnvVar = "OCI_ALLOY_CONFIG_FILE_PATH"
+// OciDeveloperToolConfigurationFilePathEnvVar is the environment variable name for the OCI Developer Tool Config File Path
+const OciDeveloperToolConfigurationFilePathEnvVar = "OCI_DEVELOPER_TOOL_CONFIGURATION_FILE_PATH"
 
-// OciAlloyRegionCoexistEnvVar is the environment variable name for the OCI Alloy Region Coexist
-const OciAlloyRegionCoexistEnvVar = "OCI_ALLOY_REGION_COEXIST"
+// OciAllowOnlyDeveloperToolConfigurationRegionsEnvVar is the environment variable name for the OCI Allow only Dev Tool Config Regions
+const OciAllowOnlyDeveloperToolConfigurationRegionsEnvVar = "OCI_ALLOW_ONLY_DEVELOPER_TOOL_CONFIGURATION_REGIONS"
 
-// defaultRealmForUnknownAlloyRegion is the default realm for unknown alloy region
-const defaultRealmForUnknownAlloyRegion = "oraclecloud.com"
+// defaultRealmForUnknownDeveloperToolConfigurationRegion is the default realm for unknown Developer Tool Configuration Regions
+const defaultRealmForUnknownDeveloperToolConfigurationRegion = "oraclecloud.com"
 
-// OciAlloyConfigFileProvider is the provider name for the OCI Alloy Config File
-var OciAlloyConfigFileProvider string
+// OciDeveloperToolConfigurationProvider is the provider name for the OCI Developer Tool Configuration file
+var OciDeveloperToolConfigurationProvider string
 
-// ociAlloyRegionCoexist is the flag to enable the OCI Alloy Region Coexist. This one has lower priority than the environment variable.
-var ociAlloyRegionCoexist bool
+// ociAllowOnlyDeveloperToolConfigurationRegions is the flag to enable the OCI Allow Only Developer Tool Configuration Regions. This one has lower priority than the environment variable.
+var ociAllowOnlyDeveloperToolConfigurationRegions bool
 
-var ociAlloyRegionSchemaList []map[string]string
+var ociDeveloperToolConfigurationRegionSchemaList []map[string]string
 
 // Endpoint returns a endpoint for a service
 func (region Region) Endpoint(service string) string {
+	// Endpoint for dotted region
+	if strings.Contains(string(region), ".") {
+		return fmt.Sprintf("%s.%s", service, region)
+	}
 	return fmt.Sprintf("%s.%s.%s", service, region, region.secondLevelDomain())
 }
 
@@ -132,7 +136,7 @@ func (region Region) EndpointForTemplateDottedRegion(service string, serviceEndp
 				return endpoint, fmt.Errorf("Endpoint service name not present in endpoint template")
 			}
 		} else {
-			return endpoint, fmt.Errorf("Invalid serviceEndpointTemplates. ServiceEndpointTemplate should start with https://")
+			return endpoint, fmt.Errorf("invalid serviceEndpointTemplates. ServiceEndpointTemplate should start with https://")
 		}
 		return endpoint, nil
 	}
@@ -150,7 +154,7 @@ func (region Region) secondLevelDomain() string {
 	}
 	Debugf("cannot find realm for region : %s, return default realm value.", region)
 	if _, ok := realm["oc1"]; !ok {
-		return defaultRealmForUnknownAlloyRegion
+		return defaultRealmForUnknownDeveloperToolConfigurationRegion
 	}
 	return realm["oc1"]
 }
@@ -168,16 +172,16 @@ func (region Region) RealmID() (string, error) {
 func StringToRegion(stringRegion string) (r Region) {
 	regionStr := strings.ToLower(stringRegion)
 	// check for PLC related regions
-	if !checkAllowOCIRegionCoexist() && (checkAlloyConfigFile() || len(ociAlloyRegionSchemaList) != 0) {
-		Debugf("Alloy config detected and OCI_ALLOY_REGION_COEXIST is not set to True, SDK will only use regions defined for Alloy regions")
-		setRegionMetadataFromAlloyCfgFile(&stringRegion)
-		if len(ociAlloyRegionSchemaList) != 0 {
+	if checkAllowOnlyDeveloperToolConfigurationRegions() && (checkDeveloperToolConfigurationFile() || len(ociDeveloperToolConfigurationRegionSchemaList) != 0) {
+		Debugf("Developer Tool config detected and OCI_ALLOW_ONLY_DEVELOPER_TOOL_CONFIGURATION_REGIONS is set to True, SDK will only use regions defined for Developer Tool Configuration Regions")
+		setRegionMetadataFromDeveloperToolConfigurationFile(&stringRegion)
+		if len(ociDeveloperToolConfigurationRegionSchemaList) != 0 {
 			resetRegionInfo()
-			bulkAddRegionSchema(ociAlloyRegionSchemaList)
+			bulkAddRegionSchema(ociDeveloperToolConfigurationRegionSchemaList)
 		}
 		r = Region(stringRegion)
 		if _, ok := regionRealm[r]; !ok {
-			Logf("You're using the %s Alloy configuration file, the region you're targeting is not declared in this config file. Please check if this is the correct region you're targeting or contact the %s cloud provider for help. If you want to target both OCI regions and %s regions, please set the OCI_PLC_REGION_COEXIST env var to True.", OciAlloyConfigFileProvider, OciAlloyConfigFileProvider, regionStr)
+			Logf("You're using the %s Developer Tool configuration file, the region you're targeting is not declared in this config file. Please check if this is the correct region you're targeting or contact the %s cloud provider for help. If you want to target both OCI regions and %s regions, please set the OCI_ALLOW_ONLY_DEVELOPER_TOOL_CONFIGURATION_REGIONS env var to False.", OciDeveloperToolConfigurationProvider, OciDeveloperToolConfigurationProvider, regionStr)
 		}
 		return r
 	}
@@ -202,7 +206,7 @@ func StringToRegion(stringRegion string) (r Region) {
 
 // canStringBeRegion test if the string can be a region, if it can, returns the string as is, otherwise it
 // returns an error
-var blankRegex = regexp.MustCompile("\\s")
+var blankRegex = regexp.MustCompile(`\s`)
 
 func canStringBeRegion(stringRegion string) (region string, err error) {
 	if blankRegex.MatchString(stringRegion) || stringRegion == "" {
@@ -235,7 +239,7 @@ func EnableInstanceMetadataServiceLookup() {
 // Once successfully find the expected region(region name or short code), return true, region name will be stored in
 // the input pointer.
 func setRegionMetadataFromEnvVar(region *string) bool {
-	if readEnvVar == false {
+	if !readEnvVar {
 		Debugf("metadata region env variable had already been checked, no need to check again.")
 		return false //no need to check it again.
 	}
@@ -266,7 +270,7 @@ func setRegionMetadataFromEnvVar(region *string) bool {
 }
 
 func setRegionMetadataFromCfgFile(region *string) bool {
-	if setRegionMetadataFromAlloyCfgFile(region) {
+	if setRegionMetadataFromDeveloperToolConfigurationFile(region) {
 		return true
 	}
 	if setRegionMetadataFromRegionCfgFile(region) {
@@ -280,7 +284,7 @@ func setRegionMetadataFromCfgFile(region *string) bool {
 // Once successfully find the expected region(region name or short code), return true, region name will be stored in
 // the input pointer.
 func setRegionMetadataFromRegionCfgFile(region *string) bool {
-	if readCfgFile == false {
+	if !readCfgFile {
 		Debugf("metadata region config file had already been checked, no need to check again.")
 		return false //no need to check it again.
 	}
@@ -305,13 +309,13 @@ func setRegionMetadataFromRegionCfgFile(region *string) bool {
 	return false
 }
 
-// setRegionMetadataFromAlloyFile checks if alloy config file is provided, once it's there, parse and add all
-// The default location of the alloy config file is ~/.oci/alloy-config.json. It will also check the environment variable
+// setRegionMetadataFromDeveloperToolConfigurationFile checks if Developer Tool config file is provided, once it's there, parse and add all
+// The default location of the Developer Tool config file is ~/.oci/developer-tool-configuration.json. It will also check the environment variable
 // the valid regions to region map, the configuration file can only be visited once.
 // Once successfully find the expected region(region name or short code), return true, region name will be stored in
 // the input pointer.
-func setRegionMetadataFromAlloyCfgFile(region *string) bool {
-	if jsonArr, ok := readAndParseAlloyConfigFile(); ok {
+func setRegionMetadataFromDeveloperToolConfigurationFile(region *string) bool {
+	if jsonArr, ok := readAndParseDeveloperToolConfigurationFile(); ok {
 		added := false
 		if jsonArr["regions"] == nil {
 			return false
@@ -326,7 +330,7 @@ func setRegionMetadataFromAlloyCfgFile(region *string) bool {
 			return false
 		}
 
-		if !IsEnvVarTrue(OciAlloyRegionCoexistEnvVar) {
+		if IsEnvVarTrue(OciAllowOnlyDeveloperToolConfigurationRegionsEnvVar) {
 			resetRegionInfo()
 		}
 		for _, jsonItem := range regionJSON {
@@ -358,14 +362,14 @@ func readAndParseConfigFile(configFileName *string) (fileContent []map[string]st
 	return
 }
 
-func readAndParseAlloyConfigFile() (fileContent map[string]interface{}, ok bool) {
+func readAndParseDeveloperToolConfigurationFile() (fileContent map[string]interface{}, ok bool) {
 	homeFolder := getHomeFolder()
-	configFileName := filepath.Join(homeFolder, regionMetadataCfgDirName, "alloy-config.json")
-	if path := os.Getenv(OciAlloyConfigFilePathEnvVar); path != "" {
+	configFileName := filepath.Join(homeFolder, regionMetadataCfgDirName, "developer-tool-configuration.json")
+	if path := os.Getenv(OciDeveloperToolConfigurationFilePathEnvVar); path != "" {
 		configFileName = path
 	}
 	if content, err := ioutil.ReadFile(configFileName); err == nil {
-		Debugf("Raw content of alloy config file content:", string(content[:]))
+		Debugf("Raw content of Developer Tool config file content:", string(content[:]))
 		if err := json.Unmarshal(content, &fileContent); err != nil {
 			Debugf("Can't unmarshal env var, the error info is", err)
 			return
@@ -373,14 +377,14 @@ func readAndParseAlloyConfigFile() (fileContent map[string]interface{}, ok bool)
 		ok = true
 		return
 	}
-	Debugf("No Alloy Config File provided.")
+	Debugf("No Developer Tool Config File provided.")
 	return
 }
 
-func checkAlloyConfigFile() bool {
+func checkDeveloperToolConfigurationFile() bool {
 	homeFolder := getHomeFolder()
-	configFileName := filepath.Join(homeFolder, regionMetadataCfgDirName, "alloy-config.json")
-	if path := os.Getenv(OciAlloyConfigFilePathEnvVar); path != "" {
+	configFileName := filepath.Join(homeFolder, regionMetadataCfgDirName, "developer-tool-configuration.json")
+	if path := os.Getenv(OciDeveloperToolConfigurationFilePathEnvVar); path != "" {
 		configFileName = path
 	}
 	if _, err := os.Stat(configFileName); err == nil {
@@ -404,7 +408,7 @@ func addRegionSchema(regionSchema map[string]string) {
 
 // AddRegionSchemaForPlc add region schema to region map
 func AddRegionSchemaForPlc(regionSchema map[string]string) {
-	ociAlloyRegionSchemaList = append(ociAlloyRegionSchemaList, regionSchema)
+	ociDeveloperToolConfigurationRegionSchemaList = append(ociDeveloperToolConfigurationRegionSchemaList, regionSchema)
 	addRegionSchema(regionSchema)
 	// if !IsEnvVarTrue(OciPlcRegionExclusiveEnvVar) {
 	// 	addRegionSchema(regionSchema)
@@ -468,7 +472,7 @@ func setRegionFromInstanceMetadataService(region *string) bool {
 	// 	"regionIdentifier" : "ca-montreal-1"
 	// }
 	// Mark visitIMDS Flag as false since it has already been visited.
-	if visitIMDS == false {
+	if !visitIMDS {
 		Debugf("check from IMDS is disabled or IMDS had already been successfully visited, no need to check again.")
 		return false
 	}
@@ -504,7 +508,7 @@ func setRegionFromInstanceMetadataService(region *string) bool {
 
 // getRegionInfoFromInstanceMetadataServiceProd calls instance metadata service and get the region information
 func getRegionInfoFromInstanceMetadataServiceProd() ([]byte, error) {
-	request, err := http.NewRequest(http.MethodGet, instanceMetadataRegionInfoURLV2, nil)
+	request, _ := http.NewRequest(http.MethodGet, instanceMetadataRegionInfoURLV2, nil)
 	request.Header.Add("Authorization", "Bearer Oracle")
 
 	client := &http.Client{
@@ -512,7 +516,7 @@ func getRegionInfoFromInstanceMetadataServiceProd() ([]byte, error) {
 	}
 	resp, err := client.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to call instance metadata service. Error: %v", err)
+		return nil, fmt.Errorf("failed to call instance metadata service. Error: %v", err)
 	}
 
 	statusCode := resp.StatusCode
@@ -521,7 +525,7 @@ func getRegionInfoFromInstanceMetadataServiceProd() ([]byte, error) {
 
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get region information from response body. Error: %v", err)
+		return nil, fmt.Errorf("failed to get region information from response body. Error: %v", err)
 	}
 
 	if statusCode != http.StatusOK {
@@ -550,12 +554,12 @@ func SetMissingTemplateParams(client *BaseClient) {
 
 func getOciSdkEnabledServicesMap() map[string]bool {
 	var enabledMap = make(map[string]bool)
-	if jsonArr, ok := readAndParseAlloyConfigFile(); ok {
+	if jsonArr, ok := readAndParseDeveloperToolConfigurationFile(); ok {
 		if jsonArr["provider"] != nil {
-			OciAlloyConfigFileProvider = jsonArr["provider"].(string)
+			OciDeveloperToolConfigurationProvider = jsonArr["provider"].(string)
 		}
-		if jsonArr["ociRegionCoexist"] != nil && jsonArr["ociRegionCoexist"] == true {
-			ociAlloyRegionCoexist = jsonArr["ociRegionCoexist"].(bool)
+		if jsonArr["allowOnlyDeveloperToolConfigurationRegions"] != nil && jsonArr["allowOnlyDeveloperToolConfigurationRegions"] == false {
+			ociAllowOnlyDeveloperToolConfigurationRegions = jsonArr["allowOnlyDeveloperToolConfigurationRegions"].(bool)
 		}
 		if jsonArr["services"] == nil {
 			return enabledMap
@@ -604,13 +608,13 @@ func CheckForEnabledServices(serviceName string) bool {
 	return OciSdkEnabledServicesMap[serviceName]
 }
 
-// CheckAllowOCIRegionCoexist checks if the OCI region coexist is allowed.
-// This function will first check if the OCI_REGION_COEXIST environment variable is set.
+// CheckAllowOnlyDeveloperToolConfigurationRegions checks if only developer tool configuration regions are allowed
+// This function will first check if the OCI_ALLOW_ONLY_DEVELOPER_TOOL_CONFIGURATION_REGIONS environment variable is set.
 // If it is set, it will return the value.
-// If it is not set, it will return the value from the OciAlloyRegionCoexist variable.
-func checkAllowOCIRegionCoexist() bool {
-	if val, ok := os.LookupEnv("OCI_REGION_COEXIST"); ok {
+// If it is not set, it will return the value from the ociAllowOnlyDeveloperToolConfigurationRegions variable.
+func checkAllowOnlyDeveloperToolConfigurationRegions() bool {
+	if val, ok := os.LookupEnv("OCI_ALLOW_ONLY_DEVELOPER_TOOL_CONFIGURATION_REGIONS"); ok {
 		return val == "true"
 	}
-	return ociAlloyRegionCoexist
+	return ociAllowOnlyDeveloperToolConfigurationRegions
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -52,27 +52,27 @@ type InstanceConfigurationIscsiAttachVolumeDetails struct {
 	UseChap *bool `mandatory:"false" json:"useChap"`
 }
 
-//GetDisplayName returns DisplayName
+// GetDisplayName returns DisplayName
 func (m InstanceConfigurationIscsiAttachVolumeDetails) GetDisplayName() *string {
 	return m.DisplayName
 }
 
-//GetIsReadOnly returns IsReadOnly
+// GetIsReadOnly returns IsReadOnly
 func (m InstanceConfigurationIscsiAttachVolumeDetails) GetIsReadOnly() *bool {
 	return m.IsReadOnly
 }
 
-//GetDevice returns Device
+// GetDevice returns Device
 func (m InstanceConfigurationIscsiAttachVolumeDetails) GetDevice() *string {
 	return m.Device
 }
 
-//GetIsShareable returns IsShareable
+// GetIsShareable returns IsShareable
 func (m InstanceConfigurationIscsiAttachVolumeDetails) GetIsShareable() *bool {
 	return m.IsShareable
 }
 
-//GetImageVolumeIndex returns ImageVolumeIndex
+// GetImageVolumeIndex returns ImageVolumeIndex
 func (m InstanceConfigurationIscsiAttachVolumeDetails) GetImageVolumeIndex() *int {
 	return m.ImageVolumeIndex
 }

@@ -283,6 +283,10 @@ func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, comp
 type MockVirtualNetworkClient struct {
 }
 
+func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
 func (c *MockVirtualNetworkClient) CreateNetworkSecurityGroup(ctx context.Context, compartmentId, vcnId, displayName, lbId string) (*core.NetworkSecurityGroup, error) {
 	return nil, nil
 }

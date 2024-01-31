@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -52,7 +52,7 @@ type InternalVnicAttachment struct {
 
 	VnicShapeConfig *VnicShapeConfig `mandatory:"false" json:"vnicShapeConfig"`
 
-	VnicaasVnicShapeConfig *VnicassVnicShapeConfig `mandatory:"false" json:"vnicaasVnicShapeConfig"`
+	VnicaasVnicShapeConfig *VnicaasVnicShapeConfig `mandatory:"false" json:"vnicaasVnicShapeConfig"`
 
 	// The instance that a VNIC is attached to
 	InstanceId *string `mandatory:"false" json:"instanceId"`
@@ -82,6 +82,9 @@ type InternalVnicAttachment struct {
 
 	// The subTopic in the shard that this VNIC would be hashing to
 	SubTopicId *string `mandatory:"false" json:"subTopicId"`
+
+	// Indicates if the VNIC supports encryption.
+	IsEncryptionSupported *bool `mandatory:"false" json:"isEncryptionSupported"`
 }
 
 func (m InternalVnicAttachment) String() string {
@@ -209,6 +212,11 @@ const (
 	InternalVnicAttachmentVnicShapeVnicaasFwaas6g250m              InternalVnicAttachmentVnicShapeEnum = "VNICAAS_FWAAS_6G_250M"
 	InternalVnicAttachmentVnicShapeVnicaasNlbApproved10g           InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_10G"
 	InternalVnicAttachmentVnicShapeVnicaasNlbApproved25g           InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_25G"
+	InternalVnicAttachmentVnicShapeVnicaasNlbApproved2m10g         InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_2M_10G"
+	InternalVnicAttachmentVnicShapeVnicaasNlbApproved5m15g         InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_5M_15G"
+	InternalVnicAttachmentVnicShapeVnicaasNlbApproved10m15g        InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_10M_15G"
+	InternalVnicAttachmentVnicShapeVnicaasNlbApproved20m15g        InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_20M_15G"
+	InternalVnicAttachmentVnicShapeVnicaasNlbApproved30m15g        InternalVnicAttachmentVnicShapeEnum = "VNICAAS_NLB_APPROVED_30M_15G"
 	InternalVnicAttachmentVnicShapeVnicaasTelesis25g               InternalVnicAttachmentVnicShapeEnum = "VNICAAS_TELESIS_25G"
 	InternalVnicAttachmentVnicShapeVnicaasTelesis10g               InternalVnicAttachmentVnicShapeEnum = "VNICAAS_TELESIS_10G"
 	InternalVnicAttachmentVnicShapeVnicaasAmbassadorFixed0100      InternalVnicAttachmentVnicShapeEnum = "VNICAAS_AMBASSADOR_FIXED0100"
@@ -1786,6 +1794,11 @@ var mappingInternalVnicAttachmentVnicShapeEnum = map[string]InternalVnicAttachme
 	"VNICAAS_FWAAS_6G_250M":                InternalVnicAttachmentVnicShapeVnicaasFwaas6g250m,
 	"VNICAAS_NLB_APPROVED_10G":             InternalVnicAttachmentVnicShapeVnicaasNlbApproved10g,
 	"VNICAAS_NLB_APPROVED_25G":             InternalVnicAttachmentVnicShapeVnicaasNlbApproved25g,
+	"VNICAAS_NLB_APPROVED_2M_10G":          InternalVnicAttachmentVnicShapeVnicaasNlbApproved2m10g,
+	"VNICAAS_NLB_APPROVED_5M_15G":          InternalVnicAttachmentVnicShapeVnicaasNlbApproved5m15g,
+	"VNICAAS_NLB_APPROVED_10M_15G":         InternalVnicAttachmentVnicShapeVnicaasNlbApproved10m15g,
+	"VNICAAS_NLB_APPROVED_20M_15G":         InternalVnicAttachmentVnicShapeVnicaasNlbApproved20m15g,
+	"VNICAAS_NLB_APPROVED_30M_15G":         InternalVnicAttachmentVnicShapeVnicaasNlbApproved30m15g,
 	"VNICAAS_TELESIS_25G":                  InternalVnicAttachmentVnicShapeVnicaasTelesis25g,
 	"VNICAAS_TELESIS_10G":                  InternalVnicAttachmentVnicShapeVnicaasTelesis10g,
 	"VNICAAS_AMBASSADOR_FIXED0100":         InternalVnicAttachmentVnicShapeVnicaasAmbassadorFixed0100,
@@ -3363,6 +3376,11 @@ var mappingInternalVnicAttachmentVnicShapeEnumLowerCase = map[string]InternalVni
 	"vnicaas_fwaas_6g_250m":                InternalVnicAttachmentVnicShapeVnicaasFwaas6g250m,
 	"vnicaas_nlb_approved_10g":             InternalVnicAttachmentVnicShapeVnicaasNlbApproved10g,
 	"vnicaas_nlb_approved_25g":             InternalVnicAttachmentVnicShapeVnicaasNlbApproved25g,
+	"vnicaas_nlb_approved_2m_10g":          InternalVnicAttachmentVnicShapeVnicaasNlbApproved2m10g,
+	"vnicaas_nlb_approved_5m_15g":          InternalVnicAttachmentVnicShapeVnicaasNlbApproved5m15g,
+	"vnicaas_nlb_approved_10m_15g":         InternalVnicAttachmentVnicShapeVnicaasNlbApproved10m15g,
+	"vnicaas_nlb_approved_20m_15g":         InternalVnicAttachmentVnicShapeVnicaasNlbApproved20m15g,
+	"vnicaas_nlb_approved_30m_15g":         InternalVnicAttachmentVnicShapeVnicaasNlbApproved30m15g,
 	"vnicaas_telesis_25g":                  InternalVnicAttachmentVnicShapeVnicaasTelesis25g,
 	"vnicaas_telesis_10g":                  InternalVnicAttachmentVnicShapeVnicaasTelesis10g,
 	"vnicaas_ambassador_fixed0100":         InternalVnicAttachmentVnicShapeVnicaasAmbassadorFixed0100,
@@ -4951,6 +4969,11 @@ func GetInternalVnicAttachmentVnicShapeEnumStringValues() []string {
 		"VNICAAS_FWAAS_6G_250M",
 		"VNICAAS_NLB_APPROVED_10G",
 		"VNICAAS_NLB_APPROVED_25G",
+		"VNICAAS_NLB_APPROVED_2M_10G",
+		"VNICAAS_NLB_APPROVED_5M_15G",
+		"VNICAAS_NLB_APPROVED_10M_15G",
+		"VNICAAS_NLB_APPROVED_20M_15G",
+		"VNICAAS_NLB_APPROVED_30M_15G",
 		"VNICAAS_TELESIS_25G",
 		"VNICAAS_TELESIS_10G",
 		"VNICAAS_AMBASSADOR_FIXED0100",

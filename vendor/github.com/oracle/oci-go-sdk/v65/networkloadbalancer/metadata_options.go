@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -22,6 +22,7 @@ const (
 	MetadataOptionsSgwPeNatIp MetadataOptionsEnum = "SGW_PE_NAT_IP"
 	MetadataOptionsVcnOcid    MetadataOptionsEnum = "VCN_OCID"
 	MetadataOptionsPeOcid     MetadataOptionsEnum = "PE_OCID"
+	MetadataOptionsSgwOcid    MetadataOptionsEnum = "SGW_OCID"
 )
 
 var mappingMetadataOptionsEnum = map[string]MetadataOptionsEnum{
@@ -29,6 +30,7 @@ var mappingMetadataOptionsEnum = map[string]MetadataOptionsEnum{
 	"SGW_PE_NAT_IP": MetadataOptionsSgwPeNatIp,
 	"VCN_OCID":      MetadataOptionsVcnOcid,
 	"PE_OCID":       MetadataOptionsPeOcid,
+	"SGW_OCID":      MetadataOptionsSgwOcid,
 }
 
 var mappingMetadataOptionsEnumLowerCase = map[string]MetadataOptionsEnum{
@@ -36,6 +38,7 @@ var mappingMetadataOptionsEnumLowerCase = map[string]MetadataOptionsEnum{
 	"sgw_pe_nat_ip": MetadataOptionsSgwPeNatIp,
 	"vcn_ocid":      MetadataOptionsVcnOcid,
 	"pe_ocid":       MetadataOptionsPeOcid,
+	"sgw_ocid":      MetadataOptionsSgwOcid,
 }
 
 // GetMetadataOptionsEnumValues Enumerates the set of values for MetadataOptionsEnum
@@ -54,6 +57,7 @@ func GetMetadataOptionsEnumStringValues() []string {
 		"SGW_PE_NAT_IP",
 		"VCN_OCID",
 		"PE_OCID",
+		"SGW_OCID",
 	}
 }
 

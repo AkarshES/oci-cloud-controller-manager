@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,19 +21,19 @@ import (
 	"strings"
 )
 
-// Dav A Direct Attached Vnic.
+// Dav A direct attached VNIC.
 type Dav struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the Direct Attached Vnic.
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the direct attached VNIC.
 	Id *string `mandatory:"true" json:"id"`
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the Direct Attached Vnic's compartment.
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the direct attached VNIC's compartment.
 	CompartmentId *string `mandatory:"true" json:"compartmentId"`
 
-	// The current state of the Direct Attached Vnic.
+	// The current state of the direct attached VNIC.
 	LifecycleState DavLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 
-	// Index of NIC for Direct Attached Vnic.
+	// Index of NIC for direct attached VNIC.
 	NicIndex *int `mandatory:"true" json:"nicIndex"`
 
 	// A user-friendly name. Does not have to be unique, and it's changeable.
@@ -51,10 +51,10 @@ type Dav struct {
 	// This field will be null in case the DAV is not attached.
 	SubstrateIp *string `mandatory:"false" json:"substrateIp"`
 
-	// The allocated slot id for the Dav.
+	// The allocated slot id for the DAV.
 	SlotId *int `mandatory:"false" json:"slotId"`
 
-	// The VLAN Tag assigned to Direct Attached Vnic.
+	// The VLAN Tag assigned to direct attached VNIC.
 	VlanTag *int `mandatory:"false" json:"vlanTag"`
 
 	// The MAC address of the Virtual Router.
@@ -66,8 +66,8 @@ type Dav struct {
 	// List of VCNx Attachments to a DRG.
 	VcnxAttachmentIds []string `mandatory:"false" json:"vcnxAttachmentIds"`
 
-	// The label type for Direct Attached Vnic. This is used to determine the
-	// label forwarding to be used by the Direct Attached Vnic.
+	// The label type for direct attached VNIC. This is used to determine the
+	// label forwarding to be used by the direct attached VNIC.
 	LabelType DavLabelTypeEnum `mandatory:"false" json:"labelType,omitempty"`
 
 	// Free-form tags for this resource. Each tag is a simple key-value pair with no
