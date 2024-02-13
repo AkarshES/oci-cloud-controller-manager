@@ -1,11 +1,12 @@
 package e2e
 
 import (
+	"time"
+
 	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	sharedfw "github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
 	oke "github.com/oracle/oci-go-sdk/v65/containerengine"
-	"time"
 )
 
 var setupF *sharedfw.Framework
@@ -74,7 +75,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 				sharedfw.Logf(" Created cluster %s with nodepool %s ", clusterOCID, *nodepool.Id)
 			} else {
 				var ocpus = float32(16.0)
-				var memoryInGBs = float32(256.0)
+				var memoryInGBs = float32(32.0)
 				var NodeShapeConfig = oke.CreateNodeShapeConfigDetails{
 					Ocpus:       &ocpus,
 					MemoryInGBs: &memoryInGBs,
@@ -83,7 +84,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 				size := 3
 
 				nodepool := setupF.CreateNodePool(clusterOCID, setupF.Compartment1, "Oracle-Linux-7.6",
-					"VM.Standard.E4.Flex", size, setupF.OkeNodePoolK8sVersion,
+					setupF.NodeShape, size, setupF.OkeNodePoolK8sVersion,
 					[]string{setupF.NodeSubnet, setupF.NodeSubnet, setupF.NodeSubnet},
 					NodeShapeConfig)
 				Expect(nodepool).ShouldNot(BeNil())
