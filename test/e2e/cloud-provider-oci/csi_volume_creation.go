@@ -375,6 +375,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 	f := framework.NewBackupFramework("csi-uhp")
 	Context("[cloudprovider][storage][csi][uhp]", func() {
 		It("Create ISCSI CSI block volume with UHP Performance Level", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			compartmentId := f.GetCompartmentId(*setupF)
 			if compartmentId == "" {
 				framework.Failf("Compartment Id undefined.")
@@ -395,6 +398,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			_ = f.DeleteStorageClass(framework.ClassOCIUHP)
 		})
 		It("Create Paravirtualized CSI block volume with UHP Performance Level", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			compartmentId := f.GetCompartmentId(*setupF)
 			if compartmentId == "" {
 				framework.Failf("Compartment Id undefined.")
@@ -415,6 +421,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			_ = f.DeleteStorageClass(framework.ClassOCIUHP)
 		})
 		It("Create CSI block volume with UHP Performance Level and xfs file system", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			compartmentId := f.GetCompartmentId(*setupF)
 			if compartmentId == "" {
 				framework.Failf("Compartment Id undefined.")
@@ -435,6 +444,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			_ = f.DeleteStorageClass(framework.ClassOCIUHP)
 		})
 		It("Static Provisioning CSI UHP", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			compartmentId := f.GetCompartmentId(*setupF)
 			if compartmentId == "" {
 				framework.Failf("Compartment Id undefined.")
@@ -457,6 +469,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			f.VolumeIds = append(f.VolumeIds, volumeId)
 		})
 		It("Basic Pod Delete UHP", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			compartmentId := f.GetCompartmentId(*setupF)
 			if compartmentId == "" {
 				framework.Failf("Compartment Id undefined.")
@@ -490,6 +505,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			_ = f.DeleteStorageClass(framework.ClassOCIUHP)
 		})
 		It("Create UHP PVC and POD for CSI with CMEK and in-transit encryption", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			compartmentId := f.GetCompartmentId(*setupF)
 			if compartmentId == "" {
 				framework.Failf("Compartment Id undefined.")
@@ -513,6 +531,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			_ = f.DeleteStorageClass(framework.ClassOCIKMS)
 		})
 		It("Create UHP and lower performance block volumes on same node", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			sc1params := map[string]string{
 				framework.AttachmentType: framework.AttachmentTypeISCSI,
 				csi_util.VpusPerGB:       "30",
@@ -523,6 +544,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			testTwoPVCSetup(f, sc1params, sc2params)
 		})
 		It("Expand PVC VolumeSize from 50Gi to 100Gi and asserts size, file existence and file corruptions for iSCSI UHP volume", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			var size = "100Gi"
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-pvc-expand-to-100gi-iscsi-uhp")
 
@@ -547,6 +571,9 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 			_ = f.DeleteStorageClass(framework.ClassOCIUHP)
 		})
 		It("Expand PVC VolumeSize from 50Gi to 100Gi and asserts size, file existence and file corruptions for Paravirtualized UHP volume", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			var size = "100Gi"
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-pvc-expand-to-100gi-iscsi-uhp")
 
@@ -577,6 +604,9 @@ var _ = Describe("CSI UHP Volumes addition e2es", func() {
 	f := framework.NewBackupFramework("csi-uhp-additional")
 	Context("[uhp]", func() {
 		It("Create UHP paravirtual volume and lower performance ISCSI block volumes on same node", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			sc1params := map[string]string{
 				framework.AttachmentType: framework.AttachmentTypeParavirtualized,
 				csi_util.VpusPerGB:       "30",
@@ -587,6 +617,9 @@ var _ = Describe("CSI UHP Volumes addition e2es", func() {
 			testTwoPVCSetup(f, sc1params, sc2params)
 		})
 		It("Create UHP ISCSI volume and lower performance paravirtualized block volumes on same node", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			sc1params := map[string]string{
 				framework.AttachmentType: framework.AttachmentTypeISCSI,
 				csi_util.VpusPerGB:       "30",
@@ -597,6 +630,9 @@ var _ = Describe("CSI UHP Volumes addition e2es", func() {
 			testTwoPVCSetup(f, sc1params, sc2params)
 		})
 		It("Create two UHP ISCSI block volumes on same node", func() {
+			if !setupF.CreateUhpNodepool {
+				Skip("Skipping test as UHP nodepool has not been enabled (Env var: CREATE_UHP_NODEPOOL)")
+			}
 			sc1params := map[string]string{
 				framework.AttachmentType: framework.AttachmentTypeISCSI,
 				csi_util.VpusPerGB:       "30",
