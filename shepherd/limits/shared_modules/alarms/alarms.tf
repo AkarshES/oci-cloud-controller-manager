@@ -50,7 +50,8 @@ locals {
   }
 
   csi = {
-    t2_fleet     = var.realm != "oc1" ? "${local.prod_tenancy_name}.${format(var.csi_dataplane_alarms_fleet_format, var.region_code)}" : tonumber(var.cell_index) == 0 ? format(var.csi_dataplane_alarms_fleet_format, var.region_code, "") : format(var.csi_dataplane_alarms_fleet_format, var.region_code, format("-cell%s", var.cell_index))
+    # TODO for non-oc1 realms add cell number to csi fleet of the format `prod-oke-clusters-<region-code>-dataplane<empty or -cell1>`
+    t2_fleet     = var.realm != "oc1" ? "${local.prod_tenancy_name}.${format(var.csi_dataplane_alarms_fleet_format, var.region_code, "")}" : tonumber(var.cell_index) == 0 ? format(var.csi_dataplane_alarms_fleet_format, var.region_code, "") : format(var.csi_dataplane_alarms_fleet_format, var.region_code, format("-cell%s", var.cell_index))
     lj_namespace = format("oke%s-kmi-%s", var.env_name != "prd" ? "-${var.env_name}" : "", local.cell_name)
   }
 
