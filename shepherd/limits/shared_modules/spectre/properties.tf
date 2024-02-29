@@ -73,6 +73,14 @@ locals {
         "false"]
       default_value = "false"
     }
+    "ccm-enable-resource-attribution" = {
+      type = "ENUM"
+      description = "Enable addition of tracking System tags on CCM managed resources"
+      options = [
+        "true",
+        "false"]
+      default_value = "false"
+    }
   }
 
   

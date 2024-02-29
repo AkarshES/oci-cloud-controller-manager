@@ -1,0 +1,9 @@
+{
+    "realms" : [ "oc1" ],
+    "name" : "ccm-enable-resource-attribution",
+    "values" : [ {
+      "region" : "all",
+      "ad" : "all",
+      "value" : "true"
+    } ]
+}
