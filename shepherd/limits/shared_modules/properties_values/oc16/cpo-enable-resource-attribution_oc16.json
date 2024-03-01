@@ -1,9 +1,0 @@
-{
-    "realms" : [ "oc16" ],
-    "name" : "cpo-enable-resource-attribution",
-    "values" : [ {
-      "region" : "all",
-      "ad" : "all",
-      "value" : "true"
-    } ]
-  }
