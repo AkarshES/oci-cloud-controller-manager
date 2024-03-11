@@ -33,6 +33,10 @@ const (
 
 	rateLimitQPSDefault    = 20.0
 	rateLimitBucketDefault = 5
+
+	CreatedBy = "CreatedBy"
+	ManagedBy = "ManagedBy"
+	CCM       = "CCM"
 )
 
 // MapProviderIDToInstanceID parses the provider id and returns the instance ocid.
