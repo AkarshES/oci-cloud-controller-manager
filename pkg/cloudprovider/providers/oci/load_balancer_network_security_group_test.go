@@ -21,6 +21,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
@@ -99,8 +100,8 @@ func (c *MockVirtualNetworkClient) CreateNetworkSecurityGroup(ctx context.Contex
 		VcnId:          common.String(vcnId),
 		DisplayName:    common.String(displayName),
 		FreeformTags: map[string]string{
-			"CreatedBy":  "CCM",
-			"ServiceUid": serviceUid,
+			client.CreatedBy: client.CCM,
+			"ServiceUid":     serviceUid,
 		},
 	}
 	return &nsg, nil

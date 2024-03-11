@@ -451,6 +451,14 @@ func (c *MockVirtualNetworkClient) ListPrivateIps(ctx context.Context, id string
 	return []core.PrivateIp{}, nil
 }
 
+func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string) ([]core.Ipv6, error) {
+	return []core.Ipv6{}, nil
+}
+
+func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
 func (c *MockVirtualNetworkClient) GetSubnet(ctx context.Context, id string) (*core.Subnet, error) {
 	if strings.EqualFold(id, "ocid1.invalid-subnet") {
 		return nil, errors.New("Internal Error.")
