@@ -44,16 +44,16 @@ resource "telemetry_alarm" "csi_block_volume_attaching_timeout" {
   project = var.project
   fleet = var.fleet
   display_name = "${var.fleet}-csi-block-volume-attaching-timeout in ${var.region}"
-  query = "(OKE.CPO.PV_ATTACH[60m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
-  severity = var.severity_3
+  query = "(OKE.CPO.PV_ATTACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
+  severity = var.severity_2
   is_enabled = var.enabled
   dedupe_key = "BvAttachingTimeout"
-  pending_duration = "PT30M"
+  pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - More than 10 persistent volumes are timing out on attach
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 82)}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/oke-csi-block-volumes-stuck-detaching].
-For service logs, see [lumberjack link|${local.attach_lumberjack_uri}]
+For service logs, see [lumberjack link|${local.attach_lumberjack_uri}] (switch to correct region)
 EOT
   destinations {
     jira {
@@ -70,16 +70,16 @@ resource "telemetry_alarm" "csi_block_volume_detaching_timeout" {
   project = var.project
   fleet = var.fleet
   display_name = "${var.fleet}-csi-block-volume-detaching-timeout in ${var.region}"
-  query = "(OKE.CPO.PV_DETACH[60m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
-  severity = var.severity_3
+  query = "(OKE.CPO.PV_DETACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
+  severity = var.severity_2
   is_enabled = var.enabled
   dedupe_key = "BvDetachingTimeout"
-  pending_duration = "PT30M"
+  pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - More than 10 persistent volumes are timing out on detach
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 83)}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/oke-csi-block-volumes-stuck-detaching].
-For service logs, see [lumberjack link|${local.detach_lumberjack_uri}]
+For service logs, see [lumberjack link|${local.detach_lumberjack_uri}] (switch to correct region)
 EOT
   destinations {
     jira {
@@ -96,16 +96,42 @@ resource "telemetry_alarm" "csi_block_volume_stuck_detaching" {
   project = var.project
   fleet = var.fleet
   display_name = "${var.fleet}-csi_block_volume_stuck_detaching in ${var.region}"
-  query = "OKE.CPO.PV_DETACH[6h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>80)"
-  severity = var.severity_3
+  query = "OKE.CPO.PV_DETACH[2h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>25)"
+  severity = var.severity_2
   is_enabled = var.enabled
   dedupe_key = "BvDetachingStuck"
-  pending_duration = "PT30M"
+  pending_duration = "PT5M"
   body = <<EOT
-OKE.CPO.PV_DETACH - Block volumes are stuck detaching for 6 hrs
+OKE.CPO.PV_DETACH - Block volumes are stuck detaching for 2 hrs
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 83)}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/oke-csi-block-volumes-stuck-detaching].
-For service logs, see [lumberjack link|${local.detach_lumberjack_uri}]
+For service logs, see [lumberjack link|${local.detach_lumberjack_uri}] (switch to correct region)
+EOT
+  destinations {
+    jira {
+      project = var.jira_project
+      component = var.jira_component
+      item = var.jira_item
+    }
+  }
+  labels = [ var.label, var.watch_mp_release_label ]
+}
+
+resource "telemetry_alarm" "csi_block_volume_stuck_attaching" {
+  compartment_id = var.compartment_ocid
+  project = var.project
+  fleet = var.fleet
+  display_name = "${var.fleet}-csi_block_volume_stuck_attaching in ${var.region}"
+  query = "OKE.CPO.PV_ATTACH[2h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>25)"
+  severity = var.severity_2
+  is_enabled = var.enabled
+  dedupe_key = "BvAttachingStuck"
+  pending_duration = "PT5M"
+  body = <<EOT
+OKE.CPO.PV_ATTACH - Block volumes are stuck attaching for 2 hrs
+See [OCI Grafana Dashboard.|${format(local.grafana_template, 83)}]
+For Runbook instructions, please see [this runbook here|${var.runbook_base}/oke-csi-block-volumes-stuck-detaching].
+For service logs, see [lumberjack link|${local.attach_lumberjack_uri}] (switch to correct region)
 EOT
   destinations {
     jira {
@@ -131,7 +157,7 @@ resource "telemetry_alarm" "storage-plugins-429s-exceeding-threshold" {
 OKE.KMI.OCI_REQUESTS_TOTAL - storage-plugins-429s-exceeding-threshold
 See [OCI Grafana Dashboard | ${var.dashboard_oci_calls}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/storage-plugins-oci-requests-runbook].
-For service logs, see [lumberjack link|${local.oci_calls_429_luberjack_uri}]
+For service logs, see [lumberjack link|${local.oci_calls_429_luberjack_uri}] (switch to correct region)
 EOT
   destinations {
     jira {
@@ -148,16 +174,16 @@ resource "telemetry_alarm" "storage-plugins-5xx-exceeding-threshold" {
   project = var.project
   fleet = var.kmi_fleet
   display_name = "${var.kmi_fleet}-storage-plugins-5xx-exceeding-threshold in ${var.region}"
-  query = "(OKE.KMI.oci_requests_total[30m]{resource=~\"volume|volume_attachment|snapshot|file_system|mount_target|export\", code=~\"50*\"}.groupBy(clusterId,resource,code).increment()).filter(x=>x>100)"
-  severity = var.severity_3
+  query = "(OKE.KMI.oci_requests_total[5m]{resource=~\"volume|volume_attachment|snapshot|file_system|mount_target|export\", code=~\"50*\"}.groupBy(clusterId,resource,code).increment()).filter(x=>x>10)"
+  severity = var.severity_2
   is_enabled = var.enabled
   dedupe_key = "SPServiceUnavailabilityThreshold"
-  pending_duration = "PT5M"
+  pending_duration = "PT2M"
   body = <<EOT
 OKE.KMI.OCI_REQUESTS_TOTAL - storage-plugins-5xx-exceeding-threshold
 See [OCI Grafana Dashboard | ${var.dashboard_oci_calls}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/storage-plugins-oci-requests-runbook].
-For service logs, see [lumberjack link|${local.oci_calls_5xx_luberjack_uri}]
+For service logs, see [lumberjack link|${local.oci_calls_5xx_luberjack_uri}] (switch to correct region)
 EOT
   destinations {
     jira {

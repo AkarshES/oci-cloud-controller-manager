@@ -68,7 +68,7 @@ locals {
   is_cp_canary_successful           = data.capability.oci_containerengine_cluster.is_available
   alarms_enabled                    = var.alarms_enabled && local.is_cp_canary_successful
   ccm_alarms_enabled                = var.ccm_alarms_enabled && local.is_cp_canary_successful && var.realm == "oc1"
-  csi_alarms_enabled                = var.csi_alarms_enabled && local.is_cp_canary_successful && var.realm == "oc1"
+  csi_alarms_enabled                = var.csi_alarms_enabled && local.is_cp_canary_successful
 }
 
 # Duplicated in non-production
