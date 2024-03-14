@@ -45,10 +45,10 @@ const (
 	ociVolumeBackupID = "volume.beta.kubernetes.io/oci-volume-source"
 
 	// Block Volume Performance Units
-	VpusPerGB                 = "vpusPerGB"
-	LowCostPerformanceOption  = 0
-	BalancedPerformanceOption = 10
-	HigherPerformanceOption   = 20
+	VpusPerGB                     = "vpusPerGB"
+	LowCostPerformanceOption      = 0
+	BalancedPerformanceOption     = 10
+	HigherPerformanceOption       = 20
 	MaxUltraHighPerformanceOption = 120
 
 	InTransitEncryptionPackageName = "oci-fss-utils"
@@ -58,7 +58,7 @@ const (
 	RPM_COMMAND                    = "rpm-host"
 )
 
-//Util interface
+// Util interface
 type Util struct {
 	Logger *zap.SugaredLogger
 }
@@ -73,8 +73,6 @@ type FSSVolumeHandler struct {
 	MountTargetIPAddress string
 	FsExportPath         string
 }
-
-
 
 func (u *Util) LookupNodeID(k kubernetes.Interface, nodeName string) (string, error) {
 	n, err := k.CoreV1().Nodes().Get(context.Background(), nodeName, metav1.GetOptions{})
@@ -170,7 +168,7 @@ func ExtractISCSIInformation(attributes map[string]string) (*disk.Disk, error) {
 	}, nil
 }
 
-//Extracts the vpusPerGB as int64 from given string input
+// Extracts the vpusPerGB as int64 from given string input
 func ExtractBlockVolumePerformanceLevel(attribute string) (int64, error) {
 	vpusPerGB, err := strconv.ParseInt(attribute, 10, 64)
 	if err != nil {
@@ -404,7 +402,6 @@ func FindMount(target string) ([]string, error) {
 	return sources, nil
 }
 
-
 func GetBlockSizeBytes(logger *zap.SugaredLogger, devicePath string) (int64, error) {
 	args := []string{"--getsize64", devicePath}
 	cmd := exec.Command("blockdev", args...)
@@ -440,3 +437,16 @@ func ValidateFssId(id string) *FSSVolumeHandler {
 	return volumeHandler
 }
 
+func GetIsFeatureEnabledFromEnv(logger *zap.SugaredLogger, featureName string, defaultValue bool) bool {
+	enableFeature := defaultValue
+	enableFeatureEnvVar, ok := os.LookupEnv(featureName)
+	if ok {
+		var err error
+		enableFeature, err = strconv.ParseBool(enableFeatureEnvVar)
+		if err != nil {
+			logger.With(zap.Error(err)).Errorf("failed to parse %s envvar, defaulting to %t", featureName, defaultValue)
+			return defaultValue
+		}
+	}
+	return enableFeature
+}

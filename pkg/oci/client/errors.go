@@ -18,13 +18,21 @@ import (
 	"context"
 	"math"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 var errNotFound = errors.New("not found")
+
+/*
+Addition of system tags can fail due to permission issue while API returns error code: RelatedResourceNotAuthorizedOrNotFound &
+the error message "The following tag namespaces / keys are not authorized or not found: 'orcl-containerengine'"
+*/
+var regexSystemTagNotFoundNotAuthorised = regexp.MustCompile(".*tag namespace.*orcl-containerengine.*")
 
 // HTTP Error Types
 const (
@@ -53,7 +61,7 @@ func IsNotFound(err error) bool {
 	return ok && serviceErr.GetHTTPStatusCode() == http.StatusNotFound
 }
 
-//IsRetryable returns true if the given error is retriable.
+// IsRetryable returns true if the given error is retriable.
 func IsRetryable(err error) bool {
 	if err == nil {
 		return false
@@ -110,4 +118,21 @@ func NewRetryPolicyWithMaxAttempts(retryAttempts uint) *common.RetryPolicy {
 		retryAttempts, isRetryableOperation, nextDuration,
 	)
 	return &policy
+}
+
+func IsSystemTagNotFoundOrNotAuthorisedError(logger *zap.SugaredLogger, err error) bool {
+
+	var ociServiceError common.ServiceError
+
+	// unwrap till ociServiceError is found
+	if errors.As(err, &ociServiceError) {
+		logger.Debugf("API error code: %s", ociServiceError.GetCode())
+		logger.Debugf("service error message: %s", ociServiceError.GetMessage())
+
+		if ociServiceError.GetHTTPStatusCode() == http.StatusBadRequest &&
+			ociServiceError.GetCode() == HTTP400RelatedResourceNotAuthorizedOrNotFoundCode {
+			return regexSystemTagNotFoundNotAuthorised.MatchString(ociServiceError.GetMessage())
+		}
+	}
+	return false
 }
