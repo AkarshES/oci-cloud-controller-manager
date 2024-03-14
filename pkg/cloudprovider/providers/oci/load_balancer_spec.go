@@ -17,6 +17,7 @@ package oci
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"net"
 	"net/http"
 	"strconv"
@@ -384,6 +385,10 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	lbTags, err := getLoadBalancerTags(svc, initialLBTags)
 	if err != nil {
 		return nil, err
+	}
+	// merge lbtags with common tags if present
+	if util.IsCommonTagPresent(initialLBTags) {
+		lbTags = util.MergeTagConfig(lbTags, initialLBTags.Common)
 	}
 
 	ruleManagementMode, managedNsg, err := getRuleManagementMode(svc)
@@ -1318,6 +1323,7 @@ func getLoadBalancerTags(svc *v1.Service, initialTags *config.InitialTags) (*con
 	if initialTags == nil || initialTags.LoadBalancer == nil {
 		return &config.TagConfig{}, nil
 	}
+
 	// return initial tags
 	return initialTags.LoadBalancer, nil
 }
