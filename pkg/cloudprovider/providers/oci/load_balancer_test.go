@@ -38,6 +38,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
+	errors1 "github.com/pkg/errors"
 )
 
 func newNodeObj(name string, labels map[string]string) *v1.Node {
@@ -637,6 +638,54 @@ func TestGetSubnetsForNodes(t *testing.T) {
 			subnets: nil,
 			err:     errors.New(`.spec.providerID was not present on node "testnode"`),
 		},
+		"Ipv6 subnets return subnet without any error GUA": {
+			nodes: []*v1.Node{
+				{
+					Spec: v1.NodeSpec{
+						ProviderID: "ipv6-instance",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "compID1",
+						},
+					},
+					Status: v1.NodeStatus{
+						Addresses: []v1.NodeAddress{
+							{
+								Type:    v1.NodeExternalIP,
+								Address: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+							},
+						},
+					},
+				},
+			},
+			subnets: []*core.Subnet{subnets["IPv6-subnet"]},
+			err:     nil,
+		},
+		"Ipv6 subnets return subnet without any error ULA": {
+			nodes: []*v1.Node{
+				{
+					Spec: v1.NodeSpec{
+						ProviderID: "ipv6-instance",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "compID1",
+						},
+					},
+					Status: v1.NodeStatus{
+						Addresses: []v1.NodeAddress{
+							{
+								Type:    v1.NodeInternalIP,
+								Address: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+							},
+						},
+					},
+				},
+			},
+			subnets: []*core.Subnet{subnets["IPv6-subnet"]},
+			err:     nil,
+		},
 	}
 	client := MockOCIClient{}
 	for name, tc := range testCases {
@@ -950,6 +999,9 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 		{
 			name: "Security List Management mode 'None' - no err",
 			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "kube-system",
 					Name:      "testservice",
@@ -965,6 +1017,9 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 		{
 			name: "Security List Management mode 'None' - delete err",
 			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "kube-system",
 					Name:      "testservice",
@@ -989,7 +1044,8 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 					},
 				},
 				Spec: v1.ServiceSpec{
-					Selector: map[string]string{"hello": "world"},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+					Selector:   map[string]string{"hello": "world"},
 				},
 			},
 			err:     "",
@@ -998,6 +1054,9 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 		{
 			name: "Security List Management mode 'All' - fetch node failure",
 			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "kube-system",
 					Name:      "testservice",
@@ -1013,6 +1072,9 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 		{
 			name: "Security List Management mode 'NSG' - no err",
 			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "kube-system",
 					Name:      "testservice",
@@ -1028,6 +1090,9 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 		{
 			name: "no management mode provided in annotation - no err",
 			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "kube-system",
 					Name:      "testservice",
@@ -1040,6 +1105,9 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 		{
 			name: "no management mode provided in annotation - delete err",
 			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "kube-system",
 					Name:      "testservice",
@@ -1168,7 +1236,7 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 
 func Test_getNodesAndPodsByIPs(t *testing.T) {
 	tests := map[string]struct {
-		backendIPs    []string
+		backendIPs    []client.IpAddresses
 		service       *v1.Service
 		expectedNodes []*v1.Node
 		expectedPods  []*v1.Pod
@@ -1185,7 +1253,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 					},
 				},
 			},
-			backendIPs: []string{"0.0.0.0", "0.0.0.1"},
+			backendIPs: []client.IpAddresses{
+				{V4: "0.0.0.0"}, {V4: "0.0.0.1"},
+			},
 			expectedNodes: []*v1.Node{
 				nodeList["instanceWithAddress1"],
 				nodeList["instanceWithAddress2"],
@@ -1204,7 +1274,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 					},
 				},
 			},
-			backendIPs:    []string{"0.0.0.10"},
+			backendIPs: []client.IpAddresses{
+				{V4: "0.0.0.10"},
+			},
 			expectedNodes: nil,
 			expectedPods: []*v1.Pod{
 				podList["virtualPod2"],
@@ -1222,7 +1294,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 					},
 				},
 			},
-			backendIPs: []string{"0.0.0.0", "0.0.0.10"},
+			backendIPs: []client.IpAddresses{
+				{V4: "0.0.0.0"}, {V4: "0.0.0.10"},
+			},
 			expectedNodes: []*v1.Node{
 				nodeList["instanceWithAddress1"],
 			},
@@ -1244,7 +1318,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 					},
 				},
 			},
-			backendIPs:    []string{"0.0.0.100"},
+			backendIPs: []client.IpAddresses{
+				{V4: "0.0.0.100"},
+			},
 			expectedNodes: nil,
 			expectedPods:  nil,
 			wantErr:       false,
@@ -1260,7 +1336,9 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 					},
 				},
 			},
-			backendIPs: []string{"0.0.0.0"},
+			backendIPs: []client.IpAddresses{
+				{V4: "0.0.0.0"},
+			},
 			expectedNodes: []*v1.Node{
 				nodeList["instanceWithAddress1"],
 			},
@@ -1280,10 +1358,41 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 					},
 				},
 			},
-			backendIPs:    []string{"0.0.0.10"},
+			backendIPs: []client.IpAddresses{
+				{V4: "0.0.0.10"},
+			},
 			expectedNodes: nil,
 			expectedPods:  nil,
 			wantErr:       false,
+		},
+		"backend IPs of provisioned nodes and virtual pods with IPv4 & IPv6 Ips": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "testservice",
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"app": "pod3",
+					},
+				},
+			},
+			backendIPs: []client.IpAddresses{
+				{
+					V4: "0.0.0.1",
+					V6: "2001:0db8:85a3:0000:0000:8a2e:0370:7335",
+				},
+				{
+					V4: "0.0.0.20",
+					V6: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+				},
+			},
+			expectedNodes: []*v1.Node{
+				nodeList["instanceWithAddressIPv4IPv6"],
+			},
+			expectedPods: []*v1.Pod{
+				podList["virtualPodIPv4Ipv6"],
+			},
+			wantErr: false,
 		},
 	}
 
@@ -1316,7 +1425,6 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func Test_addLoadBalancerOkeSystemTags(t *testing.T) {
@@ -1496,4 +1604,879 @@ func (s *mockPodNamespaceLister) Get(name string) (ret *v1.Pod, err error) {
 		return po, nil
 	}
 	return nil, k8errors.NewNotFound(v1.Resource("pod"), name)
+}
+
+func Test_checkIfSubnetIPv6Compatible(t *testing.T) {
+	tests := map[string]struct {
+		subnets     []*core.Subnet
+		ipVersion   string
+		expectedErr error
+	}{
+		"Subnet with IPv4 cidrs only": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv4-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("10.0.0.0/16"),
+				},
+			},
+			ipVersion:   IPv6,
+			expectedErr: errors1.Errorf("subnet with id IPv4-subnet does not have an ipv6 cidr block"),
+		},
+		"Subnet with both IPv4 & IPv6 cidrs": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv4-IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("10.0.0.0/16"),
+					Ipv6CidrBlocks:     []string{},
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+				},
+			},
+			ipVersion:   IPv6,
+			expectedErr: nil,
+		},
+		"Subnet with IPv6 cidrs only": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+					Ipv6CidrBlocks:     []string{"IPv6Cidr"},
+				},
+			},
+			ipVersion:   IPv6,
+			expectedErr: nil,
+		},
+		"Subnet with IPv6 cidrs only IPv4 error": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					CidrBlock:          common.String("<null>"),
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+					Ipv6CidrBlocks:     []string{"IPv6Cidr"},
+					AvailabilityDomain: nil,
+				},
+			},
+			ipVersion:   IPv4,
+			expectedErr: errors1.Errorf("subnet with id IPv6-subnet does not have an ipv4 cidr block"),
+		},
+		"multiple subnets with single IPv6 cidr": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+				},
+				{
+					Id:                 common.String("IPv6-subnet-1"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+					Ipv6CidrBlocks:     []string{"IPv6Cidr"},
+				},
+			},
+			ipVersion:   IPv6,
+			expectedErr: nil,
+		},
+		"multiple subnets with single IPv6 cidr check for IPv4": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+				},
+				{
+					Id:                 common.String("IPv6-subnet-1"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+					Ipv6CidrBlocks:     []string{"IPv6Cidr"},
+				},
+			},
+			ipVersion:   IPv4,
+			expectedErr: errors1.Errorf("subnet with id IPv6-subnet-1 does not have an ipv4 cidr block"),
+		},
+		"multiple subnets with single IPv6 cidr check for IPv6": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+				},
+				{
+					Id:                 common.String("IPv6-subnet-1"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+					Ipv6CidrBlocks:     []string{"IPv6Cidr"},
+				},
+			},
+			ipVersion:   IPv6,
+			expectedErr: nil,
+		},
+		"multiple subnets with single IPv4 check for IPv4": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv4-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("10.0.0.0/16"),
+				},
+				{
+					Id:                 common.String("IPv4-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+				},
+				{
+					Id:                 common.String("IPv4-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+				},
+			},
+			ipVersion:   IPv4,
+			expectedErr: nil,
+		},
+		"multiple subnets with single IPv6 check for IPv6": {
+			subnets: []*core.Subnet{
+				{
+					Id:                 common.String("IPv4-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("10.0.0.0/16"),
+				},
+				{
+					Id:                 common.String("IPv6-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+					CidrBlock:          common.String("<null>"),
+					Ipv6CidrBlock:      common.String("IPv6Cidr"),
+					Ipv6CidrBlocks:     []string{"IPv6Cidr"}},
+				{
+					Id:                 common.String("IPv4-subnet"),
+					DnsLabel:           common.String("subnetwithnovcndnslabel"),
+					VcnId:              common.String("vcnwithoutdnslabel"),
+					AvailabilityDomain: nil,
+				},
+			},
+			ipVersion:   IPv6,
+			expectedErr: nil,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := checkSubnetIpFamilyCompatibility(tt.subnets, tt.ipVersion)
+			if err != nil {
+				if !reflect.DeepEqual(err.Error(), tt.expectedErr.Error()) {
+					t.Errorf("checkIfSubnetIPv6Compatible() expected error = %v,\n but got %v", tt.expectedErr, err)
+					return
+				}
+			}
+		})
+	}
+}
+
+func Test_getLbEndpointVersion(t *testing.T) {
+	var tests = map[string]struct {
+		ipFamilies        []string
+		ipFamilyPolicy    string
+		subnets           []*core.Subnet
+		lbEndpointVersion string
+		wantErr           error
+	}{
+		"SingleStack IPv4": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicySingleStack),
+			subnets: []*core.Subnet{
+				{CidrBlock: common.String("10.0.1.0/24")},
+			},
+			lbEndpointVersion: IPv4,
+			wantErr:           nil,
+		},
+		"SingleStack IPv6": {
+			ipFamilies:     []string{IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicySingleStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion: IPv6,
+			wantErr:           nil,
+		},
+		"SingleStack IPv6 - wrong subnet": {
+			ipFamilies:     []string{IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicySingleStack),
+			subnets: []*core.Subnet{
+				{
+					Id:        common.String("ocid1.subnet"),
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			lbEndpointVersion: "",
+			wantErr:           errors.New("subnet does not have IPv6 CIDR blocks: subnet with id ocid1.subnet does not have an ipv6 cidr block"),
+		},
+		"RequireDualStack IPv4/IPv6": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyRequireDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion: IPv4AndIPv6,
+			wantErr:           nil,
+		},
+		"RequireDualStack IPv4/IPv6 - wrong subnet": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyRequireDualStack),
+			subnets: []*core.Subnet{
+				{
+					Id:        common.String("ocid1.subnet"),
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			lbEndpointVersion: "",
+			wantErr:           errors.New("subnet does not have IPv6 CIDR blocks: subnet with id ocid1.subnet does not have an ipv6 cidr block"),
+		},
+		"PreferDualStack IPv4/IPv6": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion: IPv4AndIPv6,
+			wantErr:           nil,
+		},
+		"PreferDualStack IPv4/IPv6 - wrong subnet": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			lbEndpointVersion: IPv4,
+			wantErr:           nil,
+		},
+		"PreferDualStack IPv4": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion: IPv4AndIPv6,
+			wantErr:           nil,
+		},
+	}
+	cp := &CloudProvider{
+		client:     MockOCIClient{},
+		config:     &providercfg.Config{CompartmentID: "testCompartment"},
+		NodeLister: &mockNodeLister{},
+		kubeclient: testclient.NewSimpleClientset(),
+		logger:     zap.L().Sugar(),
+		PodLister:  &mockPodLister{},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			lbEndpointVersion, err := cp.getLbEndpointIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.subnets)
+			if lbEndpointVersion != tt.lbEndpointVersion {
+				t.Errorf("Expected lbEndpointVersion = %s, but got %s", tt.lbEndpointVersion, lbEndpointVersion)
+			}
+			if err != nil && err.Error() != tt.wantErr.Error() {
+				t.Errorf("Expected error = %s,\n but got %s", tt.wantErr.Error(), err.Error())
+				return
+			}
+		})
+	}
+}
+
+func Test_getLbListenerBackendSetIpVersion(t *testing.T) {
+	var tests = map[string]struct {
+		ipFamilies                   []string
+		ipFamilyPolicy               string
+		nodeSubnets                  []*core.Subnet
+		listenerBackendSetIpVersions []string
+		wantErr                      error
+	}{
+		"SingleStack IPv4": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicySingleStack),
+			nodeSubnets: []*core.Subnet{
+				{CidrBlock: common.String("10.0.1.0/24")},
+			},
+			listenerBackendSetIpVersions: []string{IPv4},
+			wantErr:                      nil,
+		},
+		"SingleStack IPv6 - wrong subnet": {
+			ipFamilies:     []string{IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicySingleStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					Id:        common.String("ocid1.subnet"),
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			listenerBackendSetIpVersions: []string{},
+			wantErr:                      errors.New("subnet does not have IPv6 CIDR blocks: subnet with id ocid1.subnet does not have an ipv6 cidr block"),
+		},
+		"RequireDualStack IPv4/IPv6": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyRequireDualStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			listenerBackendSetIpVersions: []string{IPv4, IPv6},
+			wantErr:                      nil,
+		},
+		"RequireDualStack IPv4/IPv6 - wrong subnet": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyRequireDualStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					Id:        common.String("ocid1.subnet"),
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			listenerBackendSetIpVersions: []string{},
+			wantErr:                      errors.New("subnet does not have IPv6 CIDR blocks: subnet with id ocid1.subnet does not have an ipv6 cidr block"),
+		},
+		"PreferDualStack IPv4/IPv6": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			listenerBackendSetIpVersions: []string{IPv4, IPv6},
+			wantErr:                      nil,
+		},
+		"PreferDualStack IPv4/IPv6 - wrong subnet": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			listenerBackendSetIpVersions: []string{IPv4},
+			wantErr:                      nil,
+		},
+		"PreferDualStack IPv4": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			listenerBackendSetIpVersions: []string{IPv4, IPv6},
+			wantErr:                      nil,
+		},
+		"PreferDualStack IPv4 multiple subnets": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			listenerBackendSetIpVersions: []string{IPv4, IPv6},
+			wantErr:                      nil,
+		},
+	}
+	cp := &CloudProvider{
+		client:     MockOCIClient{},
+		config:     &providercfg.Config{CompartmentID: "testCompartment"},
+		NodeLister: &mockNodeLister{},
+		kubeclient: testclient.NewSimpleClientset(),
+		logger:     zap.L().Sugar(),
+		PodLister:  &mockPodLister{},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := cp.getLbListenerBackendSetIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.nodeSubnets)
+			if !reflect.DeepEqual(result, tt.listenerBackendSetIpVersions) {
+				t.Errorf("Expected listenerBackendSetIpVersions\n%+v\nbut got\n%+v", tt.listenerBackendSetIpVersions, result)
+			}
+			if err != nil && err.Error() != tt.wantErr.Error() {
+				t.Errorf("Expected error = %s,\n but got %s", tt.wantErr.Error(), err.Error())
+				return
+			}
+		})
+	}
+}
+
+func Test_getOciIpVersions(t *testing.T) {
+	var tests = map[string]struct {
+		nodeSubnets []*core.Subnet
+		lbSubnets   []*core.Subnet
+		service     *v1.Service
+		result      *IpVersions
+		wantErr     error
+	}{
+		"SingleStack IPv4": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.2.0/24"),
+				},
+			},
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{CidrBlock: common.String("10.0.1.0/24")},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			wantErr: nil,
+		},
+		"SingleStack IPv6 for NLB GUA prefix": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv6},
+			},
+			wantErr: nil,
+		},
+		"SingleStack IPv6 for NLB ULA prefix": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv6},
+			},
+			wantErr: nil,
+		},
+		"SingleStack IPv6 LB": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "lb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result:  nil,
+			wantErr: errors.New("SingleStack IPv6 is not supported for OCI LBaaS"),
+		},
+		"RequireDualStack IPv4/IPv6 - LB": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.0.0/16"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String("RequireDualStack")),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4, IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyRequireDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4AndIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			wantErr: nil,
+		},
+		"RequireDualStack IPv4/IPv6 - NLB": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.0.0/16"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String("RequireDualStack")),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4, IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyRequireDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4AndIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4, client.GenericIPv6},
+			},
+			wantErr: nil,
+		},
+		"PreferDualStack IPv4 LB - IPv4 Subnet cidrs only": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.0.0/16"),
+				},
+			},
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyPreferDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			wantErr: nil,
+		},
+		"PreferDualStack IPv4 NLB - IPv4 Subnet cidrs only": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.0.0/16"),
+				},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyPreferDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			wantErr: nil,
+		},
+		"PreferDualStack IPv6 LB - IPv6 Subnet cidrs only": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"}},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result:  nil,
+			wantErr: errors.New("SingleStack IPv6 is not supported for OCI LBaaS"),
+		},
+		"PreferDualStack IPv6 NLB - IPv6 Subnet cidrs only": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"}},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("<null>"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyPreferDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv6},
+			},
+			wantErr: nil,
+		},
+		"PreferDualStack IPv4/IPv6 LB": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.0.0/16"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4, IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyPreferDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4AndIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			wantErr: nil,
+		},
+		"PreferDualStack IPv4/IPv6 NLB": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.0.0/16"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4, IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyPreferDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4AndIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4, client.GenericIPv6},
+			},
+			wantErr: nil,
+		},
+		"PreferDualStack IPv4/IPv6 multiple subnets": {
+			lbSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.0.0/16"),
+				},
+				{
+					CidrBlock:      common.String("10.0.0.0/16"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:     []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					IPFamilyPolicy: (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack))),
+				},
+			},
+			nodeSubnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			result: &IpVersions{
+				IpFamilies:               []string{IPv4, IPv6},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicyPreferDualStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4AndIPv6),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4, client.GenericIPv6},
+			},
+			wantErr: nil,
+		},
+	}
+	cp := &CloudProvider{
+		client:     MockOCIClient{},
+		config:     &providercfg.Config{CompartmentID: "testCompartment"},
+		NodeLister: &mockNodeLister{},
+		kubeclient: testclient.NewSimpleClientset(),
+		logger:     zap.L().Sugar(),
+		PodLister:  &mockPodLister{},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result, err := cp.getOciIpVersions(tt.lbSubnets, tt.nodeSubnets, tt.service)
+			if !reflect.DeepEqual(result, tt.result) {
+				t.Errorf("Expected IpVersions\n%+v\nbut got\n%+v", tt.result, result)
+			}
+			if err != nil && err.Error() != tt.wantErr.Error() {
+				t.Errorf("Expected error = %s,\n but got %s", tt.wantErr.Error(), err.Error())
+				return
+			}
+		})
+	}
 }

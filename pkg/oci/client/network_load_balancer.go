@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"go.uber.org/zap"
-
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -89,22 +88,35 @@ func (c *networkLoadbalancer) CreateLoadBalancer(ctx context.Context, details *G
 		return "", RateLimitError(true, "CreateLoadBalancer")
 	}
 
+	createNetworkLoadBalancerDetails := networkloadbalancer.CreateNetworkLoadBalancerDetails{
+		CompartmentId:               details.CompartmentId,
+		DisplayName:                 details.DisplayName,
+		SubnetId:                    &details.SubnetIds[0],
+		IsPreserveSourceDestination: details.IsPreserveSourceDestination,
+		ReservedIps:                 c.genericReservedIpToReservedIps(details.ReservedIps),
+		IsPrivate:                   details.IsPrivate,
+		NetworkSecurityGroupIds:     details.NetworkSecurityGroupIds,
+		Listeners:                   c.genericListenerDetailsToListenerDetails(details.Listeners),
+		BackendSets:                 c.genericBackendSetDetailsToBackendSets(details.BackendSets),
+		FreeformTags:                details.FreeformTags,
+		DefinedTags:                 details.DefinedTags,
+	}
+
+	if details.IpVersion != nil {
+		switch *details.IpVersion {
+		case GenericIPv4:
+			createNetworkLoadBalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv4
+		case GenericIPv6:
+			createNetworkLoadBalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv6
+		case GenericIPv4AndIPv6:
+			createNetworkLoadBalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv4AndIpv6
+		}
+	}
+
 	resp, err := c.networkloadbalancer.CreateNetworkLoadBalancer(ctx, networkloadbalancer.CreateNetworkLoadBalancerRequest{
-		CreateNetworkLoadBalancerDetails: networkloadbalancer.CreateNetworkLoadBalancerDetails{
-			CompartmentId:               details.CompartmentId,
-			DisplayName:                 details.DisplayName,
-			SubnetId:                    &details.SubnetIds[0],
-			IsPreserveSourceDestination: details.IsPreserveSourceDestination,
-			ReservedIps:                 c.genericReservedIpToReservedIps(details.ReservedIps),
-			IsPrivate:                   details.IsPrivate,
-			NetworkSecurityGroupIds:     details.NetworkSecurityGroupIds,
-			Listeners:                   c.genericListenerDetailsToListenerDetails(details.Listeners),
-			BackendSets:                 c.genericBackendSetDetailsToBackendSets(details.BackendSets),
-			FreeformTags:                details.FreeformTags,
-			DefinedTags:                 details.DefinedTags,
-		},
-		RequestMetadata: c.requestMetadata,
-		OpcRetryToken:   serviceUid,
+		CreateNetworkLoadBalancerDetails: createNetworkLoadBalancerDetails,
+		RequestMetadata:                  c.requestMetadata,
+		OpcRetryToken:                    serviceUid,
 	})
 	incRequestCounter(err, createVerb, networkLoadBalancerResource)
 
@@ -192,17 +204,27 @@ func (c *networkLoadbalancer) CreateBackendSet(ctx context.Context, lbID string,
 	if !c.rateLimiter.Writer.TryAccept() {
 		return "", RateLimitError(true, "CreateBackendSet")
 	}
+	createBackendSetDetails := networkloadbalancer.CreateBackendSetDetails{
+		Name:             &name,
+		Backends:         backendsToBackendDetails(details.Backends),
+		IsPreserveSource: details.IsPreserveSource,
+		HealthChecker:    healthCheckerToHealthCheckerDetails(details.HealthChecker),
+		Policy:           networkloadbalancer.NetworkLoadBalancingPolicyEnum(*details.Policy),
+	}
+
+	if details.IpVersion != nil {
+		switch *details.IpVersion {
+		case GenericIPv4:
+			createBackendSetDetails.IpVersion = networkloadbalancer.IpVersionIpv4
+		case GenericIPv6:
+			createBackendSetDetails.IpVersion = networkloadbalancer.IpVersionIpv6
+		}
+	}
 
 	resp, err := c.networkloadbalancer.CreateBackendSet(ctx, networkloadbalancer.CreateBackendSetRequest{
-		NetworkLoadBalancerId: &lbID,
-		CreateBackendSetDetails: networkloadbalancer.CreateBackendSetDetails{
-			Name:             &name,
-			Backends:         backendsToBackendDetails(details.Backends),
-			IsPreserveSource: details.IsPreserveSource,
-			HealthChecker:    healthCheckerToHealthCheckerDetails(details.HealthChecker),
-			Policy:           networkloadbalancer.NetworkLoadBalancingPolicyEnum(*details.Policy),
-		},
-		RequestMetadata: c.requestMetadata,
+		NetworkLoadBalancerId:   &lbID,
+		CreateBackendSetDetails: createBackendSetDetails,
+		RequestMetadata:         c.requestMetadata,
 	})
 	incRequestCounter(err, createVerb, backendSetResource)
 
@@ -222,17 +244,27 @@ func (c *networkLoadbalancer) UpdateBackendSet(ctx context.Context, lbID string,
 		return "", RateLimitError(true, "UpdateBackendSet")
 	}
 
-	stringPolicy := details.Policy
+	updateBackendSetDetails := networkloadbalancer.UpdateBackendSetDetails{
+		Backends:         backendsToBackendDetails(details.Backends),
+		IsPreserveSource: details.IsPreserveSource,
+		HealthChecker:    healthCheckerToHealthCheckerDetails(details.HealthChecker),
+		Policy:           details.Policy,
+	}
+
+	if details.IpVersion != nil {
+		switch *details.IpVersion {
+		case GenericIPv4:
+			updateBackendSetDetails.IpVersion = networkloadbalancer.IpVersionIpv4
+		case GenericIPv6:
+			updateBackendSetDetails.IpVersion = networkloadbalancer.IpVersionIpv6
+		}
+	}
+
 	resp, err := c.networkloadbalancer.UpdateBackendSet(ctx, networkloadbalancer.UpdateBackendSetRequest{
-		NetworkLoadBalancerId: &lbID,
-		BackendSetName:        &name,
-		UpdateBackendSetDetails: networkloadbalancer.UpdateBackendSetDetails{
-			Backends:         backendsToBackendDetails(details.Backends),
-			IsPreserveSource: details.IsPreserveSource,
-			HealthChecker:    healthCheckerToHealthCheckerDetails(details.HealthChecker),
-			Policy:           stringPolicy,
-		},
-		RequestMetadata: c.requestMetadata,
+		NetworkLoadBalancerId:   &lbID,
+		BackendSetName:          &name,
+		UpdateBackendSetDetails: updateBackendSetDetails,
+		RequestMetadata:         c.requestMetadata,
 	})
 	incRequestCounter(err, updateVerb, backendSetResource)
 
@@ -286,15 +318,26 @@ func (c *networkLoadbalancer) CreateListener(ctx context.Context, lbID string, n
 		return "", RateLimitError(true, "CreateListener")
 	}
 
+	createListenerDetails := networkloadbalancer.CreateListenerDetails{
+		Name:                  &name,
+		DefaultBackendSetName: details.DefaultBackendSetName,
+		Port:                  details.Port,
+		Protocol:              networkloadbalancer.ListenerProtocolsEnum(*details.Protocol),
+	}
+
+	if details.IpVersion != nil {
+		switch *details.IpVersion {
+		case GenericIPv4:
+			createListenerDetails.IpVersion = networkloadbalancer.IpVersionIpv4
+		case GenericIPv6:
+			createListenerDetails.IpVersion = networkloadbalancer.IpVersionIpv6
+		}
+	}
+
 	resp, err := c.networkloadbalancer.CreateListener(ctx, networkloadbalancer.CreateListenerRequest{
 		NetworkLoadBalancerId: &lbID,
-		CreateListenerDetails: networkloadbalancer.CreateListenerDetails{
-			Name:                  &name,
-			DefaultBackendSetName: details.DefaultBackendSetName,
-			Port:                  details.Port,
-			Protocol:              networkloadbalancer.ListenerProtocolsEnum(*details.Protocol),
-		},
-		RequestMetadata: c.requestMetadata,
+		CreateListenerDetails: createListenerDetails,
+		RequestMetadata:       c.requestMetadata,
 	})
 	incRequestCounter(err, createVerb, listenerResource)
 
@@ -310,15 +353,26 @@ func (c *networkLoadbalancer) UpdateListener(ctx context.Context, lbID string, n
 		return "", RateLimitError(true, "UpdateListener")
 	}
 
+	updateListenerDetails := networkloadbalancer.UpdateListenerDetails{
+		DefaultBackendSetName: details.DefaultBackendSetName,
+		Port:                  details.Port,
+		Protocol:              networkloadbalancer.ListenerProtocolsEnum(*details.Protocol),
+	}
+
+	if details.IpVersion != nil {
+		switch *details.IpVersion {
+		case GenericIPv4:
+			updateListenerDetails.IpVersion = networkloadbalancer.IpVersionIpv4
+		case GenericIPv6:
+			updateListenerDetails.IpVersion = networkloadbalancer.IpVersionIpv6
+		}
+	}
+
 	resp, err := c.networkloadbalancer.UpdateListener(ctx, networkloadbalancer.UpdateListenerRequest{
 		NetworkLoadBalancerId: &lbID,
 		ListenerName:          &name,
-		UpdateListenerDetails: networkloadbalancer.UpdateListenerDetails{
-			DefaultBackendSetName: details.DefaultBackendSetName,
-			Port:                  details.Port,
-			Protocol:              networkloadbalancer.ListenerProtocolsEnum(*details.Protocol),
-		},
-		RequestMetadata: c.requestMetadata,
+		UpdateListenerDetails: updateListenerDetails,
+		RequestMetadata:       c.requestMetadata,
 	})
 	incRequestCounter(err, updateVerb, listenerResource)
 
@@ -408,13 +462,26 @@ func (c *networkLoadbalancer) UpdateLoadBalancer(ctx context.Context, lbID strin
 	if !c.rateLimiter.Writer.TryAccept() {
 		return "", RateLimitError(true, "UpdateLoadBalancer")
 	}
-
+	updateNetworkLoadbalancerDetails := networkloadbalancer.UpdateNetworkLoadBalancerDetails{}
+	if details.FreeformTags != nil {
+		updateNetworkLoadbalancerDetails.FreeformTags = details.FreeformTags
+	}
+	if details.DefinedTags != nil {
+		updateNetworkLoadbalancerDetails.DefinedTags = details.DefinedTags
+	}
+	if details.IpVersion != nil {
+		switch *details.IpVersion {
+		case GenericIPv4:
+			updateNetworkLoadbalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv4
+		case GenericIPv6:
+			updateNetworkLoadbalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv6
+		case GenericIPv4AndIPv6:
+			updateNetworkLoadbalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv4AndIpv6
+		}
+	}
 	resp, err := c.networkloadbalancer.UpdateNetworkLoadBalancer(ctx, networkloadbalancer.UpdateNetworkLoadBalancerRequest{
-		UpdateNetworkLoadBalancerDetails: networkloadbalancer.UpdateNetworkLoadBalancerDetails{
-			FreeformTags: details.FreeformTags,
-			DefinedTags:  details.DefinedTags,
-		},
-		NetworkLoadBalancerId: &lbID,
+		UpdateNetworkLoadBalancerDetails: updateNetworkLoadbalancerDetails,
+		NetworkLoadBalancerId:            &lbID,
 	})
 	incRequestCounter(err, updateVerb, networkLoadBalancerResource)
 
@@ -457,6 +524,7 @@ func healthCheckerToHealthCheckerDetails(healthChecker *GenericHealthChecker) *n
 
 func (c *networkLoadbalancer) networkLoadbalancerToGenericLoadbalancer(nlb *networkloadbalancer.NetworkLoadBalancer) *GenericLoadBalancer {
 	lifecycleState := string(nlb.LifecycleState)
+	nlbIpVersion := GenericIpVersion(nlb.NlbIpVersion)
 	return &GenericLoadBalancer{
 		Id:                      nlb.Id,
 		CompartmentId:           nlb.CompartmentId,
@@ -468,6 +536,7 @@ func (c *networkLoadbalancer) networkLoadbalancerToGenericLoadbalancer(nlb *netw
 		NetworkSecurityGroupIds: nlb.NetworkSecurityGroupIds,
 		Listeners:               c.listenersToGenericListenerDetails(nlb.Listeners),
 		BackendSets:             c.backendSetsToGenericBackendSetDetails(nlb.BackendSets),
+		IpVersion:               &nlbIpVersion,
 		FreeformTags:            nlb.FreeformTags,
 		DefinedTags:             nlb.DefinedTags,
 		SystemTags:              nlb.SystemTags,
@@ -476,6 +545,7 @@ func (c *networkLoadbalancer) networkLoadbalancerToGenericLoadbalancer(nlb *netw
 
 func (c *networkLoadbalancer) networkLoadbalancerSummaryToGenericLoadbalancer(nlb *networkloadbalancer.NetworkLoadBalancerSummary) *GenericLoadBalancer {
 	lifecycleState := string(nlb.LifecycleState)
+	nlbIpVersion := GenericIpVersion(nlb.NlbIpVersion)
 	return &GenericLoadBalancer{
 		Id:                      nlb.Id,
 		CompartmentId:           nlb.CompartmentId,
@@ -487,6 +557,7 @@ func (c *networkLoadbalancer) networkLoadbalancerSummaryToGenericLoadbalancer(nl
 		NetworkSecurityGroupIds: nlb.NetworkSecurityGroupIds,
 		Listeners:               c.listenersToGenericListenerDetails(nlb.Listeners),
 		BackendSets:             c.backendSetsToGenericBackendSetDetails(nlb.BackendSets),
+		IpVersion:               &nlbIpVersion,
 		FreeformTags:            nlb.FreeformTags,
 		DefinedTags:             nlb.DefinedTags,
 		SystemTags:              nlb.SystemTags,
@@ -523,11 +594,13 @@ func (c *networkLoadbalancer) listenersToGenericListenerDetails(details map[stri
 
 	for k, v := range details {
 		protocol := string(v.Protocol)
+		ipVersion := GenericIpVersion(v.IpVersion)
 		genericListenerDetails[k] = GenericListener{
 			Name:                  v.Name,
 			DefaultBackendSetName: v.DefaultBackendSetName,
 			Port:                  v.Port,
 			Protocol:              &protocol,
+			IpVersion:             &ipVersion,
 		}
 	}
 	return genericListenerDetails
@@ -538,6 +611,7 @@ func (c *networkLoadbalancer) backendSetsToGenericBackendSetDetails(backendSets 
 
 	for k, v := range backendSets {
 		policyString := string(v.Policy)
+		ipVersion := GenericIpVersion(v.IpVersion)
 		genericBackendSetDetails[k] = GenericBackendSetDetails{
 			HealthChecker: &GenericHealthChecker{
 				Protocol:         string(v.HealthChecker.Protocol),
@@ -552,6 +626,7 @@ func (c *networkLoadbalancer) backendSetsToGenericBackendSetDetails(backendSets 
 			Policy:           &policyString,
 			Backends:         c.backendDetailsToGenericBackendDetails(v.Backends),
 			IsPreserveSource: v.IsPreserveSource,
+			IpVersion:        &ipVersion,
 		}
 	}
 
@@ -611,12 +686,21 @@ func (c *networkLoadbalancer) genericListenerDetailsToListenerDetails(details ma
 	listenerDetails := make(map[string]networkloadbalancer.ListenerDetails)
 
 	for k, v := range details {
-		listenerDetails[k] = networkloadbalancer.ListenerDetails{
+		nlbListenerDetails := networkloadbalancer.ListenerDetails{
 			Name:                  v.Name,
 			DefaultBackendSetName: v.DefaultBackendSetName,
 			Port:                  v.Port,
 			Protocol:              networkloadbalancer.ListenerProtocolsEnum(*v.Protocol),
 		}
+		if v.IpVersion != nil {
+			switch *v.IpVersion {
+			case GenericIPv4:
+				nlbListenerDetails.IpVersion = networkloadbalancer.IpVersionIpv4
+			case GenericIPv6:
+				nlbListenerDetails.IpVersion = networkloadbalancer.IpVersionIpv6
+			}
+		}
+		listenerDetails[k] = nlbListenerDetails
 	}
 	return listenerDetails
 }
@@ -625,7 +709,7 @@ func (c *networkLoadbalancer) genericBackendSetDetailsToBackendSets(backendSets 
 	backendSetDetails := make(map[string]networkloadbalancer.BackendSetDetails)
 
 	for k, v := range backendSets {
-		backendSetDetails[k] = networkloadbalancer.BackendSetDetails{
+		nlbBackendSetDetails := networkloadbalancer.BackendSetDetails{
 			HealthChecker: &networkloadbalancer.HealthChecker{
 				Protocol:         networkloadbalancer.HealthCheckProtocolsEnum(v.HealthChecker.Protocol),
 				Port:             v.HealthChecker.Port,
@@ -639,6 +723,15 @@ func (c *networkLoadbalancer) genericBackendSetDetailsToBackendSets(backendSets 
 			Backends:         c.genericBackendDetailsToBackendDetails(v.Backends),
 			IsPreserveSource: v.IsPreserveSource,
 		}
+		if v.IpVersion != nil {
+			switch *v.IpVersion {
+			case GenericIPv4:
+				nlbBackendSetDetails.IpVersion = networkloadbalancer.IpVersionIpv4
+			case GenericIPv6:
+				nlbBackendSetDetails.IpVersion = networkloadbalancer.IpVersionIpv6
+			}
+		}
+		backendSetDetails[k] = nlbBackendSetDetails
 	}
 	return backendSetDetails
 }

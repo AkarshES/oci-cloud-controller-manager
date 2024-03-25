@@ -956,6 +956,8 @@ func Test_getBackendSetsNeedSync(t *testing.T) {
 			prc := &PodReadinessController{
 				nodeLister: &mockNodeLister{},
 			}
+			ipFamilies := []v1.IPFamily{v1.IPFamily(IPv4)}
+			tc.service.Spec.IPFamilies = ipFamilies
 
 			out, _ := prc.getBackendSetsNeedSync(tc.service, tc.pods)
 			if !reflect.DeepEqual(out, tc.out) {

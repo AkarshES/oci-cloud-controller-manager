@@ -1,5 +1,11 @@
 package client
 
+const (
+	GenericIPv4        GenericIpVersion = "IPv4"
+	GenericIPv6        GenericIpVersion = "IPv6"
+	GenericIPv4AndIPv6 GenericIpVersion = "IPv4_AND_IPv6"
+)
+
 type GenericBackendSetDetails struct {
 	Name                            *string
 	HealthChecker                   *GenericHealthChecker
@@ -10,7 +16,10 @@ type GenericBackendSetDetails struct {
 	SslConfiguration *GenericSslConfigurationDetails
 	// Only needed for NLB
 	IsPreserveSource *bool
+	IpVersion        *GenericIpVersion
 }
+
+type GenericIpVersion string
 
 type GenericSessionPersistenceConfiguration struct {
 	CookieName      *string
@@ -60,6 +69,7 @@ type GenericListener struct {
 	ConnectionConfiguration *GenericConnectionConfiguration
 	RoutingPolicyName       *string
 	RuleSetNames            []string
+	IpVersion               *GenericIpVersion
 }
 
 type GenericConnectionConfiguration struct {
@@ -82,6 +92,7 @@ type GenericCreateLoadBalancerDetails struct {
 	NetworkSecurityGroupIds     []string
 	FreeformTags                map[string]string
 	DefinedTags                 map[string]map[string]interface{}
+	IpVersion                   *GenericIpVersion
 
 	// Only needed for LB
 	Certificates map[string]GenericCertificate
@@ -129,6 +140,7 @@ type GenericLoadBalancer struct {
 	Listeners               map[string]GenericListener
 	Certificates            map[string]GenericCertificate
 	BackendSets             map[string]GenericBackendSetDetails
+	IpVersion               *GenericIpVersion
 
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}
@@ -159,6 +171,7 @@ type GenericBackendSetHealth struct {
 }
 
 type GenericUpdateLoadBalancerDetails struct {
+	IpVersion    *GenericIpVersion
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}
 }
