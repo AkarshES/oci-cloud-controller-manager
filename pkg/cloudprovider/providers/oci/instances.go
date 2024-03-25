@@ -18,20 +18,22 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
+	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"github.com/oracle/oci-go-sdk/v65/containerengine"
+	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"
-
-	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
-	"github.com/oracle/oci-go-sdk/v65/containerengine"
-	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
 const (
 	VirtualNodePoolIdAnnotation = "oci.oraclecloud.com/virtual-node-pool-id"
+	IPv4NodeIPFamilyLabel       = "oci.oraclecloud.com/ip-family-ipv4"
+	IPv6NodeIPFamilyLabel       = "oci.oraclecloud.com/ip-family-ipv6"
 )
 
 var _ cloudprovider.Instances = &CloudProvider{}
@@ -101,6 +103,27 @@ func (cp *CloudProvider) extractNodeAddresses(ctx context.Context, instanceID st
 		}
 		addresses = append(addresses, api.NodeAddress{Type: api.NodeExternalIP, Address: ip.String()})
 	}
+	nodeIpFamily, err := cp.getNodeIpFamily(instanceID)
+	if err != nil {
+		return nil, err
+	}
+	if contains(nodeIpFamily, IPv6) {
+		if vnic.Ipv6Addresses != nil {
+			for _, ipv6Addresses := range vnic.Ipv6Addresses {
+				if ipv6Addresses != "" {
+					ip := net.ParseIP(ipv6Addresses)
+					if ip == nil {
+						return nil, errors.Errorf("instance has invalid ipv6 address: %q", vnic.Ipv6Addresses[0])
+					}
+					if ip.IsPrivate() {
+						addresses = append(addresses, api.NodeAddress{Type: api.NodeInternalIP, Address: ip.String()})
+					} else {
+						addresses = append(addresses, api.NodeAddress{Type: api.NodeExternalIP, Address: ip.String()})
+					}
+				}
+			}
+		}
+	}
 
 	// OKE does not support setting DNS since this changes the override hostname we setup to be the ip address.
 	// Changing this can have wide reaching impact.
@@ -124,6 +147,37 @@ func (cp *CloudProvider) extractNodeAddresses(ctx context.Context, instanceID st
 	// }
 
 	return addresses, nil
+}
+
+// getNodeIpFamily checks if label exists in the Node
+// oci.oraclecloud.com/ip-family-ipv4
+// oci.oraclecloud.com/ip-family-ipv6
+func (cp *CloudProvider) getNodeIpFamily(instanceId string) ([]string, error) {
+	nodeIpFamily := []string{}
+	nodeList, err := cp.NodeLister.List(labels.Everything())
+	if err != nil {
+		return nodeIpFamily, errors.Wrap(err, "error listing nodes using node informer")
+	}
+
+	// TODO: @prasrira Add a cache to determine nodes that already have label https://github.com/kubernetes/client-go/blob/master/tools/cache/expiration_cache.go
+	for _, node := range nodeList {
+		providerID, err := MapProviderIDToResourceID(node.Spec.ProviderID)
+		if err != nil {
+			return nodeIpFamily, errors.New("Failed to map providerID to instanceID")
+		}
+		if providerID == instanceId {
+			if _, ok := node.Labels[IPv4NodeIPFamilyLabel]; ok {
+				nodeIpFamily = append(nodeIpFamily, IPv4)
+			}
+			if _, ok := node.Labels[IPv6NodeIPFamilyLabel]; ok {
+				nodeIpFamily = append(nodeIpFamily, IPv6)
+			}
+		}
+	}
+	if len(nodeIpFamily) != 0 {
+		cp.logger.Debugf("NodeIpFamily is %s for instance id %s", strings.Join(nodeIpFamily, ","), instanceId)
+	}
+	return nodeIpFamily, nil
 }
 
 // NodeAddresses returns the addresses of the specified instance.
