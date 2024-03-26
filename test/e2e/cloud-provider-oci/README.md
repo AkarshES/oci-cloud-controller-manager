@@ -4,7 +4,18 @@ These tests are adapted from the [Service test suite][1] in the Kubernetes core
 E2E tests.
 
 ## Pre-requisite
+
 You need to have [ginkgo][2] installed and configured.
+
+## Environment Variables
+
+| Use Case                                          | Env Variable          | Usage                                                                                                              |
+|---------------------------------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------|
+| Running e2e on existing cluster via TC            | EXISTING_CLUSTER_OCID | Specify cluster ocid of existing cluster from oke-ccm-e2e-tests compartment to run e2e on this cluster.            |
+| Skipping cluster deletion after e2e run           | SKIP_CLUSTER_DELETION | Specify true value for this env to skip cluster deletion after e2e run is completed. Useful in debugging purposes. |
+| Using specific image for worker nodes in nodepool | NP_IMAGE_OS           | Specify image name to use for worker nods, ex. Oracle-Linux-7 or Oracle-Linux-8 etc.                               |
+| Executing e2es on cluster with specific ip stack  | CLUSTER_IP_FAMILY     | Specify IP family to create clusters with. ex. IPv4 or IPv6 or IPv4,IPv6 or IPv6,IPv4                              |
+| Creating e2e cluster with specific CNI            | CNI_TYPE              | Specify CNI type to be used for clusters. ex. OCI_VCN_IP_NATIVE or FLANNEL_OVERLAY                                 |
 
 ## Running the tests locally
 
@@ -12,8 +23,12 @@ There are 2 options to run the tests : create cluster mode and existing cluster 
 It is suggested to use existing cluster mode with updated CCM image while testing features.
 
 ## Option 1.
-For a simpler way to run e2e tests locally, follow the template [here](../../../hack/cluster-create-dev0-env-template.sh). This template is intended for running e2e-tests against dev0-iad but can be modified to run against your dev environment.
-Please make sure that the CCM image is pushed and updated. Option 1 creates a cluster using the environment variables set by you. All the tests are then run on this newly created cluster.
+
+For a simpler way to run e2e tests locally, follow the
+template [here](../../../hack/cluster-create-dev0-env-template.sh). This template is intended for running e2e-tests
+against dev0-iad but can be modified to run against your dev environment.
+Please make sure that the CCM image is pushed and updated. Option 1 creates a cluster using the environment variables
+set by you. All the tests are then run on this newly created cluster.
 
 To set the variables, run
 
@@ -28,10 +43,13 @@ make run-ccm-e2e-tests-local
 ```
 
 ## Option 2.
-If you already have a cluster and wish to run the tests on your existing cluster. follow the template [here](../../../hack/existing-cluster-dev0-env-template.sh)
-It will not create a new cluster and use the one provided by you. 
 
-CCM E2E tests require two NSGs to run successfully. Please create two NSGs in the cluster's VCN and update NSG_OCIDS [here](../../../hack/existing-cluster-dev0-env-template.sh).
+If you already have a cluster and wish to run the tests on your existing cluster. follow the
+template [here](../../../hack/existing-cluster-dev0-env-template.sh)
+It will not create a new cluster and use the one provided by you.
+
+CCM E2E tests require two NSGs to run successfully. Please create two NSGs in the cluster's VCN and update
+NSG_OCIDS [here](../../../hack/existing-cluster-dev0-env-template.sh).
 
 To set the variables, run
 
@@ -45,7 +63,8 @@ Then run
 make run-ccm-e2e-tests-local
 ```
 
-An example of cloudconfig (cloud-provider.yaml) - See [provider-config-example.yaml](../../../manifests/provider-config-example.yaml)
+An example of cloudconfig (cloud-provider.yaml) -
+See [provider-config-example.yaml](../../../manifests/provider-config-example.yaml)
 For accessing you cluster's kubeconfig refer [organize-cluster-access-kubeconfig][3]
 
 NOTE: Test suite will fail if executed behind a `$HTTP_PROXY` that returns a
@@ -53,19 +72,22 @@ NOTE: Test suite will fail if executed behind a `$HTTP_PROXY` that returns a
 
 ## Additional option to specify test image pull repo
 
-The tests use below images for AMD tests - 
-*   nginx:stable-alpine
-*   agnhost:2.6
-*   centos:latest
-*   busybox:latest
+The tests use below images for AMD tests -
+
+* nginx:stable-alpine
+* agnhost:2.6
+* centos:latest
+* busybox:latest
 
 The tests use below images for ARM tests -
-*   nginx-arm:latest
-*   agnhost-arm:2.6
-*   centos-arm:latest
-*   busybox-arm:latest
 
-By default, public images are used. But if your Cluster's environment cannot access above public images then below option can be used to specify an accessible repo.
+* nginx-arm:latest
+* agnhost-arm:2.6
+* centos-arm:latest
+* busybox-arm:latest
+
+By default, public images are used. But if your Cluster's environment cannot access above public images then below
+option can be used to specify an accessible repo.
 
 ```bash
 IMAGE_PULL_REPO="accessiblerepo.com/repo/path/" make run-ccm-e2e-tests-local
@@ -75,7 +97,11 @@ Note: Above listed <IMAGE>:<TAG> should be available in the provider repo path a
 
 ## Running FSS in-transit encryption tests
 
-The two FSS in-transit encryption tests need the oci-fss-utils package to be installed on the nodes running the tests. The package is needed to be downloaded from [here][4] and installed on the applicable nodes. In addition to this, the below label is to be added using the command for each of the nodes which have the package installed to help the test suite recognise the applicable nodes.
+The two FSS in-transit encryption tests need the oci-fss-utils package to be installed on the nodes running the tests.
+The package is needed to be downloaded from [here][4] and installed on the applicable nodes. In addition to this, the
+below label is to be added using the command for each of the nodes which have the package installed to help the test
+suite recognise the applicable nodes.
+
 ```bash
 kubectl label nodes <node-name> oke.oraclecloud.com/e2e.oci-fss-util=installed
 ```
@@ -88,11 +114,15 @@ The three BV expand tests need the cluster version and nodepool version to be 1.
 
 Additional seclist count based sanity checks can be applied during e2e testing
 by providing the appropriate seclist ocids. Both must be supplied.
-If you wish to use the tests in debug mode and want to look at the namespaces created by tests you can provide the option to keep the namespaces 
+If you wish to use the tests in debug mode and want to look at the namespaces created by tests you can provide the
+option to keep the namespaces
+
 ```bash
 --delete-namespaces=false
 ```
-By default the namespaces will be deleted. So if you use above option, then you should delete the resources manually after investigation is complete.
+
+By default the namespaces will be deleted. So if you use above option, then you should delete the resources manually
+after investigation is complete.
 These values can be specified as command line parameters.
 
 ```bash
@@ -109,7 +139,8 @@ $ ginkgo -v -progress test/e2e/cloud-provider-oci -- \
 
 ### Running Architecture specific CPO E2E tests (scoped tests)
 
-You can run a subset of tests manually by setting the 'SCOPE' shell variable to be the filter to target tests for specific architecture.
+You can run a subset of tests manually by setting the 'SCOPE' shell variable to be the filter to target tests for
+specific architecture.
 By default, the test suite runs all the AMD tests followed by all the ARM tests via the default value of SCOPE="BOTH".
 To run ARM scoped tests,
 
@@ -127,7 +158,8 @@ make run-ccm-e2e-tests-local
 
 ### Running subsets of the cloud-provider-oci-e2e-tests (focused tests)
 
-You can run a subset of the tests manually by setting the 'FOCUS' environment variable to be the regular expressions matching the 'Ginkgo' descriptions of the test you want to run.
+You can run a subset of the tests manually by setting the 'FOCUS' environment variable to be the regular expressions
+matching the 'Ginkgo' descriptions of the test you want to run.
 
 Please see 'test/e2e/cloud-provider-oci' to see what description tags are available.
 The broad category of tags is "ccm" and "storage" look at [list of tests](ListOfTests.md)
@@ -135,6 +167,7 @@ The broad category of tags is "ccm" and "storage" look at [list of tests](ListOf
 ```bash
 export FOCUS=\[cloudprovider\]
 ```
+
 They can be passed directly to the make target as well:
 
 ```bash
@@ -159,6 +192,9 @@ make run-ccm-e2e-tests-local FOCUS="load_*" FILES="true"
 ---
 
 [1]: https://github.com/kubernetes/kubernetes/blob/0cb15453dae92d8be66cf42e6c1b04e21a2d0fb6/test/e2e/network/service.go
+
 [2]: https://onsi.github.io/ginkgo/
+
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
+
 [4]: https://www.oracle.com/downloads/cloud/cloud-infrastructure-file-storage-downloads.html

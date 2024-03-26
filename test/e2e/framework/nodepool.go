@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"os"
 	"strings"
 	"time"
@@ -113,10 +112,11 @@ func (f *Framework) ListNodePoolImages(nodePoolOptionId string) [][]string {
 	return npImages
 }
 
-func (f *Framework) PickNonGPUImageWithArchCompatibility(images [][]string, kubeVersion string, npImageArch string) (nodePoolImageId string, nodePoolImageName string, imageFound bool) {
+func (f *Framework) PickNonGPUImageWithArchCompatibility(images [][]string, kubeVersion string, npImageArch string, npImageOS string) (nodePoolImageId string, nodePoolImageName string, imageFound bool) {
 	latestPlatformImageId := ""
 	latestPlatformImageSourceName := ""
 	platformImageFound := false
+	Logf("Requested NP Image OS :  %s", npImageOS)
 	for _, image := range images {
 		nodePoolImageName = image[0]
 		nodePoolImageId = image[1]
@@ -128,14 +128,20 @@ func (f *Framework) PickNonGPUImageWithArchCompatibility(images [][]string, kube
 		if (npImageArch == "AMD" && !strings.Contains(nodePoolImageName, "-aarch64")) || (npImageArch == "ARM" && strings.Contains(nodePoolImageName, "-aarch64")) {
 			// Prefer a pre-baked image, if available for this Kubernetes version
 			if strings.Contains(nodePoolImageName, "-OKE") && strings.Contains(nodePoolImageName, kubeVersion) {
-				imageFound = true
-				return
+				if npImageOS == "" || strings.Contains(nodePoolImageName, npImageOS) {
+					Logf("Image Found for OS : %s  %s", npImageOS, nodePoolImageName)
+					imageFound = true
+					return
+				}
 			}
 			// Use the latest platform image if pre-baked images are not present
 			if !strings.Contains(nodePoolImageName, "-OKE") && !platformImageFound {
-				latestPlatformImageId = nodePoolImageId
-				latestPlatformImageSourceName = nodePoolImageName
-				platformImageFound = true
+				if npImageOS == "" || strings.Contains(nodePoolImageName, npImageOS) {
+					Logf("Platform image found OS : %s  %s", npImageOS, nodePoolImageName)
+					latestPlatformImageId = nodePoolImageId
+					latestPlatformImageSourceName = nodePoolImageName
+					platformImageFound = true
+				}
 			}
 		}
 	}
@@ -357,12 +363,23 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		nodeConfigDetails.NsgIds = strings.Split(f.BackendNsgOcid, ",")
 	}
 
+	if cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative {
+		if podsubnet != "" {
+			nodeConfigDetails.NodePoolPodNetworkOptionDetails = oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
+				PodSubnetIds: []string{podsubnet},
+			}
+		} else {
+			Logf("\tPOD SUBNET is empty %s", podsubnet)
+			Expect("pod subnet should not be empty for cnitype : OCI_VCN_IP_NATIVE").NotTo(HaveOccurred())
+		}
+	}
+
 	imageId = ""
 	imageName = ""
 	var nonGPUImageFound = false
 	images := f.ListNodePoolImages(clusterID)
 
-	imageId, imageName, nonGPUImageFound = f.PickNonGPUImageWithArchCompatibility(images, kubeVersion, f.Architecture)
+	imageId, imageName, nonGPUImageFound = f.PickNonGPUImageWithArchCompatibility(images, kubeVersion, f.Architecture, f.NpImageOS)
 	Expect(nonGPUImageFound).To(BeTrue(), "Unable to find a Non-GPU Node Pool image")
 
 	nodeSourceViaImageDetails := &oke.NodeSourceViaImageDetails{

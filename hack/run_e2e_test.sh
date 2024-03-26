@@ -111,6 +111,8 @@ function check_environment () {
         check-env "CREATE_UHP_NODEPOOL"       $CREATE_UHP_NODEPOOL
         check-env "ENABLE_PARALLEL_RUN"       $ENABLE_PARALLEL_RUN
         check-env "CLUSTER_TYPE"              $CLUSTER_TYPE
+        check-env "CNI_TYPE"                  $CNI_TYPE
+        check-env "POD_SUBNET"                $POD_SUBNET
         check-env-k8s-version-index-exist
         if [ -z "$CLUSTER_KUBECONFIG" ]; then
             CLUSTER_KUBECONFIG="/tmp/clusterkubeconfig"
@@ -123,6 +125,7 @@ function check_environment () {
         check-env "CLOUD_CONFIG"          $CLOUD_CONFIG
         check-env "ADLOCATION"            $ADLOCATION
         check-env "CLUSTER_TYPE"          $CLUSTER_TYPE
+        check-env "CNI_TYPE"              $CNI_TYPE
     fi
 }
 
@@ -175,6 +178,10 @@ function run_e2e_tests() {
                 --subnet3=${OCI_SUBNET3} \
                 --k8ssubnet=${OCI_K8SSUBNET} \
                 --nodesubnet=${OCI_NODESUBNET} \
+                --clusterIPFamily=${CLUSTER_IP_FAMILY} \
+                --npImageOS=${NP_IMAGE_OS} \
+                --existingClusterOcid=${EXISTING_CLUSTER_OCID} \
+                --skipClusterDeletion=${SKIP_CLUSTER_DELETION}\
                 --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
                 --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
                 --pubsshkey="${PUB_SSHKEY}" \
@@ -205,7 +212,9 @@ function run_e2e_tests() {
                 --post-upgrade=${POST_UPGRADE} \
                 --pre-upgrade=${PRE_UPGRADE} \
                 --cluster-type=${CLUSTER_TYPE} \
-                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
+                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
+                --cni-type=${CNI_TYPE} \
+                --podsubnet=${POD_SUBNET}
     else
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
                 test/e2e/cloud-provider-oci -- \
@@ -227,6 +236,10 @@ function run_e2e_tests() {
                 --subnet3=${OCI_SUBNET3} \
                 --k8ssubnet=${OCI_K8SSUBNET} \
                 --nodesubnet=${OCI_NODESUBNET} \
+                --clusterIPFamily=${CLUSTER_IP_FAMILY} \
+                --npImageOS=${NP_IMAGE_OS} \
+                --existingClusterOcid=${EXISTING_CLUSTER_OCID} \
+                --skipClusterDeletion=${SKIP_CLUSTER_DELETION}\
                 --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
                 --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
                 --pubsshkey="${PUB_SSHKEY}" \
@@ -257,7 +270,9 @@ function run_e2e_tests() {
                 --post-upgrade=${POST_UPGRADE} \
                 --pre-upgrade=${PRE_UPGRADE} \
                 --cluster-type=${CLUSTER_TYPE} \
-                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
+                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
+                --cni-type=${CNI_TYPE} \
+                --podsubnet=${POD_SUBNET}
     fi
     retval=$?
     rm -f $OCI_KEY_FILE
@@ -297,7 +312,9 @@ function run_e2e_tests_existing_cluster() {
                 --post-upgrade=${POST_UPGRADE} \
                 --pre-upgrade=${PRE_UPGRADE} \
                 --cluster-type=${CLUSTER_TYPE} \
-                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
+                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
+                --cni-type=${CNI_TYPE} \
+                --podsubnet=${POD_SUBNET}
     else
         echo "initiating"
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
@@ -326,7 +343,9 @@ function run_e2e_tests_existing_cluster() {
                         --post-upgrade=${POST_UPGRADE} \
                         --pre-upgrade=${PRE_UPGRADE} \
                         --cluster-type=${CLUSTER_TYPE} \
-                        --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
+                        --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
+                        --cni-type=${CNI_TYPE} \
+                        --podsubnet=${POD_SUBNET}
     fi
     retval=$?
     return $retval
@@ -339,6 +358,7 @@ function setup_amd() {
     if [[ "$#" -ne  "0" && "$1" == "CREATE" ]]; then
         export VCN=$VCN_AMD
         export LBRGNSUBNET=$LBRGNSUBNET_AMD
+        export POD_SUBNET=$POD_SUBNET_AMD
         export OCI_NODESUBNET=$OCI_NODESUBNET_AMD
         export NSG_OCIDS=$NSG_OCIDS_AMD
         export OKE_ENDPOINT=$OKE_ENDPOINT_AMD
@@ -358,6 +378,7 @@ function setup_arm() {
         export VCN=$VCN_ARM
         export LBRGNSUBNET=$LBRGNSUBNET_ARM
         export OCI_NODESUBNET=$OCI_NODESUBNET_ARM
+        export POD_SUBNET=$POD_SUBNET_ARM
         export NSG_OCIDS=$NSG_OCIDS_ARM
         export OKE_ENDPOINT=$OKE_ENDPOINT_ARM
         export FSS_VOLUME_HANDLE=$FSS_VOLUME_HANDLE_ARM
@@ -376,12 +397,54 @@ function setup_arm() {
     fi
 }
 
+function setup_ip_family_dependent_env() {
+  if [ -n "$CLUSTER_IP_FAMILY" ]; then
+      if [[ "$CLUSTER_IP_FAMILY" == *IPv4* && "$CLUSTER_IP_FAMILY" == *IPv6* ]]; then
+          echo "Dual stack Cluster Ip Family Configured."
+          export OCI_K8SSUBNET=$OCI_K8SSUBNET_DUAL_STACK
+          export OCI_NODESUBNET=$OCI_NODESUBNET_DUAL_STACK
+          export LBRGNSUBNET=$LBRGNSUBNET_DUAL_STACK
+          export LBSUBNET1=$LBRGNSUBNET_DUAL_STACK
+          export LBSUBNET2=$LBRGNSUBNET_DUAL_STACK
+          export POD_SUBNET=$POD_SUBNET_DUAL_STACK
+          export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID_DUAL_STACK
+
+          # Extract the first element in the comma-separated list
+          preferredIpFamily=$(echo "$CLUSTER_IP_FAMILY" | cut -d',' -f1)
+
+          if [[ $preferredIpFamily == "IPv6" ]]; then
+              echo "Dual stack subnet is IPv6 preferred."
+              export FSS_VOLUME_HANDLE=$FSS_VOLUME_HANDLE_IPV6
+              export MNT_TARGET_ID=$MNT_TARGET_ID_IPV6
+              export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID_IPV6
+          fi
+
+      elif [[ "$CLUSTER_IP_FAMILY" == *IPv6* ]]; then
+          echo "IPv6 single stack ip family configured"
+          export OCI_K8SSUBNET=$OCI_K8SSUBNET_IPV6
+          export LBRGNSUBNET=$LBRGNSUBNET_IPV6
+          export LBSUBNET1=$LBRGNSUBNET_IPV6
+          export LBSUBNET2=$LBRGNSUBNET_IPV6
+          export POD_SUBNET=$POD_SUBNET_IPV6
+          export OCI_NODESUBNET=$OCI_NODESUBNET_IPV6
+          export FSS_VOLUME_HANDLE=$FSS_VOLUME_HANDLE_IPV6
+          export MNT_TARGET_ID=$MNT_TARGET_ID_IPV6
+          export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID_IPV6
+      else
+            echo "IPv4 single stack ip family configured"
+      fi
+  else
+      echo "CLUSTER_IP_FAMILY is not set or is empty."
+  fi
+}
+
 function declare_setup () {
     check-env "ARCHITECTURE"            $ARCHITECTURE
     if [[ "$#" -ne  "0" && "$1" == "CREATE" ]]; then
         check-env "VCN"                     $VCN
         check-env "LBRGNSUBNET"             $LBRGNSUBNET
         check-env "OCI_NODESUBNET"          $OCI_NODESUBNET
+        check-env "POD_SUBNET"              $POD_SUBNET
         check-env "NODE_SHAPE"              $NODE_SHAPE
         check-env "NSG_OCIDS"               $NSG_OCIDS
         check-env "OKE_ENDPOINT"            $OKE_ENDPOINT
@@ -404,6 +467,8 @@ function declare_setup () {
     echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
     echo "ADD_OKE_SYSTEM_TAGS is ${ADD_OKE_SYSTEM_TAGS}"
+    echo "CNI_TYPE is ${CNI_TYPE}"
+    echo "POD_SUBNET is $POD_SUBNET"
 }
 
 function set_focus () {
@@ -470,10 +535,14 @@ function declare_environment () {
         echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
         echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
         echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
+        echo "CNI_TYPE is ${CNI_TYPE}"
+        echo "POD_SUBNET is ${POD_SUBNET}"
     else
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"
         echo "CLOUD_CONFIG is ${CLOUD_CONFIG}"
         echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
+        echo "CNI_TYPE is ${CNI_TYPE}"
+        echo "POD_SUBNET is ${POD_SUBNET}"
     fi
 
     if [[ $LOCAL_RUN != 1 ]]; then
@@ -498,6 +567,7 @@ function run_tests () {
         # run AMD tests
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "AMD" ]]; then
             setup_amd "CREATE"
+            setup_ip_family_dependent_env
             check_environment
             declare_environment
             run_e2e_tests
@@ -506,6 +576,7 @@ function run_tests () {
         # run ARM tests
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "ARM" ]]; then
             setup_arm "CREATE"
+            setup_ip_family_dependent_env
             check_environment
             declare_environment
             run_e2e_tests
@@ -516,6 +587,7 @@ function run_tests () {
         # run ARM tests
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "ARM" ]]; then
             setup_arm "EXIST"
+            setup_ip_family_dependent_env
             check_environment
             declare_environment
             run_e2e_tests_existing_cluster
@@ -524,6 +596,7 @@ function run_tests () {
         # run AMD tests
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "AMD" ]]; then
             setup_amd "EXIST"
+            setup_ip_family_dependent_env
             check_environment
             declare_environment
             run_e2e_tests_existing_cluster

@@ -1324,17 +1324,17 @@ func (j *PVCTestJig) CheckAttachmentTypeAndEncryptionType(compute client.Compute
 // CheckEncryptionType verifies encryption type
 func (j *PVCTestJig) CheckEncryptionType(namespace, podName string) {
 	By("Checking encryption type")
-	dfCommand := "df | grep data"
+	dfCommand := "mount | grep data"
 
 	// This test is written this way, since the only way to verify if in-transit encryption is present on FSS is by checking the df command on the pod
-	// and if the IP starts with 192.x.x.x is present on the FSS mount
+	// and if the IP starts with 192.x.x.x or fd40:: is present on the FSS mount
 	output, err := RunHostCmd(namespace, podName, dfCommand)
 	if err != nil || output == "" {
 		Failf("kubectl exec failed or output is nil")
 	}
 
-	ipStart192 := output[0:3]
-	if ipStart192 == "192" {
+	ipStart := output[0:5]
+	if strings.HasPrefix(ipStart, "192") || strings.HasPrefix(ipStart, "[fd40") {
 		Logf("FSS has in-transit encryption %s", output)
 	} else {
 		Failf("FSS does not have in-transit encryption")

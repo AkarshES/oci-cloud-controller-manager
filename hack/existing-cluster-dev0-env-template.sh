@@ -73,3 +73,20 @@ export CLUSTER_TYPE="ENHANCED_CLUSTER"
 # For SKE node, node_info, node_lifecycle controller tests against PDE
 # To setup PDE and point your localhost:25000 to the PDE CP API refer: Refer: https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oke-control-plane/browse/personal-environments/README.md
 # export CE_ENDPOINT_OVERRIDE="http://localhost:25000"
+
+# Ip family of cluster to create cluster as per required ip stack
+export CLUSTER_IP_FAMILY="IPv4"
+export NP_IMAGE_OS="Oracle-Linux-8"
+export SKIP_CLUSTER_DELETION="false"
+
+export FSS_VOLUME_HANDLE_IPV6=""
+export MNT_TARGET_ID_IPV6=""
+export MNT_TARGET_SUBNET_ID_IPV6=""
+export MNT_TARGET_SUBNET_ID_DUAL_STACK=""
+export OCI_K8SSUBNET_IPV6=""
+export OCI_K8SSUBNET_DUAL_STACK=""
+export OCI_NODESUBNET_IPV6=""
+export OCI_NODESUBNET_DUAL_STACK=""
+export LBRGNSUBNET_IPV6=""
+export LBRGNSUBNET_DUAL_STACK=""
+export EXISTING_CLUSTER_OCID=""

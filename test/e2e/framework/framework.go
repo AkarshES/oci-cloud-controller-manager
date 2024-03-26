@@ -85,6 +85,10 @@ var (
 	subnet3                       string
 	k8ssubnet                     string
 	nodesubnet                    string
+	clusterIPFamily               string
+	npImageOS                     string
+	existingClusterOcid           string
+	skipClusterDeletion           string
 	okeClusterK8sVersionIndex     int
 	okeNodePoolK8sVersionIndex    int
 	pubsshkey                     string
@@ -131,6 +135,9 @@ var (
 	enableParallelRun             bool
 	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
 	addOkeSystemTags              bool
+	podsubnet                     string
+	cniType                       string
+	cniTypeEnum                   oke.ClusterPodNetworkOptionDetailsCniTypeEnum
 )
 
 func init() {
@@ -152,6 +159,10 @@ func init() {
 	flag.StringVar(&subnet3, "subnet3", "", "OCID of the 3rd worker subnet.")
 	flag.StringVar(&k8ssubnet, "k8ssubnet", "", "OCID of the K8s API endpoint subnet.")
 	flag.StringVar(&nodesubnet, "nodesubnet", "", "OCID of the nodepool subnet.")
+	flag.StringVar(&clusterIPFamily, "clusterIPFamily", "IPv4", "IP Family of cluster to be created.")
+	flag.StringVar(&npImageOS, "npImageOS", "", "Node Pool OS Version to be used for testing.")
+	flag.StringVar(&existingClusterOcid, "existingClusterOcid", "", "OCID of existing cluster to run e2es on")
+	flag.StringVar(&skipClusterDeletion, "skipClusterDeletion", "false", "Flag to control cluster deletion post e2e run, useful to debug cluster in case of issues by skipping deletion.")
 	flag.IntVar(&okeClusterK8sVersionIndex, "okeClusterK8sVersionIndex", -1, "The index of k8s versionList (0 means the 1st version, 1 means the 2nd version. -1 means the latest version. versionList is like ['1.10.11', 1.11.8', '1.12.6']) used when create cluster")
 	flag.IntVar(&okeNodePoolK8sVersionIndex, "okeNodePoolK8sVersionIndex", -1, "The index of k8s versionList (0 means the 1st version, 1 means the 2nd version. -1 means the latest version. versionList is like ['1.10.11', 1.11.8', '1.12.6']) used when create nodepool")
 	flag.StringVar(&pubsshkey, "pubsshkey", "", "Public SSH Key for node access.")
@@ -198,6 +209,8 @@ func init() {
 	flag.StringVar(&namespace, "namespace", "pre-upgrade", "Namespace used for pre-upgrade and post-upgrade testing.")
 
 	flag.StringVar(&clusterType, "cluster-type", "BASIC_CLUSTER", "Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER")
+	flag.StringVar(&podsubnet, "podsubnet", "", "OCID of the pod subnet in which to create pods for CNI type OCI_VCN_IP_NATIVE")
+	flag.StringVar(&cniType, "cni-type", "FLANNEL_OVERLAY", "CNI type can be FLANNEL_OVERLAY or OCI_VCN_IP_NATIVE")
 	flag.BoolVar(&enableParallelRun, "enable-parallel-run", true, "Enables parallel running of test suite")
 	flag.BoolVar(&addOkeSystemTags, "add-oke-system-tags", true, "Adds oke system tags to new and existing loadbalancers and storage resources")
 }
@@ -274,6 +287,14 @@ type Framework struct {
 	K8sSubnet string
 	// Nodepool subnet
 	NodeSubnet string
+
+	ClusterIPFamily string
+	//Node Pool Image to be used
+	NpImageOS string
+
+	ExistingClusterOcid string
+
+	SkipClusterDeletion string
 	// Cluster Type
 	ClusterType oke.ClusterTypeEnum
 
@@ -281,6 +302,11 @@ type Framework struct {
 	OkeClusterK8sVersion string
 	//k8s version value (eg. v1.10.11, v1.11.8) used when create nodepool
 	OkeNodePoolK8sVersion string
+
+	// Pod subnet
+	PodSubnet string
+	// OCI_VCN_IP_NATIVE or FLANNEL_OVERLAY
+	CniType oke.ClusterPodNetworkOptionDetailsCniTypeEnum
 
 	// The Public SSH key to use when accessing nodes.
 	PubSSHKey string
@@ -412,6 +438,10 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		Subnet3:                       subnet3,
 		K8sSubnet:                     k8ssubnet,
 		NodeSubnet:                    nodesubnet,
+		ClusterIPFamily:               clusterIPFamily,
+		NpImageOS:                     npImageOS,
+		ExistingClusterOcid:           existingClusterOcid,
+		SkipClusterDeletion:           skipClusterDeletion,
 		NodeShape:                     nodeshape,
 		DelegationTargetServices:      "oke",
 		AdLocation:                    adlocation,
@@ -430,6 +460,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
 		AddOkeSystemTags:              addOkeSystemTags,
+		CniType:                       cniTypeEnum,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -557,6 +588,14 @@ func (f *Framework) Initialize() {
 	Logf("OCI K8sSubnet OCID: %s", f.K8sSubnet)
 	f.NodeSubnet = nodesubnet
 	Logf("OCI NodeSubnet OCID: %s", f.NodeSubnet)
+	f.ClusterIPFamily = clusterIPFamily
+	Logf("ClusterIPFamily : %s", f.ClusterIPFamily)
+	f.NpImageOS = npImageOS
+	Logf("NpImageOS: %s", f.NpImageOS)
+	f.ExistingClusterOcid = existingClusterOcid
+	Logf("ExistingClusterOcid: %s", f.ExistingClusterOcid)
+	f.SkipClusterDeletion = skipClusterDeletion
+	Logf("SkipClusterDeletion: %s", f.SkipClusterDeletion)
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
 	f.AddOkeSystemTags = addOkeSystemTags
@@ -568,6 +607,17 @@ func (f *Framework) Initialize() {
 	}
 	f.ClusterType = clusterTypeEnum
 	Logf("Cluster Type: %s", f.ClusterType)
+
+	f.PodSubnet = podsubnet
+	Logf("OCI pod subnet OCID: %s", f.PodSubnet)
+
+	if strings.ToUpper(cniType) == "OCI_VCN_IP_NATIVE" && podsubnet != "" {
+		cniTypeEnum = oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative
+	} else {
+		cniTypeEnum = oke.ClusterPodNetworkOptionDetailsCniTypeFlannelOverlay
+	}
+	f.CniType = cniTypeEnum
+	Logf("CNI Type: %s", f.CniType)
 
 	var err error
 	if isPreUpgradeString != "" {
