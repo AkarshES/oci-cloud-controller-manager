@@ -106,7 +106,7 @@ func cloudInitializer(config *config.CompletedConfig) cloudprovider.Interface {
 
 func getInitFuncConstructors() map[string]app.ControllerInitFuncConstructor {
 	// Disable default service controller
-	app.ControllersDisabledByDefault.Insert("service")
+	app.ControllersDisabledByDefault.Insert(names.ServiceLBController)
 
 	// Add custom service controller init func
 	defaultConstructors := app.DefaultInitFuncConstructors
