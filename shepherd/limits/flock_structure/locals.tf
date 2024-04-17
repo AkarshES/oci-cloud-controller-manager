@@ -1,20 +1,20 @@
 locals {
-  shepherd_current_regions   = [for region in local.regions : region if region.realm != "region1" && region.realm != "oc0"]
-  regions_under_build        = [for region in local.shepherd_all_regions : region if(region.state == "Building" || region.state == "None") && region.airport_code != "DCA" && region.airport_code != "QDF" && ! contains(local.blacklist_realms, region.realm)]
+  shepherd_current_regions   = [for region in local.shepherd_all_regions : region if region.realm != "region1" && region.state == "Production" && ! contains(local.blacklist_realms, region.realm)]
+  regions_under_build        = [for region in local.shepherd_all_regions : region if(region.state == "Building") && region.airport_code != "DCA" && region.airport_code != "QDF" && ! contains(local.blacklist_realms, region.realm)]
   build_region_to_realm      = { for region in local.regions_under_build : region.public_name => region.realm }
-  region_to_realm            = { for region in local.regions : region.public_name => region.realm }
+  region_to_realm            = { for region in local.shepherd_all_regions : region.public_name => region.realm }
   region_by_name             = { for region in local.shepherd_current_regions : region.public_name => region }
   region_by_name_all_regions = merge({ for region in local.shepherd_all_regions : region.public_name => region }, { for region in local.regions : region.public_name => region })
   realm_by_name              = { for realm in local.shepherd_all_realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) }
-  prod_phases                = [for realm in local.realms : realm.name if ! contains(local.blacklist_realms, realm.name) && ! (realm.attributes.is_disconnected || realm.is_sovereign_realm)]
+  prod_phases                = [for realm in local.shepherd_all_realms : realm.name if ! contains(local.blacklist_realms, realm.name) && ! (realm.attributes.is_disconnected || realm.is_sovereign_realm)]
   home_region_by_realm       = { for realm in local.realm_by_name : realm.name => realm.attributes.first_region }
   realms_under_build         = [for region in local.regions_under_build : region.realm if local.home_region_by_realm[region.realm] == region.public_name]
   blacklist_realms           = ["region1", "integ-next", "integ-stable", "dev", "oc7", "oc12"]
-  onsr_realm_by_name         = { for realm in local.realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) && (realm.attributes.is_disconnected || realm.is_sovereign_realm) }
-  prod_realm_by_name         = { for realm in local.realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) && ! (realm.attributes.is_disconnected || realm.is_sovereign_realm) }
-  build_region_by_name       = { for region in local.shepherd_all_regions : region.name => region if ! contains(local.blacklist_realms, region.realm) && (region.state == "Building" || region.state == "None") }
+  onsr_realm_by_name         = { for realm in local.shepherd_all_realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) && (realm.attributes.is_disconnected || realm.is_sovereign_realm) && ! contains(keys(local.build_region_by_name), realm.attributes.first_region) }
+  prod_realm_by_name         = { for realm in local.shepherd_all_realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) && ! (realm.attributes.is_disconnected || realm.is_sovereign_realm) && ! contains(keys(local.build_region_by_name), realm.attributes.first_region) }
+  build_region_by_name       = { for region in local.shepherd_all_regions : region.name => region if ! contains(local.blacklist_realms, region.realm) && (region.state == "Building") && region.airport_code != "DCA" && region.airport_code != "QDF" && ! contains(local.blacklist_realms, region.realm) }
   build_realm_by_name        = { for realm in local.shepherd_all_realms : realm.name => merge(realm, { airport_code : lower(lookup(local.build_region_by_name, realm.attributes.first_region).airport_code) }) if ! contains(local.blacklist_realms, realm.name) && lookup(local.prod_realm_by_name, realm.name, {}) == {} && lookup(local.onsr_realm_by_name, realm.name, {}) == {} && lookup(local.build_region_by_name, realm.attributes.first_region, {}) != {} }
-  onsr_phases                = [for realm in local.realms : realm.name if ! contains(local.blacklist_realms, realm.name) && (realm.attributes.is_disconnected || realm.is_sovereign_realm)]
+  onsr_phases                = [for realm in local.shepherd_all_realms : realm.name if ! contains(local.blacklist_realms, realm.name) && (realm.attributes.is_disconnected || realm.is_sovereign_realm) && ! contains(keys(local.build_region_by_name), realm.attributes.first_region)]
 
   // Overrides for environment, realm or region level
   overrides = {
@@ -913,9 +913,8 @@ locals {
     region => {} if lookup(local.defined_cell_overrides, region, {}) == {}
     },
     {
-    for region in local.build_regions : region => {
-      phase = "region-build_${split(".", region)[2]}"
-    }
+    for region in local.build_regions : region => merge({
+      phase = "region-build_${split(".", region)[2]}" }, lookup(local.defined_cell_overrides, region, {}))
     },
     {
     for region in local.polaris_regions :
