@@ -266,6 +266,7 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 			csioption.FssVolumeNamePrefix = csioptions.GetFssVolumeNamePrefix(csioption.VolumeNamePrefix)
 			// Check and update feature gate for CrossNamespaceDataSource
 			csioption.FeatureGates = csioptions.UpdateFeatureGates(csioption.FeatureGates)
+			csioption.RuntimeSchemeMutex = new(sync.Mutex)
 			err := csicontroller.Run(csioption, ctx.Done())
 			if err != nil {
 				logger.With(zap.Error(err)).Error("Error running csi-controller")

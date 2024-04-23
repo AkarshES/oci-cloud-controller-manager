@@ -18,6 +18,7 @@ import (
 	"flag"
 	"go.uber.org/zap"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -27,7 +28,7 @@ const (
 	CrossNamespaceVolumeDataSource = "CrossNamespaceVolumeDataSource"
 )
 
-//CSIOptions structure which contains flag values
+// CSIOptions structure which contains flag values
 type CSIOptions struct {
 	Master                    string
 	Kubeconfig                string
@@ -60,9 +61,10 @@ type CSIOptions struct {
 	EnableResizer             bool
 	ControllerPublishReadOnly bool
 	DefaultFSType             string
+	RuntimeSchemeMutex        *sync.Mutex
 }
 
-//NewCSIOptions initializes the flag
+// NewCSIOptions initializes the flag
 func NewCSIOptions() *CSIOptions {
 	csioptions := CSIOptions{
 		Master:                  *flag.String("master", "", "kube master"),
@@ -97,6 +99,7 @@ func NewCSIOptions() *CSIOptions {
 		ControllerPublishReadOnly: *flag.Bool("csi-controller-publish-readonly", false, "If the request only has one accessmode and if its ROX, set readonly to true."),
 		DefaultFSType:             *flag.String("default-fstype", "ext4", "Default File System Type."),
 	}
+
 	return &csioptions
 }
 
