@@ -17,6 +17,7 @@ package snapshotcontroller
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"os/signal"
 	"time"
@@ -39,12 +40,12 @@ import (
 
 var (
 	// the retryIntervalStart is kept as 1 second
-	retryIntervalStart   	= time.Second
-	retryIntervalMax     	= 5*time.Minute
-	version = "0.0.1"
+	retryIntervalStart = time.Second
+	retryIntervalMax   = 5 * time.Minute
+	version            = "0.0.1"
 )
 
-func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struct{}){
+func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struct{}) {
 	if csioptions.ShowVersion {
 		fmt.Println(os.Args[0], version)
 		return
@@ -55,11 +56,14 @@ func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struc
 
 	kubeClient, snapClient := csisnapshotter.InitializeClients(config)
 
-	factory 	:= informers.NewSharedInformerFactory(snapClient, csioptions.Resync)
+	factory := informers.NewSharedInformerFactory(snapClient, csioptions.Resync)
 	coreFactory := coreinformers.NewSharedInformerFactory(kubeClient, csioptions.Resync)
 
 	// Add Snapshot types to the default Kubernetes so events can be logged for them
-	snapshotscheme.AddToScheme(scheme.Scheme)
+	err := addToScheme(csioptions, scheme.Scheme)
+	if err != nil {
+		klog.Errorf("error adding snapshot schemes to runtime.scheme")
+	}
 
 	metricsManager := metrics.NewMetricsManager()
 
@@ -112,4 +116,11 @@ func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struc
 			klog.Fatalf("error initializing leader election: %v", err)
 		}
 	}
+}
+
+func addToScheme(csioptions csioptions.CSIOptions, scheme2 *runtime.Scheme) error {
+	csioptions.RuntimeSchemeMutex.Lock()
+	defer csioptions.RuntimeSchemeMutex.Unlock()
+	err := snapshotscheme.AddToScheme(scheme.Scheme)
+	return err
 }
