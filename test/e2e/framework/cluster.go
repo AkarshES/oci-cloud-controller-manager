@@ -399,7 +399,7 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 	// Waits for the workRequest.Status to complete, then
 	// waits for the cluster.lifecycle state to go ACTIVE
 	wrSucceded := false
-	timeout := 20 * time.Minute
+	timeout := 60 * time.Minute
 	clusterID = ""
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(Poll) {
 		if wrSucceded == false {

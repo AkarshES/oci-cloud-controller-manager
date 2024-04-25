@@ -1423,7 +1423,9 @@ var _ = Describe("LB Properties", func() {
 				"lb",
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
-					cloudprovider.ServiceAnnotationLoadBalancerShape:    "10Mbps",
+					cloudprovider.ServiceAnnotationLoadBalancerShape: "flexible",
+					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
+					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
 				},
 				cloudprovider.ServiceAnnotationLoadBalancerNetworkSecurityGroups,
 			},
@@ -1551,7 +1553,9 @@ var _ = Describe("LB Properties", func() {
 			{
 				"lb",
 				map[string]string{
-					cloudprovider.ServiceAnnotationLoadBalancerShape:  "10Mbps",
+					cloudprovider.ServiceAnnotationLoadBalancerShape: "flexible",
+					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
+					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
 					cloudprovider.ServiceAnnotationLoadBalancerPolicy: cloudprovider.IPHashLoadBalancerPolicy,
 				},
 				map[string]string{
@@ -1661,7 +1665,9 @@ var _ = Describe("LB Properties", func() {
 			{
 				"lb",
 				map[string]string{
-					cloudprovider.ServiceAnnotationLoadBalancerShape: "10Mbps",
+					cloudprovider.ServiceAnnotationLoadBalancerShape: "flexible",
+					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
+					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
 				},
 			},
 			{
@@ -2648,7 +2654,7 @@ var _ = Describe("SKE - LB Properties", func() {
 				"lb",
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
-					cloudprovider.ServiceAnnotationLoadBalancerShape:    "10Mbps",
+					cloudprovider.ServiceAnnotationLoadBalancerShape:    "100Mbps",
 				},
 				cloudprovider.ServiceAnnotationLoadBalancerNetworkSecurityGroups,
 			},
@@ -2774,7 +2780,7 @@ var _ = Describe("SKE - LB Properties", func() {
 			{
 				"lb",
 				map[string]string{
-					cloudprovider.ServiceAnnotationLoadBalancerShape:  "10Mbps",
+					cloudprovider.ServiceAnnotationLoadBalancerShape:  "100Mbps",
 					cloudprovider.ServiceAnnotationLoadBalancerPolicy: cloudprovider.IPHashLoadBalancerPolicy,
 				},
 				map[string]string{
@@ -2884,7 +2890,7 @@ var _ = Describe("SKE - LB Properties", func() {
 			{
 				"lb",
 				map[string]string{
-					cloudprovider.ServiceAnnotationLoadBalancerShape: "10Mbps",
+					cloudprovider.ServiceAnnotationLoadBalancerShape: "100Mbps",
 				},
 			},
 			{
