@@ -309,7 +309,11 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 
 	if req.AccessibilityRequirements != nil && req.AccessibilityRequirements.Preferred != nil && availableDomainShortName == "" {
 		for _, t := range req.AccessibilityRequirements.Preferred {
-			availableDomainShortName, _ = t.Segments[kubeAPI.LabelZoneFailureDomain]
+			var ok bool
+			availableDomainShortName, ok = t.Segments[kubeAPI.LabelTopologyZone]
+			if !ok {
+				availableDomainShortName, _ = t.Segments[kubeAPI.LabelZoneFailureDomain]
+			}
 			log.With("AD", availableDomainShortName).Info("Using preferred topology for AD.")
 			if len(availableDomainShortName) > 0 {
 				break
@@ -320,7 +324,11 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 	if availableDomainShortName == "" {
 		if req.AccessibilityRequirements != nil && req.AccessibilityRequirements.Requisite != nil {
 			for _, t := range req.AccessibilityRequirements.Requisite {
-				availableDomainShortName, _ = t.Segments[kubeAPI.LabelZoneFailureDomain]
+				var ok bool
+				availableDomainShortName, ok = t.Segments[kubeAPI.LabelTopologyZone]
+				if !ok {
+					availableDomainShortName, _ = t.Segments[kubeAPI.LabelZoneFailureDomain]
+				}
 				log.With("AD", availableDomainShortName).Info("Using requisite topology for AD.")
 				if len(availableDomainShortName) > 0 {
 					break
@@ -345,7 +353,7 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 		dimensionsMap[metrics.ComponentDimension] = metricDimension
 		metrics.SendMetricData(d.metricPusher, metric, time.Since(startTime).Seconds(), dimensionsMap)
 		log.Error("Available domain short name is not found")
-		return nil, status.Errorf(codes.InvalidArgument, "%s is required in PreferredTopologies or allowedTopologies", kubeAPI.LabelZoneFailureDomain)
+		return nil, status.Errorf(codes.InvalidArgument, "(%s) or (%s) is required in PreferredTopologies or allowedTopologies", kubeAPI.LabelTopologyZone, kubeAPI.LabelZoneFailureDomain)
 	}
 
 	//make sure this method is idempotent by checking existence of volume with same name.
@@ -453,6 +461,11 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 			VolumeId:      *provisionedVolume.Id,
 			CapacityBytes: *provisionedVolume.SizeInMBs * client.MiB,
 			AccessibleTopology: []*csi.Topology{
+				{
+					Segments: map[string]string{
+						kubeAPI.LabelTopologyZone: d.util.GetAvailableDomainInNodeLabel(*provisionedVolume.AvailabilityDomain),
+					},
+				},
 				{
 					Segments: map[string]string{
 						kubeAPI.LabelZoneFailureDomain: d.util.GetAvailableDomainInNodeLabel(*provisionedVolume.AvailabilityDomain),
@@ -1241,7 +1254,7 @@ func (d *BlockVolumeControllerDriver) ControllerExpandVolume(ctx context.Context
 		return nil, status.Error(codes.Internal, message)
 	}
 	_, err = d.client.BlockStorage().AwaitVolumeAvailableORTimeout(ctx, volumeId)
- 	if err != nil {
+	if err != nil {
 		log.With("service", "blockstorage", "verb", "get", "resource", "volume", "statusCode", util.GetHttpStatusCode(err)).
 			Error("Volume Expansion failed with time out")
 		errorType = util.GetError(err)

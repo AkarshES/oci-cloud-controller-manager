@@ -54,7 +54,7 @@ func (d LustreNodeDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStag
 	//Lnet Setup
 	if setupLnet, ok := req.GetVolumeContext()[SetupLnet]; ok && setupLnet == "true" {
 
-		lustreSubnetCIDR, ok :=  req.GetVolumeContext()[LustreSubnetCidr]
+		lustreSubnetCIDR, ok := req.GetVolumeContext()[LustreSubnetCidr]
 
 		if !ok {
 			lustreSubnetCIDR = fmt.Sprintf("%s/32", d.nodeID)
@@ -78,8 +78,6 @@ func (d LustreNodeDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStag
 	}
 
 	mounter := mount.New(mountPath)
-
-
 
 	targetPath := req.StagingTargetPath
 	mountPoint, err := isMountPoint(mounter, targetPath)
@@ -166,7 +164,7 @@ func (d LustreNodeDriver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUn
 			logger.With("StagingTargetPath", targetPath).Infof("mount point does not exist")
 			return &csi.NodeUnstageVolumeResponse{}, nil
 		}
-		return  nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	if !isMountPoint {
@@ -174,7 +172,7 @@ func (d LustreNodeDriver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUn
 		err = os.RemoveAll(targetPath)
 		if err != nil {
 			logger.With(zap.Error(err)).Error("Remove target path failed with error")
-			return  nil, status.Error(codes.Internal, "Failed to remove target path")
+			return nil, status.Error(codes.Internal, "Failed to remove target path")
 		}
 		return &csi.NodeUnstageVolumeResponse{}, nil
 	}
@@ -202,7 +200,6 @@ func (d LustreNodeDriver) NodePublishVolume(ctx context.Context, req *csi.NodePu
 		return nil, status.Error(codes.InvalidArgument, "Target Path must be provided")
 	}
 
-
 	logger := d.logger.With("volumeID", req.VolumeId)
 	logger.Debugf("volume context: %v", req.VolumeContext)
 
@@ -211,7 +208,7 @@ func (d LustreNodeDriver) NodePublishVolume(ctx context.Context, req *csi.NodePu
 	//Lnet Setup
 	if setupLnet, ok := req.GetVolumeContext()[SetupLnet]; ok && setupLnet == "true" {
 
-		lustreSubnetCIDR, ok :=  req.GetVolumeContext()[LustreSubnetCidr]
+		lustreSubnetCIDR, ok := req.GetVolumeContext()[LustreSubnetCidr]
 
 		if !ok {
 			lustreSubnetCIDR = fmt.Sprintf("%s/32", d.nodeID)
@@ -372,8 +369,8 @@ func (d LustreNodeDriver) NodeGetInfo(ctx context.Context, request *csi.NodeGetI
 		AccessibleTopology: &csi.Topology{
 			Segments: map[string]string{
 				kubeAPI.LabelZoneFailureDomain: ad,
+				kubeAPI.LabelTopologyZone:      ad,
 			},
 		},
 	}, nil
 }
-
