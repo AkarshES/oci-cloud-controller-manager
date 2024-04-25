@@ -17,7 +17,6 @@ package csisnapshotter
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"os/signal"
 	"time"
@@ -47,17 +46,17 @@ import (
 
 var (
 	// the csiTimeout is kept as 1 minute
-	csiTimeout             = time.Minute
-	snapshotNamePrefix     = "snapshot"
-	snapshotNameUUIDLength = -1
-	extraCreateMetadata    = false
+	csiTimeout              = time.Minute
+	snapshotNamePrefix      = "snapshot"
+	snapshotNameUUIDLength  = -1
+	extraCreateMetadata     = false
 	// the retryIntervalStart is kept as 1 second
-	retryIntervalStart = time.Second
-	retryIntervalMax   = 5 * time.Minute
+	retryIntervalStart      = time.Second
+	retryIntervalMax        = 5 * time.Minute
 
-	kubeAPIQPS   = 5
-	kubeAPIBurst = 10
-	version      = "0.0.1"
+	kubeAPIQPS              = 5
+	kubeAPIBurst            = 10
+	version                 = "0.0.1"
 )
 
 func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{}) {
@@ -75,7 +74,7 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 	coreFactory := coreinformers.NewSharedInformerFactory(kubeClient, csioptions.Resync)
 
 	// Add Snapshot types to the default Kubernetes so events can be logged for them
-	err := addToScheme(csioptions, scheme.Scheme)
+	err := AddToScheme(csioptions)
 	if err != nil {
 		klog.Error("error adding to runtime.scheme ", err)
 	}
@@ -202,7 +201,7 @@ func InitializeClients(config *rest.Config) (*kubernetes.Clientset, *clientset.C
 	return kubeClient, snapClient
 }
 
-func addToScheme(csioptions csioptions.CSIOptions, scheme2 *runtime.Scheme) error {
+func AddToScheme(csioptions csioptions.CSIOptions) error {
 	csioptions.RuntimeSchemeMutex.Lock()
 	defer csioptions.RuntimeSchemeMutex.Unlock()
 	err := snapshotscheme.AddToScheme(scheme.Scheme)

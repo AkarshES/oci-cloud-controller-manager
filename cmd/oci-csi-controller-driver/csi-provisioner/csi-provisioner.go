@@ -88,7 +88,7 @@ var (
 	nodeDeployment              *ctrl.NodeDeployment
 )
 
-// StartCSIProvisioner main function to start CSI Controller Provisioner
+//StartCSIProvisioner main function to start CSI Controller Provisioner
 func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSIDriver) {
 	var config *rest.Config
 	var err error

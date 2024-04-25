@@ -17,20 +17,17 @@ package snapshotcontroller
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/kubernetes-csi/csi-lib-utils/leaderelection"
-	snapshotscheme "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/scheme"
 	informers "github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions"
 	controller "github.com/kubernetes-csi/external-snapshotter/v6/pkg/common-controller"
 	"github.com/kubernetes-csi/external-snapshotter/v6/pkg/metrics"
 	coreinformers "k8s.io/client-go/informers"
 	v1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
@@ -40,9 +37,9 @@ import (
 
 var (
 	// the retryIntervalStart is kept as 1 second
-	retryIntervalStart = time.Second
-	retryIntervalMax   = 5 * time.Minute
-	version            = "0.0.1"
+	retryIntervalStart      = time.Second
+	retryIntervalMax        = 5 * time.Minute
+	version                 = "0.0.1"
 )
 
 func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struct{}) {
@@ -60,7 +57,7 @@ func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struc
 	coreFactory := coreinformers.NewSharedInformerFactory(kubeClient, csioptions.Resync)
 
 	// Add Snapshot types to the default Kubernetes so events can be logged for them
-	err := addToScheme(csioptions, scheme.Scheme)
+	err := csisnapshotter.AddToScheme(csioptions)
 	if err != nil {
 		klog.Errorf("error adding snapshot schemes to runtime.scheme")
 	}
@@ -116,11 +113,4 @@ func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struc
 			klog.Fatalf("error initializing leader election: %v", err)
 		}
 	}
-}
-
-func addToScheme(csioptions csioptions.CSIOptions, scheme2 *runtime.Scheme) error {
-	csioptions.RuntimeSchemeMutex.Lock()
-	defer csioptions.RuntimeSchemeMutex.Unlock()
-	err := snapshotscheme.AddToScheme(scheme.Scheme)
-	return err
 }
