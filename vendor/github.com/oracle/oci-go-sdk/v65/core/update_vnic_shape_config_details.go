@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,10 +21,10 @@ import (
 	"strings"
 )
 
-// UpdateVnicShapeConfigDetails Details required for updating the shape config of Vnic in VNIC attachment.
+// UpdateVnicShapeConfigDetails Details required for updating the shape config of VNIC in VNIC attachment.
 type UpdateVnicShapeConfigDetails struct {
 
-	// VNIC whose attachments need to be updated to the destination vnic shape.
+	// VNIC whose attachments need to be updated to the destination VNIC shape.
 	VnicId *string `mandatory:"true" json:"vnicId"`
 
 	VnicShapeConfig *VnicShapeConfig `mandatory:"true" json:"vnicShapeConfig"`

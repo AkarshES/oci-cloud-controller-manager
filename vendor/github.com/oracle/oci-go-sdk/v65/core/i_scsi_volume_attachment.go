@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -74,11 +74,18 @@ type IScsiVolumeAttachment struct {
 	// be attached in shareable mode. Defaults to false if not specified.
 	IsShareable *bool `mandatory:"false" json:"isShareable"`
 
-	// Whether in-transit encryption for the data volume's paravirtualized attachment is enabled or not.
+	// Deprecated. Use `isEncryptionInTransitEnabled` instead.
 	IsPvEncryptionInTransitEnabled *bool `mandatory:"false" json:"isPvEncryptionInTransitEnabled"`
+
+	// Whether in-transit encryption for the data volume's attachment is enabled or not.
+	IsEncryptionInTransitEnabled *bool `mandatory:"false" json:"isEncryptionInTransitEnabled"`
 
 	// Whether the Iscsi or Paravirtualized attachment is multipath or not, it is not applicable to NVMe attachment.
 	IsMultipath *bool `mandatory:"false" json:"isMultipath"`
+
+	// Flag indicating if this volume was created for the customer as part of a simplified launch.
+	// Used to determine whether the volume requires deletion on instance termination.
+	IsVolumeCreatedDuringLaunch *bool `mandatory:"false" json:"isVolumeCreatedDuringLaunch"`
 
 	// The Challenge-Handshake-Authentication-Protocol (CHAP) secret
 	// valid for the associated CHAP user name.
@@ -103,79 +110,88 @@ type IScsiVolumeAttachment struct {
 	// all iscsi sessions need to be all logged-in or logged-out to be in logged-in or logged-out state.
 	IscsiLoginState VolumeAttachmentIscsiLoginStateEnum `mandatory:"false" json:"iscsiLoginState,omitempty"`
 
-	// Refer the top-level definition of encryptionInTransitType.
-	// The default value is NONE.
+	// Deprecated. Use `isEncryptionInTransitEnabled` instead.
 	EncryptionInTransitType EncryptionInTransitTypeEnum `mandatory:"false" json:"encryptionInTransitType,omitempty"`
 }
 
-//GetAvailabilityDomain returns AvailabilityDomain
+// GetAvailabilityDomain returns AvailabilityDomain
 func (m IScsiVolumeAttachment) GetAvailabilityDomain() *string {
 	return m.AvailabilityDomain
 }
 
-//GetCompartmentId returns CompartmentId
+// GetCompartmentId returns CompartmentId
 func (m IScsiVolumeAttachment) GetCompartmentId() *string {
 	return m.CompartmentId
 }
 
-//GetDevice returns Device
+// GetDevice returns Device
 func (m IScsiVolumeAttachment) GetDevice() *string {
 	return m.Device
 }
 
-//GetDisplayName returns DisplayName
+// GetDisplayName returns DisplayName
 func (m IScsiVolumeAttachment) GetDisplayName() *string {
 	return m.DisplayName
 }
 
-//GetId returns Id
+// GetId returns Id
 func (m IScsiVolumeAttachment) GetId() *string {
 	return m.Id
 }
 
-//GetInstanceId returns InstanceId
+// GetInstanceId returns InstanceId
 func (m IScsiVolumeAttachment) GetInstanceId() *string {
 	return m.InstanceId
 }
 
-//GetIsReadOnly returns IsReadOnly
+// GetIsReadOnly returns IsReadOnly
 func (m IScsiVolumeAttachment) GetIsReadOnly() *bool {
 	return m.IsReadOnly
 }
 
-//GetIsShareable returns IsShareable
+// GetIsShareable returns IsShareable
 func (m IScsiVolumeAttachment) GetIsShareable() *bool {
 	return m.IsShareable
 }
 
-//GetLifecycleState returns LifecycleState
+// GetLifecycleState returns LifecycleState
 func (m IScsiVolumeAttachment) GetLifecycleState() VolumeAttachmentLifecycleStateEnum {
 	return m.LifecycleState
 }
 
-//GetTimeCreated returns TimeCreated
+// GetTimeCreated returns TimeCreated
 func (m IScsiVolumeAttachment) GetTimeCreated() *common.SDKTime {
 	return m.TimeCreated
 }
 
-//GetVolumeId returns VolumeId
+// GetVolumeId returns VolumeId
 func (m IScsiVolumeAttachment) GetVolumeId() *string {
 	return m.VolumeId
 }
 
-//GetIsPvEncryptionInTransitEnabled returns IsPvEncryptionInTransitEnabled
+// GetIsPvEncryptionInTransitEnabled returns IsPvEncryptionInTransitEnabled
 func (m IScsiVolumeAttachment) GetIsPvEncryptionInTransitEnabled() *bool {
 	return m.IsPvEncryptionInTransitEnabled
 }
 
-//GetIsMultipath returns IsMultipath
+// GetIsEncryptionInTransitEnabled returns IsEncryptionInTransitEnabled
+func (m IScsiVolumeAttachment) GetIsEncryptionInTransitEnabled() *bool {
+	return m.IsEncryptionInTransitEnabled
+}
+
+// GetIsMultipath returns IsMultipath
 func (m IScsiVolumeAttachment) GetIsMultipath() *bool {
 	return m.IsMultipath
 }
 
-//GetIscsiLoginState returns IscsiLoginState
+// GetIscsiLoginState returns IscsiLoginState
 func (m IScsiVolumeAttachment) GetIscsiLoginState() VolumeAttachmentIscsiLoginStateEnum {
 	return m.IscsiLoginState
+}
+
+// GetIsVolumeCreatedDuringLaunch returns IsVolumeCreatedDuringLaunch
+func (m IScsiVolumeAttachment) GetIsVolumeCreatedDuringLaunch() *bool {
+	return m.IsVolumeCreatedDuringLaunch
 }
 
 func (m IScsiVolumeAttachment) String() string {

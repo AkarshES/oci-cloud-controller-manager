@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -34,6 +34,7 @@ const (
 	WorkRequestOperationTypeVirtualnodepoolUpdate                WorkRequestOperationTypeEnum = "VIRTUALNODEPOOL_UPDATE"
 	WorkRequestOperationTypeVirtualnodepoolDelete                WorkRequestOperationTypeEnum = "VIRTUALNODEPOOL_DELETE"
 	WorkRequestOperationTypeVirtualnodeDelete                    WorkRequestOperationTypeEnum = "VIRTUALNODE_DELETE"
+	WorkRequestOperationTypeVirtualnodepoolCycling               WorkRequestOperationTypeEnum = "VIRTUALNODEPOOL_CYCLING"
 	WorkRequestOperationTypeEnableAddon                          WorkRequestOperationTypeEnum = "ENABLE_ADDON"
 	WorkRequestOperationTypeUpdateAddon                          WorkRequestOperationTypeEnum = "UPDATE_ADDON"
 	WorkRequestOperationTypeDisableAddon                         WorkRequestOperationTypeEnum = "DISABLE_ADDON"
@@ -71,6 +72,7 @@ var mappingWorkRequestOperationTypeEnum = map[string]WorkRequestOperationTypeEnu
 	"VIRTUALNODEPOOL_UPDATE":                   WorkRequestOperationTypeVirtualnodepoolUpdate,
 	"VIRTUALNODEPOOL_DELETE":                   WorkRequestOperationTypeVirtualnodepoolDelete,
 	"VIRTUALNODE_DELETE":                       WorkRequestOperationTypeVirtualnodeDelete,
+	"VIRTUALNODEPOOL_CYCLING":                  WorkRequestOperationTypeVirtualnodepoolCycling,
 	"ENABLE_ADDON":                             WorkRequestOperationTypeEnableAddon,
 	"UPDATE_ADDON":                             WorkRequestOperationTypeUpdateAddon,
 	"DISABLE_ADDON":                            WorkRequestOperationTypeDisableAddon,
@@ -108,6 +110,7 @@ var mappingWorkRequestOperationTypeEnumLowerCase = map[string]WorkRequestOperati
 	"virtualnodepool_update":                   WorkRequestOperationTypeVirtualnodepoolUpdate,
 	"virtualnodepool_delete":                   WorkRequestOperationTypeVirtualnodepoolDelete,
 	"virtualnode_delete":                       WorkRequestOperationTypeVirtualnodeDelete,
+	"virtualnodepool_cycling":                  WorkRequestOperationTypeVirtualnodepoolCycling,
 	"enable_addon":                             WorkRequestOperationTypeEnableAddon,
 	"update_addon":                             WorkRequestOperationTypeUpdateAddon,
 	"disable_addon":                            WorkRequestOperationTypeDisableAddon,
@@ -156,6 +159,7 @@ func GetWorkRequestOperationTypeEnumStringValues() []string {
 		"VIRTUALNODEPOOL_UPDATE",
 		"VIRTUALNODEPOOL_DELETE",
 		"VIRTUALNODE_DELETE",
+		"VIRTUALNODEPOOL_CYCLING",
 		"ENABLE_ADDON",
 		"UPDATE_ADDON",
 		"DISABLE_ADDON",

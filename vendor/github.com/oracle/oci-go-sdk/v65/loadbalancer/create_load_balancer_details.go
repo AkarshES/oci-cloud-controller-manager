@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -32,7 +32,7 @@ type CreateLoadBalancerDetails struct {
 	// To get a list of available shapes, use the ListShapes
 	// operation.
 	// Example: `flexible`
-	// NOTE: Starting May 2023, Fixed shapes - 10Mbps, 100Mbps, 400Mbps, 8000Mbps would be deprecated and only shape
+	// NOTE: After May 2023, Fixed shapes - 10Mbps, 100Mbps, 400Mbps, 8000Mbps would be deprecated and only shape
 	//       allowed would be `Flexible`
 	ShapeName *string `mandatory:"true" json:"shapeName"`
 
@@ -51,11 +51,31 @@ type CreateLoadBalancerDetails struct {
 	// Example: `true`
 	IsPrivate *bool `mandatory:"false" json:"isPrivate"`
 
+	// Whether or not the load balancer has delete protection enabled.
+	// If "true", the loadbalancer will be protected against deletion if configured to accept traffic.
+	// If "false", the loadbalancer will not be protected against deletion.
+	// Delete protection will not be enabled unless a value of "true" is provided.
+	// Example: `true`
+	IsDeleteProtectionEnabled *bool `mandatory:"false" json:"isDeleteProtectionEnabled"`
+
 	// Whether the load balancer has an IPv4 or IPv6 IP address.
 	// If "IPV4", the service assigns an IPv4 address and the load balancer supports IPv4 traffic.
 	// If "IPV6", the service assigns an IPv6 address and the load balancer supports IPv6 traffic.
 	// Example: "ipMode":"IPV6"
 	IpMode CreateLoadBalancerDetailsIpModeEnum `mandatory:"false" json:"ipMode,omitempty"`
+
+	// Request ID is an identifier given to every request that goes through the load balancer.
+	// The same request id will be generated for both incoming request and the corresponding outgoing response.
+	// The header X-Request-ID (default name) holding the value of the request ID will be added to both request and response.
+	// If the header already exists i.e. it was sent by the caller or returned by the backend then its value will not be changed.
+	// Request ID header property allows:
+	// 1. specifying name of the header holding the request ID;
+	// 2. switching this feature off by setting the header name to empty string.
+	// **Notes:**
+	// * The header name must conform to the
+	//   RFC 7230 - Hypertext Transfer Protocol (HTTP/1.1) (https://datatracker.ietf.org/doc/html/rfc7230) standard.
+	// * The header name must start with "X-" prefix.
+	RequestIdHeader *string `mandatory:"false" json:"requestIdHeader"`
 
 	// An array of reserved Ips.
 	ReservedIps []ReservedIp `mandatory:"false" json:"reservedIps"`
