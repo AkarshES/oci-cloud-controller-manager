@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -28,6 +28,9 @@ type CreateClusterKubeconfigContentDetails struct {
 
 	// The endpoint to target. A cluster may have multiple endpoints exposed but the kubeconfig can only target one at a time.
 	Endpoint CreateClusterKubeconfigContentDetailsEndpointEnum `mandatory:"false" json:"endpoint,omitempty"`
+
+	// Provide the ClusterNamespaceId to generate kubeconfig for the specific kubernetes namespace
+	ClusterNamespaceId *string `mandatory:"false" json:"clusterNamespaceId"`
 }
 
 func (m CreateClusterKubeconfigContentDetails) String() string {
