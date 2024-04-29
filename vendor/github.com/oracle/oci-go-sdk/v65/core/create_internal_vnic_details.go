@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-// CreateInternalVnicDetails This structure is used when creating vnic for internal clients.
+// CreateInternalVnicDetails This structure is used when creating VNIC for internal clients.
 // For more information about VNICs, see
 // Virtual Network Interface Cards (VNICs) (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/managingVNICs.htm).
 type CreateInternalVnicDetails struct {
@@ -61,7 +61,7 @@ type CreateInternalVnicDetails struct {
 	// Contact sic_vcn_us_grp@oracle.com before setting this flag.
 	// Indicates that the Cavium should not enforce Internet ingress/egress throttling.
 	// Defaults to `false`, in which case we do enforce that throttling.
-	// At least one of subnetId OR the vlanId are required
+	// At least one of `subnetId` OR the `vlanId` are required
 	BypassInternetThrottle *bool `mandatory:"false" json:"bypassInternetThrottle"`
 
 	// Defined tags for this resource. Each key is predefined and scoped to a
@@ -84,15 +84,15 @@ type CreateInternalVnicDetails struct {
 	// Must be unique across all VNICs in the subnet and comply with
 	// RFC 952 (https://tools.ietf.org/html/rfc952) and
 	// RFC 1123 (https://tools.ietf.org/html/rfc1123).
-	// The value appears in the Vnic object and also the
-	// PrivateIp object returned by
-	// ListPrivateIps and
-	// GetPrivateIp.
+	// The value appears in the `Vnic` object and also the
+	// `PrivateIp` object returned by
+	// `ListPrivateIps` and
+	// `GetPrivateIp`.
 	// For more information, see
 	// DNS in Your Virtual Cloud Network (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/dns.htm).
 	// When launching an instance, use this `hostnameLabel` instead
 	// of the deprecated `hostnameLabel` in
-	// LaunchInstanceDetails.
+	// `LaunchInstanceDetails`.
 	// If you provide both, the values must match.
 	// Example: `bminstance1`
 	HostnameLabel *string `mandatory:"false" json:"hostnameLabel"`
@@ -105,6 +105,9 @@ type CreateInternalVnicDetails struct {
 
 	// Indicates if this VNIC can issue GARP requests. False by default.
 	IsGarpEnabled *bool `mandatory:"false" json:"isGarpEnabled"`
+
+	// Indicates if Elastic Datapath is enabled for the VNIC.
+	IsEdpEnabled *bool `mandatory:"false" json:"isEdpEnabled"`
 
 	// Indicates if MAC learning is enabled for the VNIC. The default is `false`.
 	// When this flag is enabled, then VCN CP does not allocate MAC address,
@@ -119,7 +122,7 @@ type CreateInternalVnicDetails struct {
 	// Indicates if the VNIC is primary which means it cannot be detached.
 	IsPrimary *bool `mandatory:"false" json:"isPrimary"`
 
-	// Indicates if the VNIC is a service vnic.
+	// Indicates if the VNIC is a service VNIC.
 	IsServiceVnic *bool `mandatory:"false" json:"isServiceVnic"`
 
 	// Only provided when no publicIpPoolId is specified.
@@ -133,7 +136,7 @@ type CreateInternalVnicDetails struct {
 	// NetworkSecurityGroup.
 	NsgIds []string `mandatory:"false" json:"nsgIds"`
 
-	// ID of the entity owning the VNIC. This is passed in the create vnic call.
+	// ID of the entity owning the VNIC. This is passed in the create VNIC call.
 	// If none is passed and if there is an attachment then the attached instanceId is the ownerId.
 	OwnerId *string `mandatory:"false" json:"ownerId"`
 
@@ -141,10 +144,10 @@ type CreateInternalVnicDetails struct {
 	// available IP address within the subnet's CIDR. If you don't specify a
 	// value, Oracle automatically assigns a private IP address from the subnet.
 	// This is the VNIC's *primary* private IP address. The value appears in
-	// the Vnic object and also the
-	// PrivateIp object returned by
-	// ListPrivateIps and
-	// GetPrivateIp.
+	// the `Vnic` object and also the
+	// `PrivateIp` object returned by
+	// `ListPrivateIps` and
+	// `GetPrivateIp`.
 	// Example: `10.0.3.3`
 	PrivateIp *string `mandatory:"false" json:"privateIp"`
 
@@ -209,12 +212,12 @@ type CreateInternalVnicDetails struct {
 	// Type of service VNIC. Feature or use case that is creating this service VNIC. Used for forecasting, resource limits enforcement, and capacity management.
 	ServiceVnicType CreateInternalVnicDetailsServiceVnicTypeEnum `mandatory:"false" json:"serviceVnicType,omitempty"`
 
-	// Shape of VNIC that will be used to allocate resource in the data plane once the VNIC is attached
+	// Shape configuration of the VNIC. This is used to allocate resources when the VNIC is attached to an instance.
 	VnicShape CreateInternalVnicDetailsVnicShapeEnum `mandatory:"false" json:"vnicShape,omitempty"`
 
 	VnicShapeConfig *VnicShapeConfig `mandatory:"false" json:"vnicShapeConfig"`
 
-	VnicaasVnicShapeConfig *VnicassVnicShapeConfig `mandatory:"false" json:"vnicaasVnicShapeConfig"`
+	VnicaasVnicShapeConfig *VnicaasVnicShapeConfig `mandatory:"false" json:"vnicaasVnicShapeConfig"`
 }
 
 func (m CreateInternalVnicDetails) String() string {
@@ -387,6 +390,11 @@ const (
 	CreateInternalVnicDetailsVnicShapeVnicaasFwaas6g250m              CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_FWAAS_6G_250M"
 	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10g           CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_10G"
 	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved25g           CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_25G"
+	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved2m10g         CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_2M_10G"
+	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved5m15g         CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_5M_15G"
+	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10m15g        CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_10M_15G"
+	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved20m15g        CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_20M_15G"
+	CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved30m15g        CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_NLB_APPROVED_30M_15G"
 	CreateInternalVnicDetailsVnicShapeVnicaasTelesis25g               CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_TELESIS_25G"
 	CreateInternalVnicDetailsVnicShapeVnicaasTelesis10g               CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_TELESIS_10G"
 	CreateInternalVnicDetailsVnicShapeVnicaasAmbassadorFixed0100      CreateInternalVnicDetailsVnicShapeEnum = "VNICAAS_AMBASSADOR_FIXED0100"
@@ -1964,6 +1972,11 @@ var mappingCreateInternalVnicDetailsVnicShapeEnum = map[string]CreateInternalVni
 	"VNICAAS_FWAAS_6G_250M":                CreateInternalVnicDetailsVnicShapeVnicaasFwaas6g250m,
 	"VNICAAS_NLB_APPROVED_10G":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10g,
 	"VNICAAS_NLB_APPROVED_25G":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved25g,
+	"VNICAAS_NLB_APPROVED_2M_10G":          CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved2m10g,
+	"VNICAAS_NLB_APPROVED_5M_15G":          CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved5m15g,
+	"VNICAAS_NLB_APPROVED_10M_15G":         CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10m15g,
+	"VNICAAS_NLB_APPROVED_20M_15G":         CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved20m15g,
+	"VNICAAS_NLB_APPROVED_30M_15G":         CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved30m15g,
 	"VNICAAS_TELESIS_25G":                  CreateInternalVnicDetailsVnicShapeVnicaasTelesis25g,
 	"VNICAAS_TELESIS_10G":                  CreateInternalVnicDetailsVnicShapeVnicaasTelesis10g,
 	"VNICAAS_AMBASSADOR_FIXED0100":         CreateInternalVnicDetailsVnicShapeVnicaasAmbassadorFixed0100,
@@ -3541,6 +3554,11 @@ var mappingCreateInternalVnicDetailsVnicShapeEnumLowerCase = map[string]CreateIn
 	"vnicaas_fwaas_6g_250m":                CreateInternalVnicDetailsVnicShapeVnicaasFwaas6g250m,
 	"vnicaas_nlb_approved_10g":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10g,
 	"vnicaas_nlb_approved_25g":             CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved25g,
+	"vnicaas_nlb_approved_2m_10g":          CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved2m10g,
+	"vnicaas_nlb_approved_5m_15g":          CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved5m15g,
+	"vnicaas_nlb_approved_10m_15g":         CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved10m15g,
+	"vnicaas_nlb_approved_20m_15g":         CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved20m15g,
+	"vnicaas_nlb_approved_30m_15g":         CreateInternalVnicDetailsVnicShapeVnicaasNlbApproved30m15g,
 	"vnicaas_telesis_25g":                  CreateInternalVnicDetailsVnicShapeVnicaasTelesis25g,
 	"vnicaas_telesis_10g":                  CreateInternalVnicDetailsVnicShapeVnicaasTelesis10g,
 	"vnicaas_ambassador_fixed0100":         CreateInternalVnicDetailsVnicShapeVnicaasAmbassadorFixed0100,
@@ -5129,6 +5147,11 @@ func GetCreateInternalVnicDetailsVnicShapeEnumStringValues() []string {
 		"VNICAAS_FWAAS_6G_250M",
 		"VNICAAS_NLB_APPROVED_10G",
 		"VNICAAS_NLB_APPROVED_25G",
+		"VNICAAS_NLB_APPROVED_2M_10G",
+		"VNICAAS_NLB_APPROVED_5M_15G",
+		"VNICAAS_NLB_APPROVED_10M_15G",
+		"VNICAAS_NLB_APPROVED_20M_15G",
+		"VNICAAS_NLB_APPROVED_30M_15G",
 		"VNICAAS_TELESIS_25G",
 		"VNICAAS_TELESIS_10G",
 		"VNICAAS_AMBASSADOR_FIXED0100",

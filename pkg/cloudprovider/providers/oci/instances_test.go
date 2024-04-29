@@ -758,6 +758,10 @@ func (c *MockBlockStorageClient) GetVolumeBackupsByName(ctx context.Context, sna
 type MockVirtualNetworkClient struct {
 }
 
+func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
 func (c *MockVirtualNetworkClient) IsRegionalSubnet(ctx context.Context, id string) (bool, error) {
 	return subnets[id].AvailabilityDomain == nil, nil
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -20,9 +20,10 @@ import (
 // Overview of IAM (https://docs.cloud.oracle.com/Content/Identity/getstarted/identity-domains.htm). If you're new to policies, see
 // Get Started with Policies (https://docs.cloud.oracle.com/Content/Identity/policiesgs/get-started-with-policies.htm).
 // The word "policy" is used by people in different ways:
-//   * An individual statement written in the policy language
-//   * A collection of statements in a single, named "policy" document (which has an Oracle Cloud ID (OCID) assigned to it)
-//   * The overall body of policies your organization uses to control access to resources
+//   - An individual statement written in the policy language
+//   - A collection of statements in a single, named "policy" document (which has an Oracle Cloud ID (OCID) assigned to it)
+//   - The overall body of policies your organization uses to control access to resources
+//
 // To use any of the API operations, you must be authorized in an IAM policy. If you're not authorized,
 // talk to an administrator.
 // **Warning:** Oracle recommends that you avoid using any confidential information when you supply string values
