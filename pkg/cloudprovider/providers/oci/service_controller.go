@@ -25,7 +25,9 @@ import (
 	"sync"
 	"time"
 
+	errors2 "github.com/pkg/errors"
 	"go.uber.org/zap"
+
 	v1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -147,7 +149,7 @@ type ServiceController struct {
 }
 
 // getSpamKey builds unique event key based on source, involvedObject
-func getSpamKey(event *v1.Event) string {
+func getNewSpamKey(event *v1.Event) string {
 	return strings.Join([]string{
 		event.Source.Component,
 		event.Source.Host,
@@ -174,20 +176,7 @@ func NewServiceController(
 	endpointSliceUpdatesBatchPeriod time.Duration,
 	featureGate featuregate.FeatureGate,
 ) (*ServiceController, error) {
-	opts := record.CorrelatorOptions{SpamKeyFunc: func(event *v1.Event) string {
-		return strings.Join([]string{
-			event.Source.Component,
-			event.Source.Host,
-			event.InvolvedObject.Kind,
-			event.InvolvedObject.Namespace,
-			event.InvolvedObject.Name,
-			string(event.InvolvedObject.UID),
-			event.InvolvedObject.APIVersion,
-			event.Type,
-			event.Reason,
-		},
-			"")
-	}}
+	opts := record.CorrelatorOptions{SpamKeyFunc: getNewSpamKey}
 	broadcaster := record.NewBroadcasterWithCorrelatorOptions(opts)
 	broadcaster.StartStructuredLogging(0)
 	broadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
@@ -554,7 +543,9 @@ func (s *ServiceController) processServiceCreateOrUpdate(ctx context.Context, se
 	cachedService.state = service
 	op, err := s.syncLoadBalancerIfNeeded(ctx, service, key)
 	if err != nil {
-		s.eventRecorder.Eventf(service, v1.EventTypeWarning, "SyncLoadBalancerFailed", "Error syncing load balancer: %v", err)
+		if !errors2.Is(err, LbOperationAlreadyExists) {
+			s.eventRecorder.Eventf(service, v1.EventTypeWarning, "SyncLoadBalancerFailed", "Error syncing load balancer: %v", err)
+		}
 		return err
 	}
 	if op == deleteLoadBalancer {
@@ -1057,7 +1048,9 @@ func (s *ServiceController) lockedUpdateLoadBalancerHosts(service *v1.Service, h
 		return nil
 	}
 
-	s.eventRecorder.Eventf(service, v1.EventTypeWarning, "UpdateLoadBalancerFailed", "Error updating load balancer with new hosts %v: %v", nodeNames(hosts), err)
+	if !errors2.Is(err, LbOperationAlreadyExists) {
+		s.eventRecorder.Eventf(service, v1.EventTypeWarning, "UpdateLoadBalancerFailed", "Error updating load balancer with new hosts %v: %v", nodeNames(hosts), err)
+	}
 	return err
 }
 
@@ -1123,7 +1116,9 @@ func (s *ServiceController) processLoadBalancerDelete(ctx context.Context, servi
 	}
 	s.eventRecorder.Event(service, v1.EventTypeNormal, "DeletingLoadBalancer", "Deleting load balancer")
 	if err := s.balancer.EnsureLoadBalancerDeleted(ctx, s.clusterName, service); err != nil {
-		s.eventRecorder.Eventf(service, v1.EventTypeWarning, "DeleteLoadBalancerFailed", "Error deleting load balancer: %v", err)
+		if !errors2.Is(err, LbOperationAlreadyExists) {
+			s.eventRecorder.Eventf(service, v1.EventTypeWarning, "DeleteLoadBalancerFailed", "Error deleting load balancer: %v", err)
+		}
 		return err
 	}
 	s.eventRecorder.Event(service, v1.EventTypeNormal, "DeletedLoadBalancer", "Deleted load balancer")
