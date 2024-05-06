@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -145,6 +146,22 @@ type ServiceController struct {
 	mixedClustersEnabled bool
 }
 
+// getSpamKey builds unique event key based on source, involvedObject
+func getSpamKey(event *v1.Event) string {
+	return strings.Join([]string{
+		event.Source.Component,
+		event.Source.Host,
+		event.InvolvedObject.Kind,
+		event.InvolvedObject.Namespace,
+		event.InvolvedObject.Name,
+		string(event.InvolvedObject.UID),
+		event.InvolvedObject.APIVersion,
+		event.Type,
+		event.Reason,
+	},
+		"")
+}
+
 // NewServiceController returns a new service controller to keep cloud provider service resources
 // (like load balancers) in sync with the registry.
 func NewServiceController(
@@ -157,7 +174,21 @@ func NewServiceController(
 	endpointSliceUpdatesBatchPeriod time.Duration,
 	featureGate featuregate.FeatureGate,
 ) (*ServiceController, error) {
-	broadcaster := record.NewBroadcaster()
+	opts := record.CorrelatorOptions{SpamKeyFunc: func(event *v1.Event) string {
+		return strings.Join([]string{
+			event.Source.Component,
+			event.Source.Host,
+			event.InvolvedObject.Kind,
+			event.InvolvedObject.Namespace,
+			event.InvolvedObject.Name,
+			string(event.InvolvedObject.UID),
+			event.InvolvedObject.APIVersion,
+			event.Type,
+			event.Reason,
+		},
+			"")
+	}}
+	broadcaster := record.NewBroadcasterWithCorrelatorOptions(opts)
 	broadcaster.StartStructuredLogging(0)
 	broadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := broadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "service-controller"})
