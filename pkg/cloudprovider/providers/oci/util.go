@@ -32,6 +32,7 @@ const (
 	virtualNodeOcidPrefix      = "ocid1.virtualnode."
 	virtualNodeOcidDevPrefix   = "ocid1.virtualnodedev."
 	virtualNodeOcidIntegPrefix = "ocid1.virtualnodeinteg."
+	virtualNodeOcidRbaasPrefix = "ocid1.virtualnoderbaas."
 )
 
 // Protects Load Balancers against multiple updates in parallel
@@ -99,7 +100,7 @@ func DeepEqualLists(listA, listB []string) bool {
 
 // IsVirtualNodeId Returns true if providerId is a Virtual Node OCID
 func IsVirtualNodeId(resourceId string) bool {
-	return strings.HasPrefix(resourceId, virtualNodeOcidPrefix) || strings.HasPrefix(resourceId, virtualNodeOcidDevPrefix) || strings.HasPrefix(resourceId, virtualNodeOcidIntegPrefix)
+	return strings.HasPrefix(resourceId, virtualNodeOcidPrefix) || strings.HasPrefix(resourceId, virtualNodeOcidDevPrefix) || strings.HasPrefix(resourceId, virtualNodeOcidIntegPrefix) || strings.HasPrefix(resourceId, virtualNodeOcidRbaasPrefix)
 }
 
 // IsVirtualNode returns true if a node object corresponds to a Virtual Node
