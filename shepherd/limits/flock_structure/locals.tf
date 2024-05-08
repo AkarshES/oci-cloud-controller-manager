@@ -870,6 +870,10 @@ locals {
       predecessor           = "prd.oc1.us-ashburn-1.cell0"
       oke_secrets_namespace = "oke-prime-prod-cell1"
     }
+    "prd.oc1.us-phoenix-1.cell1" = {
+      predecessor           = "prd.oc1.us-phoenix-1.cell0"
+      oke_secrets_namespace = "oke-prime-prod-cell1"
+    }
     "prd.oc8.ap-ibaraki-1.cell0" = {
       alarms_enabled          = true
       mapi_api_alarms_enabled = true
