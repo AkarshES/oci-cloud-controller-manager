@@ -160,6 +160,14 @@ func TestIsVirtualNode(t *testing.T) {
 			},
 			isVirtualNode: true,
 		},
+		"Virtual node rbaas": {
+			node: &v1.Node{
+				Spec: v1.NodeSpec{
+					ProviderID: "ocid1.virtualnoderbaas.xyz",
+				},
+			},
+			isVirtualNode: true,
+		},
 		"Unknown virtual node resource": {
 			node: &v1.Node{
 				Spec: v1.NodeSpec{
