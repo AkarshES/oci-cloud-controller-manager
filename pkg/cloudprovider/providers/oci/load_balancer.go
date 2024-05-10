@@ -53,8 +53,9 @@ const (
 	NetworkLoadBalancingPolicyTwoTuple   = "TWO_TUPLE"
 	NetworkLoadBalancingPolicyThreeTuple = "THREE_TUPLE"
 	NetworkLoadBalancingPolicyFiveTuple  = "FIVE_TUPLE"
-	LbOperationAlreadyExistsFmt          = "An operation for the %s: %s already exists."
 )
+
+var LbOperationAlreadyExists = errors.New("An operation for the service is already in progress.")
 
 // DefaultLoadBalancerBEProtocol defines the default protocol for load
 // balancer listeners created by the CCM.
@@ -504,7 +505,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	loadBalancerService := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 	if acquired := cp.lbLocks.TryAcquire(loadBalancerService); !acquired {
 		logger.Error("Could not acquire lock for Ensuring Load Balancer")
-		return nil, errors.Errorf(LbOperationAlreadyExistsFmt, loadBalancerType, loadBalancerService)
+		return nil, LbOperationAlreadyExists
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
@@ -1161,7 +1162,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	loadBalancerService := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 	if acquired := cp.lbLocks.TryAcquire(loadBalancerService); !acquired {
 		logger.Error("Could not acquire lock for Updating Load Balancer")
-		return errors.Errorf(LbOperationAlreadyExistsFmt, loadBalancerType, loadBalancerService)
+		return LbOperationAlreadyExists
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
@@ -1348,7 +1349,7 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 	loadBalancerService := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 	if acquired := cp.lbLocks.TryAcquire(loadBalancerService); !acquired {
 		logger.Error("Could not acquire lock for Deleting Load Balancer")
-		return errors.Errorf(LbOperationAlreadyExistsFmt, loadBalancerType, loadBalancerService)
+		return LbOperationAlreadyExists
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
