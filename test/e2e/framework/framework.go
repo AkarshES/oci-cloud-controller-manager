@@ -51,7 +51,7 @@ const (
 	ClassOCILowCost    = "oci-bv-low"
 	ClassOCIBalanced   = "oci-bal"
 	ClassOCIHigh       = "oci-bv-high"
-	ClassOCIUHP  	   = "oci-uhp"
+	ClassOCIUHP        = "oci-uhp"
 	ClassOCIKMS        = "oci-kms"
 	ClassOCIExt3       = "oci-ext3"
 	ClassOCIXfs        = "oci-xfs"
@@ -62,7 +62,7 @@ const (
 	MaxVolumeBlock     = "100Gi"
 	VolumeFss          = "1Gi"
 
-	VSClassDefault = "oci-snapclass"
+	VSClassDefault    = "oci-snapclass"
 	NodeHostnameLabel = "kubernetes.io/hostname"
 )
 
@@ -120,7 +120,7 @@ var (
 	lustreVolumeHandle            string // The Lustre mount volume handle
 	lustreSubnetCidr              string // The Lustre Subnet Cidr
 	staticSnapshotCompartmentOCID string // Compartment ID for cross compartment snapshot test
-	createUhpNodepool			  bool   // Creates UHP nodepool instead of normal nodepool
+	createUhpNodepool             bool   // Creates UHP nodepool instead of normal nodepool
 	namespace                     string // Namespace for pre-upgrade and post-upgrade testing
 	isPreUpgradeBool              bool
 	isPostUpgradeBool             bool
@@ -129,6 +129,7 @@ var (
 	clusterID                     string              // Ocid of the newly created E2E cluster
 	clusterType                   string              // Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER (Default: BASIC_CLUSTER)
 	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
+	addOkeSystemTags              bool
 )
 
 func init() {
@@ -196,6 +197,7 @@ func init() {
 	flag.StringVar(&namespace, "namespace", "pre-upgrade", "Namespace used for pre-upgrade and post-upgrade testing.")
 
 	flag.StringVar(&clusterType, "cluster-type", "BASIC_CLUSTER", "Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER")
+	flag.BoolVar(&addOkeSystemTags, "add-oke-system-tags", true, "Adds oke system tags to new and existing loadbalancers and storage resources")
 }
 
 func getDefaultOCIUser() OCIUser {
@@ -336,11 +338,13 @@ type Framework struct {
 
 	// Compartment ID for cross compartment snapshot test
 	StaticSnapshotCompartmentOcid string
-	CreateUhpNodepool       bool
+	CreateUhpNodepool             bool
 
 	UpgradeTestingNamespace string
 	IsPreUpgrade            bool
 	IsPostUpgrade           bool
+	ClusterOcid             string
+	AddOkeSystemTags        bool
 }
 
 // New creates a new a framework that holds the context of the test
@@ -420,9 +424,10 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		LustreVolumeHandle:            lustreVolumeHandle,
 		LustreSubnetCidr:              lustreSubnetCidr,
 		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
-		CreateUhpNodepool: 			   createUhpNodepool,
+		CreateUhpNodepool:             createUhpNodepool,
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
+		AddOkeSystemTags:              addOkeSystemTags,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -552,6 +557,8 @@ func (f *Framework) Initialize() {
 	Logf("OCI NodeSubnet OCID: %s", f.NodeSubnet)
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
+	f.AddOkeSystemTags = addOkeSystemTags
+	Logf("AddOkeSystemTags : %v", f.AddOkeSystemTags)
 	if strings.ToUpper(clusterType) == "ENHANCED_CLUSTER" {
 		clusterTypeEnum = oke.ClusterTypeEnhancedCluster
 	} else {
