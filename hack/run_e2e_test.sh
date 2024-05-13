@@ -204,7 +204,8 @@ function run_e2e_tests() {
                 --namespace=${NAMESPACE} \
                 --post-upgrade=${POST_UPGRADE} \
                 --pre-upgrade=${PRE_UPGRADE} \
-                --cluster-type=${CLUSTER_TYPE}
+                --cluster-type=${CLUSTER_TYPE} \
+                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
     else
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
                 test/e2e/cloud-provider-oci -- \
@@ -255,7 +256,8 @@ function run_e2e_tests() {
                 --namespace=${NAMESPACE} \
                 --post-upgrade=${POST_UPGRADE} \
                 --pre-upgrade=${PRE_UPGRADE} \
-                --cluster-type=${CLUSTER_TYPE}
+                --cluster-type=${CLUSTER_TYPE} \
+                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
     fi
     retval=$?
     rm -f $OCI_KEY_FILE
@@ -263,6 +265,7 @@ function run_e2e_tests() {
 }
 
 function run_e2e_tests_existing_cluster() {
+    echo "run test"
     if [[ -z "${E2E_NODE_COUNT}" ]]; then
         E2E_NODE_COUNT=1
     fi
@@ -293,8 +296,10 @@ function run_e2e_tests_existing_cluster() {
                 --namespace=${NAMESPACE} \
                 --post-upgrade=${POST_UPGRADE} \
                 --pre-upgrade=${PRE_UPGRADE} \
-                --cluster-type=${CLUSTER_TYPE}
+                --cluster-type=${CLUSTER_TYPE} \
+                --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
     else
+        echo "initiating"
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_FP_OPT}"  \
                         test/e2e/cloud-provider-oci -- \
                         --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
@@ -320,7 +325,8 @@ function run_e2e_tests_existing_cluster() {
                         --namespace=${NAMESPACE} \
                         --post-upgrade=${POST_UPGRADE} \
                         --pre-upgrade=${PRE_UPGRADE} \
-                        --cluster-type=${CLUSTER_TYPE}
+                        --cluster-type=${CLUSTER_TYPE} \
+                        --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
     fi
     retval=$?
     return $retval
@@ -397,6 +403,7 @@ function declare_setup () {
     echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
     echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
+    echo "ADD_OKE_SYSTEM_TAGS is ${ADD_OKE_SYSTEM_TAGS}"
 }
 
 function set_focus () {
