@@ -80,7 +80,7 @@ var _ = Describe("Service [Slow]", func() {
 			},
 		},
 	}
-	Context("[cloudprovider][ccm][lb][SL]", func() {
+	Context("[cloudprovider][ccm][lb][SL][system-tags]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer (change nodeport) [Canary]", func() {
 			for _, test := range basicTestArray {
 				if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
@@ -151,6 +151,32 @@ var _ = Describe("Service [Slow]", func() {
 					if !reflect.DeepEqual(loadBalancer.DefinedTags, testDefinedTags) {
 						sharedfw.Failf("Defined tag mismatch! Expected: %v, Got: %v", testDefinedTags, loadBalancer.DefinedTags)
 					}
+				}
+
+				By("validating system tags on the loadbalancer")
+				lbName := cloudprovider.GetLoadBalancerName(tcpService)
+				sharedfw.Logf("LB Name is %s", lbName)
+				ctx := context.TODO()
+				compartmentId := ""
+				if setupF.Compartment1 != "" {
+					compartmentId = setupF.Compartment1
+				} else if f.CloudProviderConfig.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.CompartmentID
+				} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+				} else {
+					sharedfw.Failf("Compartment Id undefined.")
+				}
+				lbType := test.lbType
+				if strings.HasSuffix(test.lbType, "-wris") {
+					lbType = strings.TrimSuffix(test.lbType, "-wris")
+				}
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				sharedfw.ExpectNoError(err)
+				sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+				sharedfw.Logf("cluster ocid from setup is %s", setupF.ClusterOcid)
+				if setupF.AddOkeSystemTags && !sharedfw.HasOkeSystemTags(loadBalancer.SystemTags) {
+					sharedfw.Failf("Loadbalancer is expected to have the system tags")
 				}
 
 				tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
