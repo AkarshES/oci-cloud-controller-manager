@@ -130,6 +130,7 @@ type InitialTags struct {
 	LoadBalancer *TagConfig `yaml:"loadBalancer"`
 	BlockVolume  *TagConfig `yaml:"blockVolume"`
 	FSS          *TagConfig `yaml:"fss"`
+	Common       *TagConfig `yaml:"common"`
 }
 
 // Config holds the OCI cloud-provider config passed to Kubernetes components
@@ -300,8 +301,8 @@ func NewConfigurationProvider(cfg *Config) (common.ConfigurationProvider, error)
 
 }
 
-//NewConfigurationProviderWithUserPrincipal takes a cloud provider config file with user auth and returns an OCI ConfigurationProvider
-//to be consumed by e2e tests.
+// NewConfigurationProviderWithUserPrincipal takes a cloud provider config file with user auth and returns an OCI ConfigurationProvider
+// to be consumed by e2e tests.
 func NewConfigurationProviderWithUserPrincipal(cfg *Config) (common.ConfigurationProvider, error) {
 	var conf common.ConfigurationProvider
 	if cfg != nil {

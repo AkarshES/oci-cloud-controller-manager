@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	metricErrors "github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,14 +21,15 @@ const (
 	CompartmentIDAnnotation = "oci.oraclecloud.com/compartment-id"
 
 	// Error codes
-	Err429           = "429"
-	Err4XX           = "4XX"
-	Err5XX           = "5XX"
-	ErrValidation    = "VALIDATION_ERROR"
-	ErrLimitExceeded = "LIMIT_EXCEEDED"
-	ErrCtxTimeout    = "CTX_TIMEOUT"
-	Success          = "SUCCESS"
-	BackupCreating   = "CREATING"
+	Err429             = "429"
+	Err4XX             = "4XX"
+	Err5XX             = "5XX"
+	ErrValidation      = "VALIDATION_ERROR"
+	ErrLimitExceeded   = "LIMIT_EXCEEDED"
+	ErrCtxTimeout      = "CTX_TIMEOUT"
+	ErrTagLimitReached = "TAG_LIMIT_REACHED"
+	Success            = "SUCCESS"
+	BackupCreating     = "CREATING"
 
 	// Components generating errors
 	// Load Balancer
@@ -36,6 +38,9 @@ const (
 	// storage types
 	CSIStorageType = "CSI"
 	FVDStorageType = "FVD"
+
+	// Errorcode prefixes
+	SystemTagErrTypePrefix = "SYSTEM_TAG_"
 )
 
 // LookupNodeCompartment returns the compartment OCID for the given nodeName.
@@ -105,4 +110,39 @@ func GetHttpStatusCode(err error) int {
 		}
 	}
 	return statusCode
+}
+
+func mergeFreeFormTags(freefromTags ...map[string]string) map[string]string {
+	merged := make(map[string]string)
+	for _, t := range freefromTags {
+		for k, v := range t {
+			merged[k] = v
+		}
+	}
+	return merged
+}
+
+func mergeDefinedTags(definedTags ...map[string]map[string]interface{}) map[string]map[string]interface{} {
+	merged := make(map[string]map[string]interface{})
+	for _, t := range definedTags {
+		for k, v := range t {
+			merged[k] = v
+		}
+	}
+	return merged
+}
+
+// MergeTagConfig merges TagConfig's where dstTagConfig takes precedence
+func MergeTagConfig(srcTagConfig, dstTagConfig *config.TagConfig) *config.TagConfig {
+	var mergedTag config.TagConfig
+	mergedTag.FreeformTags = mergeFreeFormTags(srcTagConfig.FreeformTags, dstTagConfig.FreeformTags)
+	mergedTag.DefinedTags = mergeDefinedTags(srcTagConfig.DefinedTags, dstTagConfig.DefinedTags)
+
+	return &mergedTag
+}
+
+// IsCommonTagPresent return true if Common tags are initialised in config
+func IsCommonTagPresent(initialTags *config.InitialTags) bool {
+
+	return initialTags != nil && initialTags.Common != nil
 }
