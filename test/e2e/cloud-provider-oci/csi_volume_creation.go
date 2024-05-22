@@ -29,14 +29,29 @@ import (
 
 var _ = Describe("CSI Volume Creation", func() {
 	f := framework.NewDefaultFramework("csi-basic")
-	Context("[cloudprovider][storage][csi]", func() {
+	Context("[cloudprovider][storage][csi][system-tags]", func() {
 		It("Create PVC and POD for CSI.", func() {
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-provisioner-e2e-tests")
 
 			scName := f.CreateStorageClassOrFail(framework.ClassOCICSI, "blockvolume.csi.oraclecloud.com", nil, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			ctx := context.TODO()
 			pvc := pvcJig.CreateAndAwaitPVCOrFailCSI(f.Namespace.Name, framework.MinVolumeBlock, scName, nil, v1.PersistentVolumeFilesystem, v1.ReadWriteOnce, v1.ClaimPending)
 			f.VolumeIds = append(f.VolumeIds, pvc.Spec.VolumeName)
 			pvcJig.NewPodForCSI("app1", f.Namespace.Name, pvc.Name, setupF.AdLabel)
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+			compartmentId := f.GetCompartmentId(*setupF)
+			// read created BV
+			volumes, err := f.Client.BlockStorage().GetVolumesByName(ctx, volumeName, compartmentId)
+			framework.ExpectNoError(err)
+			// volume name duplicate should not exist
+			for _, volume := range volumes {
+				framework.Logf("volume details %v :", volume)
+				framework.Logf("cluster ocid from setup is %s", setupF.ClusterOcid)
+				if setupF.AddOkeSystemTags && !framework.HasOkeSystemTags(volume.SystemTags) {
+					framework.Failf("the resource %s is expected to have oke system tags", *volume.Id)
+				}
+			}
+
 		})
 
 		It("Create PVC with VolumeSize 1Gi but should use default 50Gi", func() {
@@ -487,7 +502,6 @@ var _ = Describe("CSI Ultra High Performance Volumes", func() {
 
 			ctx := context.Background()
 			pvcJig.VerifyMultipathEnabled(ctx, f.ComputeClient, pvc.Name, f.Namespace.Name, compartmentId)
-
 			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.Name, f.Namespace.Name)
 			framework.Logf("Pod name : %s", podName)
 			framework.Logf("Persistent volume name : %s", volumeName)

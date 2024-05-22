@@ -129,6 +129,7 @@ var (
 	clusterID                     string              // Ocid of the newly created E2E cluster
 	clusterType                   string              // Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER (Default: BASIC_CLUSTER)
 	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
+	addOkeSystemTags              bool
 )
 
 func init() {
@@ -196,6 +197,7 @@ func init() {
 	flag.StringVar(&namespace, "namespace", "pre-upgrade", "Namespace used for pre-upgrade and post-upgrade testing.")
 
 	flag.StringVar(&clusterType, "cluster-type", "BASIC_CLUSTER", "Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER")
+	flag.BoolVar(&addOkeSystemTags, "add-oke-system-tags", true, "Adds oke system tags to new and existing loadbalancers and storage resources")
 }
 
 func getDefaultOCIUser() OCIUser {
@@ -341,6 +343,8 @@ type Framework struct {
 	UpgradeTestingNamespace string
 	IsPreUpgrade            bool
 	IsPostUpgrade           bool
+	ClusterOcid             string
+	AddOkeSystemTags        bool
 }
 
 // New creates a new a framework that holds the context of the test
@@ -423,6 +427,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		CreateUhpNodepool:             createUhpNodepool,
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
+		AddOkeSystemTags:              addOkeSystemTags,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -552,6 +557,8 @@ func (f *Framework) Initialize() {
 	Logf("OCI NodeSubnet OCID: %s", f.NodeSubnet)
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
+	f.AddOkeSystemTags = addOkeSystemTags
+	Logf("AddOkeSystemTags : %v", f.AddOkeSystemTags)
 	if strings.ToUpper(clusterType) == "ENHANCED_CLUSTER" {
 		clusterTypeEnum = oke.ClusterTypeEnhancedCluster
 	} else {

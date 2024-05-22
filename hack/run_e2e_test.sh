@@ -202,7 +202,8 @@ function run_e2e_tests() {
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
         --pre-upgrade=${PRE_UPGRADE} \
-        --cluster-type=${CLUSTER_TYPE}
+        --cluster-type=${CLUSTER_TYPE} \
+        --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
     retval=$?
     rm -f $OCI_KEY_FILE
     return $retval
@@ -233,7 +234,8 @@ function run_e2e_tests_existing_cluster() {
         --namespace=${NAMESPACE} \
         --post-upgrade=${POST_UPGRADE} \
         --pre-upgrade=${PRE_UPGRADE} \
-        --cluster-type=${CLUSTER_TYPE}
+        --cluster-type=${CLUSTER_TYPE} \
+        --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS}
     retval=$?
     return $retval
 }
@@ -307,6 +309,7 @@ function declare_setup () {
     echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
     echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
+    echo "ADD_OKE_SYSTEM_TAGS is ${ADD_OKE_SYSTEM_TAGS}"
 }
 
 function set_focus () {
@@ -372,6 +375,7 @@ function declare_environment () {
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"
         echo "CLOUD_CONFIG is ${CLOUD_CONFIG}"
         echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
+        echo "ADD_OKE_SYSTEM_TAGS is ${ADD_OKE_SYSTEM_TAGS}"
     fi
 
     if [[ $LOCAL_RUN != 1 ]]; then
