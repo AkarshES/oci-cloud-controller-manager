@@ -18,6 +18,25 @@ locals {
     "v1.29" : "v1.29-8b155b26267-10@sha256:7577fda4aaf55a1e69fbd5421930890d9554d12508be2e26d931644fa709fb27"
   }
 
+  // https://jira.oci.oraclecorp.com/browse/OKE-30416
+  oss_ccm_mapping_override = {
+    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+    "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
+    "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
+    "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
+    "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
+    "v1.27" : "v1.27-6316b402b65-3143@sha256:9375e501825f6e3c554e7d1fa319f1697d77526e2b0bf806ca4ab65952467817",
+    "v1.28" : "v1.28-82f08e51cb0-27@sha256:0f1de79957e0cbfa1cee9aaeb902db10ffaa45e91805e3c279b6cf2ef176c488",
+    "v1.29" : "v1.29-b4676b971bb-13@sha256:26c1e2c2d6b0f908bf11448bc13c5cb5c6625ea995ccaee59012cfa2872d9dc6"
+  }
+
   tenancy_property_overrides = {
     "oc1" = {
       "ccm-image-version-mapping" = {
@@ -57,6 +76,19 @@ locals {
             value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaav4ijf6ej5k5o54cc7ikjjkyvsolqofhoahh7vtvlry6e7swkeznq"
           },
+          // https://jira.oci.oraclecorp.com/browse/OKE-30416
+          {
+            regions = ["phx", "iad", "yyz", "bom"]
+            env     = "prd"
+            value   = jsonencode(local.oss_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq"
+          },
+          { // test integ-phx
+            regions = ["phx"]
+            env     = "integ"
+            value   = jsonencode(local.oss_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
+          }
         ]
       },
       "oci-service-controller-enabled" = {
