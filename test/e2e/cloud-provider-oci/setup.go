@@ -42,6 +42,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 			Expect(clusterOCID).ShouldNot(BeZero())
 			sharedfw.Logf("Cluster OCID is %s", clusterOCID)
 		}
+		setupF.ClusterOcid = clusterOCID
 
 		kubeConfig := setupF.CreateClusterKubeconfigContent(clusterOCID)
 		Expect(setupF.IsNotJsonFormatStr(kubeConfig)).To(BeTrue())
@@ -58,7 +59,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		Expect(err).Should(BeNil())
 
 		if (!setupF.IsPreUpgrade && !setupF.IsPostUpgrade) || createUpgradeTestingNodepool {
-			if !setupF.CreateUhpNodepool{
+			if !setupF.CreateUhpNodepool {
 				var ocpus = float32(1.0)
 				var memoryInGBs = float32(6.0)
 				var NodeShapeConfig = oke.CreateNodeShapeConfigDetails{
@@ -91,7 +92,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 				sharedfw.Logf(" Created cluster %s with nodepool %s ", clusterOCID, *nodepool.Id)
 				setupF.EnableBVMPluginOnNodepool(nodepool)
 				sharedfw.Logf("Waiting 10 mins for block volume management plugin to be enabled")
-				time.Sleep(10*time.Minute)
+				time.Sleep(10 * time.Minute)
 			}
 			setupF.CrossValidateCluster(clusterOCID, setupF.ValidateChildResources)
 		}
