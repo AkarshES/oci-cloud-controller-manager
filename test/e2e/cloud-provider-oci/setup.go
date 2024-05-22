@@ -42,6 +42,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 			Expect(clusterOCID).ShouldNot(BeZero())
 			sharedfw.Logf("Cluster OCID is %s", clusterOCID)
 		}
+		setupF.ClusterOcid = clusterOCID
 
 		kubeConfig := setupF.CreateClusterKubeconfigContent(clusterOCID)
 		Expect(setupF.IsNotJsonFormatStr(kubeConfig)).To(BeTrue())
@@ -99,9 +100,9 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		sharedfw.Logf("Cluster creation skipped. Running tests with existing cluster.")
 	}
 	return nil
-	}, func(data []byte) {
-		setupF = sharedfw.New()
-	},
+}, func(data []byte) {
+	setupF = sharedfw.New()
+},
 )
 
 var _ = ginkgo.SynchronizedAfterSuite(func() {}, func() {

@@ -29,6 +29,7 @@ import (
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/pkg/errors"
 	helper "k8s.io/cloud-provider/service/helpers"
@@ -325,6 +326,7 @@ type LBSpec struct {
 	NetworkSecurityGroupIds     []string
 	FreeformTags                map[string]string
 	DefinedTags                 map[string]map[string]interface{}
+	SystemTags                  map[string]map[string]interface{}
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -385,6 +387,10 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	if err != nil {
 		return nil, err
 	}
+	// merge lbtags with common tags if present
+	if enableOkeSystemTags && util.IsCommonTagPresent(initialLBTags) {
+		lbTags = util.MergeTagConfig(lbTags, initialLBTags.Common)
+	}
 
 	ruleManagementMode, managedNsg, err := getRuleManagementMode(svc)
 	if err != nil {
@@ -424,6 +430,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		securityListManager:         secListFactory(ruleManagementMode),
 		FreeformTags:                lbTags.FreeformTags,
 		DefinedTags:                 lbTags.DefinedTags,
+		SystemTags:                  getResourceTrackingSysTagsFromConfig(logger, initialLBTags),
 	}, nil
 }
 
@@ -1318,6 +1325,7 @@ func getLoadBalancerTags(svc *v1.Service, initialTags *config.InitialTags) (*con
 	if initialTags == nil || initialTags.LoadBalancer == nil {
 		return &config.TagConfig{}, nil
 	}
+
 	// return initial tags
 	return initialTags.LoadBalancer, nil
 }
@@ -1376,4 +1384,23 @@ func updateSpecWithLbSubnets(spec *LBSpec, lbSubnetId []string) (*LBSpec, error)
 	spec.Subnets = lbSubnetId
 
 	return spec, nil
+}
+
+// getResourceTrackingSysTagsFromConfig reads resource tracking tags from config
+// which are specified under common tags
+func getResourceTrackingSysTagsFromConfig(logger *zap.SugaredLogger, initialTags *config.InitialTags) (resourceTrackingTags map[string]map[string]interface{}) {
+	resourceTrackingTags = make(map[string]map[string]interface{})
+	// TODO: Fix the double negative
+	if !(util.IsCommonTagPresent(initialTags) && initialTags.Common.DefinedTags != nil) {
+		logger.Error("oke resource tracking system tags are not present in cloud-config.yaml")
+		return nil
+	}
+
+	if tag, exists := initialTags.Common.DefinedTags[OkeSystemTagNamesapce]; exists {
+		resourceTrackingTags[OkeSystemTagNamesapce] = tag
+		return
+	}
+
+	logger.Error("tag config doesn't consist resource tracking tags")
+	return nil
 }

@@ -132,6 +132,7 @@ type GenericLoadBalancer struct {
 
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}
+	SystemTags   map[string]map[string]interface{}
 }
 
 type GenericWorkRequest struct {
@@ -155,4 +156,9 @@ type GenericBackendSetHealth struct {
 	CriticalStateBackendNames []string
 	UnknownStateBackendNames  []string
 	BackendCount              *int
+}
+
+type GenericUpdateLoadBalancerDetails struct {
+	FreeformTags map[string]string
+	DefinedTags  map[string]map[string]interface{}
 }
