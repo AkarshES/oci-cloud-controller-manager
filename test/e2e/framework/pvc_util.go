@@ -41,7 +41,6 @@ import (
 	csi_util "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/csi/driver"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
-	"github.com/oracle/oci-cloud-controller-manager/pkg/volume/provisioner/plugin"
 )
 
 const (
@@ -103,7 +102,7 @@ func (j *PVCTestJig) pvcAddLabelSelector(pvc *v1.PersistentVolumeClaim, adLabel 
 	if pvc != nil {
 		pvc.Spec.Selector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				plugin.LabelZoneFailureDomain: adLabel,
+				v1.LabelTopologyZone: adLabel,
 			},
 		}
 	}
@@ -734,7 +733,7 @@ func (j *PVCTestJig) NewPodForCSI(name string, namespace string, claimName strin
 				},
 			},
 			NodeSelector: map[string]string{
-				plugin.LabelZoneFailureDomain: adLabel,
+				v1.LabelTopologyZone: adLabel,
 			},
 		},
 	}, metav1.CreateOptions{})
@@ -842,7 +841,7 @@ func (j *PVCTestJig) NewPodForCSIClone(name string, namespace string, claimName 
 				},
 			},
 			NodeSelector: map[string]string{
-				plugin.LabelZoneFailureDomain: adLabel,
+				v1.LabelTopologyZone: adLabel,
 			},
 		},
 	}, metav1.CreateOptions{})
@@ -897,7 +896,7 @@ func (j *PVCTestJig) NewPodForCSIWithoutWait(name string, namespace string, clai
 				},
 			},
 			NodeSelector: map[string]string{
-				plugin.LabelZoneFailureDomain: adLabel,
+				v1.LabelTopologyZone: adLabel,
 			},
 		},
 	}, metav1.CreateOptions{})
