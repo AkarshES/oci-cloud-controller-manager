@@ -463,7 +463,9 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		// Wrap Provision and Delete to detect when it is time to refresh capacity.
 		csiProvisioner = capacity.NewProvisionWrapper(csiProvisioner, capacityController)
 	}
-	provisionController := controller.NewProvisionController(
+
+	provisionController := newProvisionController(
+		csioptions,
 		clientset,
 		provisionerName,
 		csiProvisioner,
@@ -555,4 +557,16 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		}
 	}
 
+}
+
+func newProvisionController(csioptions csioptions.CSIOptions, clientset *kubernetes.Clientset, provisionerName string, csiProvisioner controller.Provisioner, provisionerOptions ...func(*controller.ProvisionController) error) *controller.ProvisionController {
+	csioptions.RuntimeSchemeMutex.Lock()
+	defer csioptions.RuntimeSchemeMutex.Unlock()
+	provisionController := controller.NewProvisionController(
+		clientset,
+		provisionerName,
+		csiProvisioner,
+		provisionerOptions...,
+	)
+	return provisionController
 }

@@ -18,6 +18,7 @@ import (
 	"flag"
 	"go.uber.org/zap"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -60,6 +61,7 @@ type CSIOptions struct {
 	EnableResizer             bool
 	ControllerPublishReadOnly bool
 	DefaultFSType             string
+	RuntimeSchemeMutex        *sync.Mutex
 }
 
 //NewCSIOptions initializes the flag

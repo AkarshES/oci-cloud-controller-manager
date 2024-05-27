@@ -23,7 +23,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	csi_util "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
-	"github.com/oracle/oci-cloud-controller-manager/pkg/volume/provisioner/plugin"
 	"github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
 )
 
@@ -769,8 +768,8 @@ func testTwoPVCSetup(f *framework.CloudProviderFramework, storageclass1params ma
 	nodeHostname := pvcJig.GetNodeHostnameFromPod(podName, f.Namespace.Name)
 
 	nodeLabels := map[string]string{
-		plugin.LabelZoneFailureDomain: setupF.AdLabel,
-		framework.NodeHostnameLabel:   nodeHostname,
+		v1.LabelTopologyZone:        setupF.AdLabel,
+		framework.NodeHostnameLabel: nodeHostname,
 	}
 
 	lowPerfScName := f.CreateStorageClassOrFail("storage-class-two", "blockvolume.csi.oraclecloud.com",
