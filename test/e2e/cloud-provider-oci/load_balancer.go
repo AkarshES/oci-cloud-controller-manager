@@ -153,30 +153,33 @@ var _ = Describe("Service [Slow]", func() {
 					}
 				}
 
-				By("validating system tags on the loadbalancer")
-				lbName := cloudprovider.GetLoadBalancerName(tcpService)
-				sharedfw.Logf("LB Name is %s", lbName)
-				ctx := context.TODO()
-				compartmentId := ""
-				if setupF.Compartment1 != "" {
-					compartmentId = setupF.Compartment1
-				} else if f.CloudProviderConfig.CompartmentID != "" {
-					compartmentId = f.CloudProviderConfig.CompartmentID
-				} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
-					compartmentId = f.CloudProviderConfig.Auth.CompartmentID
-				} else {
-					sharedfw.Failf("Compartment Id undefined.")
-				}
-				lbType := test.lbType
 				if strings.HasSuffix(test.lbType, "-wris") {
-					lbType = strings.TrimSuffix(test.lbType, "-wris")
-				}
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
-				sharedfw.ExpectNoError(err)
-				sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
-				sharedfw.Logf("cluster ocid from setup is %s", setupF.ClusterOcid)
-				if setupF.AddOkeSystemTags && !sharedfw.HasOkeSystemTags(loadBalancer.SystemTags) {
-					sharedfw.Failf("Loadbalancer is expected to have the system tags")
+					sharedfw.Logf("skip evaluating system tag when the principal type is Workload identity")
+				} else {
+					By("validating system tags on the loadbalancer")
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+					lbType := test.lbType
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbType = strings.TrimSuffix(test.lbType, "-wris")
+					}
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+					if setupF.AddOkeSystemTags && !sharedfw.HasOkeSystemTags(loadBalancer.SystemTags) {
+						sharedfw.Failf("Loadbalancer is expected to have the system tags")
+					}
 				}
 
 				tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
