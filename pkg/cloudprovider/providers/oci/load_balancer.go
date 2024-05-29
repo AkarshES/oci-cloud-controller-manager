@@ -1286,6 +1286,22 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		return err
 	}
 
+	var sslConfig *SSLConfig
+	if requiresCertificate(service) {
+		ports, err := getSSLEnabledPorts(service)
+		if err != nil {
+			logger.With(zap.Error(err)).Error("Failed to parse SSL port.")
+			errorType = util.GetError(err)
+			lbMetricDimension = util.GetMetricDimensionForComponent(errorType, util.LoadBalancerType)
+			dimensionsMap[metrics.ComponentDimension] = lbMetricDimension
+			metrics.SendMetricData(cp.metricPusher, getMetric(loadBalancerType, Update), time.Since(startTime).Seconds(), dimensionsMap)
+			return err
+		}
+		secretListenerString := service.Annotations[ServiceAnnotationLoadBalancerTLSSecret]
+		secretBackendSetString := service.Annotations[ServiceAnnotationLoadBalancerTLSBackendSetSecret]
+		sslConfig = NewSSLConfig(secretListenerString, secretBackendSetString, service, ports, cp)
+	}
+
 	subnets, err := cp.getLoadBalancerSubnets(ctx, logger, service)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to get Load balancer Subnets.")
@@ -1296,7 +1312,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		return err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, subnets, nil, cp.securityListManagerFactory, cp.config.Tags, lb)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, subnets, sslConfig, cp.securityListManagerFactory, cp.config.Tags, lb)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
