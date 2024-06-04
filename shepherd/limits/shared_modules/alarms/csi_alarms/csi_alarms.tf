@@ -176,7 +176,7 @@ resource "telemetry_alarm" "storage-plugins-5xx-exceeding-threshold" {
   display_name = "${var.kmi_fleet}-storage-plugins-5xx-exceeding-threshold in ${var.region}"
   query = "(OKE.KMI.oci_requests_total[5m]{resource=~\"volume|volume_attachment|snapshot|file_system|mount_target|export\", code=~\"50*\"}.groupBy(clusterId,resource,code).increment()).filter(x=>x>10)"
   severity = var.severity_2
-  is_enabled = var.enabled
+  is_enabled = false
   dedupe_key = "SPServiceUnavailabilityThreshold"
   pending_duration = "PT2M"
   body = <<EOT
