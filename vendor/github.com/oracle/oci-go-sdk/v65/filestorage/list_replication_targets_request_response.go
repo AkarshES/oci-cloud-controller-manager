@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -150,6 +150,7 @@ type ListReplicationTargetsLifecycleStateEnum string
 const (
 	ListReplicationTargetsLifecycleStateCreating ListReplicationTargetsLifecycleStateEnum = "CREATING"
 	ListReplicationTargetsLifecycleStateActive   ListReplicationTargetsLifecycleStateEnum = "ACTIVE"
+	ListReplicationTargetsLifecycleStateUpdating ListReplicationTargetsLifecycleStateEnum = "UPDATING"
 	ListReplicationTargetsLifecycleStateDeleting ListReplicationTargetsLifecycleStateEnum = "DELETING"
 	ListReplicationTargetsLifecycleStateDeleted  ListReplicationTargetsLifecycleStateEnum = "DELETED"
 	ListReplicationTargetsLifecycleStateFailed   ListReplicationTargetsLifecycleStateEnum = "FAILED"
@@ -158,6 +159,7 @@ const (
 var mappingListReplicationTargetsLifecycleStateEnum = map[string]ListReplicationTargetsLifecycleStateEnum{
 	"CREATING": ListReplicationTargetsLifecycleStateCreating,
 	"ACTIVE":   ListReplicationTargetsLifecycleStateActive,
+	"UPDATING": ListReplicationTargetsLifecycleStateUpdating,
 	"DELETING": ListReplicationTargetsLifecycleStateDeleting,
 	"DELETED":  ListReplicationTargetsLifecycleStateDeleted,
 	"FAILED":   ListReplicationTargetsLifecycleStateFailed,
@@ -166,6 +168,7 @@ var mappingListReplicationTargetsLifecycleStateEnum = map[string]ListReplication
 var mappingListReplicationTargetsLifecycleStateEnumLowerCase = map[string]ListReplicationTargetsLifecycleStateEnum{
 	"creating": ListReplicationTargetsLifecycleStateCreating,
 	"active":   ListReplicationTargetsLifecycleStateActive,
+	"updating": ListReplicationTargetsLifecycleStateUpdating,
 	"deleting": ListReplicationTargetsLifecycleStateDeleting,
 	"deleted":  ListReplicationTargetsLifecycleStateDeleted,
 	"failed":   ListReplicationTargetsLifecycleStateFailed,
@@ -185,6 +188,7 @@ func GetListReplicationTargetsLifecycleStateEnumStringValues() []string {
 	return []string{
 		"CREATING",
 		"ACTIVE",
+		"UPDATING",
 		"DELETING",
 		"DELETED",
 		"FAILED",

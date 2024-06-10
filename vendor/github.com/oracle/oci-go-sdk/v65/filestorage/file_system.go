@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -107,6 +107,9 @@ type FileSystem struct {
 	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the associated file system snapshot policy, which
 	// controls the frequency of snapshot creation and retention period of the taken snapshots.
 	FilesystemSnapshotPolicyId *string `mandatory:"false" json:"filesystemSnapshotPolicyId"`
+
+	// Specifies the state of enforcement of quota rules on the file system.
+	QuotaEnforcementState FileSystemQuotaEnforcementStateEnum `mandatory:"false" json:"quotaEnforcementState,omitempty"`
 }
 
 func (m FileSystem) String() string {
@@ -125,6 +128,9 @@ func (m FileSystem) ValidateEnumValue() (bool, error) {
 	if _, ok := GetMappingFileSystemCloneAttachStatusEnum(string(m.CloneAttachStatus)); !ok && m.CloneAttachStatus != "" {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for CloneAttachStatus: %s. Supported values are: %s.", m.CloneAttachStatus, strings.Join(GetFileSystemCloneAttachStatusEnumStringValues(), ",")))
 	}
+	if _, ok := GetMappingFileSystemQuotaEnforcementStateEnum(string(m.QuotaEnforcementState)); !ok && m.QuotaEnforcementState != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for QuotaEnforcementState: %s. Supported values are: %s.", m.QuotaEnforcementState, strings.Join(GetFileSystemQuotaEnforcementStateEnumStringValues(), ",")))
+	}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
 	}
@@ -138,6 +144,7 @@ type FileSystemLifecycleStateEnum string
 const (
 	FileSystemLifecycleStateCreating FileSystemLifecycleStateEnum = "CREATING"
 	FileSystemLifecycleStateActive   FileSystemLifecycleStateEnum = "ACTIVE"
+	FileSystemLifecycleStateUpdating FileSystemLifecycleStateEnum = "UPDATING"
 	FileSystemLifecycleStateDeleting FileSystemLifecycleStateEnum = "DELETING"
 	FileSystemLifecycleStateDeleted  FileSystemLifecycleStateEnum = "DELETED"
 	FileSystemLifecycleStateFailed   FileSystemLifecycleStateEnum = "FAILED"
@@ -146,6 +153,7 @@ const (
 var mappingFileSystemLifecycleStateEnum = map[string]FileSystemLifecycleStateEnum{
 	"CREATING": FileSystemLifecycleStateCreating,
 	"ACTIVE":   FileSystemLifecycleStateActive,
+	"UPDATING": FileSystemLifecycleStateUpdating,
 	"DELETING": FileSystemLifecycleStateDeleting,
 	"DELETED":  FileSystemLifecycleStateDeleted,
 	"FAILED":   FileSystemLifecycleStateFailed,
@@ -154,6 +162,7 @@ var mappingFileSystemLifecycleStateEnum = map[string]FileSystemLifecycleStateEnu
 var mappingFileSystemLifecycleStateEnumLowerCase = map[string]FileSystemLifecycleStateEnum{
 	"creating": FileSystemLifecycleStateCreating,
 	"active":   FileSystemLifecycleStateActive,
+	"updating": FileSystemLifecycleStateUpdating,
 	"deleting": FileSystemLifecycleStateDeleting,
 	"deleted":  FileSystemLifecycleStateDeleted,
 	"failed":   FileSystemLifecycleStateFailed,
@@ -173,6 +182,7 @@ func GetFileSystemLifecycleStateEnumStringValues() []string {
 	return []string{
 		"CREATING",
 		"ACTIVE",
+		"UPDATING",
 		"DELETING",
 		"DELETED",
 		"FAILED",
@@ -228,5 +238,55 @@ func GetFileSystemCloneAttachStatusEnumStringValues() []string {
 // GetMappingFileSystemCloneAttachStatusEnum performs case Insensitive comparison on enum value and return the desired enum
 func GetMappingFileSystemCloneAttachStatusEnum(val string) (FileSystemCloneAttachStatusEnum, bool) {
 	enum, ok := mappingFileSystemCloneAttachStatusEnumLowerCase[strings.ToLower(val)]
+	return enum, ok
+}
+
+// FileSystemQuotaEnforcementStateEnum Enum with underlying type: string
+type FileSystemQuotaEnforcementStateEnum string
+
+// Set of constants representing the allowable values for FileSystemQuotaEnforcementStateEnum
+const (
+	FileSystemQuotaEnforcementStateEnabling  FileSystemQuotaEnforcementStateEnum = "ENABLING"
+	FileSystemQuotaEnforcementStateEnabled   FileSystemQuotaEnforcementStateEnum = "ENABLED"
+	FileSystemQuotaEnforcementStateDisabling FileSystemQuotaEnforcementStateEnum = "DISABLING"
+	FileSystemQuotaEnforcementStateDisabled  FileSystemQuotaEnforcementStateEnum = "DISABLED"
+)
+
+var mappingFileSystemQuotaEnforcementStateEnum = map[string]FileSystemQuotaEnforcementStateEnum{
+	"ENABLING":  FileSystemQuotaEnforcementStateEnabling,
+	"ENABLED":   FileSystemQuotaEnforcementStateEnabled,
+	"DISABLING": FileSystemQuotaEnforcementStateDisabling,
+	"DISABLED":  FileSystemQuotaEnforcementStateDisabled,
+}
+
+var mappingFileSystemQuotaEnforcementStateEnumLowerCase = map[string]FileSystemQuotaEnforcementStateEnum{
+	"enabling":  FileSystemQuotaEnforcementStateEnabling,
+	"enabled":   FileSystemQuotaEnforcementStateEnabled,
+	"disabling": FileSystemQuotaEnforcementStateDisabling,
+	"disabled":  FileSystemQuotaEnforcementStateDisabled,
+}
+
+// GetFileSystemQuotaEnforcementStateEnumValues Enumerates the set of values for FileSystemQuotaEnforcementStateEnum
+func GetFileSystemQuotaEnforcementStateEnumValues() []FileSystemQuotaEnforcementStateEnum {
+	values := make([]FileSystemQuotaEnforcementStateEnum, 0)
+	for _, v := range mappingFileSystemQuotaEnforcementStateEnum {
+		values = append(values, v)
+	}
+	return values
+}
+
+// GetFileSystemQuotaEnforcementStateEnumStringValues Enumerates the set of values in String for FileSystemQuotaEnforcementStateEnum
+func GetFileSystemQuotaEnforcementStateEnumStringValues() []string {
+	return []string{
+		"ENABLING",
+		"ENABLED",
+		"DISABLING",
+		"DISABLED",
+	}
+}
+
+// GetMappingFileSystemQuotaEnforcementStateEnum performs case Insensitive comparison on enum value and return the desired enum
+func GetMappingFileSystemQuotaEnforcementStateEnum(val string) (FileSystemQuotaEnforcementStateEnum, bool) {
+	enum, ok := mappingFileSystemQuotaEnforcementStateEnumLowerCase[strings.ToLower(val)]
 	return enum, ok
 }
