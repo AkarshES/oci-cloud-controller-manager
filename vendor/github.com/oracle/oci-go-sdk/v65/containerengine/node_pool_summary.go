@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -24,7 +24,7 @@ type NodePoolSummary struct {
 	// The OCID of the node pool.
 	Id *string `mandatory:"false" json:"id"`
 
-	// The state of the nodepool.
+	// The state of the nodepool. For more information, see Monitoring Clusters (https://docs.cloud.oracle.com/Content/ContEng/Tasks/contengmonitoringclusters.htm)
 	LifecycleState NodePoolLifecycleStateEnum `mandatory:"false" json:"lifecycleState,omitempty"`
 
 	// Details about the state of the nodepool.
@@ -189,19 +189,13 @@ func (m *NodePoolSummary) UnmarshalJSON(data []byte) (e error) {
 	m.NodeShape = model.NodeShape
 
 	m.InitialNodeLabels = make([]KeyValue, len(model.InitialNodeLabels))
-	for i, n := range model.InitialNodeLabels {
-		m.InitialNodeLabels[i] = n
-	}
-
+	copy(m.InitialNodeLabels, model.InitialNodeLabels)
 	m.SshPublicKey = model.SshPublicKey
 
 	m.QuantityPerSubnet = model.QuantityPerSubnet
 
 	m.SubnetIds = make([]string, len(model.SubnetIds))
-	for i, n := range model.SubnetIds {
-		m.SubnetIds[i] = n
-	}
-
+	copy(m.SubnetIds, model.SubnetIds)
 	m.NodeConfigDetails = model.NodeConfigDetails
 
 	m.FreeformTags = model.FreeformTags
