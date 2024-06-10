@@ -76,18 +76,13 @@ locals {
             value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaav4ijf6ej5k5o54cc7ikjjkyvsolqofhoahh7vtvlry6e7swkeznq"
           },
-          // https://jira.oci.oraclecorp.com/browse/OKE-30416
+          // Jira: https://jira.oci.oraclecorp.com/browse/OKE-30416
+          // CHANGE Tickets: https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2499240 & https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2504588 
           {
-            regions = ["phx", "iad", "yyz", "bom"]
+            regions = ["phx", "iad", "yyz", "bom", "sin", "lhr", "fra"]
             env     = "prd"
             value   = jsonencode(local.oss_ccm_mapping_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq"
-          },
-          { // test integ-phx
-            regions = ["phx"]
-            env     = "integ"
-            value   = jsonencode(local.oss_ccm_mapping_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
           }
         ]
       },
