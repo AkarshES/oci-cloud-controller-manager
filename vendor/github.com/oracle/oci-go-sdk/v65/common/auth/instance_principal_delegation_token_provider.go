@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 
 package auth
@@ -43,6 +43,19 @@ func newInstancePrincipalDelegationTokenConfigurationProvider(delegationToken *s
 	error)) (common.ConfigurationProvider, error) {
 
 	keyProvider, err := newInstancePrincipalKeyProvider(modifier, "")
+	if err != nil {
+		return nil, instancePrincipalDelegationTokenError{err: fmt.Errorf("failed to create a new key provider for instance principal: %s", err.Error())}
+	}
+	if len(region) > 0 {
+		return instancePrincipalDelegationTokenConfigurationProvider{*keyProvider, *delegationToken, &region}, err
+	}
+	return instancePrincipalDelegationTokenConfigurationProvider{*keyProvider, *delegationToken, nil}, err
+}
+
+func newInstancePrincipalDelegationTokenConfigurationProviderWithPurpose(delegationToken *string, region common.Region, modifier func(common.HTTPRequestDispatcher) (common.HTTPRequestDispatcher,
+	error), tokenPurpose string) (common.ConfigurationProvider, error) {
+
+	keyProvider, err := newInstancePrincipalKeyProvider(modifier, tokenPurpose)
 	if err != nil {
 		return nil, instancePrincipalDelegationTokenError{err: fmt.Errorf("failed to create a new key provider for instance principal: %s", err.Error())}
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -77,6 +77,15 @@ type BigDataBmToVmInstanceMigration struct {
 	// The combined size of the `metadata` and `extendedMetadata` objects can be a maximum of
 	// 32,000 bytes.
 	TargetExtendedMetadata map[string]interface{} `mandatory:"false" json:"targetExtendedMetadata"`
+
+	// The time at which the BigDataBmToVmInstanceMigration requested.
+	TimeRequested *common.SDKTime `mandatory:"false" json:"timeRequested"`
+
+	// The time at which the BigDataBmToVmInstanceMigration started.
+	TimeCreated *common.SDKTime `mandatory:"false" json:"timeCreated"`
+
+	// The time at which the BigDataBmToVmInstanceMigration completed.
+	TimeCompleted *common.SDKTime `mandatory:"false" json:"timeCompleted"`
 }
 
 func (m BigDataBmToVmInstanceMigration) String() string {

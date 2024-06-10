@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -61,15 +61,15 @@ type OutboundConnectorSummary interface {
 
 type outboundconnectorsummary struct {
 	JsonData           []byte
+	AvailabilityDomain *string                                    `mandatory:"false" json:"availabilityDomain"`
+	FreeformTags       map[string]string                          `mandatory:"false" json:"freeformTags"`
+	DefinedTags        map[string]map[string]interface{}          `mandatory:"false" json:"definedTags"`
+	SystemTags         map[string]map[string]interface{}          `mandatory:"false" json:"systemTags"`
 	CompartmentId      *string                                    `mandatory:"true" json:"compartmentId"`
 	Id                 *string                                    `mandatory:"true" json:"id"`
 	LifecycleState     OutboundConnectorSummaryLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 	DisplayName        *string                                    `mandatory:"true" json:"displayName"`
 	TimeCreated        *common.SDKTime                            `mandatory:"true" json:"timeCreated"`
-	AvailabilityDomain *string                                    `mandatory:"false" json:"availabilityDomain"`
-	FreeformTags       map[string]string                          `mandatory:"false" json:"freeformTags"`
-	DefinedTags        map[string]map[string]interface{}          `mandatory:"false" json:"definedTags"`
-	SystemTags         map[string]map[string]interface{}          `mandatory:"false" json:"systemTags"`
 	ConnectorType      string                                     `json:"connectorType"`
 }
 
@@ -117,49 +117,49 @@ func (m *outboundconnectorsummary) UnmarshalPolymorphicJSON(data []byte) (interf
 	}
 }
 
-//GetCompartmentId returns CompartmentId
-func (m outboundconnectorsummary) GetCompartmentId() *string {
-	return m.CompartmentId
-}
-
-//GetId returns Id
-func (m outboundconnectorsummary) GetId() *string {
-	return m.Id
-}
-
-//GetLifecycleState returns LifecycleState
-func (m outboundconnectorsummary) GetLifecycleState() OutboundConnectorSummaryLifecycleStateEnum {
-	return m.LifecycleState
-}
-
-//GetDisplayName returns DisplayName
-func (m outboundconnectorsummary) GetDisplayName() *string {
-	return m.DisplayName
-}
-
-//GetTimeCreated returns TimeCreated
-func (m outboundconnectorsummary) GetTimeCreated() *common.SDKTime {
-	return m.TimeCreated
-}
-
-//GetAvailabilityDomain returns AvailabilityDomain
+// GetAvailabilityDomain returns AvailabilityDomain
 func (m outboundconnectorsummary) GetAvailabilityDomain() *string {
 	return m.AvailabilityDomain
 }
 
-//GetFreeformTags returns FreeformTags
+// GetFreeformTags returns FreeformTags
 func (m outboundconnectorsummary) GetFreeformTags() map[string]string {
 	return m.FreeformTags
 }
 
-//GetDefinedTags returns DefinedTags
+// GetDefinedTags returns DefinedTags
 func (m outboundconnectorsummary) GetDefinedTags() map[string]map[string]interface{} {
 	return m.DefinedTags
 }
 
-//GetSystemTags returns SystemTags
+// GetSystemTags returns SystemTags
 func (m outboundconnectorsummary) GetSystemTags() map[string]map[string]interface{} {
 	return m.SystemTags
+}
+
+// GetCompartmentId returns CompartmentId
+func (m outboundconnectorsummary) GetCompartmentId() *string {
+	return m.CompartmentId
+}
+
+// GetId returns Id
+func (m outboundconnectorsummary) GetId() *string {
+	return m.Id
+}
+
+// GetLifecycleState returns LifecycleState
+func (m outboundconnectorsummary) GetLifecycleState() OutboundConnectorSummaryLifecycleStateEnum {
+	return m.LifecycleState
+}
+
+// GetDisplayName returns DisplayName
+func (m outboundconnectorsummary) GetDisplayName() *string {
+	return m.DisplayName
+}
+
+// GetTimeCreated returns TimeCreated
+func (m outboundconnectorsummary) GetTimeCreated() *common.SDKTime {
+	return m.TimeCreated
 }
 
 func (m outboundconnectorsummary) String() string {

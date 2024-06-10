@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -96,22 +96,22 @@ func (m *topology) UnmarshalPolymorphicJSON(data []byte) (interface{}, error) {
 	}
 }
 
-//GetEntities returns Entities
+// GetEntities returns Entities
 func (m topology) GetEntities() []interface{} {
 	return m.Entities
 }
 
-//GetRelationships returns Relationships
+// GetRelationships returns Relationships
 func (m topology) GetRelationships() json.RawMessage {
 	return m.Relationships
 }
 
-//GetLimitedEntities returns LimitedEntities
+// GetLimitedEntities returns LimitedEntities
 func (m topology) GetLimitedEntities() []string {
 	return m.LimitedEntities
 }
 
-//GetTimeCreated returns TimeCreated
+// GetTimeCreated returns TimeCreated
 func (m topology) GetTimeCreated() *common.SDKTime {
 	return m.TimeCreated
 }
