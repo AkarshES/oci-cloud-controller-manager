@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
-
-manifest="../../MANIFEST.csv"
+if [[ "$#" -ne 1 ]]; then
+    >&2 echo "Usage: ./gen_images_tfvars.sh <path_to_wheelbarrow_manifest>"
+    exit
+fi
+manifest=$1
 
 echo "{\"images\": ["
 
@@ -10,7 +13,7 @@ awk ' \
   /.\/*/{ \
     gsub(/^[ \t]+|[ \t]+$/, "", $1); \
     gsub(/^[ \t]+|[ \t]+$/, "", $2); \
-    gsub("\\.", "_DOT_", $2); \
+    gsub("\\\.", "_DOT_", $2); \
     printf "%s  {\"name\": \"%s__%s\", \"location\": \"%s\"}", SEP, $1, $2, $1; \
     SEP=",\n"; \
   } \
