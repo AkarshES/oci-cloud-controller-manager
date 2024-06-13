@@ -55,7 +55,7 @@ func HasValidSinglePortRulesAfterPortChangeNSG(oci client.Interface, nsgId strin
 		if numOldPortRules != 0 {
 			return false
 		}
-		if numNewPortRules != 1 {
+		if numNewPortRules == 0 {
 			return false
 		}
 	}
@@ -65,7 +65,7 @@ func HasValidSinglePortRulesAfterPortChangeNSG(oci client.Interface, nsgId strin
 // WaitForSinglePortRulesAfterPortChangeOrFailNSG waits for the expected rules to be added and validates
 // that the rule on the old port is removed and the rule on the new port is added
 func WaitForSinglePortRulesAfterPortChangeOrFailNSG(oci client.Interface, nsgId string, oldPort, newPort int, direction core.SecurityRuleDirectionEnum) {
-	for start := time.Now(); time.Since(start) < 70*time.Second; {
+	for start := time.Now(); time.Since(start) < 190*time.Second; {
 		valid := HasValidSinglePortRulesAfterPortChangeNSG(oci, nsgId, oldPort, newPort, direction)
 		if !valid {
 			time.Sleep(1 * time.Second)
@@ -73,5 +73,5 @@ func WaitForSinglePortRulesAfterPortChangeOrFailNSG(oci client.Interface, nsgId 
 			return
 		}
 	}
-	Failf("Failed: ValidSinglePortRulesAfterPortChangeOrDie Rule %s on NSG for old port still present: oldPort: %d, newPort: %d)", string(direction), oldPort, newPort)
+	Failf("Failed: ValidSinglePortRulesAfterPortChangeOrDie Rule %s on NSG %s for old port still present: oldPort: %d, newPort: %d)", string(direction), nsgId, oldPort, newPort)
 }

@@ -200,6 +200,7 @@ function run_e2e_tests() {
                 --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                 --reserved-ip=${RESERVED_IP} \
                 --architecture=${ARCHITECTURE} \
                 --volume-handle=${FSS_VOLUME_HANDLE} \
@@ -258,6 +259,7 @@ function run_e2e_tests() {
                 --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                 --reserved-ip=${RESERVED_IP} \
                 --architecture=${ARCHITECTURE} \
                 --volume-handle=${FSS_VOLUME_HANDLE} \
@@ -300,6 +302,7 @@ function run_e2e_tests_existing_cluster() {
                 --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                 --reserved-ip=${RESERVED_IP} \
                 --architecture=${ARCHITECTURE} \
                 --volume-handle=${FSS_VOLUME_HANDLE} \
@@ -331,6 +334,7 @@ function run_e2e_tests_existing_cluster() {
                         --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                         --nsg-ocids=${NSG_OCIDS} \
                         --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                        --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                         --reserved-ip=${RESERVED_IP} \
                         --architecture=${ARCHITECTURE} \
                         --volume-handle=${FSS_VOLUME_HANDLE} \

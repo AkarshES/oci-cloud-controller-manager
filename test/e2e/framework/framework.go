@@ -118,6 +118,7 @@ var (
 	cmekKMSKey                    string // KMS key for CMEK testing
 	nsgOCIDS                      string // Testing CCM NSG feature
 	backendNsgIds                 string // Testing Rule management Backend NSG feature
+	singleStackIPv6LbSubnet       string // Testing SingleStack IPv6 for Loadbalancer service
 	reservedIP                    string // Testing public reserved IP feature
 	architecture                  string
 	volumeHandle                  string // The FSS mount volume handle
@@ -198,6 +199,7 @@ func init() {
 	flag.StringVar(&cmekKMSKey, "cmek-kms-key", "", "KMS key to be used for CMEK testing")
 	flag.StringVar(&nsgOCIDS, "nsg-ocids", "", "NSG OCIDs to be used to associate to LB")
 	flag.StringVar(&backendNsgIds, "backend-nsg-ocids", "", "backend NSG Ids associated with backends of LB")
+	flag.StringVar(&singleStackIPv6LbSubnet, "single-stack-ipv6-lb-subnet", "", "SingleStack IPv6 LB subnet to create load balancers in")
 	flag.StringVar(&reservedIP, "reserved-ip", "", "Public reservedIP to be used for testing loadbalancer with reservedIP")
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
 
@@ -356,6 +358,7 @@ type Framework struct {
 	CMEKKMSKey               string
 	NsgOCIDS                 string
 	BackendNsgOcid           string
+	SingleStackIPv6LbSubnet  string
 	ReservedIP               string
 	Architecture             string
 
@@ -554,6 +557,8 @@ func (f *Framework) Initialize() {
 	Logf("NSG OCIDS: %s", f.NsgOCIDS)
 	f.BackendNsgOcid = backendNsgIds
 	Logf("Backend NSG OCIDS: %s", f.BackendNsgOcid)
+	f.SingleStackIPv6LbSubnet = singleStackIPv6LbSubnet
+	Logf("SingleStack IPv6 LB Subnet: %s", f.SingleStackIPv6LbSubnet)
 	f.ReservedIP = reservedIP
 	Logf("Reserved IP: %s", f.ReservedIP)
 	f.Architecture = architecture

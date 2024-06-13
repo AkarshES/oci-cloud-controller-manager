@@ -50,7 +50,7 @@ export ARCHITECTURE_AMD="AMD"
 export ARCHITECTURE_ARM="ARM"
 
 #Focus the tests : ARM, AMD or BOTH
-export SCOPE="AMD"
+export SCOPE="ARM"
 
 #NSG Network security group created in cluster's VCN for backend management, this NSG will have to be attached to the nodes manually for tests to pass
 export BACKEND_NSG_OCIDS="ocid1.networksecuritygroup.oc1.phx.aaaaaaaa5mcufaaxor246s6ija72dbb3ybqtc5akdiys6yccs65kwyad3zqq"
@@ -88,9 +88,9 @@ export CLUSTER_TYPE="ENHANCED_CLUSTER"
 # export CE_ENDPOINT_OVERRIDE="http://localhost:25000"
 
 # Ip family of cluster to create cluster as per required ip stack
-export CLUSTER_IP_FAMILY="IPv4"
+export CLUSTER_IP_FAMILY="IPv4,IPv6"
 export NP_IMAGE_OS="Oracle-Linux-8"
-export SKIP_CLUSTER_DELETION="true"
+export SKIP_CLUSTER_DELETION="false"
 
 
 export MNT_TARGET_ID_IPV6=""

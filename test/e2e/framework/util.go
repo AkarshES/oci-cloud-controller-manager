@@ -98,3 +98,13 @@ func CompareVersions(v1 string, v2 string) (ret int) {
 	}
 	return
 }
+
+// Contains is a utility method to check if a string is part of a slice
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

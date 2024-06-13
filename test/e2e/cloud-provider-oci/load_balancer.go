@@ -19,17 +19,21 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/blang/semver/v4"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	cloudprovider "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci"
 	sharedfw "github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
+	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"go.uber.org/zap"
@@ -38,9 +42,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+	net2 "k8s.io/utils/net"
 )
 
-var _ = Describe("Service [Slow]", func() {
+var once sync.Once
+
+type IpVersion struct {
+	V4 string
+	V6 string
+}
+
+var _ = Describe("Service SingleStack IPv4 [Slow]", func() {
 
 	baseName := "service"
 	f := sharedfw.NewDefaultFramework(baseName)
@@ -58,10 +70,12 @@ var _ = Describe("Service [Slow]", func() {
 	basicTestArray := []struct {
 		lbType              string
 		CreationAnnotations map[string]string
+		ipFamilies          v1.IPFamily
 	}{
 		{
 			"lb",
 			map[string]string{},
+			v1.IPv4Protocol,
 		},
 		{
 			"nlb",
@@ -69,6 +83,7 @@ var _ = Describe("Service [Slow]", func() {
 				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
 			},
+			v1.IPv4Protocol,
 		},
 		{
 			"lb-wris",
@@ -76,6 +91,7 @@ var _ = Describe("Service [Slow]", func() {
 				cloudprovider.ServiceAnnotationServiceAccountName:                     "sa",
 				cloudprovider.ServiceAnnotationLoadBalancerInitialDefinedTagsOverride: string(testDefinedTagsByteArray),
 			},
+			v1.IPv4Protocol,
 		},
 		{
 			"nlb-wris",
@@ -85,6 +101,7 @@ var _ = Describe("Service [Slow]", func() {
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerInitialDefinedTagsOverride: string(testDefinedTagsByteArray),
 			},
+			v1.IPv4Protocol,
 		},
 	}
 	Context("[cloudprovider][ccm][lb][SL][wris][system-tags]", func() {
@@ -124,6 +141,7 @@ var _ = Describe("Service [Slow]", func() {
 						s.Spec.Type = v1.ServiceTypeLoadBalancer
 						s.Spec.LoadBalancerIP = requestedIP // will be "" if not applicable
 						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 					})
 
 					if _, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
@@ -307,7 +325,7 @@ var _ = Describe("Service [Slow]", func() {
 	})
 })
 
-var _ = Describe("Service NSG [Slow]", func() {
+var _ = Describe("Service NSG SingleStack IPv4 [Slow]", func() {
 
 	baseName := "service"
 	f := sharedfw.NewDefaultFramework(baseName)
@@ -321,6 +339,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 	basicTestArray := []struct {
 		lbType              string
 		CreationAnnotations map[string]string
+		ipFamilies          v1.IPFamily
 	}{
 		{
 			"lb",
@@ -328,6 +347,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
 				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
 			},
+			v1.IPv4Protocol,
 		},
 		{
 			"nlb",
@@ -336,6 +356,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
 				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
 			},
+			v1.IPv4Protocol,
 		},
 	}
 	Context("[cloudprovider][ccm][lb][managedNsg]", func() {
@@ -374,6 +395,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 					s.Spec.Type = v1.ServiceTypeLoadBalancer
 					s.Spec.LoadBalancerIP = requestedIP // will be "" if not applicable
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -521,7 +543,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 })
 
 // NOTE: OCI LBaaS is not a passthrough load balancer so ESIPP (External Source IP
-// Presevation) is not possible, however, this test covers support for node-local
+// Preservation) is not possible, however, this test covers support for node-local
 // routing (i.e. avoidance of a second hop).
 var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 
@@ -544,10 +566,12 @@ var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 	esippTestsArray := []struct {
 		lbType              string
 		CreationAnnotations map[string]string
+		ipFamilies          v1.IPFamily
 	}{
 		{
 			"lb",
 			map[string]string{},
+			v1.IPv4Protocol,
 		},
 		{
 			"nlb",
@@ -555,6 +579,7 @@ var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
 			},
+			v1.IPv4Protocol,
 		},
 	}
 	Context("[cloudprovider][ccm][lb][node-local]", func() {
@@ -574,6 +599,7 @@ var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 							svc.Spec.Ports[0].TargetPort = intstr.FromInt(int(svc.Spec.Ports[0].Port))
 							svc.Spec.Ports[0].Port = 8081
 						}
+						svc.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 					})
 				serviceLBNames = append(serviceLBNames, cloudprovider.GetLoadBalancerName(svc))
 				defer func() {
@@ -640,6 +666,7 @@ var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 							cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal: "true",
 						}
 					}
+					s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 				})
 				serviceLBNames = append(serviceLBNames, cloudprovider.GetLoadBalancerName(svc))
 				defer func() {
@@ -670,6 +697,8 @@ var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 
 				var srcIP string
 				By(fmt.Sprintf("Hitting external lb %v from pod %v on node %v", ingressIP, podName, nodeName))
+				podIpv6 := ""
+				podIpv4 := ""
 				if pollErr := wait.PollImmediate(sharedfw.K8sResourcePoll, sharedfw.LoadBalancerCreateTimeoutDefault, func() (bool, error) {
 					stdout, err := sharedfw.RunHostCmd(execPod.Namespace, execPod.Name, cmd)
 					if err != nil {
@@ -677,9 +706,20 @@ var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 						return false, nil
 					}
 					srcIP = strings.TrimSpace(strings.Split(stdout, ":")[0])
-					return srcIP == execPod.Status.PodIP, nil
+					sharedfw.Logf("log std out: %v,", stdout)
+					podIPs := execPod.Status.PodIPs
+
+					for _, ip := range podIPs {
+						if net2.IsIPv6String(ip.String()) {
+							podIpv6 = ip.String()
+						}
+						if net2.IsIPv4String(ip.String()) {
+							podIpv4 = ip.String()
+						}
+					}
+					return strings.EqualFold(srcIP, execPod.Status.PodIP) || strings.EqualFold(srcIP, podIpv4) || strings.EqualFold(srcIP, podIpv6), nil
 				}); pollErr != nil {
-					sharedfw.Failf("Source IP not preserved from %v, expected '%v' got '%v'", podName, execPod.Status.PodIP, srcIP)
+					sharedfw.Failf("Source IP not preserved from %v, expected podIpv4 '%v', podIpv6 '%v' got '%v'", podName, podIpv4, podIpv6, srcIP)
 				}
 			}
 		})
@@ -733,6 +773,7 @@ var _ = Describe("End to end TLS", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
 				}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -942,6 +983,7 @@ var _ = Describe("BackendSet only enabled TLS", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
 				}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1031,6 +1073,7 @@ var _ = Describe("BackendSet only enabled TLS - NodePool Scaling", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret:           sslSecretName,
 					cloudprovider.ServiceAnnotationLoadbalancerListenerSSLConfig:   `{"CipherSuiteName":"oci-default-http2-ssl-cipher-suite-v1", "Protocols":["TLSv1.2"]}`,
 				}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1186,6 +1229,7 @@ var _ = Describe("Listener only enabled TLS", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret: sslSecretName,
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:  "true",
 				}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1385,6 +1429,7 @@ var _ = Describe("End to end enabled TLS - different certificates", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslBackendSetSecretName,
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
 				}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1442,6 +1487,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 			configuration    string
 			annotations      map[string]string
 			isPreserveSource bool
+			ipFamilies       v1.IPFamily
 		}{
 			{
 				"nlb",
@@ -1452,6 +1498,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:                "true",
 				},
 				true,
+				v1.IPv4Protocol,
 			},
 			{
 				"nlb",
@@ -1462,6 +1509,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:                "true",
 				},
 				false,
+				v1.IPv4Protocol,
 			},
 		}
 		It("should be possible configure preservation of source IP in NLB", func() {
@@ -1487,6 +1535,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 					s.ObjectMeta.Annotations = test.annotations
 					s.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
 					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1559,6 +1608,7 @@ var _ = Describe("LB Properties", func() {
 			RemovedAnnotations  map[string]string
 			CreateInterval      int
 			UpdateInterval      int
+			ipFamilies          v1.IPFamily
 		}{
 			{
 				"lb",
@@ -1575,6 +1625,7 @@ var _ = Describe("LB Properties", func() {
 				map[string]string{},
 				4000,
 				6000,
+				v1.IPv4Protocol,
 			},
 			{
 				"nlb",
@@ -1595,6 +1646,7 @@ var _ = Describe("LB Properties", func() {
 				},
 				10000,
 				15000,
+				v1.IPv4Protocol,
 			},
 		}
 		It("should be possible to create Service type:LoadBalancer and mutate health-check config", func() {
@@ -1624,6 +1676,7 @@ var _ = Describe("LB Properties", func() {
 					if test.lbType == "nlb" {
 						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
 					}
+					s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1769,6 +1822,7 @@ var _ = Describe("LB Properties", func() {
 				s.Spec.LoadBalancerIP = requestedIP
 				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 			By("creating a pod to be part of the TCP service " + serviceName)
 			jig.RunOrFail(ns, nil)
@@ -1786,7 +1840,7 @@ var _ = Describe("LB Properties", func() {
 						cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "100",
 						cloudprovider.ServiceAnnotationLoadBalancerInternal:     "true",
 					}
-
+					s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1861,6 +1915,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionIdleTimeout: "500",
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:              "true",
 				}
+				s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1922,6 +1977,7 @@ var _ = Describe("LB Properties", func() {
 			lbtype        string
 			Annotations   map[string]string
 			nsgAnnotation string
+			ipFamilies    v1.IPFamily
 		}{
 			{
 				"lb",
@@ -1932,6 +1988,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
 				},
 				cloudprovider.ServiceAnnotationLoadBalancerNetworkSecurityGroups,
+				v1.IPv4Protocol,
 			},
 			{
 				"nlb",
@@ -1940,6 +1997,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerType:            "nlb",
 				},
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerNetworkSecurityGroups,
+				v1.IPv4Protocol,
 			},
 		}
 		// Test NSG feature
@@ -1988,6 +2046,8 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.Annotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -2059,6 +2119,7 @@ var _ = Describe("LB Properties", func() {
 			CreationAnnotations map[string]string
 			UpdatedAnnotations  map[string]string
 			PolicyAnnotation    string
+			ipFamilies          v1.IPFamily
 		}{
 			{
 				"lb",
@@ -2072,6 +2133,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerPolicy: cloudprovider.LeastConnectionsLoadBalancerPolicy,
 				},
 				cloudprovider.ServiceAnnotationLoadBalancerPolicy,
+				v1.IPv4Protocol,
 			},
 			{
 				"nlb",
@@ -2084,6 +2146,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationNetworkLoadBalancerBackendPolicy: cloudprovider.NetworkLoadBalancingPolicyThreeTuple,
 				},
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerBackendPolicy,
+				v1.IPv4Protocol,
 			},
 		}
 
@@ -2117,6 +2180,7 @@ var _ = Describe("LB Properties", func() {
 					if test.lbType == "nlb" {
 						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
 					}
+					s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -2177,6 +2241,7 @@ var _ = Describe("LB Properties", func() {
 		reservedIpTestArray := []struct {
 			lbType              string
 			CreationAnnotations map[string]string
+			ipFamilies          v1.IPFamily
 		}{
 			{
 				"lb",
@@ -2185,16 +2250,18 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
 				},
+				v1.IPv4Protocol,
 			},
 			{
 				"nlb",
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerType: "nlb",
 				},
+				v1.IPv4Protocol,
 			},
 			{
-				"lb-wris",
-				map[string]string{
+				lbType: "lb-wris",
+				CreationAnnotations: map[string]string{
 					cloudprovider.ServiceAnnotationServiceAccountName:       "sa",
 					cloudprovider.ServiceAnnotationLoadBalancerShape:        "flexible",
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
@@ -2202,8 +2269,8 @@ var _ = Describe("LB Properties", func() {
 				},
 			},
 			{
-				"nlb-wris",
-				map[string]string{
+				lbType: "nlb-wris",
+				CreationAnnotations: map[string]string{
 					cloudprovider.ServiceAnnotationServiceAccountName: "sa",
 					cloudprovider.ServiceAnnotationLoadBalancerType:   "nlb",
 				},
@@ -2239,7 +2306,6 @@ var _ = Describe("LB Properties", func() {
 						By("creating service account \"sa\" in namespace " + ns)
 						serviceAccount = jig.CreateServiceAccountOrFail(ns, sa, nil)
 					}
-
 					reservedIP := setupF.ReservedIP
 					sharedfw.Logf(reservedIP)
 					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
@@ -2248,6 +2314,7 @@ var _ = Describe("LB Properties", func() {
 						s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 							{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{test.ipFamilies}
 					})
 
 					if _, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
@@ -2445,6 +2512,178 @@ var _ = Describe("LB Properties", func() {
 				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
 			}
 		})
+
+		ipVersionTestArray := []struct {
+			lbtype              string
+			CreationAnnotations map[string]string
+		}{
+			{
+				"nlb",
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType: "nlb",
+				},
+			},
+		}
+		if sharedfw.Contains(f.ClusterIPFamily, "IPv6") {
+			It("should be possible to update Service type:LoadbBalancer from SingleStack IPv4 to DualStack", func() {
+				for _, test := range ipVersionTestArray {
+					By("Running test for: " + test.lbtype)
+					serviceName := "e2e-" + test.lbtype + "-singlestack"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.Spec.Ports = []v1.ServicePort{
+							{Name: "http", Port: 80, TargetPort: intstr.FromInt32(80)},
+						}
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+					})
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("creating a pod to be part of the TCP service " + serviceName)
+					jig.RunOrFail(ns, nil)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+					sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+					By("waiting upto 5m0s to verify initial LB config")
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					By("waiting upto 5m0s to verify whether LB has been created")
+
+					lbEndpointIpVersion := loadBalancer.IpVersion
+					sharedfw.Logf("Current loadbalancer endpoint version is: %s", *lbEndpointIpVersion)
+
+					By("changing TCP service to IpFamilies to PreferDualStack")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol, v1.IPv6Protocol}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack)))
+					})
+
+					By("waiting upto 5m0s to verify loadbalancer ipVersion after modification")
+					err = f.VerifyLoadBalancerUpdateIpVersionChange(*loadBalancer.Id, test.lbtype, string(v1.IPFamilyPolicyPreferDualStack))
+					sharedfw.ExpectNoError(err)
+
+					By("changing TCP service to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+					// Wait for the load balancer to be destroyed asynchronously
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+				}
+			})
+
+			It("should be possible to update Service type:LoadbBalancer from DualStack to SingleStack IPv4", func() {
+				for _, test := range ipVersionTestArray {
+					By("Running test for: " + test.lbtype)
+					serviceName := "e2e-" + test.lbtype + "-dualstack"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.Spec.Ports = []v1.ServicePort{
+							{Name: "http", Port: 80, TargetPort: intstr.FromInt32(80)},
+						}
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol, v1.IPv6Protocol}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack)))
+					})
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("creating a pod to be part of the TCP service " + serviceName)
+					jig.RunOrFail(ns, nil)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+					sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+					By("waiting upto 5m0s to verify initial LB config")
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					By("waiting upto 5m0s to verify whether LB has been created")
+
+					lbEndpointIpVersion := loadBalancer.IpVersion
+					sharedfw.Logf("Current loadbalancer endpoint version is: %s", *lbEndpointIpVersion)
+
+					By("changing TCP service to IpFamilies to SingleStack IPv4")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack)))
+					})
+
+					By("waiting upto 5m0s to verify loadbalancer ipVersion after modification")
+					err = f.VerifyLoadBalancerUpdateIpVersionChange(*loadBalancer.Id, test.lbtype, string(v1.IPFamilyPolicySingleStack))
+					sharedfw.ExpectNoError(err)
+
+					By("changing TCP service to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+					// Wait for the load balancer to be destroyed asynchronously
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+				}
+			})
+		}
 	})
 })
 
@@ -3879,5 +4118,985 @@ var _ = Describe("Mixed Cluster - scale managed and virtual pods", func() {
 				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
 			}
 		})
+	})
+})
+
+var _ = Describe("Service DualStack IPv4/IPv6 [Slow]", func() {
+
+	baseName := "service"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	basicTestArray := []struct {
+		lbType              string
+		CreationAnnotations map[string]string
+	}{
+		{
+			"lb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType: "lb",
+			},
+		},
+		{
+			"nlb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+			},
+		},
+	}
+	Context("[cloudprovider][ccm][lb][SL][DualStack]", func() {
+		if sharedfw.Contains(f.ClusterIPFamily, "IPv6") {
+			It("should be possible to create and mutate a Service type:LoadBalancer (change nodeport) [Canary]", func() {
+				for _, test := range basicTestArray {
+					featureVersion, _ := semver.New("1.29.0")
+					clusterVersion, err := semver.New(strings.TrimSpace(setupF.OkeClusterK8sVersion[1:]))
+					if err != nil {
+						sharedfw.Failf(err.Error())
+					}
+
+					if test.lbType == "nlb" && clusterVersion.LT(*featureVersion) {
+						continue
+					}
+					if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+						sharedfw.Logf("Skipping Workload Identity Principal test for LB Type (%s) because the cluster is not an OKE ENHANCED_CLUSTER", test.lbType)
+						continue
+					}
+
+					By("Running test for: " + test.lbType)
+					serviceName := "basic-" + test.lbType + "-test"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+
+					if sa, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+						// Create a service account in the same namespace as the service
+						jig.CreateServiceAccountOrFail(ns, sa, nil)
+					}
+
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol, v1.IPv6Protocol}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicyPreferDualStack)))
+					})
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("creating a pod to be part of the TCP service " + serviceName)
+					jig.RunOrFail(ns, nil)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbName := cloudprovider.GetLoadBalancerName(tcpService)
+						sharedfw.Logf("LB Name is %s", lbName)
+
+					}
+
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+					lbType := test.lbType
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbType = strings.TrimSuffix(test.lbType, "-wris")
+					}
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+
+					tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					LoadbalancerIngress := tcpService.Status.LoadBalancer.Ingress
+
+					tcpIngressIP := IpVersion{
+						V4: "",
+						V6: "",
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							sharedfw.Logf("IPv4 IP %s", ipAddress)
+							if !ipAddress.IsPrivate() {
+								sharedfw.Logf("IPv4 IP %s", ip)
+								tcpIngressIP.V4 = ip
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							tcpIngressIP.V6 = ip
+						}
+					}
+
+					sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					sharedfw.Logf("TCP load balancer IPv6: %s", tcpIngressIP.V6)
+
+					By("hitting the TCP service's LoadBalancer via the IPv4 endpoint")
+					jig.TestReachableHTTP(false, tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+
+					By("hitting the TCP service's LoadBalancer via the IPv6 endpoint")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' node ports.
+					By("changing the TCP service's NodePort")
+					// Count the number of ingress/egress rules with the original port so
+					// we can check the correct number are updated.
+					numEgressRules, numIngressRules := sharedfw.CountSinglePortSecListRules(f.Client, f.CCMSecListID, f.K8SSecListID, tcpNodePort)
+					tcpService = jig.ChangeServiceNodePortOrFail(ns, tcpService.Name, tcpNodePort)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					tcpNodePortOld := tcpNodePort
+					tcpNodePort = int(tcpService.Spec.Ports[0].NodePort)
+					if tcpNodePort == tcpNodePortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) did not change", tcpNodePort)
+					}
+
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							if !ipAddress.IsPrivate() {
+								if tcpIngressIP.V4 != ip {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+
+					// Check the correct number of rules are present.
+					sharedfw.WaitForSinglePortEgressRulesAfterPortChangeOrFail(f.Client, f.CCMSecListID, numEgressRules, tcpNodePortOld, tcpNodePort)
+					sharedfw.WaitForSinglePortIngressRulesAfterPortChangeOrFail(f.Client, f.K8SSecListID, numIngressRules, tcpNodePortOld, tcpNodePort)
+
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					By("hitting the TCP service's IPv4 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' main ports.
+
+					By("changing the TCP service's port")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Ports[0].Port++
+					})
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+					svcPortOld := svcPort
+					svcPort = int(tcpService.Spec.Ports[0].Port)
+					if svcPort == svcPortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].Port (%d) did not change", svcPort)
+					}
+					if int(tcpService.Spec.Ports[0].NodePort) != tcpNodePort {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) changed", tcpService.Spec.Ports[0].NodePort)
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							if !ipAddress.IsPrivate() {
+								if tcpIngressIP.V4 != ip {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+					sharedfw.Logf("service port (TCP): %d", svcPort)
+
+					By("hitting the TCP service's IPv4 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+					// Change the services back to ClusterIP.
+
+					By("changing TCP service back to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP.V4, svcPort, loadBalancerCreateTimeout)
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP.V6, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+					By("checking the TCP LoadBalancer is closed")
+					jig.TestNotReachableHTTP(tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+					jig.TestNotReachableHTTP(tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+				}
+			})
+		}
+	})
+})
+
+var _ = Describe("Service NSG DualStack IPv4/IPv6 [Slow]", func() {
+
+	baseName := "service"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	basicTestArray := []struct {
+		lbType              string
+		CreationAnnotations map[string]string
+	}{
+		{
+			"lb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:                       "lb",
+				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
+			},
+		},
+		{
+			"nlb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:                       "nlb",
+				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
+			},
+		},
+	}
+	Context("[cloudprovider][ccm][lb][managedNsg][DualStack]", func() {
+		if sharedfw.Contains(f.ClusterIPFamily, "IPv6") {
+			It("should be possible to create and mutate a Service type:LoadBalancer (change nodeport) [Canary]", func() {
+				for _, test := range basicTestArray {
+					featureVersion, _ := semver.New("1.29.0")
+					clusterVersion, err := semver.New(strings.TrimSpace(setupF.OkeClusterK8sVersion[1:]))
+					if err != nil {
+						sharedfw.Failf(err.Error())
+					}
+
+					if test.lbType == "nlb" && clusterVersion.LT(*featureVersion) {
+						continue
+					}
+					if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+						sharedfw.Logf("Skipping Workload Identity Principal test for LB Type (%s) because the cluster is not an OKE ENHANCED_CLUSTER", test.lbType)
+						continue
+					}
+
+					By("Running test for: " + test.lbType)
+					serviceName := "basic-" + test.lbType + "-test"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+
+					if sa, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+						// Create a service account in the same namespace as the service
+						jig.CreateServiceAccountOrFail(ns, sa, nil)
+					}
+
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{"IPv4", "IPv6"}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String("PreferDualStack"))
+					})
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("creating a pod to be part of the TCP service " + serviceName)
+					jig.RunOrFail(ns, nil)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbName := cloudprovider.GetLoadBalancerName(tcpService)
+						sharedfw.Logf("LB Name is %s", lbName)
+
+					}
+
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+					lbType := test.lbType
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbType = strings.TrimSuffix(test.lbType, "-wris")
+					}
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+
+					tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					LoadbalancerIngress := tcpService.Status.LoadBalancer.Ingress
+
+					tcpIngressIP := IpVersion{
+						V4: "",
+						V6: "",
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							if !ipAddress.IsPrivate() {
+								sharedfw.Logf("IPv4 IP %s", ip)
+								tcpIngressIP.V4 = ip
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							tcpIngressIP.V6 = ip
+						}
+					}
+
+					sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					sharedfw.Logf("TCP load balancer IPv6: %s", tcpIngressIP.V6)
+
+					By("hitting the TCP service's LoadBalancer via the IPv4 endpoint")
+					jig.TestReachableHTTP(false, tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+
+					By("hitting the TCP service's LoadBalancer via the IPv6 endpoint")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' node ports.
+					By("changing the TCP service's NodePort")
+
+					frontendNsgId := loadBalancer.NetworkSecurityGroupIds[0]
+					// Count the number of ingress/egress rules with the original port so
+					// we can check the correct number are updated.
+					tcpService = jig.ChangeServiceNodePortOrFail(ns, tcpService.Name, tcpNodePort)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					tcpNodePortOld := tcpNodePort
+					tcpNodePort = int(tcpService.Spec.Ports[0].NodePort)
+					if tcpNodePort == tcpNodePortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) did not change", tcpNodePort)
+					}
+
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							if tcpIngressIP.V4 != ip {
+								var ipAddress net.IP
+								ipAddress = net2.ParseIPSloppy(ip)
+								if !ipAddress.IsPrivate() {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+
+					// Check the correct number of rules are present on the NSG
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionEgress)
+					backendNsgList := strings.Split(strings.ReplaceAll(setupF.BackendNsgOcid, " ", ""), ",")
+
+					for _, backendNsg := range backendNsgList {
+						sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionIngress)
+					}
+
+					// Check if rules are not modified on the security list.
+					numEgressRules, numIngressRules := sharedfw.CountSinglePortSecListRules(f.Client, f.CCMSecListID, f.K8SSecListID, tcpNodePort)
+					if numEgressRules != 0 || numIngressRules != 0 {
+						sharedfw.Logf("Count of Egress Rules added to sec list %d", numEgressRules)
+						sharedfw.Logf("Count of Ingress Rules added to sec list %d", numIngressRules)
+						sharedfw.Failf("Security List rules modified while service should be using NSG on port %d", tcpNodePort)
+					}
+
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					By("hitting the TCP service's IPv4 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' main ports.
+
+					By("changing the TCP service's port")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Ports[0].Port++
+					})
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+					svcPortOld := svcPort
+					svcPort = int(tcpService.Spec.Ports[0].Port)
+
+					if svcPort == svcPortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].Port (%d) did not change", svcPort)
+					}
+					if int(tcpService.Spec.Ports[0].NodePort) != tcpNodePort {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) changed", tcpService.Spec.Ports[0].NodePort)
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							if tcpIngressIP.V4 != ip {
+								var ipAddress net.IP
+								ipAddress = net2.ParseIPSloppy(ip)
+								if !ipAddress.IsPrivate() {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+					sharedfw.Logf("service port (TCP): %d", svcPort)
+
+					By("hitting the TCP service's IPv4 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services back to ClusterIP.
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, svcPortOld, svcPort, core.SecurityRuleDirectionIngress)
+
+					By("changing TCP service back to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+					// Wait for the load balancer to be destroyed asynchronously
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP.V4, svcPort, loadBalancerCreateTimeout)
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP.V6, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+					By("checking the TCP LoadBalancer is closed")
+					jig.TestNotReachableHTTP(tcpIngressIP.V4, svcPort, loadBalancerLagTimeout)
+					jig.TestNotReachableHTTP(tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+				}
+			})
+		}
+	})
+})
+
+var _ = Describe("Service SingleStack IPv6 - NLB SL [Slow]", func() {
+	baseName := "service"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	basicTestArray := []struct {
+		lbType              string
+		CreationAnnotations map[string]string
+	}{
+		{
+			"nlb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerSubnet:                     f.SingleStackIPv6LbSubnet,
+			},
+		},
+	}
+	Context("[nlb][SL][SingleStackIPv6]", func() {
+		// featureVersion, _ := semver.New("1.29.0")
+		//clusterVersion, err := semver.New(strings.TrimSpace(setupF.OkeClusterK8sVersion))
+		//if err != nil {
+		//	sharedfw.Failf(err.Error())
+		//}
+		if sharedfw.Contains(f.ClusterIPFamily, "IPv6") && f.SingleStackIPv6LbSubnet != "" {
+			It("should be possible to create and mutate a Service type:LoadBalancer (change nodeport) [Canary]", func() {
+				for _, test := range basicTestArray {
+					if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+						sharedfw.Logf("Skipping Workload Identity Principal test for LB Type (%s) because the cluster is not an OKE ENHANCED_CLUSTER", test.lbType)
+						continue
+					}
+
+					By("Running test for: " + test.lbType)
+					serviceName := "basic-" + test.lbType + "-test"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+
+					if sa, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+						// Create a service account in the same namespace as the service
+						jig.CreateServiceAccountOrFail(ns, sa, nil)
+					}
+
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv6Protocol}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack)))
+					})
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("creating a pod to be part of the TCP service " + serviceName)
+					jig.RunOrFail(ns, nil)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbName := cloudprovider.GetLoadBalancerName(tcpService)
+						sharedfw.Logf("LB Name is %s", lbName)
+
+					}
+
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+					lbType := test.lbType
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbType = strings.TrimSuffix(test.lbType, "-wris")
+					}
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+
+					tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					LoadbalancerIngress := tcpService.Status.LoadBalancer.Ingress
+
+					tcpIngressIP := IpVersion{
+						V4: "",
+						V6: "",
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							sharedfw.Logf("IPv4 IP %s", ipAddress)
+							if !ipAddress.IsPrivate() {
+								sharedfw.Logf("IPv4 IP %s", ip)
+								tcpIngressIP.V4 = ip
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							tcpIngressIP.V6 = ip
+						}
+					}
+
+					if tcpIngressIP.V4 != "" {
+						sharedfw.ExpectNoError(errors.New("IPv4 Endpoint not expected for SingleStack use case"))
+						sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					}
+
+					sharedfw.Logf("TCP load balancer IPv6: %s", tcpIngressIP.V6)
+
+					By("hitting the TCP service's LoadBalancer via the IPv6 endpoint")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' node ports.
+					By("changing the TCP service's NodePort")
+					// Count the number of ingress/egress rules with the original port so
+					// we can check the correct number are updated.
+					numEgressRules, numIngressRules := sharedfw.CountSinglePortSecListRules(f.Client, f.CCMSecListID, f.K8SSecListID, tcpNodePort)
+					tcpService = jig.ChangeServiceNodePortOrFail(ns, tcpService.Name, tcpNodePort)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					tcpNodePortOld := tcpNodePort
+					tcpNodePort = int(tcpService.Spec.Ports[0].NodePort)
+					if tcpNodePort == tcpNodePortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) did not change", tcpNodePort)
+					}
+
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							if !ipAddress.IsPrivate() {
+								if tcpIngressIP.V4 != ip {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+
+					// Check the correct number of rules are present.
+					sharedfw.WaitForSinglePortEgressRulesAfterPortChangeOrFail(f.Client, f.CCMSecListID, numEgressRules, tcpNodePortOld, tcpNodePort)
+					sharedfw.WaitForSinglePortIngressRulesAfterPortChangeOrFail(f.Client, f.K8SSecListID, numIngressRules, tcpNodePortOld, tcpNodePort)
+
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					if tcpIngressIP.V4 != "" {
+						sharedfw.ExpectNoError(errors.New("IPv4 Endpoint not expected for SingleStack use case"))
+						sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					}
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' main ports.
+
+					By("changing the TCP service's port")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Ports[0].Port++
+					})
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+					svcPortOld := svcPort
+					svcPort = int(tcpService.Spec.Ports[0].Port)
+					if svcPort == svcPortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].Port (%d) did not change", svcPort)
+					}
+					if int(tcpService.Spec.Ports[0].NodePort) != tcpNodePort {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) changed", tcpService.Spec.Ports[0].NodePort)
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							if !ipAddress.IsPrivate() {
+								if tcpIngressIP.V4 != ip {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+					sharedfw.Logf("service port (TCP): %d", svcPort)
+
+					if tcpIngressIP.V4 != "" {
+						sharedfw.ExpectNoError(errors.New("IPv4 Endpoint not expected for SingleStack use case"))
+						sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					}
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+					// Change the services back to ClusterIP.
+
+					By("changing TCP service back to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP.V6, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+					By("checking the TCP LoadBalancer is closed")
+					jig.TestNotReachableHTTP(tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+				}
+			})
+		}
+	})
+})
+
+var _ = Describe("Service SingleStack IPv6 - NLB NSG [Slow]", func() {
+
+	baseName := "service"
+	f := sharedfw.NewDefaultFramework(baseName)
+	basicTestArray := []struct {
+		lbType              string
+		CreationAnnotations map[string]string
+	}{
+		{
+			"nlb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:                       "nlb",
+				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerSubnet:              f.SingleStackIPv6LbSubnet,
+			},
+		},
+	}
+	Context("[nlb][managedNsg][SingleStackIPv6]", func() {
+		//featureVersion, _ := semver.New("1.29.0")
+		//clusterVersion, err := semver.New(strings.TrimSpace(setupF.OkeClusterK8sVersion))
+		//if err != nil {
+		//	sharedfw.Failf(err.Error())
+		//}
+		if sharedfw.Contains(f.ClusterIPFamily, "IPv6") && f.SingleStackIPv6LbSubnet != "" {
+			It("should be possible to create and mutate a Service type:LoadBalancer (change nodeport) [Canary]", func() {
+				for _, test := range basicTestArray {
+					if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+						sharedfw.Logf("Skipping Workload Identity Principal test for LB Type (%s) because the cluster is not an OKE ENHANCED_CLUSTER", test.lbType)
+						continue
+					}
+
+					By("Running test for: " + test.lbType)
+					serviceName := "basic-" + test.lbType + "-test"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+
+					if sa, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+						// Create a service account in the same namespace as the service
+						jig.CreateServiceAccountOrFail(ns, sa, nil)
+					}
+
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+						s.Spec.IPFamilies = []v1.IPFamily{v1.IPv6Protocol}
+						s.Spec.IPFamilyPolicy = (*v1.IPFamilyPolicy)(common.String(string(v1.IPFamilyPolicySingleStack)))
+					})
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("creating a pod to be part of the TCP service " + serviceName)
+					jig.RunOrFail(ns, nil)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbName := cloudprovider.GetLoadBalancerName(tcpService)
+						sharedfw.Logf("LB Name is %s", lbName)
+
+					}
+
+					lbName := cloudprovider.GetLoadBalancerName(tcpService)
+					sharedfw.Logf("LB Name is %s", lbName)
+					ctx := context.TODO()
+					compartmentId := ""
+					if setupF.Compartment1 != "" {
+						compartmentId = setupF.Compartment1
+					} else if f.CloudProviderConfig.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.CompartmentID
+					} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+						compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+					} else {
+						sharedfw.Failf("Compartment Id undefined.")
+					}
+					lbType := test.lbType
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbType = strings.TrimSuffix(test.lbType, "-wris")
+					}
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					sharedfw.ExpectNoError(err)
+					sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+
+					tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					LoadbalancerIngress := tcpService.Status.LoadBalancer.Ingress
+
+					tcpIngressIP := IpVersion{
+						V4: "",
+						V6: "",
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							var ipAddress net.IP
+							ipAddress = net2.ParseIPSloppy(ip)
+							if !ipAddress.IsPrivate() {
+								sharedfw.Logf("IPv4 IP %s", ip)
+								tcpIngressIP.V4 = ip
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							tcpIngressIP.V6 = ip
+						}
+					}
+
+					if tcpIngressIP.V4 != "" {
+						sharedfw.ExpectNoError(errors.New("IPv4 Endpoint not expected for SingleStack use case"))
+						sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					}
+
+					sharedfw.Logf("TCP load balancer IPv6: %s", tcpIngressIP.V6)
+
+					By("hitting the TCP service's LoadBalancer via the IPv6 endpoint")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' node ports.
+					By("changing the TCP service's NodePort")
+
+					frontendNsgId := loadBalancer.NetworkSecurityGroupIds[0]
+					// Count the number of ingress/egress rules with the original port so
+					// we can check the correct number are updated.
+					tcpService = jig.ChangeServiceNodePortOrFail(ns, tcpService.Name, tcpNodePort)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					tcpNodePortOld := tcpNodePort
+					tcpNodePort = int(tcpService.Spec.Ports[0].NodePort)
+					if tcpNodePort == tcpNodePortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) did not change", tcpNodePort)
+					}
+
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							if tcpIngressIP.V4 != ip {
+								var ipAddress net.IP
+								ipAddress = net2.ParseIPSloppy(ip)
+								if !ipAddress.IsPrivate() {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+
+					// Check the correct number of rules are present on the NSG
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionEgress)
+					backendNsgList := strings.Split(strings.ReplaceAll(setupF.BackendNsgOcid, " ", ""), ",")
+
+					for _, backendNsg := range backendNsgList {
+						sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionIngress)
+					}
+
+					// Check if rules are not modified on the security list.
+					numEgressRules, numIngressRules := sharedfw.CountSinglePortSecListRules(f.Client, f.CCMSecListID, f.K8SSecListID, tcpNodePort)
+					if numEgressRules != 0 || numIngressRules != 0 {
+						sharedfw.Logf("Count of Egress Rules added to sec list %d", numEgressRules)
+						sharedfw.Logf("Count of Ingress Rules added to sec list %d", numIngressRules)
+						sharedfw.Failf("Security List rules modified while service should be using NSG on port %d", tcpNodePort)
+					}
+
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					if tcpIngressIP.V4 != "" {
+						sharedfw.ExpectNoError(errors.New("IPv4 Endpoint not expected for SingleStack use case"))
+						sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					}
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services' main ports.
+
+					By("changing the TCP service's port")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Ports[0].Port++
+					})
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+					svcPortOld := svcPort
+					svcPort = int(tcpService.Spec.Ports[0].Port)
+
+					if svcPort == svcPortOld {
+						sharedfw.Failf("TCP Spec.Ports[0].Port (%d) did not change", svcPort)
+					}
+					if int(tcpService.Spec.Ports[0].NodePort) != tcpNodePort {
+						sharedfw.Failf("TCP Spec.Ports[0].NodePort (%d) changed", tcpService.Spec.Ports[0].NodePort)
+					}
+					for _, ingress := range LoadbalancerIngress {
+						ip := sharedfw.GetIngressPoint(&ingress)
+						if net2.IsIPv4String(ip) {
+							if tcpIngressIP.V4 != ip {
+								var ipAddress net.IP
+								ipAddress = net2.ParseIPSloppy(ip)
+								if !ipAddress.IsPrivate() {
+									sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv4 changed (%s -> %s) when not expected", tcpIngressIP.V4, ip)
+								}
+							}
+						}
+						if net2.IsIPv6String(ip) {
+							if tcpIngressIP.V6 != ip {
+								sharedfw.Failf("TCP Status.LoadBalancer.Ingress IPv6 changed (%s -> %s) when not expected", tcpIngressIP.V6, ip)
+							}
+						}
+					}
+					sharedfw.Logf("service port (TCP): %d", svcPort)
+
+					if tcpIngressIP.V4 != "" {
+						sharedfw.ExpectNoError(errors.New("IPv4 Endpoint not expected for SingleStack use case"))
+						sharedfw.Logf("TCP load balancer IPv4: %s", tcpIngressIP.V4)
+					}
+
+					By("hitting the TCP service's IPv6 LoadBalancer")
+					jig.TestReachableHTTP(false, tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+
+					// Change the services back to ClusterIP.
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, svcPortOld, svcPort, core.SecurityRuleDirectionIngress)
+
+					By("changing TCP service back to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+					// Wait for the load balancer to be destroyed asynchronously
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP.V6, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+					By("checking the TCP LoadBalancer is closed")
+					jig.TestNotReachableHTTP(tcpIngressIP.V6, svcPort, loadBalancerLagTimeout)
+				}
+			})
+		}
 	})
 })

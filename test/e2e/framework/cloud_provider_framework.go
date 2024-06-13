@@ -92,7 +92,9 @@ type CloudProviderFramework struct {
 
 	ClusterType containerengine.ClusterTypeEnum
 	// Backend Nsg ocids test
-	BackendNsgOcids string
+	BackendNsgOcids         string
+	SingleStackIPv6LbSubnet string
+	ClusterIPFamily         []string
 }
 
 // NewDefaultFramework constructs a new e2e test CloudProviderFramework with default options.
@@ -140,6 +142,12 @@ func NewCcmFramework(baseName string, client clientset.Interface, backup bool) *
 	}
 	if backendNsgIds != "" {
 		f.BackendNsgOcids = backendNsgIds
+	}
+	if singleStackIPv6LbSubnet != "" {
+		f.SingleStackIPv6LbSubnet = singleStackIPv6LbSubnet
+	}
+	if clusterIPFamily != "" {
+		f.ClusterIPFamily = strings.Split(clusterIPFamily, ",")
 	}
 	BeforeEach(f.BeforeEach)
 	AfterEach(f.AfterEach)

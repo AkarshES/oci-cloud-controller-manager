@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
 	"net"
 	"reflect"
 	"sort"
@@ -1449,6 +1450,53 @@ func testLoadBalancerPolicy(loadBalancer *client.GenericLoadBalancer, loadbalanc
 		}
 	}
 	return true, nil
+}
+
+func (f *CloudProviderFramework) VerifyLoadBalancerUpdateIpVersionChange(loadBalancerId string, lbtype string, ipFamilyPolicy string) error {
+	pollFunc := func() (done bool, err error) {
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		if err != nil {
+			return false, err
+		}
+		success, err := testLoadBalancerIpVersionChange(loadBalancer, lbtype, ipFamilyPolicy)
+		if err != nil {
+			return false, err
+		}
+		updatedLb, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		if err != nil {
+			return false, err
+		}
+		if success {
+			Logf("%s ipVersion updated to %s", lbtype, *updatedLb.IpVersion)
+			return true, nil
+		}
+		Logf("%s ipVersion failed to update current ip version %s", lbtype, *loadBalancer.IpVersion)
+		return false, nil
+	}
+	return wait.PollImmediate(5*time.Second, 5*time.Minute, pollFunc)
+}
+
+func testLoadBalancerIpVersionChange(loadBalancer *client.GenericLoadBalancer, lbType string, ipFamilyPolicy string) (bool, error) {
+	if loadBalancer == nil {
+		return false, gerrors.Errorf("Could not find load balancer")
+	}
+	ipVersion := string(*loadBalancer.IpVersion)
+	switch lbType {
+	case cloudprovider.LB:
+		// Updating IpVersion for Loadbalancers is not supported
+		return true, nil
+	case cloudprovider.NLB:
+		if ipFamilyPolicy == string(v1.IPFamilyPolicySingleStack) {
+			if ipVersion == string(networkloadbalancer.NlbIpVersionIpv4AndIpv6) {
+				return true, nil
+			}
+		} else {
+			if ipVersion == string(networkloadbalancer.NlbIpVersionIpv4) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func prettifyBackendSetsMap(backendSets map[string]client.GenericBackendSetDetails) (backendSetMap map[string][]string) {
