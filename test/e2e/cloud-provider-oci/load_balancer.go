@@ -24,6 +24,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,9 +41,12 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 )
 
+var once sync.Once
 var _ = Describe("Service [Slow]", func() {
 
 	baseName := "service"
+	var tcpService *v1.Service
+	var jig *sharedfw.ServiceTestJig
 	f := sharedfw.NewDefaultFramework(baseName)
 	// TODO: lalitsin - Remove this when these E2Es are capable of running an a mixed cluster - via different node lables for physical and virtual nodes
 	BeforeEach(func() {
@@ -50,6 +54,16 @@ var _ = Describe("Service [Slow]", func() {
 		if len(nodes.Items) != 0 {
 			Skip("Skipping test since virtual nodes exist in the cluster.")
 		}
+	})
+
+	JustAfterEach(func() {
+		if tcpService == nil || jig == nil {
+			return
+		}
+		dp := metav1.DeletePropagationBackground // Default after k8s v1.20
+		jig.Client.CoreV1().Services(f.Namespace.Name).Delete(context.Background(), tcpService.Name, metav1.DeleteOptions{
+			PropagationPolicy: &dp,
+		})
 	})
 
 	testDefinedTags := map[string]map[string]interface{}{"oke-tag": {"oke-tagging": "ccm-test-integ"}}
@@ -87,7 +101,7 @@ var _ = Describe("Service [Slow]", func() {
 			},
 		},
 	}
-	Context("[cloudprovider][ccm][lb][SL][system-tags]", func() {
+	Context("[cloudprovider][ccm][lb][SL][wris][system-tags]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer (change nodeport) [Canary]", func() {
 			for _, test := range basicTestArray {
 				if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
@@ -99,7 +113,7 @@ var _ = Describe("Service [Slow]", func() {
 				serviceName := "basic-" + test.lbType + "-test"
 				ns := f.Namespace.Name
 
-				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+				jig = sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
 
 				nodeIP := sharedfw.PickNodeIP(jig.Client) // for later
 
@@ -108,10 +122,11 @@ var _ = Describe("Service [Slow]", func() {
 				if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
 					loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
 				}
-
+				var serviceAccount *v1.ServiceAccount
 				if sa, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
 					// Create a service account in the same namespace as the service
-					jig.CreateServiceAccountOrFail(ns, sa, nil)
+					By("creating service account \"sa\" in namespace " + ns)
+					serviceAccount = jig.CreateServiceAccountOrFail(ns, sa, nil)
 				}
 
 				// TODO(apryde): Test that LoadBalancers can receive static IP addresses
@@ -119,11 +134,17 @@ var _ = Describe("Service [Slow]", func() {
 				// support this.
 				requestedIP := ""
 
-				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+				tcpService = jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
 					s.Spec.Type = v1.ServiceTypeLoadBalancer
 					s.Spec.LoadBalancerIP = requestedIP // will be "" if not applicable
 					s.ObjectMeta.Annotations = test.CreationAnnotations
 				})
+
+				if _, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+					By("setting service account \"sa\" owner reference as the TCP service " + serviceName)
+					// Set SA owner reference as the service to prevent deletion of service account before the service
+					jig.SetServiceOwnerReferenceOnServiceAccountOrFail(ns, serviceAccount, tcpService)
+				}
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
 
