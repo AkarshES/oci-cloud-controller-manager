@@ -221,3 +221,11 @@ out/oke-ccm-tests-pop-$(BUILD_NUMBER).tar.gz: run-command/validate/* images/oke-
 
 .PHONY: create-pop
 create-pop: clone-secrets out/oke-ccm-tests-pop-$(BUILD_NUMBER).tar.gz
+
+.PHONY: cleanup-images
+cleanup-images:
+	go run hack/release-validation.go "cleanup-images"
+
+.PHONY: validate-mappings
+validate-mappings:
+	go run hack/release-validation.go "validate-mappings"
