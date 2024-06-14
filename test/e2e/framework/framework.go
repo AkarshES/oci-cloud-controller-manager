@@ -130,7 +130,7 @@ var (
 	isPostUpgradeBool             bool
 	isPreUpgradeString            string
 	isPostUpgradeString           string
-	clusterID                     string // Ocid of the newly created E2E cluster
+	ClusterID                     string // Ocid of the newly created E2E cluster
 	clusterType                   string // Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER (Default: BASIC_CLUSTER)
 	enableParallelRun             bool
 	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
@@ -460,6 +460,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
 		AddOkeSystemTags:              addOkeSystemTags,
+		ClusterOcid:                   ClusterID,
 		CniType:                       cniTypeEnum,
 	}
 

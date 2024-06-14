@@ -265,10 +265,10 @@ func (j *ServiceTestJig) CreateOnlyLocalLoadBalancerService(namespace, serviceNa
 		// We need to turn affinity off for our LB distribution tests
 		svc.Spec.SessionAffinity = v1.ServiceAffinityNone
 		svc.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
+		svc.ObjectMeta.Annotations = creationAnnotations
 		if tweak != nil {
 			tweak(svc)
 		}
-		svc.ObjectMeta.Annotations = creationAnnotations
 	})
 
 	if createPod {
@@ -1034,7 +1034,8 @@ func (f *CloudProviderFramework) VerifyLoadBalancerBackendSetsWithPodsOnMixedClu
 			Logf("LB backends match virtual pods targeted by service")
 			return nil
 		}
-		Logf("LB backends do not match virtual pods targeted by service - will retry")
+		actualBackends, expectedBackends := prettifyBackendSetsMap(loadBalancer.BackendSets), prettifyIpMap(managedNodeAndVirtualPodIPs)
+		Logf("LB backends do not match virtual pods targeted by service - will retry. \nExpected: %v\nActual:%v", expectedBackends, actualBackends)
 	}
 	return gerrors.Errorf("Timeout waiting for LB backends to be as expected.")
 }
@@ -1367,4 +1368,24 @@ func testLoadBalancerPolicy(loadBalancer *client.GenericLoadBalancer, loadbalanc
 		}
 	}
 	return true, nil
+}
+
+func prettifyBackendSetsMap(backendSets map[string]client.GenericBackendSetDetails) (backendSetMap map[string][]string) {
+	backendSetMap = make(map[string][]string)
+
+	for _, backendSet := range backendSets {
+		var backendsList []string
+		for _, backend := range backendSet.Backends {
+			backendsList = append(backendsList, *backend.IpAddress)
+		}
+		backendSetMap[*backendSet.Name] = backendsList
+	}
+	return
+}
+
+func prettifyIpMap(backendSets map[string]interface{}) (backends []string) {
+	for backend, _ := range backendSets {
+		backends = append(backends, backend)
+	}
+	return
 }

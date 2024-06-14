@@ -419,7 +419,7 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 	// waits for the cluster.lifecycle state to go ACTIVE
 	wrSucceded := false
 	timeout := 60 * time.Minute
-	clusterID = ""
+	ClusterID = ""
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(Poll) {
 		if wrSucceded == false {
 			wrResponse := f.GetWorkRequest(workRequestID)
@@ -427,8 +427,8 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 			Logf("createCluster workRequest '%s'; current state '%s'", workRequestID, wrResponse.WorkRequest.Status)
 			if wrResponse.WorkRequest.Status == oke.WorkRequestStatusSucceeded {
 				wrSucceded = true
-				clusterID = f.getClusterIDFromWR(wrResponse)
-				Logf("Setting clusterID: '%s'", clusterID)
+				ClusterID = f.getClusterIDFromWR(wrResponse)
+				Logf("Setting clusterID: '%s'", ClusterID)
 			} else {
 				Expect(wrResponse.WorkRequest.Status).To(SatisfyAny(
 					Equal(oke.WorkRequestStatusAccepted),
@@ -439,8 +439,8 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 					Equal(oke.WorkRequestStatusCanceled)))
 			}
 		} else {
-			cluster := f.GetCluster(clusterID)
-			Logf("createCluster ID '%s'; current state '%s'", clusterID, cluster.LifecycleState)
+			cluster := f.GetCluster(ClusterID)
+			Logf("createCluster ID '%s'; current state '%s'", ClusterID, cluster.LifecycleState)
 			if cluster.LifecycleState == oke.ClusterLifecycleStateActive {
 				return *cluster.Id
 			}
@@ -455,7 +455,7 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 				Equal(oke.ClusterLifecycleStateDeleted)))
 		}
 	}
-	Failf("Timeout waiting for cluster '%s' to reach state: '%s'\n", clusterID, oke.ClusterSummaryLifecycleStateActive)
+	Failf("Timeout waiting for cluster '%s' to reach state: '%s'\n", ClusterID, oke.ClusterSummaryLifecycleStateActive)
 	return ""
 }
 

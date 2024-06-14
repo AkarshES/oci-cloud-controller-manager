@@ -634,6 +634,12 @@ func validateProtocols(servicePorts []api.ServicePort, lbType string, secListMgm
 	return nil
 }
 
+// GetSSLEnabledPorts returns a list of port numbers for which we need to enable
+// SSL on the corresponding listener.
+func GetSSLEnabledPorts(svc *api.Service) ([]int, error) {
+	return getSSLEnabledPorts(svc)
+}
+
 // getSSLEnabledPorts returns a list of port numbers for which we need to enable
 // SSL on the corresponding listener.
 func getSSLEnabledPorts(svc *api.Service) ([]int, error) {

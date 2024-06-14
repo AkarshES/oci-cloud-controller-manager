@@ -885,7 +885,9 @@ func getHealthCheckTimeout(svc *v1.Service) (int, error) {
 	}
 	return timeoutInMillis, nil
 }
-
+func GetSSLConfiguration(cfg *SSLConfig, name string, port int) *client.GenericSslConfigurationDetails {
+	return getSSLConfiguration(cfg, name, port)
+}
 func getSSLConfiguration(cfg *SSLConfig, name string, port int) *client.GenericSslConfigurationDetails {
 	if cfg == nil || !cfg.Ports.Has(port) || len(name) == 0 {
 		return nil

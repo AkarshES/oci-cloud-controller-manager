@@ -665,6 +665,20 @@ func GetReadySchedulableNodesOrDie(c clientset.Interface) (nodes *v1.NodeList) {
 	return nodes
 }
 
+func WaitReadySchedulableNodesOrDie(c clientset.Interface, expectedReadyNodes int) (nodes *v1.NodeList) {
+	var err error
+	if wait.PollImmediate(K8sResourcePoll, SingleCallTimeout, func() (bool, error) {
+		nodes = GetReadySchedulableNodesOrDie(c)
+		if len(nodes.Items) != expectedReadyNodes {
+			return false, nil
+		}
+		return true, nil
+	}) != nil {
+		ExpectNoError(err, "Timed out while waiting for expected nodes to be ready.")
+	}
+	return nodes
+}
+
 // GetReadySchedulableVirtualNodesOrDie - gets nodes that are schedulable, ready and virtual
 func GetReadySchedulableVirtualNodesOrDie(c clientset.Interface) (nodes *v1.NodeList) {
 	nodes = waitListSchedulableNodesOrDie(c)

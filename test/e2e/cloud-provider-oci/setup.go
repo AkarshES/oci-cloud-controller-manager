@@ -48,6 +48,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 			sharedfw.Logf("Cluster OCID is %s", clusterOCID)
 		}
 		setupF.ClusterOcid = clusterOCID
+		sharedfw.ClusterID = clusterOCID
 
 		kubeConfig := setupF.CreateClusterKubeconfigContent(clusterOCID)
 		Expect(setupF.IsNotJsonFormatStr(kubeConfig)).To(BeTrue())
