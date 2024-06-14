@@ -44,6 +44,13 @@ var _ = Describe("Service [Slow]", func() {
 
 	baseName := "service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	// TODO: lalitsin - Remove this when these E2Es are capable of running an a mixed cluster - via different node lables for physical and virtual nodes
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	testDefinedTags := map[string]map[string]interface{}{"oke-tag": {"oke-tagging": "ccm-test-integ"}}
 	testDefinedTagsByteArray, _ := json.Marshal(testDefinedTags)
@@ -289,6 +296,12 @@ var _ = Describe("Service NSG [Slow]", func() {
 
 	baseName := "service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	basicTestArray := []struct {
 		lbType              string
@@ -495,10 +508,16 @@ var _ = Describe("Service NSG [Slow]", func() {
 // NOTE: OCI LBaaS is not a passthrough load balancer so ESIPP (External Source IP
 // Presevation) is not possible, however, this test covers support for node-local
 // routing (i.e. avoidance of a second hop).
-var _ = Describe("ESIPP [Slow]", func() {
+var _ = Describe("ESIPP / Node Local Routing [Slow]", func() {
 
-	baseName := "esipp"
+	baseName := "node-local-routing"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
 	serviceLBNames := []string{}
@@ -513,17 +532,20 @@ var _ = Describe("ESIPP [Slow]", func() {
 	}{
 		{
 			"lb",
-			map[string]string{},
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+			},
 		},
 		{
 			"nlb",
 			map[string]string{
 				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal:                   "true",
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
 			},
 		},
 	}
-	Context("[cloudprovider][ccm][lb]", func() {
+	Context("[cloudprovider][ccm][lb][node-local]", func() {
 		It("should only target nodes with endpoints", func() {
 			for _, test := range esippTestsArray {
 				By("Running test for: " + test.lbType)
@@ -540,7 +562,6 @@ var _ = Describe("ESIPP [Slow]", func() {
 							svc.Spec.Ports[0].TargetPort = intstr.FromInt(int(svc.Spec.Ports[0].Port))
 							svc.Spec.Ports[0].Port = 8081
 						}
-
 					})
 				serviceLBNames = append(serviceLBNames, cloudprovider.GetLoadBalancerName(svc))
 				defer func() {
@@ -593,7 +614,21 @@ var _ = Describe("ESIPP [Slow]", func() {
 				jig := sharedfw.NewServiceTestJig(cs, serviceName)
 				nodes := jig.GetNodes(sharedfw.MaxNodesForEndpointsTests)
 
-				svc := jig.CreateOnlyLocalLoadBalancerService(namespace, serviceName, loadBalancerCreateTimeout, true, test.CreationAnnotations, nil)
+				svc := jig.CreateOnlyLocalLoadBalancerService(namespace, serviceName, loadBalancerCreateTimeout, true, test.CreationAnnotations, func(s *v1.Service) {
+					if test.lbType == "lb" {
+						s.ObjectMeta.Annotations = map[string]string{
+							cloudprovider.ServiceAnnotationLoadBalancerInternal:     "true",
+							cloudprovider.ServiceAnnotationLoadBalancerShape:        "flexible",
+							cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
+							cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "100",
+						}
+					}
+					if test.lbType == "nlb" {
+						s.ObjectMeta.Annotations = map[string]string{
+							cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal: "true",
+						}
+					}
+				})
 				serviceLBNames = append(serviceLBNames, cloudprovider.GetLoadBalancerName(svc))
 				defer func() {
 					jig.ChangeServiceType(svc.Namespace, svc.Name, v1.ServiceTypeClusterIP, loadBalancerCreateTimeout)
@@ -642,6 +677,12 @@ var _ = Describe("ESIPP [Slow]", func() {
 var _ = Describe("End to end TLS", func() {
 	baseName := "endtoendtls-service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 	Context("[cloudprovider][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer [Canary]", func() {
 			serviceName := "e2e-tls-lb-test"
@@ -677,8 +718,9 @@ var _ = Describe("End to end TLS", func() {
 					v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 				s.ObjectMeta.Annotations = map[string]string{cloudprovider.ServiceAnnotationLoadBalancerSSLPorts: "443",
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret:           sslSecretName,
-					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName}
-
+					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
+				}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -723,6 +765,12 @@ var _ = Describe("BackendSet only enabled TLS", func() {
 
 	baseName := "backendset-service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer [Canary]", func() {
@@ -758,8 +806,9 @@ var _ = Describe("BackendSet only enabled TLS", func() {
 				s.Spec.Ports = []v1.ServicePort{v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 				s.ObjectMeta.Annotations = map[string]string{cloudprovider.ServiceAnnotationLoadBalancerSSLPorts: "443",
-					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName}
-
+					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
+				}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -952,6 +1001,12 @@ var _ = Describe("Listener only enabled TLS", func() {
 
 	baseName := "listener-service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer [Canary]", func() {
@@ -986,9 +1041,11 @@ var _ = Describe("Listener only enabled TLS", func() {
 				s.Spec.LoadBalancerIP = requestedIP
 				s.Spec.Ports = []v1.ServicePort{v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
-				s.ObjectMeta.Annotations = map[string]string{cloudprovider.ServiceAnnotationLoadBalancerSSLPorts: "443",
-					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret: sslSecretName}
-
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:  "443",
+					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:  "true",
+				}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1030,6 +1087,12 @@ var _ = Describe("Listener only enabled TLS", func() {
 var _ = Describe("End to end enabled TLS - different certificates", func() {
 	baseName := "e2e-diff-certs"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer [Canary]", func() {
@@ -1078,10 +1141,12 @@ var _ = Describe("End to end enabled TLS - different certificates", func() {
 				s.Spec.LoadBalancerIP = requestedIP
 				s.Spec.Ports = []v1.ServicePort{v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
-				s.ObjectMeta.Annotations = map[string]string{cloudprovider.ServiceAnnotationLoadBalancerSSLPorts: "443",
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:            "443",
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret:           sslListenerSecretName,
-					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslBackendSetSecretName}
-
+					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslBackendSetSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
+				}
 			})
 
 			svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1126,6 +1191,12 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 
 	baseName := "preserve-source"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider][ccm][lb]", func() {
 		preserveSourceTestArray := []struct {
@@ -1140,6 +1211,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerType:                    "nlb",
 					cloudprovider.ServiceAnnotationNetworkLoadBalancerIsPreserveSource: "true",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:                "true",
 				},
 				true,
 			},
@@ -1149,6 +1221,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerType:                    "nlb",
 					cloudprovider.ServiceAnnotationNetworkLoadBalancerIsPreserveSource: "false",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:                "true",
 				},
 				false,
 			},
@@ -1175,6 +1248,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.annotations
 					s.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1231,6 +1305,12 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 var _ = Describe("LB Properties", func() {
 	baseName := "lb-properties"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider][ccm][lb]", func() {
 
@@ -1300,6 +1380,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1433,7 +1514,6 @@ var _ = Describe("LB Properties", func() {
 				s.Spec.LoadBalancerIP = requestedIP
 				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
-
 			})
 			By("creating a pod to be part of the TCP service " + serviceName)
 			jig.RunOrFail(ns, nil)
@@ -1449,6 +1529,7 @@ var _ = Describe("LB Properties", func() {
 						// Setting default values for Min and Max (Does not matter for fixed shape test)
 						cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
 						cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "100",
+						cloudprovider.ServiceAnnotationLoadBalancerInternal:     "true",
 					}
 
 				})
@@ -1523,6 +1604,7 @@ var _ = Describe("LB Properties", func() {
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 				s.ObjectMeta.Annotations = map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionIdleTimeout: "500",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:              "true",
 				}
 			})
 
@@ -1651,6 +1733,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.Annotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1768,6 +1851,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1922,6 +2006,13 @@ var _ = Describe("SKE - Service [Slow]", func() {
 
 	baseName := "service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	// TODO: lalitsin - Remove this when these E2Es are capable of running an a mixed cluster - via different node lables for physical and virtual nodes
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since schedule nodes exist in the cluster.")
+		}
+	})
 
 	basicTestArray := []struct {
 		lbType              string
@@ -2044,6 +2135,12 @@ var _ = Describe("SKE - Service [Slow]", func() {
 var _ = Describe("SKE - scale virtual pods", func() {
 	baseName := "service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since schedule nodes exist in the cluster.")
+		}
+	})
 
 	basicTestArray := []struct {
 		lbType              string
@@ -2078,6 +2175,7 @@ var _ = Describe("SKE - scale virtual pods", func() {
 				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
 					s.Spec.Type = v1.ServiceTypeLoadBalancer
 					s.ObjectMeta.Annotations = test.creationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				By("creating a virtual pod to be part of the TCP service " + serviceName)
@@ -2152,6 +2250,12 @@ var _ = Describe("SKE - scale virtual pods", func() {
 var _ = Describe("SKE - End to end TLS", func() {
 	baseName := "endtoendtls-service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since schedule nodes exist in the cluster.")
+		}
+	})
 	Context("[cloudprovider-ske][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer in an SKE cluster [Canary]", func() {
 			serviceName := "e2e-tls-lb-test"
@@ -2188,6 +2292,7 @@ var _ = Describe("SKE - End to end TLS", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:            "443",
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret:           sslSecretName,
 					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
 				}
 			})
 
@@ -2225,6 +2330,12 @@ var _ = Describe("SKE - BackendSet only enabled TLS", func() {
 
 	baseName := "backendset-service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since schedule nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider-ske][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer in an SKE cluster [Canary]", func() {
@@ -2261,6 +2372,7 @@ var _ = Describe("SKE - BackendSet only enabled TLS", func() {
 				s.ObjectMeta.Annotations = map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:            "443",
 					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
 				}
 			})
 
@@ -2298,6 +2410,12 @@ var _ = Describe("SKE - Listener only enabled TLS", func() {
 
 	baseName := "listener-service"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since schedule nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider-ske][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer in an SKE cluster [Canary]", func() {
@@ -2334,6 +2452,7 @@ var _ = Describe("SKE - Listener only enabled TLS", func() {
 				s.ObjectMeta.Annotations = map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:  "443",
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:  "true",
 				}
 
 			})
@@ -2371,6 +2490,12 @@ var _ = Describe("SKE - Listener only enabled TLS", func() {
 var _ = Describe("SKE - End to end enabled TLS - different certificates", func() {
 	baseName := "e2e-diff-certs"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since schedule nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider-ske][ccm][lb]", func() {
 		It("should be possible to create and mutate a Service type:LoadBalancer in an SKE cluster [Canary]", func() {
@@ -2422,6 +2547,7 @@ var _ = Describe("SKE - End to end enabled TLS - different certificates", func()
 					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:            "443",
 					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret:           sslListenerSecretName,
 					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslBackendSetSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
 				}
 			})
 
@@ -2460,6 +2586,12 @@ var _ = Describe("SKE - End to end enabled TLS - different certificates", func()
 var _ = Describe("SKE - LB Properties", func() {
 	baseName := "lb-properties"
 	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping ske test since scheduled nodes exist in the cluster.")
+		}
+	})
 
 	Context("[cloudprovider-ske][ccm][lb]", func() {
 
@@ -2526,6 +2658,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -2683,6 +2816,7 @@ var _ = Describe("SKE - LB Properties", func() {
 						// Setting default values for Min and Max (Does not matter for fixed shape test)
 						cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
 						cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "100",
+						cloudprovider.ServiceAnnotationLoadBalancerInternal:     "true",
 					}
 
 				})
@@ -2754,6 +2888,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 				s.ObjectMeta.Annotations = map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionIdleTimeout: "500",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:              "true",
 				}
 			})
 
@@ -2878,6 +3013,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.Annotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -2993,6 +3129,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -3214,6 +3351,7 @@ var _ = Describe("Mixed Cluster - scale managed and virtual pods", func() {
 				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
 					s.Spec.Type = v1.ServiceTypeLoadBalancer
 					s.ObjectMeta.Annotations = test.creationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				By("creating a virtual pod to be part of the TCP service " + serviceName)

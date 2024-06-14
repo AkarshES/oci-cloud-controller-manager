@@ -51,7 +51,7 @@ var _ = Describe("Instances", func() {
 		Expect(enabled).To(BeTrue())
 
 		cs = f.ClientSet
-		nodes := sharedfw.GetReadySchedulableNodesOrDie(cs)
+		nodes := sharedfw.GetReadySchedulableManagedNodesOrDie(cs)
 		Expect(len(nodes.Items)).NotTo(BeZero())
 		node = nodes.Items[0]
 	})
