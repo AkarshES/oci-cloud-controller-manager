@@ -391,7 +391,7 @@ func getInitFuncConstructors(logger *zap.SugaredLogger) map[string]cloudControll
 	isOciSvcCtrlEnvEnabled := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_OCI_SERVICE_CONTROLLER", false)
 	if isOciSvcCtrlEnvEnabled || enableOCIServiceController {
 		// Disable default Kubernetes Cloud Provider service controller
-		cloudControllerManager.ControllersDisabledByDefault.Insert(names.ServiceLBController)
+		cloudControllerManager.ControllersDisabledByDefault.Insert("service")
 
 		// Add OCI service controller init func
 		initConstructors["oci-service"] = cloudControllerManager.ControllerInitFuncConstructor{
