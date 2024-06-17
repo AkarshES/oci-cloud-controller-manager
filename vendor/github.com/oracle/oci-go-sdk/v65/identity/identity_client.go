@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -28,7 +28,7 @@ type IdentityClient struct {
 // the configuration provider will be used for the default signer as well as reading the region
 func NewIdentityClientWithConfigurationProvider(configProvider common.ConfigurationProvider) (client IdentityClient, err error) {
 	if enabled := common.CheckForEnabledServices("identity"); !enabled {
-		return client, fmt.Errorf("the Developer Tool configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local developer-tool-configuration.json file configured the service you're targeting or contact the cloud provider on the availability of this service")
+		return client, fmt.Errorf("the Alloy configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local alloy_config file configured the service you're targeting or contact the cloud provider on the availability of this service")
 	}
 	provider, err := auth.GetGenericConfigurationProvider(configProvider)
 	if err != nil {
@@ -81,7 +81,7 @@ func (client *IdentityClient) setConfigurationProvider(configProvider common.Con
 	region, _ := configProvider.Region()
 	client.SetRegion(region)
 	if client.Host == "" {
-		return fmt.Errorf("invalid region or Host. Endpoint cannot be constructed without endpointServiceName or serviceEndpointTemplate for a dotted region")
+		return fmt.Errorf("Invalid region or Host. Endpoint cannot be constructed without endpointServiceName or serviceEndpointTemplate for a dotted region")
 	}
 	client.config = &configProvider
 	return nil
@@ -522,11 +522,10 @@ func (client IdentityClient) bulkDeleteResources(ctx context.Context, request co
 // BulkDeleteTags Deletes the specified tag key definitions. This operation triggers a process that removes the
 // tags from all resources in your tenancy. The tag key definitions must be within the same tag namespace.
 // The following actions happen immediately:
-//   - If the tag is a cost-tracking tag, the tag no longer counts against your
-//     10 cost-tracking tags limit, even if you do not disable the tag before running this operation.
-//   - If the tag is used with dynamic groups, the rules that contain the tag are no longer
-//     evaluated against the tag.
-//
+//   * If the tag is a cost-tracking tag, the tag no longer counts against your
+//   10 cost-tracking tags limit, even if you do not disable the tag before running this operation.
+//   * If the tag is used with dynamic groups, the rules that contain the tag are no longer
+//   evaluated against the tag.
 // After you start this operation, the state of the tag changes to DELETING, and tag removal
 // from resources begins. This process can take up to 48 hours depending on the number of resources that
 // are tagged and the regions in which those resources reside.
@@ -596,11 +595,10 @@ func (client IdentityClient) bulkDeleteTags(ctx context.Context, request common.
 
 // BulkEditTags Edits the specified list of tag key definitions for the selected resources.
 // This operation triggers a process that edits the tags on all selected resources. The possible actions are:
-//   - Add a defined tag when the tag does not already exist on the resource.
-//   - Update the value for a defined tag when the tag is present on the resource.
-//   - Add a defined tag when it does not already exist on the resource or update the value for a defined tag when the tag is present on the resource.
-//   - Remove a defined tag from a resource. The tag is removed from the resource regardless of the tag value.
-//
+//   * Add a defined tag when the tag does not already exist on the resource.
+//   * Update the value for a defined tag when the tag is present on the resource.
+//   * Add a defined tag when it does not already exist on the resource or update the value for a defined tag when the tag is present on the resource.
+//   * Remove a defined tag from a resource. The tag is removed from the resource regardless of the tag value.
 // See BulkEditOperationDetails for more information.
 // The edits can include a combination of operations and tag sets.
 // However, multiple operations cannot apply to one key definition in the same request.
@@ -732,10 +730,9 @@ func (client IdentityClient) bulkMoveResources(ctx context.Context, request comm
 // CascadeDeleteTagNamespace Deletes the specified tag namespace. This operation triggers a process that removes all of the tags
 // defined in the specified tag namespace from all resources in your tenancy and then deletes the tag namespace.
 // After you start the delete operation:
-//   - New tag key definitions cannot be created under the namespace.
-//   - The state of the tag namespace changes to DELETING.
-//   - Tag removal from the resources begins.
-//
+//   * New tag key definitions cannot be created under the namespace.
+//   * The state of the tag namespace changes to DELETING.
+//   * Tag removal from the resources begins.
 // This process can take up to 48 hours depending on the number of tag definitions in the namespace, the number of resources
 // that are tagged, and the locations of the regions in which those resources reside.
 // After all tags are removed, the state changes to DELETED. You cannot restore a deleted tag namespace. After the deleted tag namespace
@@ -3858,11 +3855,10 @@ func (client IdentityClient) deleteSwiftPassword(ctx context.Context, request co
 // DeleteTag Deletes the specified tag definition. This operation triggers a process that removes the
 // tag from all resources in your tenancy.
 // These things happen immediately:
-//   - If the tag was a cost-tracking tag, it no longer counts against your 10 cost-tracking
-//     tags limit, whether you first disabled it or not.
-//   - If the tag was used with dynamic groups, none of the rules that contain the tag will
-//     be evaluated against the tag.
-//
+//   * If the tag was a cost-tracking tag, it no longer counts against your 10 cost-tracking
+//   tags limit, whether you first disabled it or not.
+//   * If the tag was used with dynamic groups, none of the rules that contain the tag will
+//   be evaluated against the tag.
 // When you start the delete operation, the state of the tag changes to DELETING and tag removal
 // from resources begins. This can take up to 48 hours depending on the number of resources that
 // were tagged as well as the regions in which those resources reside.

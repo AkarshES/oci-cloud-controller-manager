@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -39,17 +39,17 @@ type ImageSourceViaVolumeBackupDetails struct {
 	SourceImageType ImageSourceDetailsSourceImageTypeEnum `mandatory:"false" json:"sourceImageType,omitempty"`
 }
 
-// GetOperatingSystem returns OperatingSystem
+//GetOperatingSystem returns OperatingSystem
 func (m ImageSourceViaVolumeBackupDetails) GetOperatingSystem() *string {
 	return m.OperatingSystem
 }
 
-// GetOperatingSystemVersion returns OperatingSystemVersion
+//GetOperatingSystemVersion returns OperatingSystemVersion
 func (m ImageSourceViaVolumeBackupDetails) GetOperatingSystemVersion() *string {
 	return m.OperatingSystemVersion
 }
 
-// GetSourceImageType returns SourceImageType
+//GetSourceImageType returns SourceImageType
 func (m ImageSourceViaVolumeBackupDetails) GetSourceImageType() ImageSourceDetailsSourceImageTypeEnum {
 	return m.SourceImageType
 }

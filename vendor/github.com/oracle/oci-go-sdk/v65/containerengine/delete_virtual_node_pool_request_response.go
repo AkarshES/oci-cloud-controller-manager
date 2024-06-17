@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -30,7 +30,7 @@ type DeleteVirtualNodePoolRequest struct {
 	// PT0M will indicate you want to delete the virtual node without cordon and drain. Default PT60M, Min PT0M, Max: PT60M. Format ISO 8601 e.g PT30M
 	OverrideEvictionGraceDurationVnp *string `mandatory:"false" contributesTo:"query" name:"overrideEvictionGraceDurationVnp"`
 
-	// Deprecated, this field does not apply to virtual node pools.  If the underlying virtual node should be deleted if you cannot evict all the pods in grace period.
+	// If the underlying compute instance should be deleted if you cannot evict all the pods in grace period
 	IsForceDeletionAfterOverrideGraceDurationVnp *bool `mandatory:"false" contributesTo:"query" name:"isForceDeletionAfterOverrideGraceDurationVnp"`
 
 	// Metadata about the request. This information will not be transmitted to the service, but

@@ -1,11 +1,11 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
 // Monitoring API
 //
 // Use the Monitoring API to manage metric queries and alarms for assessing the health, capacity, and performance of your cloud resources.
-// Endpoints vary by operation. For PostMetricData, use the `telemetry-ingestion` endpoints; for all other operations, use the `telemetry` endpoints.
+// Endpoints vary by operation. For PostMetric, use the `telemetry-ingestion` endpoints; for all other operations, use the `telemetry` endpoints.
 // For more information, see
 // the Monitoring documentation (https://docs.cloud.oracle.com/iaas/Content/Monitoring/home.htm).
 //
@@ -140,21 +140,6 @@ type CreateAlarmDetails struct {
 	// Usage of predefined tag keys. These predefined keys are scoped to namespaces.
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
-
-	// A set of overrides that control evaluations of the alarm.
-	// Each override can specify values for query, severity, body, and pending duration.
-	// When an alarm contains overrides, the Monitoring service evaluates each override in order, beginning with the first override in the array (index position `0`),
-	// and then evaluates the alarm's base values (`ruleName` value of `BASE`).
-	Overrides []AlarmOverride `mandatory:"false" json:"overrides"`
-
-	// Identifier of the alarm's base values for alarm evaluation, for use when the alarm contains overrides.
-	// A valid ruleName value starts with an alphabetic character and includes only alphanumeric characters, underscores and square brackets.
-	// Minimum number of characters: 3. Default value is `BASE`. For information about alarm overrides, see AlarmOverride.
-	RuleName *string `mandatory:"false" json:"ruleName"`
-
-	// The version of the alarm notification to be delivered. Allowed value: `1.X`
-	// The value must start with a number (up to four digits), followed by a period and an uppercase X.
-	NotificationVersion *string `mandatory:"false" json:"notificationVersion"`
 }
 
 func (m CreateAlarmDetails) String() string {

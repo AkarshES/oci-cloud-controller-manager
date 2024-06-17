@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,8 +21,8 @@ import (
 	"strings"
 )
 
-// InternalVnic This is a VNIC type only used in operations with overlay customers and RCE.
-// It defines additonal properties: isManaged, resourceType, resourceId, isBMVnic, isGarpEnabled, isEdpEnabled, and isServiceVnic
+// InternalVnic This is a vnic type only used in operations with overlay customers and RCE.
+// It defines additonal properties: isManaged, resourceType, resourceId, isBMVnic, isGarpEnabled and isServiceVnic
 type InternalVnic struct {
 
 	// The VNIC's availability domain.
@@ -62,14 +62,11 @@ type InternalVnic struct {
 	// Indicates if the VNIC is associated with (and will be attached to) a BM instance.
 	IsBmVnic *bool `mandatory:"false" json:"isBmVnic"`
 
-	// Indicates if the VNIC is a service VNIC.
+	// Indicates if the VNIC is a service vnic.
 	IsServiceVnic *bool `mandatory:"false" json:"isServiceVnic"`
 
 	// Indicates if this VNIC can issue GARP requests. False by default.
 	IsGarpEnabled *bool `mandatory:"false" json:"isGarpEnabled"`
-
-	// Indicates if Elastic Datapath is enabled for the VNIC.
-	IsEdpEnabled *bool `mandatory:"false" json:"isEdpEnabled"`
 
 	// The VNIC's physical availability domain.
 	// Example: `PHX-AD-1`
@@ -160,7 +157,7 @@ type InternalVnic struct {
 	// are prohibited to add private IP to Exadata node.
 	IsPrivateIpCreationBlocked *bool `mandatory:"false" json:"isPrivateIpCreationBlocked"`
 
-	// ID of the entity owning the VNIC. This is passed in the create VNIC call.
+	// ID of the entity owning the VNIC. This is passed in the create vnic call.
 	// If none is passed and if there is an attachment then the attached instanceId is the ownerId.
 	OwnerId *string `mandatory:"false" json:"ownerId"`
 

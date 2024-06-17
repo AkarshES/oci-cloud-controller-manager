@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -116,10 +116,6 @@ func (m *attachvolumedetails) UnmarshalPolymorphicJSON(data []byte) (interface{}
 		mm := AttachIScsiVolumeDetails{}
 		err = json.Unmarshal(data, &mm)
 		return mm, err
-	case "nvme":
-		mm := AttachNvmeVolumeDetails{}
-		err = json.Unmarshal(data, &mm)
-		return mm, err
 	case "paravirtualized":
 		mm := AttachParavirtualizedVolumeDetails{}
 		err = json.Unmarshal(data, &mm)
@@ -130,42 +126,42 @@ func (m *attachvolumedetails) UnmarshalPolymorphicJSON(data []byte) (interface{}
 	}
 }
 
-// GetDevice returns Device
+//GetDevice returns Device
 func (m attachvolumedetails) GetDevice() *string {
 	return m.Device
 }
 
-// GetDisplayName returns DisplayName
+//GetDisplayName returns DisplayName
 func (m attachvolumedetails) GetDisplayName() *string {
 	return m.DisplayName
 }
 
-// GetInstanceId returns InstanceId
+//GetInstanceId returns InstanceId
 func (m attachvolumedetails) GetInstanceId() *string {
 	return m.InstanceId
 }
 
-// GetIsReadOnly returns IsReadOnly
+//GetIsReadOnly returns IsReadOnly
 func (m attachvolumedetails) GetIsReadOnly() *bool {
 	return m.IsReadOnly
 }
 
-// GetIsShareable returns IsShareable
+//GetIsShareable returns IsShareable
 func (m attachvolumedetails) GetIsShareable() *bool {
 	return m.IsShareable
 }
 
-// GetImageVolumeIndex returns ImageVolumeIndex
+//GetImageVolumeIndex returns ImageVolumeIndex
 func (m attachvolumedetails) GetImageVolumeIndex() *int {
 	return m.ImageVolumeIndex
 }
 
-// GetVolumeId returns VolumeId
+//GetVolumeId returns VolumeId
 func (m attachvolumedetails) GetVolumeId() *string {
 	return m.VolumeId
 }
 
-// GetCreateVolumeDetails returns CreateVolumeDetails
+//GetCreateVolumeDetails returns CreateVolumeDetails
 func (m attachvolumedetails) GetCreateVolumeDetails() *CreateVolumeDetails {
 	return m.CreateVolumeDetails
 }

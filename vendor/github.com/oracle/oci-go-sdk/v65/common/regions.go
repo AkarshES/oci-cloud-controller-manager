@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 
 package common
@@ -140,22 +140,8 @@ const (
 	RegionEUJovanovac1 Region = "eu-jovanovac-1"
 	//RegionMEDccDoha1 region Doha
 	RegionMEDccDoha1 Region = "me-dcc-doha-1"
-	//RegionUSSomerset1 region Somerset
-	RegionUSSomerset1 Region = "us-somerset-1"
-	//RegionUSThames1 region Thames
-	RegionUSThames1 Region = "us-thames-1"
 	//RegionEUDccZurich1 region Zurich
 	RegionEUDccZurich1 Region = "eu-dcc-zurich-1"
-	//RegionMEAbudhabi3 region Abudhabi
-	RegionMEAbudhabi3 Region = "me-abudhabi-3"
-	//RegionUSDccSwjordan1 region Swjordan
-	RegionUSDccSwjordan1 Region = "us-dcc-swjordan-1"
-	//RegionUSDccSwjordan2 region Swjordan
-	RegionUSDccSwjordan2 Region = "us-dcc-swjordan-2"
-	//RegionMEAbudhabi2 region Abudhabi
-	RegionMEAbudhabi2 Region = "me-abudhabi-2"
-	//RegionMEAbudhabi4 region Abudhabi
-	RegionMEAbudhabi4 Region = "me-abudhabi-4"
 )
 
 var shortNameRegion = map[string]Region{
@@ -227,14 +213,7 @@ var shortNameRegion = map[string]Region{
 	"str": RegionEUFrankfurt2,
 	"beg": RegionEUJovanovac1,
 	"doh": RegionMEDccDoha1,
-	"ebb": RegionUSSomerset1,
-	"ebl": RegionUSThames1,
 	"avz": RegionEUDccZurich1,
-	"ahu": RegionMEAbudhabi3,
-	"ozz": RegionUSDccSwjordan1,
-	"drs": RegionUSDccSwjordan2,
-	"rkt": RegionMEAbudhabi2,
-	"shj": RegionMEAbudhabi4,
 }
 
 var realm = map[string]string{
@@ -253,12 +232,7 @@ var realm = map[string]string{
 	"oc19": "oraclecloud.eu",
 	"oc20": "oraclecloud20.com",
 	"oc21": "oraclecloud21.com",
-	"oc23": "oraclecloud23.com",
 	"oc24": "oraclecloud24.com",
-	"oc26": "oraclecloud26.com",
-	"oc27": "oraclecloud27.com",
-	"oc28": "oraclecloud28.com",
-	"oc29": "oraclecloud29.com",
 }
 
 var regionRealm = map[Region]string{
@@ -345,17 +319,5 @@ var regionRealm = map[Region]string{
 
 	RegionMEDccDoha1: "oc21",
 
-	RegionUSSomerset1: "oc23",
-	RegionUSThames1:   "oc23",
-
 	RegionEUDccZurich1: "oc24",
-
-	RegionMEAbudhabi3: "oc26",
-
-	RegionUSDccSwjordan1: "oc27",
-
-	RegionUSDccSwjordan2: "oc28",
-
-	RegionMEAbudhabi2: "oc29",
-	RegionMEAbudhabi4: "oc29",
 }

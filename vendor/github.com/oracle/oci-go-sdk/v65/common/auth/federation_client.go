@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 
 // Package auth provides supporting functions and structs for authentication
@@ -153,28 +153,6 @@ func newX509FederationClientWithPurpose(region common.Region, tenancyID string, 
 		leafCertificateRetriever:          leafCertificateRetriever,
 		intermediateCertificateRetrievers: intermediateCertificateRetrievers,
 		skipTenancyValidation:             skipTenancyValidation,
-		tokenPurpose:                      purpose,
-	}
-	client.sessionKeySupplier = newSessionKeySupplier()
-	authClient := newAuthClient(region, client)
-
-	var err error
-
-	if authClient.HTTPClient, err = modifier.Modify(authClient.HTTPClient); err != nil {
-		err = fmt.Errorf("failed to modify client: %s", err.Error())
-		return nil, err
-	}
-
-	client.authClient = authClient
-	return client, nil
-}
-
-func newX509FederationClientWithURLOrFileBasedCerts(region common.Region, tenancyID string, leafCertificateRetriever x509CertificateRetriever,
-	intermediateRetrievers []x509CertificateRetriever, modifier dispatcherModifier, purpose string) (federationClient, error) {
-	client := &x509FederationClient{
-		tenancyID:                         tenancyID,
-		leafCertificateRetriever:          leafCertificateRetriever,
-		intermediateCertificateRetrievers: intermediateRetrievers,
 		tokenPurpose:                      purpose,
 	}
 	client.sessionKeySupplier = newSessionKeySupplier()

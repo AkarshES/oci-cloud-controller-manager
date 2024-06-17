@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -26,10 +26,10 @@ import (
 // The answers correlate to the questions that are specific to the CPE device type (see the
 // `parameters` attribute of CpeDeviceShapeDetail).
 // See these related operations:
-//   - GetTunnelCpeDeviceConfig
-//   - GetTunnelCpeDeviceConfigContent
-//   - GetIpsecCpeDeviceConfigContent
-//   - GetCpeDeviceConfigContent
+//   * GetTunnelCpeDeviceConfig
+//   * GetTunnelCpeDeviceConfigContent
+//   * GetIpsecCpeDeviceConfigContent
+//   * GetCpeDeviceConfigContent
 type TunnelCpeDeviceConfig struct {
 	TunnelCpeDeviceConfigParameter []CpeDeviceConfigAnswer `mandatory:"false" json:"tunnelCpeDeviceConfigParameter"`
 }

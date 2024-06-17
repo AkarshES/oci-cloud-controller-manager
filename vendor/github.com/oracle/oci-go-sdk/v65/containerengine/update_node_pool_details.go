@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -124,11 +124,17 @@ func (m *UpdateNodePoolDetails) UnmarshalJSON(data []byte) (e error) {
 	m.KubernetesVersion = model.KubernetesVersion
 
 	m.InitialNodeLabels = make([]KeyValue, len(model.InitialNodeLabels))
-	copy(m.InitialNodeLabels, model.InitialNodeLabels)
+	for i, n := range model.InitialNodeLabels {
+		m.InitialNodeLabels[i] = n
+	}
+
 	m.QuantityPerSubnet = model.QuantityPerSubnet
 
 	m.SubnetIds = make([]string, len(model.SubnetIds))
-	copy(m.SubnetIds, model.SubnetIds)
+	for i, n := range model.SubnetIds {
+		m.SubnetIds[i] = n
+	}
+
 	m.NodeConfigDetails = model.NodeConfigDetails
 
 	m.NodeMetadata = model.NodeMetadata
