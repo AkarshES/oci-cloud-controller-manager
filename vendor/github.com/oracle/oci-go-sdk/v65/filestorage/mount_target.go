@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -59,9 +59,6 @@ type MountTarget struct {
 	// mount target.
 	ExportSetId *string `mandatory:"false" json:"exportSetId"`
 
-	// The OCIDs of the IPv6 addresses associated with this mount target.
-	MountTargetIpv6Ids []string `mandatory:"false" json:"mountTargetIpv6Ids"`
-
 	// The method used to map a Unix UID to secondary groups. If NONE, the mount target will not use the Unix UID for ID mapping.
 	IdmapType MountTargetIdmapTypeEnum `mandatory:"false" json:"idmapType,omitempty"`
 
@@ -79,10 +76,7 @@ type MountTarget struct {
 	// systems will be shared through SMB protocol on this mount target.
 	ShareSetId *string `mandatory:"false" json:"shareSetId"`
 
-	// Immediately available IOPS performance for the associated mount target. Three values are accepted: 50000,
-	// 200000, and 400000. The default IOPS value of 50000 translates to a standard shape with 10 Gbps throughput.
-	// The values of 200000 and 400000 translate to high performance shapes with 40 Gbps or 80 Gbps throughput,
-	// respectively.
+	// Immediately available IOPS performance for associated mount target.
 	BaselineIops *int64 `mandatory:"false" json:"baselineIops"`
 
 	// Maximum IOPS performance that associated Mount Target can scale to in response to load.

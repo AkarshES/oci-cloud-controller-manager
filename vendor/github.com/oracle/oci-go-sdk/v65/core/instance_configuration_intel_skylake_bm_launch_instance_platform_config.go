@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -64,22 +64,22 @@ type InstanceConfigurationIntelSkylakeBmLaunchInstancePlatformConfig struct {
 	NumaNodesPerSocket InstanceConfigurationIntelSkylakeBmLaunchInstancePlatformConfigNumaNodesPerSocketEnum `mandatory:"false" json:"numaNodesPerSocket,omitempty"`
 }
 
-// GetIsSecureBootEnabled returns IsSecureBootEnabled
+//GetIsSecureBootEnabled returns IsSecureBootEnabled
 func (m InstanceConfigurationIntelSkylakeBmLaunchInstancePlatformConfig) GetIsSecureBootEnabled() *bool {
 	return m.IsSecureBootEnabled
 }
 
-// GetIsTrustedPlatformModuleEnabled returns IsTrustedPlatformModuleEnabled
+//GetIsTrustedPlatformModuleEnabled returns IsTrustedPlatformModuleEnabled
 func (m InstanceConfigurationIntelSkylakeBmLaunchInstancePlatformConfig) GetIsTrustedPlatformModuleEnabled() *bool {
 	return m.IsTrustedPlatformModuleEnabled
 }
 
-// GetIsMeasuredBootEnabled returns IsMeasuredBootEnabled
+//GetIsMeasuredBootEnabled returns IsMeasuredBootEnabled
 func (m InstanceConfigurationIntelSkylakeBmLaunchInstancePlatformConfig) GetIsMeasuredBootEnabled() *bool {
 	return m.IsMeasuredBootEnabled
 }
 
-// GetIsMemoryEncryptionEnabled returns IsMemoryEncryptionEnabled
+//GetIsMemoryEncryptionEnabled returns IsMemoryEncryptionEnabled
 func (m InstanceConfigurationIntelSkylakeBmLaunchInstancePlatformConfig) GetIsMemoryEncryptionEnabled() *bool {
 	return m.IsMemoryEncryptionEnabled
 }

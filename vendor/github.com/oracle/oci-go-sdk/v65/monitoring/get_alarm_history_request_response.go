@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,9 +21,8 @@ type GetAlarmHistoryRequest struct {
 	// request, please provide the complete request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
 
-	// The type of history entries to retrieve.
-	// State history (STATE_HISTORY), state transition history (STATE_TRANSITION_HISTORY), rule history (RULE_HISTORY) or rule transition history (RULE_TRANSITION_HISTORY).
-	// If not specified, entries of all types are retrieved.
+	// The type of history entries to retrieve. State history (STATE_HISTORY) or state transition history (STATE_TRANSITION_HISTORY).
+	// If not specified, entries of both types are retrieved.
 	// Example: `STATE_HISTORY`
 	AlarmHistorytype GetAlarmHistoryAlarmHistorytypeEnum `mandatory:"false" contributesTo:"query" name:"alarmHistorytype" omitEmpty:"true"`
 
@@ -40,11 +39,11 @@ type GetAlarmHistoryRequest struct {
 	Limit *int `mandatory:"false" contributesTo:"query" name:"limit"`
 
 	// A filter to return only alarm history entries with timestamps occurring on or after the specified date and time. Format defined by RFC3339.
-	// Example: `2023-01-01T01:00:00.789Z`
+	// Example: `2019-01-01T01:00:00.789Z`
 	TimestampGreaterThanOrEqualTo *common.SDKTime `mandatory:"false" contributesTo:"query" name:"timestampGreaterThanOrEqualTo"`
 
 	// A filter to return only alarm history entries with timestamps occurring before the specified date and time. Format defined by RFC3339.
-	// Example: `2023-01-02T01:00:00.789Z`
+	// Example: `2019-01-02T01:00:00.789Z`
 	TimestampLessThan *common.SDKTime `mandatory:"false" contributesTo:"query" name:"timestampLessThan"`
 
 	// Metadata about the request. This information will not be transmitted to the service, but
@@ -125,24 +124,18 @@ type GetAlarmHistoryAlarmHistorytypeEnum string
 
 // Set of constants representing the allowable values for GetAlarmHistoryAlarmHistorytypeEnum
 const (
-	GetAlarmHistoryAlarmHistorytypeStateHistory           GetAlarmHistoryAlarmHistorytypeEnum = "STATE_HISTORY"
-	GetAlarmHistoryAlarmHistorytypeStateTransitionHistory GetAlarmHistoryAlarmHistorytypeEnum = "STATE_TRANSITION_HISTORY"
-	GetAlarmHistoryAlarmHistorytypeRuleHistory            GetAlarmHistoryAlarmHistorytypeEnum = "RULE_HISTORY"
-	GetAlarmHistoryAlarmHistorytypeRuleTransitionHistory  GetAlarmHistoryAlarmHistorytypeEnum = "RULE_TRANSITION_HISTORY"
+	GetAlarmHistoryAlarmHistorytypeHistory           GetAlarmHistoryAlarmHistorytypeEnum = "STATE_HISTORY"
+	GetAlarmHistoryAlarmHistorytypeTransitionHistory GetAlarmHistoryAlarmHistorytypeEnum = "STATE_TRANSITION_HISTORY"
 )
 
 var mappingGetAlarmHistoryAlarmHistorytypeEnum = map[string]GetAlarmHistoryAlarmHistorytypeEnum{
-	"STATE_HISTORY":            GetAlarmHistoryAlarmHistorytypeStateHistory,
-	"STATE_TRANSITION_HISTORY": GetAlarmHistoryAlarmHistorytypeStateTransitionHistory,
-	"RULE_HISTORY":             GetAlarmHistoryAlarmHistorytypeRuleHistory,
-	"RULE_TRANSITION_HISTORY":  GetAlarmHistoryAlarmHistorytypeRuleTransitionHistory,
+	"STATE_HISTORY":            GetAlarmHistoryAlarmHistorytypeHistory,
+	"STATE_TRANSITION_HISTORY": GetAlarmHistoryAlarmHistorytypeTransitionHistory,
 }
 
 var mappingGetAlarmHistoryAlarmHistorytypeEnumLowerCase = map[string]GetAlarmHistoryAlarmHistorytypeEnum{
-	"state_history":            GetAlarmHistoryAlarmHistorytypeStateHistory,
-	"state_transition_history": GetAlarmHistoryAlarmHistorytypeStateTransitionHistory,
-	"rule_history":             GetAlarmHistoryAlarmHistorytypeRuleHistory,
-	"rule_transition_history":  GetAlarmHistoryAlarmHistorytypeRuleTransitionHistory,
+	"state_history":            GetAlarmHistoryAlarmHistorytypeHistory,
+	"state_transition_history": GetAlarmHistoryAlarmHistorytypeTransitionHistory,
 }
 
 // GetGetAlarmHistoryAlarmHistorytypeEnumValues Enumerates the set of values for GetAlarmHistoryAlarmHistorytypeEnum
@@ -159,8 +152,6 @@ func GetGetAlarmHistoryAlarmHistorytypeEnumStringValues() []string {
 	return []string{
 		"STATE_HISTORY",
 		"STATE_TRANSITION_HISTORY",
-		"RULE_HISTORY",
-		"RULE_TRANSITION_HISTORY",
 	}
 }
 

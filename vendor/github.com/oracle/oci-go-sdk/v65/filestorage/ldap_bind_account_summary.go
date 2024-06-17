@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -65,47 +65,47 @@ type LdapBindAccountSummary struct {
 	LifecycleState OutboundConnectorSummaryLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 }
 
-// GetAvailabilityDomain returns AvailabilityDomain
+//GetAvailabilityDomain returns AvailabilityDomain
 func (m LdapBindAccountSummary) GetAvailabilityDomain() *string {
 	return m.AvailabilityDomain
 }
 
-// GetCompartmentId returns CompartmentId
+//GetCompartmentId returns CompartmentId
 func (m LdapBindAccountSummary) GetCompartmentId() *string {
 	return m.CompartmentId
 }
 
-// GetId returns Id
+//GetId returns Id
 func (m LdapBindAccountSummary) GetId() *string {
 	return m.Id
 }
 
-// GetLifecycleState returns LifecycleState
+//GetLifecycleState returns LifecycleState
 func (m LdapBindAccountSummary) GetLifecycleState() OutboundConnectorSummaryLifecycleStateEnum {
 	return m.LifecycleState
 }
 
-// GetDisplayName returns DisplayName
+//GetDisplayName returns DisplayName
 func (m LdapBindAccountSummary) GetDisplayName() *string {
 	return m.DisplayName
 }
 
-// GetTimeCreated returns TimeCreated
+//GetTimeCreated returns TimeCreated
 func (m LdapBindAccountSummary) GetTimeCreated() *common.SDKTime {
 	return m.TimeCreated
 }
 
-// GetFreeformTags returns FreeformTags
+//GetFreeformTags returns FreeformTags
 func (m LdapBindAccountSummary) GetFreeformTags() map[string]string {
 	return m.FreeformTags
 }
 
-// GetDefinedTags returns DefinedTags
+//GetDefinedTags returns DefinedTags
 func (m LdapBindAccountSummary) GetDefinedTags() map[string]map[string]interface{} {
 	return m.DefinedTags
 }
 
-// GetSystemTags returns SystemTags
+//GetSystemTags returns SystemTags
 func (m LdapBindAccountSummary) GetSystemTags() map[string]map[string]interface{} {
 	return m.SystemTags
 }

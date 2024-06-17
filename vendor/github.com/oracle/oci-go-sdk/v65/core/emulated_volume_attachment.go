@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -61,18 +61,11 @@ type EmulatedVolumeAttachment struct {
 	// be attached in shareable mode. Defaults to false if not specified.
 	IsShareable *bool `mandatory:"false" json:"isShareable"`
 
-	// Deprecated. Use `isEncryptionInTransitEnabled` instead.
+	// Whether in-transit encryption for the data volume's paravirtualized attachment is enabled or not.
 	IsPvEncryptionInTransitEnabled *bool `mandatory:"false" json:"isPvEncryptionInTransitEnabled"`
-
-	// Whether in-transit encryption for the data volume's attachment is enabled or not.
-	IsEncryptionInTransitEnabled *bool `mandatory:"false" json:"isEncryptionInTransitEnabled"`
 
 	// Whether the Iscsi or Paravirtualized attachment is multipath or not, it is not applicable to NVMe attachment.
 	IsMultipath *bool `mandatory:"false" json:"isMultipath"`
-
-	// Flag indicating if this volume was created for the customer as part of a simplified launch.
-	// Used to determine whether the volume requires deletion on instance termination.
-	IsVolumeCreatedDuringLaunch *bool `mandatory:"false" json:"isVolumeCreatedDuringLaunch"`
 
 	// The current state of the volume attachment.
 	LifecycleState VolumeAttachmentLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
@@ -82,84 +75,74 @@ type EmulatedVolumeAttachment struct {
 	IscsiLoginState VolumeAttachmentIscsiLoginStateEnum `mandatory:"false" json:"iscsiLoginState,omitempty"`
 }
 
-// GetAvailabilityDomain returns AvailabilityDomain
+//GetAvailabilityDomain returns AvailabilityDomain
 func (m EmulatedVolumeAttachment) GetAvailabilityDomain() *string {
 	return m.AvailabilityDomain
 }
 
-// GetCompartmentId returns CompartmentId
+//GetCompartmentId returns CompartmentId
 func (m EmulatedVolumeAttachment) GetCompartmentId() *string {
 	return m.CompartmentId
 }
 
-// GetDevice returns Device
+//GetDevice returns Device
 func (m EmulatedVolumeAttachment) GetDevice() *string {
 	return m.Device
 }
 
-// GetDisplayName returns DisplayName
+//GetDisplayName returns DisplayName
 func (m EmulatedVolumeAttachment) GetDisplayName() *string {
 	return m.DisplayName
 }
 
-// GetId returns Id
+//GetId returns Id
 func (m EmulatedVolumeAttachment) GetId() *string {
 	return m.Id
 }
 
-// GetInstanceId returns InstanceId
+//GetInstanceId returns InstanceId
 func (m EmulatedVolumeAttachment) GetInstanceId() *string {
 	return m.InstanceId
 }
 
-// GetIsReadOnly returns IsReadOnly
+//GetIsReadOnly returns IsReadOnly
 func (m EmulatedVolumeAttachment) GetIsReadOnly() *bool {
 	return m.IsReadOnly
 }
 
-// GetIsShareable returns IsShareable
+//GetIsShareable returns IsShareable
 func (m EmulatedVolumeAttachment) GetIsShareable() *bool {
 	return m.IsShareable
 }
 
-// GetLifecycleState returns LifecycleState
+//GetLifecycleState returns LifecycleState
 func (m EmulatedVolumeAttachment) GetLifecycleState() VolumeAttachmentLifecycleStateEnum {
 	return m.LifecycleState
 }
 
-// GetTimeCreated returns TimeCreated
+//GetTimeCreated returns TimeCreated
 func (m EmulatedVolumeAttachment) GetTimeCreated() *common.SDKTime {
 	return m.TimeCreated
 }
 
-// GetVolumeId returns VolumeId
+//GetVolumeId returns VolumeId
 func (m EmulatedVolumeAttachment) GetVolumeId() *string {
 	return m.VolumeId
 }
 
-// GetIsPvEncryptionInTransitEnabled returns IsPvEncryptionInTransitEnabled
+//GetIsPvEncryptionInTransitEnabled returns IsPvEncryptionInTransitEnabled
 func (m EmulatedVolumeAttachment) GetIsPvEncryptionInTransitEnabled() *bool {
 	return m.IsPvEncryptionInTransitEnabled
 }
 
-// GetIsEncryptionInTransitEnabled returns IsEncryptionInTransitEnabled
-func (m EmulatedVolumeAttachment) GetIsEncryptionInTransitEnabled() *bool {
-	return m.IsEncryptionInTransitEnabled
-}
-
-// GetIsMultipath returns IsMultipath
+//GetIsMultipath returns IsMultipath
 func (m EmulatedVolumeAttachment) GetIsMultipath() *bool {
 	return m.IsMultipath
 }
 
-// GetIscsiLoginState returns IscsiLoginState
+//GetIscsiLoginState returns IscsiLoginState
 func (m EmulatedVolumeAttachment) GetIscsiLoginState() VolumeAttachmentIscsiLoginStateEnum {
 	return m.IscsiLoginState
-}
-
-// GetIsVolumeCreatedDuringLaunch returns IsVolumeCreatedDuringLaunch
-func (m EmulatedVolumeAttachment) GetIsVolumeCreatedDuringLaunch() *bool {
-	return m.IsVolumeCreatedDuringLaunch
 }
 
 func (m EmulatedVolumeAttachment) String() string {

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -28,12 +28,6 @@ type ListInstanceMaintenanceEventsRequest struct {
 
 	// A filter to only return resources that match the given instance action.
 	InstanceAction *string `mandatory:"false" contributesTo:"query" name:"instanceAction"`
-
-	// Starting range to return the maintenances which are not completed (date-time is in RFC3339 (https://tools.ietf.org/html/rfc3339) format).
-	TimeWindowStartGreaterThanOrEqualTo *common.SDKTime `mandatory:"false" contributesTo:"query" name:"timeWindowStartGreaterThanOrEqualTo"`
-
-	// Ending range to return the maintenances which are not completed (date-time is in RFC3339 (https://tools.ietf.org/html/rfc3339) format).
-	TimeWindowStartLessThanOrEqualTo *common.SDKTime `mandatory:"false" contributesTo:"query" name:"timeWindowStartLessThanOrEqualTo"`
 
 	// For list pagination. The maximum number of results per page, or items to return in a paginated
 	// "List" call. For important details about how pagination works, see

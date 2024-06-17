@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -31,11 +31,6 @@ type ListDrgRouteRulesRequest struct {
 	// Static routes are specified through the DRG route table API.
 	// Dynamic routes are learned by the DRG from the DRG attachments through various routing protocols.
 	RouteType ListDrgRouteRulesRouteTypeEnum `mandatory:"false" contributesTo:"query" name:"routeType" omitEmpty:"true"`
-
-	// Enables filtering routes on a Global DRG route table by the Oracle Cloud
-	// Infrastructure (region)[iaas/General/Concepts/regions.htm] where this route rule originates.
-	// Example: 'phx'
-	RouteRegion *string `mandatory:"false" contributesTo:"query" name:"routeRegion"`
 
 	// Unique Oracle-assigned identifier for the request.
 	// If you need to contact Oracle about a particular request, please provide the request ID.

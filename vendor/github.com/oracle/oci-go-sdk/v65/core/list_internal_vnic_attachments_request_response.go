@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -14,17 +14,11 @@ import (
 // ListInternalVnicAttachmentsRequest wrapper for the ListInternalVnicAttachments operation
 type ListInternalVnicAttachmentsRequest struct {
 
+	// The substrate IP address
+	SubstrateIp *string `mandatory:"true" contributesTo:"query" name:"substrateIp"`
+
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment.
 	CompartmentId *string `mandatory:"true" contributesTo:"query" name:"compartmentId"`
-
-	// The substrate IP address
-	SubstrateIp *string `mandatory:"false" contributesTo:"query" name:"substrateIp"`
-
-	// A filter to return only resources that match the given instanceOcid
-	InstanceOcidOptional *string `mandatory:"false" contributesTo:"query" name:"instanceOcidOptional"`
-
-	// A filter to return only resources that match isPrimary on the VNIC associated to VnicAttachment on the instance.
-	IsPrimaryOptional *bool `mandatory:"false" contributesTo:"query" name:"isPrimaryOptional"`
 
 	// For list pagination. The maximum number of results per page, or items to return in a paginated
 	// "List" call. For important details about how pagination works, see

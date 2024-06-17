@@ -39,7 +39,6 @@ type NetworkingInterface interface {
 	ListPrivateIps(ctx context.Context, vnicId string) ([]core.PrivateIp, error)
 	GetPrivateIp(ctx context.Context, id string) (*core.PrivateIp, error)
 	CreatePrivateIp(ctx context.Context, vnicID string) (*core.PrivateIp, error)
-	GetIpv6(ctx context.Context, id string) (*core.Ipv6, error)
 
 	GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error)
 
@@ -267,24 +266,6 @@ func (c *client) CreatePrivateIp(ctx context.Context, vnicId string) (*core.Priv
 	}
 
 	return &resp.PrivateIp, nil
-}
-
-func (c *client) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
-	if !c.rateLimiter.Reader.TryAccept() {
-		return nil, RateLimitError(false, "GetIpv6")
-	}
-	resp, err := c.network.GetIpv6(ctx, core.GetIpv6Request{
-		Ipv6Id:          &id,
-		RequestMetadata: c.requestMetadata,
-	})
-	incRequestCounter(err, getVerb, ipv6IPResource)
-
-	if err != nil {
-		c.logger.With(id).Infof("GetIpv6 failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
-		return nil, errors.WithStack(err)
-	}
-
-	return &resp.Ipv6, nil
 }
 
 func (c *client) CreateNetworkSecurityGroup(ctx context.Context, compartmentId, vcnId, displayName, serviceUid string) (*core.NetworkSecurityGroup, error) {
