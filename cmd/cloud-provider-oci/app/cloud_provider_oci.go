@@ -32,13 +32,13 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"k8s.io/cloud-provider/names"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	cloudprovider "k8s.io/cloud-provider"
 	cloudControllerManager "k8s.io/cloud-provider/app"
 	cloudControllerManagerConfig "k8s.io/cloud-provider/app/config"
-	"k8s.io/cloud-provider/names"
 	"k8s.io/cloud-provider/options"
 	cliflag "k8s.io/component-base/cli/flag"
 	utilflag "k8s.io/component-base/cli/flag"
@@ -387,7 +387,7 @@ func getInitFuncConstructors(logger *zap.SugaredLogger) map[string]cloudControll
 	isOciSvcCtrlEnvEnabled := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_OCI_SERVICE_CONTROLLER", false)
 	if isOciSvcCtrlEnvEnabled || enableOCIServiceController {
 		// Disable default Kubernetes Cloud Provider service controller
-		cloudControllerManager.ControllersDisabledByDefault.Insert(names.ServiceLBController)
+		cloudControllerManager.ControllersDisabledByDefault.Insert("service")
 
 		// Add OCI service controller init func
 		initConstructors["oci-service"] = cloudControllerManager.ControllerInitFuncConstructor{
