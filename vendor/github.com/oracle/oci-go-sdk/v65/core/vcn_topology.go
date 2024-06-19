@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -45,22 +45,22 @@ type VcnTopology struct {
 	VcnId *string `mandatory:"false" json:"vcnId"`
 }
 
-// GetEntities returns Entities
+//GetEntities returns Entities
 func (m VcnTopology) GetEntities() []interface{} {
 	return m.Entities
 }
 
-// GetRelationships returns Relationships
+//GetRelationships returns Relationships
 func (m VcnTopology) GetRelationships() []TopologyEntityRelationship {
 	return m.Relationships
 }
 
-// GetLimitedEntities returns LimitedEntities
+//GetLimitedEntities returns LimitedEntities
 func (m VcnTopology) GetLimitedEntities() []string {
 	return m.LimitedEntities
 }
 
-// GetTimeCreated returns TimeCreated
+//GetTimeCreated returns TimeCreated
 func (m VcnTopology) GetTimeCreated() *common.SDKTime {
 	return m.TimeCreated
 }
@@ -113,7 +113,10 @@ func (m *VcnTopology) UnmarshalJSON(data []byte) (e error) {
 	m.VcnId = model.VcnId
 
 	m.Entities = make([]interface{}, len(model.Entities))
-	copy(m.Entities, model.Entities)
+	for i, n := range model.Entities {
+		m.Entities[i] = n
+	}
+
 	m.Relationships = make([]TopologyEntityRelationship, len(model.Relationships))
 	for i, n := range model.Relationships {
 		nn, e = n.UnmarshalPolymorphicJSON(n.JsonData)
@@ -126,8 +129,12 @@ func (m *VcnTopology) UnmarshalJSON(data []byte) (e error) {
 			m.Relationships[i] = nil
 		}
 	}
+
 	m.LimitedEntities = make([]string, len(model.LimitedEntities))
-	copy(m.LimitedEntities, model.LimitedEntities)
+	for i, n := range model.LimitedEntities {
+		m.LimitedEntities[i] = n
+	}
+
 	m.TimeCreated = model.TimeCreated
 
 	return

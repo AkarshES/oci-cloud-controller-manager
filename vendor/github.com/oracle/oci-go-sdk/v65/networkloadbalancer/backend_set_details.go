@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -17,7 +17,7 @@ import (
 
 // BackendSetDetails The configuration of a network load balancer backend set.
 // For more information about backend set configuration, see
-// Managing Backend Sets (https://docs.cloud.oracle.com/Content/NetworkLoadBalancer/BackendSets/backend-set-management.htm).
+// Managing Backend Sets (https://docs.cloud.oracle.com/Content/Balance/Tasks/managingbackendsets.htm).
 // **Caution:** Oracle recommends that you avoid using any confidential information when you supply string values using the API.
 type BackendSetDetails struct {
 	HealthChecker *HealthChecker `mandatory:"true" json:"healthChecker"`
@@ -38,20 +38,8 @@ type BackendSetDetails struct {
 	// The value is false by default.
 	IsFailOpen *bool `mandatory:"false" json:"isFailOpen"`
 
-	// If enabled existing connections will be forwarded to an alternative healthy backend as soon as current backend becomes unhealthy.
-	IsInstantFailoverEnabled *bool `mandatory:"false" json:"isInstantFailoverEnabled"`
-
 	// An array of backends.
 	Backends []Backend `mandatory:"false" json:"backends"`
-
-	// If this parameter is enabled, the NLB fleet in a particular AD will prefer backends within the same AD while load-balancing traffic.
-	IsAdAffinityEnabled *bool `mandatory:"false" json:"isAdAffinityEnabled"`
-
-	// When backends are added without weights, this value will represent the percent of backends that must be healthy within an AD for AD Affinity to be honored.
-	// When backends are added with weights, this value will represent the percent of weights that must be healthy within an AD for AD Affinity to be honored.
-	// If the percent of healthy backends falls below this threshold, traffic will be distributed across all healthy backends in all ADs.
-	// If this percent value is not specified then default will be 80.
-	MinimumHealthyBackendPercentage *int `mandatory:"false" json:"minimumHealthyBackendPercentage"`
 }
 
 func (m BackendSetDetails) String() string {

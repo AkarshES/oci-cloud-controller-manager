@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -74,15 +74,6 @@ type DrgAttachment struct {
 	// This field is deprecated. Instead, use the `networkDetails` field to view the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the attached resource.
 	VcnId *string `mandatory:"false" json:"vcnId"`
 
-	// STANDARD applies to all regional resources which are customer visible, GDRG_SERVICE_RESOURCE applies to
-	// internal resources created to back GlobalDRGAttachments, and GDRG_MESH_RPC applies to internal RPC Attachments
-	// used to facilitate GlobalDRG functionality.
-	InternalType DrgAttachmentInternalTypeEnum `mandatory:"false" json:"internalType,omitempty"`
-
-	// Indicates if transitive traffic is enabled for this DRG attachment. This field is
-	// only supported for VirtualCircuit and IPSec DRG attachments.
-	TransitiveTrafficEnabled DrgAttachmentTransitiveTrafficStateEnum `mandatory:"false" json:"transitiveTrafficEnabled,omitempty"`
-
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the export route distribution used to specify how routes in the assigned DRG route table
 	// are advertised to the attachment.
 	// If this value is null, no routes are advertised through this attachment.
@@ -106,12 +97,6 @@ func (m DrgAttachment) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetDrgAttachmentLifecycleStateEnumStringValues(), ",")))
 	}
 
-	if _, ok := GetMappingDrgAttachmentInternalTypeEnum(string(m.InternalType)); !ok && m.InternalType != "" {
-		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for InternalType: %s. Supported values are: %s.", m.InternalType, strings.Join(GetDrgAttachmentInternalTypeEnumStringValues(), ",")))
-	}
-	if _, ok := GetMappingDrgAttachmentTransitiveTrafficStateEnum(string(m.TransitiveTrafficEnabled)); !ok && m.TransitiveTrafficEnabled != "" {
-		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for TransitiveTrafficEnabled: %s. Supported values are: %s.", m.TransitiveTrafficEnabled, strings.Join(GetDrgAttachmentTransitiveTrafficStateEnumStringValues(), ",")))
-	}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
 	}
@@ -121,22 +106,20 @@ func (m DrgAttachment) ValidateEnumValue() (bool, error) {
 // UnmarshalJSON unmarshals from json
 func (m *DrgAttachment) UnmarshalJSON(data []byte) (e error) {
 	model := struct {
-		DisplayName                  *string                                 `json:"displayName"`
-		TimeCreated                  *common.SDKTime                         `json:"timeCreated"`
-		DrgRouteTableId              *string                                 `json:"drgRouteTableId"`
-		NetworkDetails               drgattachmentnetworkdetails             `json:"networkDetails"`
-		DefinedTags                  map[string]map[string]interface{}       `json:"definedTags"`
-		FreeformTags                 map[string]string                       `json:"freeformTags"`
-		RouteTableId                 *string                                 `json:"routeTableId"`
-		VcnId                        *string                                 `json:"vcnId"`
-		InternalType                 DrgAttachmentInternalTypeEnum           `json:"internalType"`
-		TransitiveTrafficEnabled     DrgAttachmentTransitiveTrafficStateEnum `json:"transitiveTrafficEnabled"`
-		ExportDrgRouteDistributionId *string                                 `json:"exportDrgRouteDistributionId"`
-		IsCrossTenancy               *bool                                   `json:"isCrossTenancy"`
-		CompartmentId                *string                                 `json:"compartmentId"`
-		DrgId                        *string                                 `json:"drgId"`
-		Id                           *string                                 `json:"id"`
-		LifecycleState               DrgAttachmentLifecycleStateEnum         `json:"lifecycleState"`
+		DisplayName                  *string                           `json:"displayName"`
+		TimeCreated                  *common.SDKTime                   `json:"timeCreated"`
+		DrgRouteTableId              *string                           `json:"drgRouteTableId"`
+		NetworkDetails               drgattachmentnetworkdetails       `json:"networkDetails"`
+		DefinedTags                  map[string]map[string]interface{} `json:"definedTags"`
+		FreeformTags                 map[string]string                 `json:"freeformTags"`
+		RouteTableId                 *string                           `json:"routeTableId"`
+		VcnId                        *string                           `json:"vcnId"`
+		ExportDrgRouteDistributionId *string                           `json:"exportDrgRouteDistributionId"`
+		IsCrossTenancy               *bool                             `json:"isCrossTenancy"`
+		CompartmentId                *string                           `json:"compartmentId"`
+		DrgId                        *string                           `json:"drgId"`
+		Id                           *string                           `json:"id"`
+		LifecycleState               DrgAttachmentLifecycleStateEnum   `json:"lifecycleState"`
 	}{}
 
 	e = json.Unmarshal(data, &model)
@@ -168,10 +151,6 @@ func (m *DrgAttachment) UnmarshalJSON(data []byte) (e error) {
 
 	m.VcnId = model.VcnId
 
-	m.InternalType = model.InternalType
-
-	m.TransitiveTrafficEnabled = model.TransitiveTrafficEnabled
-
 	m.ExportDrgRouteDistributionId = model.ExportDrgRouteDistributionId
 
 	m.IsCrossTenancy = model.IsCrossTenancy
@@ -196,7 +175,6 @@ const (
 	DrgAttachmentLifecycleStateAttached  DrgAttachmentLifecycleStateEnum = "ATTACHED"
 	DrgAttachmentLifecycleStateDetaching DrgAttachmentLifecycleStateEnum = "DETACHING"
 	DrgAttachmentLifecycleStateDetached  DrgAttachmentLifecycleStateEnum = "DETACHED"
-	DrgAttachmentLifecycleStateUpdating  DrgAttachmentLifecycleStateEnum = "UPDATING"
 )
 
 var mappingDrgAttachmentLifecycleStateEnum = map[string]DrgAttachmentLifecycleStateEnum{
@@ -204,7 +182,6 @@ var mappingDrgAttachmentLifecycleStateEnum = map[string]DrgAttachmentLifecycleSt
 	"ATTACHED":  DrgAttachmentLifecycleStateAttached,
 	"DETACHING": DrgAttachmentLifecycleStateDetaching,
 	"DETACHED":  DrgAttachmentLifecycleStateDetached,
-	"UPDATING":  DrgAttachmentLifecycleStateUpdating,
 }
 
 var mappingDrgAttachmentLifecycleStateEnumLowerCase = map[string]DrgAttachmentLifecycleStateEnum{
@@ -212,7 +189,6 @@ var mappingDrgAttachmentLifecycleStateEnumLowerCase = map[string]DrgAttachmentLi
 	"attached":  DrgAttachmentLifecycleStateAttached,
 	"detaching": DrgAttachmentLifecycleStateDetaching,
 	"detached":  DrgAttachmentLifecycleStateDetached,
-	"updating":  DrgAttachmentLifecycleStateUpdating,
 }
 
 // GetDrgAttachmentLifecycleStateEnumValues Enumerates the set of values for DrgAttachmentLifecycleStateEnum
@@ -231,7 +207,6 @@ func GetDrgAttachmentLifecycleStateEnumStringValues() []string {
 		"ATTACHED",
 		"DETACHING",
 		"DETACHED",
-		"UPDATING",
 	}
 }
 

@@ -19,43 +19,42 @@ import (
 	fss "github.com/oracle/oci-go-sdk/v65/filestorage"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	authv1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
 
-type MockFileStorageClient struct {
+type MockFileStorageClient struct{
 	filestorage util.MockOCIFileStorageClient
 }
 
-var (
+var(
 	mountTargets = map[string]*fss.MountTarget{
 		"mount-target-stuck-creating": {
-			DisplayName:        common.String("mount-target-stuck-creating"),
-			LifecycleState:     fss.MountTargetLifecycleStateCreating,
+			DisplayName: common.String("mount-target-stuck-creating"),
+			LifecycleState: fss.MountTargetLifecycleStateCreating,
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id:                 common.String("mount-target-stuck-creating"),
+			Id: common.String("mount-target-stuck-creating"),
 		},
 	}
 
 	fileSystems = map[string]*fss.FileSystem{
 		"file-system-stuck-creating": {
-			DisplayName:        common.String("file-system-stuck-creating"),
-			LifecycleState:     fss.FileSystemLifecycleStateCreating,
+			DisplayName: common.String("file-system-stuck-creating"),
+			LifecycleState: fss.FileSystemLifecycleStateCreating,
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
-			Id:                 common.String("file-system-stuck-creating"),
+			Id: common.String("file-system-stuck-creating"),
 		},
 	}
 
 	exports = map[string]*fss.Export{
 		"export-stuck-creating": {
 			LifecycleState: fss.ExportLifecycleStateCreating,
-			Id:             common.String("export-stuck-creating"),
+			Id: common.String("export-stuck-creating"),
 		},
 	}
 )
+
 
 func (c *MockFileStorageClient) GetMountTarget(ctx context.Context, id string) (*filestorage.MountTarget, error) {
 	if mountTargets[id] != nil {
@@ -72,7 +71,7 @@ func (c *MockFileStorageClient) GetMountTarget(ctx context.Context, id string) (
 		DisplayName:        &displayName,
 		PrivateIpIds:       privateIpIds,
 		ExportSetId:        &idEx,
-		LifecycleState:     fss.MountTargetLifecycleStateActive,
+		LifecycleState: 	fss.MountTargetLifecycleStateActive,
 	}, nil
 }
 
@@ -138,7 +137,7 @@ func (c *MockFileStorageClient) GetFileSystem(ctx context.Context, id string) (*
 		AvailabilityDomain: &ad,
 		DisplayName:        &displayName,
 		CompartmentId:      &compartmentOcid,
-		LifecycleState:     fss.FileSystemLifecycleStateActive,
+		LifecycleState: 	fss.FileSystemLifecycleStateActive,
 	}, nil
 }
 
@@ -236,7 +235,7 @@ func (c *MockFileStorageClient) CreateExport(ctx context.Context, details filest
 
 // GetExport mocks the FileStorage CreateExport implementation.
 func (c *MockFileStorageClient) GetExport(ctx context.Context, id string) (*fss.Export, error) {
-	if exports[id] != nil {
+	if exports[id] != nil{
 		return exports[id], nil
 	}
 	return &fss.Export{}, nil
@@ -528,7 +527,7 @@ func TestFSSControllerDriver_CreateVolume(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				req: &csi.CreateVolumeRequest{
-					Name: "file-system-idempotency-check-timeout-volume",
+					Name:       "file-system-idempotency-check-timeout-volume",
 					Parameters: map[string]string{"availabilityDomain": "US-ASHBURN-AD-1",
 						"mountTargetOcid": "oc1.mounttarget.xxxx"},
 					VolumeCapabilities: []*csi.VolumeCapability{{
@@ -925,182 +924,4 @@ func isStorageClassParametersEqual(gotStorageClassParameters, expectedStorageCla
 		(gotStorageClassParameters.compartmentOcid == expectedStorageClassParameters.compartmentOcid) &&
 		(gotStorageClassParameters.exportPath == expectedStorageClassParameters.exportPath) &&
 		(gotStorageClassParameters.kmsKey == expectedStorageClassParameters.kmsKey)
-}
-
-func Test_validateMountTargetWithClusterIpFamily(t *testing.T) {
-
-	ipv4ClusterDriver := &FSSControllerDriver{ControllerDriver{
-		clusterIpFamily: csi_util.Ipv4Stack,
-	}}
-
-	ipv6ClusterDriver := &FSSControllerDriver{ControllerDriver{
-		clusterIpFamily: csi_util.Ipv6Stack,
-	}}
-
-	dualStackClusterDriver := &FSSControllerDriver{ControllerDriver{
-		clusterIpFamily: strings.Join([]string{csi_util.Ipv4Stack, csi_util.Ipv6Stack}, ","),
-	}}
-
-	tests := []struct {
-		name         string
-		driver       *FSSControllerDriver
-		mtIpv6Ids    []string
-		privateIpIds []string
-		wantErr      error
-	}{
-		{
-			name:      "Should error when ipv6 mount target specified for ipv4 cluster",
-			driver:    ipv4ClusterDriver,
-			mtIpv6Ids: []string{"fd00:00c1::a9fe:202"},
-			wantErr:   status.Errorf(codes.InvalidArgument, "Invalid mount target. For using ipv6 mount target, cluster needs to be ipv6 or dual stack but found to be %s.", ipv4ClusterDriver.clusterIpFamily),
-		},
-		{
-			name:         "Should error when ipv4 mount target specified for ipv6 cluster",
-			driver:       ipv6ClusterDriver,
-			privateIpIds: []string{"10.0.10.1"},
-			wantErr:      status.Errorf(codes.InvalidArgument, "Invalid mount target. For using ipv4 mount target, cluster needs to ipv4 or dual stack but found to be %s.", ipv6ClusterDriver.clusterIpFamily),
-		},
-		{
-			name:      "Should not return error when ipv6 mount target specified for ipv6 cluster",
-			driver:    ipv6ClusterDriver,
-			mtIpv6Ids: []string{"fd00:00c1::a9fe:202"},
-			wantErr:   nil,
-		},
-		{
-			name:      "Should not return error when ipv6 mount target specified for dual stack cluster",
-			driver:    dualStackClusterDriver,
-			mtIpv6Ids: []string{"fd00:00c1::a9fe:202"},
-			wantErr:   nil,
-		},
-		{
-			name:         "Should not return error when ipv4 mount target specified for ipv4 stack cluster",
-			driver:       ipv4ClusterDriver,
-			privateIpIds: []string{"10.0.10.1"},
-			wantErr:      nil,
-		},
-		{
-			name:         "Should not return error when ipv4 mount target specified for dual stack cluster",
-			driver:       dualStackClusterDriver,
-			privateIpIds: []string{"10.0.10.1"},
-			wantErr:      nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotErr := tt.driver.validateMountTargetWithClusterIpFamily(tt.mtIpv6Ids, tt.privateIpIds)
-
-			if tt.wantErr != gotErr && !strings.EqualFold(tt.wantErr.Error(), gotErr.Error()) {
-				t.Errorf("validateMountTargetWithClusterIpFamily() = %v, want %v", gotErr.Error(), tt.wantErr.Error())
-			}
-		})
-	}
-
-}
-
-func Test_validateMountTargetSubnetWithClusterIpFamily(t *testing.T) {
-	logger := zap.S()
-	ipv4ClusterDriver := &FSSControllerDriver{ControllerDriver{
-		KubeClient:      nil,
-		logger:          logger,
-		config:          &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
-		util:            &csi_util.Util{},
-		clusterIpFamily: csi_util.Ipv4Stack,
-		client:          NewClientProvisioner(nil, nil, &MockFileStorageClient{}),
-	}}
-
-	ipv6ClusterDriver := &FSSControllerDriver{ControllerDriver{
-		KubeClient:      nil,
-		logger:          logger,
-		config:          &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
-		util:            &csi_util.Util{},
-		clusterIpFamily: csi_util.Ipv6Stack,
-		client:          NewClientProvisioner(nil, nil, &MockFileStorageClient{}),
-	}}
-
-	dualStackClusterDriver := &FSSControllerDriver{ControllerDriver{
-		KubeClient:      nil,
-		logger:          logger,
-		config:          &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
-		util:            &csi_util.Util{},
-		clusterIpFamily: strings.Join([]string{csi_util.Ipv4Stack, csi_util.Ipv6Stack}, ","),
-		client:          NewClientProvisioner(nil, nil, &MockFileStorageClient{}),
-	}}
-
-	tests := []struct {
-		name                string
-		driver              *FSSControllerDriver
-		mountTargetSubnetId string
-		wantErr             error
-	}{
-		{
-			name:                "Should not return error when ipv4 mount target subnet is used with ipv4 clusters",
-			driver:              ipv4ClusterDriver,
-			mountTargetSubnetId: "ocid1.ipv4-subnet",
-			wantErr:             nil,
-		},
-		{
-			name:                "Should return error when ipv6 mount target subnet is used with ipv4 clusters",
-			driver:              ipv4ClusterDriver,
-			mountTargetSubnetId: "ocid1.ipv6-subnet",
-			wantErr:             status.Errorf(codes.InvalidArgument, "Invalid mount target subnet. For using ipv6 mount target subnet, cluster needs to be ipv6 or dual stack but found to be %s.", ipv4ClusterDriver.clusterIpFamily),
-		},
-		{
-			name:                "Should not return error when dual stack mount target subnet is used with ipv4 clusters",
-			driver:              ipv4ClusterDriver,
-			mountTargetSubnetId: "ocid1.dual-stack-subnet",
-			wantErr:             nil,
-		},
-		{
-			name:                "Should return error when ipv4 mount target subnet is used with ipv6 clusters",
-			driver:              ipv6ClusterDriver,
-			mountTargetSubnetId: "ocid1.ipv4-subnet",
-			wantErr:             status.Errorf(codes.InvalidArgument, "Invalid mount target subnet. For using ipv4 mount target subnet, cluster needs to be ipv4 or dual stack but found to be %s.", ipv6ClusterDriver.clusterIpFamily),
-		},
-		{
-			name:                "Should return error when dual stack mount target subnet is used with ipv6 clusters",
-			driver:              ipv6ClusterDriver,
-			mountTargetSubnetId: "ocid1.dual-stack-subnet",
-			wantErr:             status.Errorf(codes.InvalidArgument, "Invalid mount target subnet. For using dual stack mount target subnet, cluster needs to ipv4 or dual stack but found to be %s.", ipv6ClusterDriver.clusterIpFamily),
-		},
-		{
-			name:                "Should not return error when ipv6 mount target subnet is used with ipv6 clusters",
-			driver:              ipv6ClusterDriver,
-			mountTargetSubnetId: "ocid1.ipv6-subnet",
-			wantErr:             nil,
-		},
-		{
-			name:                "Should not return error when ipv4 mount target subnet is used with dual stack clusters",
-			driver:              dualStackClusterDriver,
-			mountTargetSubnetId: "ocid1.ipv4-subnet",
-			wantErr:             nil,
-		},
-		{
-			name:                "Should not return error when ipv6 mount target subnet is used with dual stack clusters",
-			driver:              dualStackClusterDriver,
-			mountTargetSubnetId: "ocid1.ipv6-subnet",
-			wantErr:             nil,
-		},
-		{
-			name:                "Should not return error when dual stack mount target subnet is used with dual stack clusters",
-			driver:              dualStackClusterDriver,
-			mountTargetSubnetId: "ocid1.dual-stack-subnet",
-			wantErr:             nil,
-		},
-		{
-			name:                "Should return error when invalid mount target subnet is used",
-			driver:              ipv4ClusterDriver,
-			mountTargetSubnetId: "ocid1.invalid-subnet",
-			wantErr:             status.Errorf(codes.Internal, "Failed to get mount target subnet, error: %s", "Internal Error."),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotErr := tt.driver.validateMountTargetSubnetWithClusterIpFamily(context.Background(), tt.mountTargetSubnetId, logger)
-
-			if tt.wantErr != gotErr && !strings.EqualFold(tt.wantErr.Error(), gotErr.Error()) {
-				t.Errorf("validateMountTargetWithClusterIpFamily() = %v, want %v", gotErr.Error(), tt.wantErr.Error())
-			}
-		})
-	}
-
 }

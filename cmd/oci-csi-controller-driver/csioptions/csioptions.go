@@ -16,11 +16,10 @@ package csioptions
 
 import (
 	"flag"
+	"go.uber.org/zap"
 	"strings"
 	"sync"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -29,7 +28,7 @@ const (
 	CrossNamespaceVolumeDataSource = "CrossNamespaceVolumeDataSource"
 )
 
-// CSIOptions structure which contains flag values
+//CSIOptions structure which contains flag values
 type CSIOptions struct {
 	Master                    string
 	Kubeconfig                string
@@ -65,7 +64,7 @@ type CSIOptions struct {
 	RuntimeSchemeMutex        *sync.Mutex
 }
 
-// NewCSIOptions initializes the flag
+//NewCSIOptions initializes the flag
 func NewCSIOptions() *CSIOptions {
 	csioptions := CSIOptions{
 		Master:                  *flag.String("master", "", "kube master"),

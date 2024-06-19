@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-// ChangeVnicAttachmentsCompartmentRequest This structure is used when changing VNIC attachment compartment.
+// ChangeVnicAttachmentsCompartmentRequest This structure is used when changing vnic attachment compartment.
 type ChangeVnicAttachmentsCompartmentRequest struct {
 
 	// List of VNICs whose attachments need to move to the destination compartment

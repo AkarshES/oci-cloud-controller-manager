@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -30,9 +30,8 @@ type CreateExportDetails struct {
 	// Example: `/mediafiles`
 	Path *string `mandatory:"true" json:"path"`
 
-	// Export options for the new export. For exports of mount targets with
-	// IPv4 address, if client options are left unspecified, client options
-	// would default to:
+	// Export options for the new export. If left unspecified,
+	// defaults to:
 	//        [
 	//          {
 	//             "source" : "0.0.0.0/0",
@@ -45,9 +44,6 @@ type CreateExportDetails struct {
 	//             "allowedAuth": ["SYS"]
 	//           }
 	//        ]
-	//   For exports of mount targets with IPv6 address, if client options are
-	//   left unspecified, client options would be an empty array, i.e. export
-	//   would not be visible to any clients.
 	//   **Note:** Mount targets do not have Internet-routable IP
 	//   addresses.  Therefore they will not be reachable from the
 	//   Internet, even if an associated `ClientOptions` item has

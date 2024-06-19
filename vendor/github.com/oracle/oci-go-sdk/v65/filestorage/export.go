@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -29,14 +29,12 @@ import (
 // complete path element sequence of the second export resource.
 //
 // For example, the following are acceptable:
-//   - /example and /path
-//   - /example1 and /example2
-//   - /example and /example1
-//
+//   * /example and /path
+//   * /example1 and /example2
+//   * /example and /example1
 // The following examples are not acceptable:
-//   - /example and /example/path
-//   - / and /example
-//
+//   * /example and /example/path
+//   * / and /example
 // Paths may not end in a slash (/). No path element can be a period (.)
 // or two periods in sequence (..). All path elements must be 255 bytes or less.
 // No two non-'DELETED' export resources in the same export set can

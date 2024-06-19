@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -53,6 +53,13 @@ type InstanceMaintenanceEvent struct {
 	// this time.
 	TimeWindowStart *common.SDKTime `mandatory:"true" json:"timeWindowStart"`
 
+	// The end of the time window when Maintenance is scheduled to begin. The Maintenance must be started before this
+	// time is reached or it will be rescheduled.
+	TimeWindowEnd *common.SDKTime `mandatory:"true" json:"timeWindowEnd"`
+
+	// This is the estimated duration of the Maintenance, once the Maintenance has entered the STARTED state.
+	EstimatedDuration *string `mandatory:"true" json:"estimatedDuration"`
+
 	// Indicates if this MaintenanceEvent is capable of being rescheduled up to the timeHardDueDate.
 	CanReschedule *bool `mandatory:"true" json:"canReschedule"`
 
@@ -65,6 +72,11 @@ type InstanceMaintenanceEvent struct {
 
 	// The creator of the maintenance event.
 	CreatedBy InstanceMaintenanceEventCreatedByEnum `mandatory:"true" json:"createdBy"`
+
+	// A unique identifier that will group Instances that have a relationship with one another and must be scheduled
+	// together for the Maintenance to proceed. Any Instances that have a relationship with one another from a Maintenance
+	// perspective will have a matching correlationToken.
+	CorrelationToken *string `mandatory:"true" json:"correlationToken"`
 
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
@@ -80,39 +92,16 @@ type InstanceMaintenanceEvent struct {
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 
-	// The time at which the Maintenance actually started.
-	TimeStarted *common.SDKTime `mandatory:"false" json:"timeStarted"`
-
-	// The time at which the Maintenance actually finished.
-	TimeFinished *common.SDKTime `mandatory:"false" json:"timeFinished"`
-
-	// The duration of the time window Maintenance is scheduled to begin within.
-	StartWindowDuration *string `mandatory:"false" json:"startWindowDuration"`
-
-	// This is the estimated duration of the Maintenance, once the Maintenance has entered the STARTED state.
-	EstimatedDuration *string `mandatory:"false" json:"estimatedDuration"`
-
 	// It is the scheduled hard due date and time of the maintenance event.
 	// The maintenance event will happen at this time and the due date will not be extended.
 	TimeHardDueDate *common.SDKTime `mandatory:"false" json:"timeHardDueDate"`
 
-	// Provides more details about the state of the maintenance event.
-	LifecycleDetails *string `mandatory:"false" json:"lifecycleDetails"`
-
 	// It is the descriptive information about the maintenance taking place on the customer instance.
 	Description *string `mandatory:"false" json:"description"`
-
-	// A unique identifier that will group Instances that have a relationship with one another and must be scheduled
-	// together for the Maintenance to proceed. Any Instances that have a relationship with one another from a Maintenance
-	// perspective will have a matching correlationToken.
-	CorrelationToken *string `mandatory:"false" json:"correlationToken"`
 
 	// For Instances that have local storage, this field is set to true when local storage
 	// will be deleted as a result of the Maintenance.
 	CanDeleteLocalStorage *bool `mandatory:"false" json:"canDeleteLocalStorage"`
-
-	// Additional details of the maintenance in the form of json.
-	AdditionalDetails map[string]string `mandatory:"false" json:"additionalDetails"`
 }
 
 func (m InstanceMaintenanceEvent) String() string {
