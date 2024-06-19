@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -50,12 +50,12 @@ type CreateOutboundConnectorDetails interface {
 
 type createoutboundconnectordetails struct {
 	JsonData           []byte
+	AvailabilityDomain *string                           `mandatory:"true" json:"availabilityDomain"`
+	CompartmentId      *string                           `mandatory:"true" json:"compartmentId"`
 	DisplayName        *string                           `mandatory:"false" json:"displayName"`
 	FreeformTags       map[string]string                 `mandatory:"false" json:"freeformTags"`
 	DefinedTags        map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 	SystemTags         map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
-	AvailabilityDomain *string                           `mandatory:"true" json:"availabilityDomain"`
-	CompartmentId      *string                           `mandatory:"true" json:"compartmentId"`
 	ConnectorType      string                            `json:"connectorType"`
 }
 
@@ -100,34 +100,34 @@ func (m *createoutboundconnectordetails) UnmarshalPolymorphicJSON(data []byte) (
 	}
 }
 
-// GetDisplayName returns DisplayName
-func (m createoutboundconnectordetails) GetDisplayName() *string {
-	return m.DisplayName
-}
-
-// GetFreeformTags returns FreeformTags
-func (m createoutboundconnectordetails) GetFreeformTags() map[string]string {
-	return m.FreeformTags
-}
-
-// GetDefinedTags returns DefinedTags
-func (m createoutboundconnectordetails) GetDefinedTags() map[string]map[string]interface{} {
-	return m.DefinedTags
-}
-
-// GetSystemTags returns SystemTags
-func (m createoutboundconnectordetails) GetSystemTags() map[string]map[string]interface{} {
-	return m.SystemTags
-}
-
-// GetAvailabilityDomain returns AvailabilityDomain
+//GetAvailabilityDomain returns AvailabilityDomain
 func (m createoutboundconnectordetails) GetAvailabilityDomain() *string {
 	return m.AvailabilityDomain
 }
 
-// GetCompartmentId returns CompartmentId
+//GetCompartmentId returns CompartmentId
 func (m createoutboundconnectordetails) GetCompartmentId() *string {
 	return m.CompartmentId
+}
+
+//GetDisplayName returns DisplayName
+func (m createoutboundconnectordetails) GetDisplayName() *string {
+	return m.DisplayName
+}
+
+//GetFreeformTags returns FreeformTags
+func (m createoutboundconnectordetails) GetFreeformTags() map[string]string {
+	return m.FreeformTags
+}
+
+//GetDefinedTags returns DefinedTags
+func (m createoutboundconnectordetails) GetDefinedTags() map[string]map[string]interface{} {
+	return m.DefinedTags
+}
+
+//GetSystemTags returns SystemTags
+func (m createoutboundconnectordetails) GetSystemTags() map[string]map[string]interface{} {
+	return m.SystemTags
 }
 
 func (m createoutboundconnectordetails) String() string {

@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -52,27 +52,27 @@ type InstanceConfigurationParavirtualizedAttachVolumeDetails struct {
 	IsPvEncryptionInTransitEnabled *bool `mandatory:"false" json:"isPvEncryptionInTransitEnabled"`
 }
 
-// GetDisplayName returns DisplayName
+//GetDisplayName returns DisplayName
 func (m InstanceConfigurationParavirtualizedAttachVolumeDetails) GetDisplayName() *string {
 	return m.DisplayName
 }
 
-// GetIsReadOnly returns IsReadOnly
+//GetIsReadOnly returns IsReadOnly
 func (m InstanceConfigurationParavirtualizedAttachVolumeDetails) GetIsReadOnly() *bool {
 	return m.IsReadOnly
 }
 
-// GetDevice returns Device
+//GetDevice returns Device
 func (m InstanceConfigurationParavirtualizedAttachVolumeDetails) GetDevice() *string {
 	return m.Device
 }
 
-// GetIsShareable returns IsShareable
+//GetIsShareable returns IsShareable
 func (m InstanceConfigurationParavirtualizedAttachVolumeDetails) GetIsShareable() *bool {
 	return m.IsShareable
 }
 
-// GetImageVolumeIndex returns ImageVolumeIndex
+//GetImageVolumeIndex returns ImageVolumeIndex
 func (m InstanceConfigurationParavirtualizedAttachVolumeDetails) GetImageVolumeIndex() *int {
 	return m.ImageVolumeIndex
 }

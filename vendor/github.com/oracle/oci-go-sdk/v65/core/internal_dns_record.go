@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-// InternalDnsRecord A `DnsRecord` object representing a single RRSet.
+// InternalDnsRecord DnsRecord representing a single RRSet.
 type InternalDnsRecord struct {
 
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment containing the DNS record.
@@ -30,26 +30,26 @@ type InternalDnsRecord struct {
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the DNS record.
 	Id *string `mandatory:"true" json:"id"`
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the Internal Hosted Zone the `DnsRecord` object belongs to.
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the Internal Hosted Zone the `DnsRecord` belongs to.
 	InternalHostedZoneId *string `mandatory:"true" json:"internalHostedZoneId"`
 
-	// The `DnsRecord`'s current state.
+	// The DnsRecord's current state.
 	LifecycleState InternalDnsRecordLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 
-	// Name of the `DnsRecord`.
+	// Name of the DnsRecord.
 	// -*A:* Partially Qualified DNS Name that will be mapped to the IPv4 address
 	Name *string `mandatory:"true" json:"name"`
 
-	// Type of DNS record according to RFC 1035 (https://tools.ietf.org/html/rfc1035).
+	// Type of Dns Record according to RFC 1035 (https://tools.ietf.org/html/rfc1035).
 	// Currently supported list of types are the following.
 	// -*A:* Type 1, a host name to IPv4 address
 	Type InternalDnsRecordTypeEnum `mandatory:"true" json:"type"`
 
-	// Value for the `DnsRecord`.
+	// Value for the DnsRecord.
 	// -*A:* One or more IPv4 addresses. Comma separated.
 	Value *string `mandatory:"true" json:"value"`
 
-	// Time to live value for the `DnsRecord`, according to RFC 1035 (https://tools.ietf.org/html/rfc1035).
+	// Time to live value for the DnsRecord, according to RFC 1035 (https://tools.ietf.org/html/rfc1035).
 	// Defaults to 86400.
 	Ttl *int `mandatory:"false" json:"ttl"`
 }

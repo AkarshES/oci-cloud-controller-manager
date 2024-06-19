@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 
 package common
@@ -27,8 +27,6 @@ const (
 	InstancePrincipalDelegationToken AuthenticationType = "instance_principle_delegation_token"
 	// ResourcePrincipalDelegationToken is used for resource principal delegation token auth type
 	ResourcePrincipalDelegationToken AuthenticationType = "resource_principle_delegation_token"
-	// ServicePrincipalDelegationToken is used for service principal delegation token auth type
-	ServicePrincipalDelegationToken AuthenticationType = "service_principle_delegation_token"
 	// UnknownAuthenticationType is used for none meaningful auth type
 	UnknownAuthenticationType AuthenticationType = "unknown_auth_type"
 )
@@ -55,9 +53,7 @@ type ConfigurationProvider interface {
 var fileMutex = sync.Mutex{}
 var fileCache = make(map[string][]byte)
 
-// Reads the file contents from cache if present otherwise reads the file.
-// If file to be read is frequently updated/refreshed, please use readFile(filename) as readFileFromCache(filename) might return the old contents from the cache.
-func readFileFromCache(filename string) ([]byte, error) {
+func readFile(filename string) ([]byte, error) {
 	fileMutex.Lock()
 	defer fileMutex.Unlock()
 	val, ok := fileCache[filename]
@@ -68,14 +64,6 @@ func readFileFromCache(filename string) ([]byte, error) {
 	if err == nil {
 		fileCache[filename] = val
 	}
-	return val, err
-}
-
-// Reads the file and returns the contents
-func readFile(filename string) ([]byte, error) {
-	fileMutex.Lock()
-	defer fileMutex.Unlock()
-	val, err := os.ReadFile(filename)
 	return val, err
 }
 
@@ -194,7 +182,7 @@ func (p environmentConfigurationProvider) PrivateRSAKey() (key *rsa.PrivateKey, 
 	}
 
 	expandedPath := expandPath(value)
-	pemFileContent, err := readFileFromCache(expandedPath)
+	pemFileContent, err := readFile(expandedPath)
 	if err != nil {
 		Debugln("Can not read PrivateKey location from environment variable: " + environmentVariable)
 		return
@@ -358,7 +346,7 @@ func parseConfigFile(data []byte, profile string) (info *configFileInfo, err err
 
 	//Look for profile
 	for i, line := range splitContent {
-		if match := profileRegex.FindStringSubmatch(line); len(match) > 1 && match[1] == profile {
+		if match := profileRegex.FindStringSubmatch(line); match != nil && len(match) > 1 && match[1] == profile {
 			start := i + 1
 			return parseConfigAtLine(start, splitContent)
 		}
@@ -430,7 +418,7 @@ func expandPath(filename string) (expandedPath string) {
 
 func openConfigFile(configFilePath string) (data []byte, err error) {
 	expandedPath := expandPath(configFilePath)
-	data, err = readFileFromCache(expandedPath)
+	data, err = readFile(expandedPath)
 	if err != nil {
 		err = fmt.Errorf("can not read config file: %s due to: %s", configFilePath, err.Error())
 	}
@@ -560,7 +548,7 @@ func (p fileConfigurationProvider) PrivateRSAKey() (key *rsa.PrivateKey, err err
 	}
 
 	expandedPath := expandPath(filePath)
-	pemFileContent, err := readFileFromCache(expandedPath)
+	pemFileContent, err := readFile(expandedPath)
 	if err != nil {
 		err = fileConfigurationProviderError{err: fmt.Errorf("can not read PrivateKey  from configuration file due to: %s", err.Error())}
 		return
@@ -602,7 +590,7 @@ func (p fileConfigurationProvider) AuthType() (AuthConfig, error) {
 		err = fmt.Errorf("can not read tenancy configuration due to: %s", err.Error())
 		return AuthConfig{UnknownAuthenticationType, true, nil}, err
 	}
-	val, _ := presentOrError(info.AuthenticationType, hasAuthenticationType, info.PresentConfiguration, "authentication_type")
+	val, err := presentOrError(info.AuthenticationType, hasAuthenticationType, info.PresentConfiguration, "authentication_type")
 
 	if val == "instance_principal" {
 		if filePath, err := presentOrError(info.DelegationTokenFilePath, hasDelegationTokenFile, info.PresentConfiguration, "delegationTokenFilePath"); err == nil {
@@ -627,7 +615,7 @@ func getTokenContent(filePath string) (string, error) {
 		err = fileConfigurationProviderError{err: fmt.Errorf("can not read token content from configuration file due to: %s", err.Error())}
 		return "", err
 	}
-	return string(tokenFileContent), nil
+	return fmt.Sprintf("%s", tokenFileContent), nil
 }
 
 // A configuration provider that look for information in  multiple configuration providers
@@ -730,88 +718,6 @@ func getRegionFromEnvVar() (string, error) {
 		return region, nil
 	}
 	return "", fmt.Errorf("did not find OCI_REGION env var")
-}
-
-type sessionTokenConfigurationProvider struct {
-	fileConfigurationProvider
-}
-
-func (p sessionTokenConfigurationProvider) UserOCID() (value string, err error) {
-	info, err := p.readAndParseConfigFile()
-	if err != nil {
-		err = fileConfigurationProviderError{err: fmt.Errorf("can not read the configuration due to: %s", err.Error())}
-		return
-	}
-	// In case of session token-based authentication, userOCID will not be present
-	// need to check if session token path is provided in the configuration
-	if _, stErr := presentOrError(info.SecurityTokenFilePath, hasSecurityTokenFile, info.PresentConfiguration,
-		"securityTokenPath"); stErr == nil {
-		err = nil
-	}
-	return
-}
-
-func (p sessionTokenConfigurationProvider) KeyID() (keyID string, err error) {
-	_, err = p.TenancyOCID()
-	if err != nil {
-		return
-	}
-
-	_, err = p.KeyFingerprint()
-	if err != nil {
-		return
-	}
-
-	info, err := p.readAndParseConfigFile()
-	if err != nil {
-		err = fileConfigurationProviderError{err: fmt.Errorf("can not read SessionTokenFilePath configuration due to: %s", err.Error())}
-		return
-	}
-
-	filePath, pathErr := presentOrError(info.SecurityTokenFilePath, hasSecurityTokenFile, info.PresentConfiguration, "securityTokenFilePath")
-	if pathErr == nil {
-		rawString, err := getTokenContent(filePath)
-		if err != nil {
-			return "", fileConfigurationProviderError{err: err}
-		}
-		return "ST$" + rawString, nil
-	}
-	err = fileConfigurationProviderError{err: fmt.Errorf("can not read SessionTokenFilePath from configuration file due to: %s", pathErr.Error())}
-	return
-}
-
-// ConfigurationProviderForSessionToken creates a session token configuration provider from a configuration file
-// by reading the "DEFAULT" profile
-func ConfigurationProviderForSessionToken(configFilePath, privateKeyPassword string) (ConfigurationProvider, error) {
-	if configFilePath == "" {
-		return nil, fileConfigurationProviderError{err: fmt.Errorf("config file path can not be empty")}
-	}
-
-	return sessionTokenConfigurationProvider{
-		fileConfigurationProvider{
-			ConfigPath:         configFilePath,
-			PrivateKeyPassword: privateKeyPassword,
-			Profile:            "DEFAULT",
-			configMux:          sync.Mutex{}}}, nil
-}
-
-// ConfigurationProviderForSessionTokenWithProfile creates a session token configuration provider from a configuration file
-// by reading the given profile
-func ConfigurationProviderForSessionTokenWithProfile(configFilePath, profile, privateKeyPassword string) (ConfigurationProvider, error) {
-	if configFilePath == "" {
-		return nil, fileConfigurationProviderError{err: fmt.Errorf("config file path can not be empty")}
-	}
-
-	return sessionTokenConfigurationProvider{
-		fileConfigurationProvider{
-			ConfigPath:         configFilePath,
-			PrivateKeyPassword: privateKeyPassword,
-			Profile:            profile,
-			configMux:          sync.Mutex{}}}, nil
-}
-
-func (p sessionTokenConfigurationProvider) Refreshable() bool {
-	return true
 }
 
 // RefreshableConfigurationProvider the interface to identity if the config provider is refreshable

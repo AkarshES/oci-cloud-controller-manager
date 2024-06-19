@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -104,7 +104,6 @@ const (
 	DrgRouteDistributionLifecycleStateAvailable    DrgRouteDistributionLifecycleStateEnum = "AVAILABLE"
 	DrgRouteDistributionLifecycleStateTerminating  DrgRouteDistributionLifecycleStateEnum = "TERMINATING"
 	DrgRouteDistributionLifecycleStateTerminated   DrgRouteDistributionLifecycleStateEnum = "TERMINATED"
-	DrgRouteDistributionLifecycleStateUpdating     DrgRouteDistributionLifecycleStateEnum = "UPDATING"
 )
 
 var mappingDrgRouteDistributionLifecycleStateEnum = map[string]DrgRouteDistributionLifecycleStateEnum{
@@ -112,7 +111,6 @@ var mappingDrgRouteDistributionLifecycleStateEnum = map[string]DrgRouteDistribut
 	"AVAILABLE":    DrgRouteDistributionLifecycleStateAvailable,
 	"TERMINATING":  DrgRouteDistributionLifecycleStateTerminating,
 	"TERMINATED":   DrgRouteDistributionLifecycleStateTerminated,
-	"UPDATING":     DrgRouteDistributionLifecycleStateUpdating,
 }
 
 var mappingDrgRouteDistributionLifecycleStateEnumLowerCase = map[string]DrgRouteDistributionLifecycleStateEnum{
@@ -120,7 +118,6 @@ var mappingDrgRouteDistributionLifecycleStateEnumLowerCase = map[string]DrgRoute
 	"available":    DrgRouteDistributionLifecycleStateAvailable,
 	"terminating":  DrgRouteDistributionLifecycleStateTerminating,
 	"terminated":   DrgRouteDistributionLifecycleStateTerminated,
-	"updating":     DrgRouteDistributionLifecycleStateUpdating,
 }
 
 // GetDrgRouteDistributionLifecycleStateEnumValues Enumerates the set of values for DrgRouteDistributionLifecycleStateEnum
@@ -139,7 +136,6 @@ func GetDrgRouteDistributionLifecycleStateEnumStringValues() []string {
 		"AVAILABLE",
 		"TERMINATING",
 		"TERMINATED",
-		"UPDATING",
 	}
 }
 

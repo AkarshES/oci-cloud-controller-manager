@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -70,11 +70,8 @@ type VolumeAttachment interface {
 	// be attached in shareable mode. Defaults to false if not specified.
 	GetIsShareable() *bool
 
-	// Deprecated. Use `isEncryptionInTransitEnabled` instead.
+	// Whether in-transit encryption for the data volume's paravirtualized attachment is enabled or not.
 	GetIsPvEncryptionInTransitEnabled() *bool
-
-	// Whether in-transit encryption for the data volume's attachment is enabled or not.
-	GetIsEncryptionInTransitEnabled() *bool
 
 	// Whether the Iscsi or Paravirtualized attachment is multipath or not, it is not applicable to NVMe attachment.
 	GetIsMultipath() *bool
@@ -82,23 +79,10 @@ type VolumeAttachment interface {
 	// The iscsi login state of the volume attachment. For a Iscsi volume attachment,
 	// all iscsi sessions need to be all logged-in or logged-out to be in logged-in or logged-out state.
 	GetIscsiLoginState() VolumeAttachmentIscsiLoginStateEnum
-
-	// Flag indicating if this volume was created for the customer as part of a simplified launch.
-	// Used to determine whether the volume requires deletion on instance termination.
-	GetIsVolumeCreatedDuringLaunch() *bool
 }
 
 type volumeattachment struct {
 	JsonData                       []byte
-	Device                         *string                             `mandatory:"false" json:"device"`
-	DisplayName                    *string                             `mandatory:"false" json:"displayName"`
-	IsReadOnly                     *bool                               `mandatory:"false" json:"isReadOnly"`
-	IsShareable                    *bool                               `mandatory:"false" json:"isShareable"`
-	IsPvEncryptionInTransitEnabled *bool                               `mandatory:"false" json:"isPvEncryptionInTransitEnabled"`
-	IsEncryptionInTransitEnabled   *bool                               `mandatory:"false" json:"isEncryptionInTransitEnabled"`
-	IsMultipath                    *bool                               `mandatory:"false" json:"isMultipath"`
-	IscsiLoginState                VolumeAttachmentIscsiLoginStateEnum `mandatory:"false" json:"iscsiLoginState,omitempty"`
-	IsVolumeCreatedDuringLaunch    *bool                               `mandatory:"false" json:"isVolumeCreatedDuringLaunch"`
 	AvailabilityDomain             *string                             `mandatory:"true" json:"availabilityDomain"`
 	CompartmentId                  *string                             `mandatory:"true" json:"compartmentId"`
 	Id                             *string                             `mandatory:"true" json:"id"`
@@ -106,6 +90,13 @@ type volumeattachment struct {
 	LifecycleState                 VolumeAttachmentLifecycleStateEnum  `mandatory:"true" json:"lifecycleState"`
 	TimeCreated                    *common.SDKTime                     `mandatory:"true" json:"timeCreated"`
 	VolumeId                       *string                             `mandatory:"true" json:"volumeId"`
+	Device                         *string                             `mandatory:"false" json:"device"`
+	DisplayName                    *string                             `mandatory:"false" json:"displayName"`
+	IsReadOnly                     *bool                               `mandatory:"false" json:"isReadOnly"`
+	IsShareable                    *bool                               `mandatory:"false" json:"isShareable"`
+	IsPvEncryptionInTransitEnabled *bool                               `mandatory:"false" json:"isPvEncryptionInTransitEnabled"`
+	IsMultipath                    *bool                               `mandatory:"false" json:"isMultipath"`
+	IscsiLoginState                VolumeAttachmentIscsiLoginStateEnum `mandatory:"false" json:"iscsiLoginState,omitempty"`
 	AttachmentType                 string                              `json:"attachmentType"`
 }
 
@@ -132,10 +123,8 @@ func (m *volumeattachment) UnmarshalJSON(data []byte) error {
 	m.IsReadOnly = s.Model.IsReadOnly
 	m.IsShareable = s.Model.IsShareable
 	m.IsPvEncryptionInTransitEnabled = s.Model.IsPvEncryptionInTransitEnabled
-	m.IsEncryptionInTransitEnabled = s.Model.IsEncryptionInTransitEnabled
 	m.IsMultipath = s.Model.IsMultipath
 	m.IscsiLoginState = s.Model.IscsiLoginState
-	m.IsVolumeCreatedDuringLaunch = s.Model.IsVolumeCreatedDuringLaunch
 	m.AttachmentType = s.Model.AttachmentType
 
 	return err
@@ -158,10 +147,6 @@ func (m *volumeattachment) UnmarshalPolymorphicJSON(data []byte) (interface{}, e
 		mm := EmulatedVolumeAttachment{}
 		err = json.Unmarshal(data, &mm)
 		return mm, err
-	case "nvme":
-		mm := NvmeVolumeAttachment{}
-		err = json.Unmarshal(data, &mm)
-		return mm, err
 	case "paravirtualized":
 		mm := ParavirtualizedVolumeAttachment{}
 		err = json.Unmarshal(data, &mm)
@@ -172,84 +157,74 @@ func (m *volumeattachment) UnmarshalPolymorphicJSON(data []byte) (interface{}, e
 	}
 }
 
-// GetDevice returns Device
-func (m volumeattachment) GetDevice() *string {
-	return m.Device
-}
-
-// GetDisplayName returns DisplayName
-func (m volumeattachment) GetDisplayName() *string {
-	return m.DisplayName
-}
-
-// GetIsReadOnly returns IsReadOnly
-func (m volumeattachment) GetIsReadOnly() *bool {
-	return m.IsReadOnly
-}
-
-// GetIsShareable returns IsShareable
-func (m volumeattachment) GetIsShareable() *bool {
-	return m.IsShareable
-}
-
-// GetIsPvEncryptionInTransitEnabled returns IsPvEncryptionInTransitEnabled
-func (m volumeattachment) GetIsPvEncryptionInTransitEnabled() *bool {
-	return m.IsPvEncryptionInTransitEnabled
-}
-
-// GetIsEncryptionInTransitEnabled returns IsEncryptionInTransitEnabled
-func (m volumeattachment) GetIsEncryptionInTransitEnabled() *bool {
-	return m.IsEncryptionInTransitEnabled
-}
-
-// GetIsMultipath returns IsMultipath
-func (m volumeattachment) GetIsMultipath() *bool {
-	return m.IsMultipath
-}
-
-// GetIscsiLoginState returns IscsiLoginState
-func (m volumeattachment) GetIscsiLoginState() VolumeAttachmentIscsiLoginStateEnum {
-	return m.IscsiLoginState
-}
-
-// GetIsVolumeCreatedDuringLaunch returns IsVolumeCreatedDuringLaunch
-func (m volumeattachment) GetIsVolumeCreatedDuringLaunch() *bool {
-	return m.IsVolumeCreatedDuringLaunch
-}
-
-// GetAvailabilityDomain returns AvailabilityDomain
+//GetAvailabilityDomain returns AvailabilityDomain
 func (m volumeattachment) GetAvailabilityDomain() *string {
 	return m.AvailabilityDomain
 }
 
-// GetCompartmentId returns CompartmentId
+//GetCompartmentId returns CompartmentId
 func (m volumeattachment) GetCompartmentId() *string {
 	return m.CompartmentId
 }
 
-// GetId returns Id
+//GetId returns Id
 func (m volumeattachment) GetId() *string {
 	return m.Id
 }
 
-// GetInstanceId returns InstanceId
+//GetInstanceId returns InstanceId
 func (m volumeattachment) GetInstanceId() *string {
 	return m.InstanceId
 }
 
-// GetLifecycleState returns LifecycleState
+//GetLifecycleState returns LifecycleState
 func (m volumeattachment) GetLifecycleState() VolumeAttachmentLifecycleStateEnum {
 	return m.LifecycleState
 }
 
-// GetTimeCreated returns TimeCreated
+//GetTimeCreated returns TimeCreated
 func (m volumeattachment) GetTimeCreated() *common.SDKTime {
 	return m.TimeCreated
 }
 
-// GetVolumeId returns VolumeId
+//GetVolumeId returns VolumeId
 func (m volumeattachment) GetVolumeId() *string {
 	return m.VolumeId
+}
+
+//GetDevice returns Device
+func (m volumeattachment) GetDevice() *string {
+	return m.Device
+}
+
+//GetDisplayName returns DisplayName
+func (m volumeattachment) GetDisplayName() *string {
+	return m.DisplayName
+}
+
+//GetIsReadOnly returns IsReadOnly
+func (m volumeattachment) GetIsReadOnly() *bool {
+	return m.IsReadOnly
+}
+
+//GetIsShareable returns IsShareable
+func (m volumeattachment) GetIsShareable() *bool {
+	return m.IsShareable
+}
+
+//GetIsPvEncryptionInTransitEnabled returns IsPvEncryptionInTransitEnabled
+func (m volumeattachment) GetIsPvEncryptionInTransitEnabled() *bool {
+	return m.IsPvEncryptionInTransitEnabled
+}
+
+//GetIsMultipath returns IsMultipath
+func (m volumeattachment) GetIsMultipath() *bool {
+	return m.IsMultipath
+}
+
+//GetIscsiLoginState returns IscsiLoginState
+func (m volumeattachment) GetIscsiLoginState() VolumeAttachmentIscsiLoginStateEnum {
+	return m.IscsiLoginState
 }
 
 func (m volumeattachment) String() string {

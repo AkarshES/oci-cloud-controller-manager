@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -33,7 +33,7 @@ type VirtualNetworkClient struct {
 // the configuration provider will be used for the default signer as well as reading the region
 func NewVirtualNetworkClientWithConfigurationProvider(configProvider common.ConfigurationProvider) (client VirtualNetworkClient, err error) {
 	if enabled := common.CheckForEnabledServices("core"); !enabled {
-		return client, fmt.Errorf("the Developer Tool configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local developer-tool-configuration.json file configured the service you're targeting or contact the cloud provider on the availability of this service")
+		return client, fmt.Errorf("the Alloy configuration disabled this service, this behavior is controlled by OciSdkEnabledServicesMap variables. Please check if your local alloy_config file configured the service you're targeting or contact the cloud provider on the availability of this service")
 	}
 	provider, err := auth.GetGenericConfigurationProvider(configProvider)
 	if err != nil {
@@ -86,7 +86,7 @@ func (client *VirtualNetworkClient) setConfigurationProvider(configProvider comm
 	region, _ := configProvider.Region()
 	client.SetRegion(region)
 	if client.Host == "" {
-		return fmt.Errorf("invalid region or Host. Endpoint cannot be constructed without endpointServiceName or serviceEndpointTemplate for a dotted region")
+		return fmt.Errorf("Invalid region or Host. Endpoint cannot be constructed without endpointServiceName or serviceEndpointTemplate for a dotted region")
 	}
 	client.config = &configProvider
 	return nil
@@ -196,117 +196,6 @@ func (client VirtualNetworkClient) addAdditionalRouteRules(ctx context.Context, 
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/RouteTable/AddAdditionalRouteRules"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "AddAdditionalRouteRules", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// AddC3DrgRouteDistributionStatements Adds one or more route distribution statements to the specified route distribution.
-func (client VirtualNetworkClient) AddC3DrgRouteDistributionStatements(ctx context.Context, request AddC3DrgRouteDistributionStatementsRequest) (response AddC3DrgRouteDistributionStatementsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.addC3DrgRouteDistributionStatements, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = AddC3DrgRouteDistributionStatementsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = AddC3DrgRouteDistributionStatementsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(AddC3DrgRouteDistributionStatementsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into AddC3DrgRouteDistributionStatementsResponse")
-	}
-	return
-}
-
-// addC3DrgRouteDistributionStatements implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) addC3DrgRouteDistributionStatements(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteDistributions/{drgRouteDistributionId}/actions/addDrgRouteDistributionStatements", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response AddC3DrgRouteDistributionStatementsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistributionStatement/AddC3DrgRouteDistributionStatements"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "AddC3DrgRouteDistributionStatements", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// AddC3DrgRouteRules Adds one or more static route rules to the specified DRG route table.
-func (client VirtualNetworkClient) AddC3DrgRouteRules(ctx context.Context, request AddC3DrgRouteRulesRequest) (response AddC3DrgRouteRulesResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.addC3DrgRouteRules, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = AddC3DrgRouteRulesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = AddC3DrgRouteRulesResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(AddC3DrgRouteRulesResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into AddC3DrgRouteRulesResponse")
-	}
-	return
-}
-
-// addC3DrgRouteRules implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) addC3DrgRouteRules(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteTables/{drgRouteTableId}/actions/addDrgRouteRules", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response AddC3DrgRouteRulesResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteRule/AddC3DrgRouteRules"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "AddC3DrgRouteRules", apiReferenceLink)
 		return response, err
 	}
 
@@ -828,9 +717,9 @@ func (client VirtualNetworkClient) advertiseByoipRange(ctx context.Context, requ
 	return response, err
 }
 
-// AttachDav Attach the direct attached VNIC (DAV) to requested instance. Only after a DAV
-// has been attached will the respective MicroVnic mappings get generated for
-// VCN DP to consume.
+// AttachDav Attach the Direct Attached Vnic to requested instance. Only after a DAV
+// has been attached, the respective MicroVnic mappings will get generated for
+// VCN DP tto consume.
 func (client VirtualNetworkClient) AttachDav(ctx context.Context, request AttachDavRequest) (response AttachDavResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -2119,65 +2008,6 @@ func (client VirtualNetworkClient) changeInternalDrgCompartment(ctx context.Cont
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalDrg/ChangeInternalDrgCompartment"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "ChangeInternalDrgCompartment", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// ChangeInternalEcmpGroupCompartment Moves an Internal Ecmp Group into a different compartment within the same tenancy. For information | about moving resources between compartments, see Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes). When provided, If-Match is checked against ETag values of the resource.
-// A default retry strategy applies to this operation ChangeInternalEcmpGroupCompartment()
-func (client VirtualNetworkClient) ChangeInternalEcmpGroupCompartment(ctx context.Context, request ChangeInternalEcmpGroupCompartmentRequest) (response ChangeInternalEcmpGroupCompartmentResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.DefaultRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.changeInternalEcmpGroupCompartment, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ChangeInternalEcmpGroupCompartmentResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ChangeInternalEcmpGroupCompartmentResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ChangeInternalEcmpGroupCompartmentResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ChangeInternalEcmpGroupCompartmentResponse")
-	}
-	return
-}
-
-// changeInternalEcmpGroupCompartment implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) changeInternalEcmpGroupCompartment(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/internalEcmpGroups/{internalEcmpGroupId}/actions/changeCompartment", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ChangeInternalEcmpGroupCompartmentResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalEcmpGroup/ChangeInternalEcmpGroupCompartment"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ChangeInternalEcmpGroupCompartment", apiReferenceLink)
 		return response, err
 	}
 
@@ -3795,126 +3625,6 @@ func (client VirtualNetworkClient) createC3DrgAttachment(ctx context.Context, re
 	return response, err
 }
 
-// CreateC3DrgRouteDistribution Creates a new route distribution for the specified DRG.
-// Assign the route distribution as an import distribution to a DRG route table using the `UpdateDrgRouteTable` or `CreateDrgRouteTable` operations.
-// Assign the route distribution as an export distribution to a DRG attachment
-// using the `UpdateDrgAttachment` or `CreateDrgAttachment` operations.
-func (client VirtualNetworkClient) CreateC3DrgRouteDistribution(ctx context.Context, request CreateC3DrgRouteDistributionRequest) (response CreateC3DrgRouteDistributionResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.createC3DrgRouteDistribution, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = CreateC3DrgRouteDistributionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = CreateC3DrgRouteDistributionResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(CreateC3DrgRouteDistributionResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into CreateC3DrgRouteDistributionResponse")
-	}
-	return
-}
-
-// createC3DrgRouteDistribution implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) createC3DrgRouteDistribution(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteDistributions", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response CreateC3DrgRouteDistributionResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistribution/CreateC3DrgRouteDistribution"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "CreateC3DrgRouteDistribution", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// CreateC3DrgRouteTable Creates a new DRG route table for the specified DRG. Assign the DRG route table to a DRG attachment
-// using the `UpdateDrgAttachment` or `CreateDrgAttachment` operations.
-func (client VirtualNetworkClient) CreateC3DrgRouteTable(ctx context.Context, request CreateC3DrgRouteTableRequest) (response CreateC3DrgRouteTableResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.createC3DrgRouteTable, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = CreateC3DrgRouteTableResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = CreateC3DrgRouteTableResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(CreateC3DrgRouteTableResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into CreateC3DrgRouteTableResponse")
-	}
-	return
-}
-
-// createC3DrgRouteTable implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) createC3DrgRouteTable(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteTables", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response CreateC3DrgRouteTableResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteTable/CreateC3DrgRouteTable"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "CreateC3DrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // CreateCaptureFilter Creates a virtual test access point (VTAP) capture filter in the specified compartment.
 // For the purposes of access control, you must provide the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment that contains
 // the VTAP. For more information about compartments and access control, see
@@ -4373,7 +4083,7 @@ func (client VirtualNetworkClient) createDatapathMessage(ctx context.Context, re
 	return response, err
 }
 
-// CreateDav Request to create a direct attached VNIC.
+// CreateDav Request to create a Direct Attached Vnic.
 func (client VirtualNetworkClient) CreateDav(ctx context.Context, request CreateDavRequest) (response CreateDavResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -4945,9 +4655,8 @@ func (client VirtualNetworkClient) createFlowLogConfigAttachment(ctx context.Con
 // It does not have to be unique, and you can change it. Avoid entering confidential information.
 // After creating the IPSec connection, you need to configure your on-premises router
 // with tunnel-specific information. For tunnel status and the required configuration information, see:
-//   - IPSecConnectionTunnel
-//   - IPSecConnectionTunnelSharedSecret
-//
+//   * IPSecConnectionTunnel
+//   * IPSecConnectionTunnelSharedSecret
 // For each tunnel, you need the IP address of Oracle's VPN headend and the shared secret
 // (that is, the pre-shared key). For more information, see
 // CPE Configuration (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/configuringCPE.htm).
@@ -5067,7 +4776,7 @@ func (client VirtualNetworkClient) createInternalByoipv6Range(ctx context.Contex
 	return response, err
 }
 
-// CreateInternalDnsRecord Creates a new DNS record.
+// CreateInternalDnsRecord Creates a new Dns Record.
 func (client VirtualNetworkClient) CreateInternalDnsRecord(ctx context.Context, request CreateInternalDnsRecordRequest) (response CreateInternalDnsRecordResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -5316,65 +5025,6 @@ func (client VirtualNetworkClient) createInternalDrgRouteTable(ctx context.Conte
 	return response, err
 }
 
-// CreateInternalEcmpGroup Creates a new internal ecmp group
-// A default retry strategy applies to this operation CreateInternalEcmpGroup()
-func (client VirtualNetworkClient) CreateInternalEcmpGroup(ctx context.Context, request CreateInternalEcmpGroupRequest) (response CreateInternalEcmpGroupResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.DefaultRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.createInternalEcmpGroup, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = CreateInternalEcmpGroupResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = CreateInternalEcmpGroupResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(CreateInternalEcmpGroupResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into CreateInternalEcmpGroupResponse")
-	}
-	return
-}
-
-// createInternalEcmpGroup implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) createInternalEcmpGroup(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/internalEcmpGroups", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response CreateInternalEcmpGroupResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalEcmpGroup/CreateInternalEcmpGroup"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "CreateInternalEcmpGroup", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // CreateInternalFloatingIp Create a floating IP
 func (client VirtualNetworkClient) CreateInternalFloatingIp(ctx context.Context, request CreateInternalFloatingIpRequest) (response CreateInternalFloatingIpResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -5491,7 +5141,7 @@ func (client VirtualNetworkClient) createInternalGenericGateway(ctx context.Cont
 	return response, err
 }
 
-// CreateInternalPrivateIp Create an internal private IP.
+// CreateInternalPrivateIp Create a Internal private IP.
 func (client VirtualNetworkClient) CreateInternalPrivateIp(ctx context.Context, request CreateInternalPrivateIpRequest) (response CreateInternalPrivateIpResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -7515,113 +7165,6 @@ func (client VirtualNetworkClient) deleteC3DrgAttachment(ctx context.Context, re
 	return response, err
 }
 
-// DeleteC3DrgRouteDistribution Deletes the specified route distribution. You can't delete a route distribution currently in use by a DRG attachment or DRG route table.
-// Remove the DRG route distribution from a DRG attachment or DRG route table by using the "RemoveExportDrgRouteDistribution" or "RemoveImportDrgRouteDistribution' operations.
-func (client VirtualNetworkClient) DeleteC3DrgRouteDistribution(ctx context.Context, request DeleteC3DrgRouteDistributionRequest) (response DeleteC3DrgRouteDistributionResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.deleteC3DrgRouteDistribution, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = DeleteC3DrgRouteDistributionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = DeleteC3DrgRouteDistributionResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(DeleteC3DrgRouteDistributionResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into DeleteC3DrgRouteDistributionResponse")
-	}
-	return
-}
-
-// deleteC3DrgRouteDistribution implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) deleteC3DrgRouteDistribution(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/c3_drgRouteDistributions/{drgRouteDistributionId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response DeleteC3DrgRouteDistributionResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistributionStatement/DeleteC3DrgRouteDistribution"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "DeleteC3DrgRouteDistribution", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// DeleteC3DrgRouteTable Deletes the specified DRG route table. There must not be any DRG attachments assigned.
-func (client VirtualNetworkClient) DeleteC3DrgRouteTable(ctx context.Context, request DeleteC3DrgRouteTableRequest) (response DeleteC3DrgRouteTableResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.deleteC3DrgRouteTable, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = DeleteC3DrgRouteTableResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = DeleteC3DrgRouteTableResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(DeleteC3DrgRouteTableResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into DeleteC3DrgRouteTableResponse")
-	}
-	return
-}
-
-// deleteC3DrgRouteTable implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) deleteC3DrgRouteTable(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/c3_drgRouteTables/{drgRouteTableId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response DeleteC3DrgRouteTableResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalPublicIp/DeleteC3DrgRouteTable"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "DeleteC3DrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // DeleteCaptureFilter Deletes the specified VTAP capture filter. This is an asynchronous operation. The VTAP capture filter's `lifecycleState` will
 // change to TERMINATING temporarily until the VTAP capture filter is completely removed.
 func (client VirtualNetworkClient) DeleteCaptureFilter(ctx context.Context, request DeleteCaptureFilterRequest) (response DeleteCaptureFilterResponse, err error) {
@@ -8009,7 +7552,7 @@ func (client VirtualNetworkClient) deleteDatapathMessage(ctx context.Context, re
 	return response, err
 }
 
-// DeleteDav Deletes a direct attached VNIC.
+// DeleteDav Deletes a Direct Attached Vnic.
 func (client VirtualNetworkClient) DeleteDav(ctx context.Context, request DeleteDavRequest) (response DeleteDavResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -8615,7 +8158,7 @@ func (client VirtualNetworkClient) deleteInternalByoipv6Range(ctx context.Contex
 	return response, err
 }
 
-// DeleteInternalDnsRecord Deletes a `DnsRecord`.
+// DeleteInternalDnsRecord Deletes a DnsRecord.
 func (client VirtualNetworkClient) DeleteInternalDnsRecord(ctx context.Context, request DeleteInternalDnsRecordRequest) (response DeleteInternalDnsRecordResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -8823,60 +8366,6 @@ func (client VirtualNetworkClient) deleteInternalDrgRouteTable(ctx context.Conte
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalDrgRouteTable/DeleteInternalDrgRouteTable"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "DeleteInternalDrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// DeleteInternalEcmpGroup Deletes an internal ecmp group.
-// A default retry strategy applies to this operation DeleteInternalEcmpGroup()
-func (client VirtualNetworkClient) DeleteInternalEcmpGroup(ctx context.Context, request DeleteInternalEcmpGroupRequest) (response DeleteInternalEcmpGroupResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.DefaultRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.deleteInternalEcmpGroup, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = DeleteInternalEcmpGroupResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = DeleteInternalEcmpGroupResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(DeleteInternalEcmpGroupResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into DeleteInternalEcmpGroupResponse")
-	}
-	return
-}
-
-// deleteInternalEcmpGroup implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) deleteInternalEcmpGroup(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/internalEcmpGroups/{internalEcmpGroupId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response DeleteInternalEcmpGroupResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalEcmpGroup/DeleteInternalEcmpGroup"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "DeleteInternalEcmpGroup", apiReferenceLink)
 		return response, err
 	}
 
@@ -9113,7 +8602,7 @@ func (client VirtualNetworkClient) deleteInternalPublicIp(ctx context.Context, r
 	return response, err
 }
 
-// DeleteInternalVnic Deletes specified internal VNIC
+// DeleteInternalVnic Deletes specified internal Vnic
 func (client VirtualNetworkClient) DeleteInternalVnic(ctx context.Context, request DeleteInternalVnicRequest) (response DeleteInternalVnicResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -10660,7 +10149,7 @@ func (client VirtualNetworkClient) deleteVtap(ctx context.Context, request commo
 	return response, err
 }
 
-// DetachDav Detach the direct attached VNIC from instance.
+// DetachDav Detach the Direct Attached Vnic from instance.
 func (client VirtualNetworkClient) DetachDav(ctx context.Context, request DetachDavRequest) (response DetachDavResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -10782,7 +10271,7 @@ func (client VirtualNetworkClient) detachServiceId(ctx context.Context, request 
 }
 
 // DetachServiceVnicFromDestinationShard Detaches service VNIC, getting live migrated, from destination shard. This API is called by dataplane
-// as part of aborting an in-progress service VNIC live migration.
+// as part of aborting an in-progress service vnic live migration.
 // **Note** that this API cannot be called after API call to route traffic to destination shard.
 func (client VirtualNetworkClient) DetachServiceVnicFromDestinationShard(ctx context.Context, request DetachServiceVnicFromDestinationShardRequest) (response DetachServiceVnicFromDestinationShardResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -11693,59 +11182,6 @@ func (client VirtualNetworkClient) generateLocalPeeringToken(ctx context.Context
 	return response, err
 }
 
-// GetAllC3DrgAttachments Returns a complete list of DRG attachments that belong to a particular DRG.
-func (client VirtualNetworkClient) GetAllC3DrgAttachments(ctx context.Context, request GetAllC3DrgAttachmentsRequest) (response GetAllC3DrgAttachmentsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getAllC3DrgAttachments, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetAllC3DrgAttachmentsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetAllC3DrgAttachmentsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetAllC3DrgAttachmentsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetAllC3DrgAttachmentsResponse")
-	}
-	return
-}
-
-// getAllC3DrgAttachments implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getAllC3DrgAttachments(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgs/{drgId}/actions/getAllDrgAttachments", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetAllC3DrgAttachmentsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/Drg/GetAllC3DrgAttachments"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetAllC3DrgAttachments", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // GetAllDrgAttachments Returns a complete list of DRG attachments that belong to a particular DRG.
 func (client VirtualNetworkClient) GetAllDrgAttachments(ctx context.Context, request GetAllDrgAttachmentsRequest) (response GetAllDrgAttachmentsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -12063,165 +11499,6 @@ func (client VirtualNetworkClient) getC3DrgAttachment(ctx context.Context, reque
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgAttachment/GetC3DrgAttachment"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetC3DrgAttachment", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetC3DrgRouteDistribution Gets the specified route distribution's information.
-func (client VirtualNetworkClient) GetC3DrgRouteDistribution(ctx context.Context, request GetC3DrgRouteDistributionRequest) (response GetC3DrgRouteDistributionResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getC3DrgRouteDistribution, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetC3DrgRouteDistributionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetC3DrgRouteDistributionResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetC3DrgRouteDistributionResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetC3DrgRouteDistributionResponse")
-	}
-	return
-}
-
-// getC3DrgRouteDistribution implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getC3DrgRouteDistribution(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgRouteDistributions/{drgRouteDistributionId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetC3DrgRouteDistributionResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistribution/GetC3DrgRouteDistribution"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetC3DrgRouteDistribution", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetC3DrgRouteTable Gets the specified DRG route table's information.
-func (client VirtualNetworkClient) GetC3DrgRouteTable(ctx context.Context, request GetC3DrgRouteTableRequest) (response GetC3DrgRouteTableResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getC3DrgRouteTable, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetC3DrgRouteTableResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetC3DrgRouteTableResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetC3DrgRouteTableResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetC3DrgRouteTableResponse")
-	}
-	return
-}
-
-// getC3DrgRouteTable implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getC3DrgRouteTable(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgRouteTables/{drgRouteTableId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetC3DrgRouteTableResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteTable/GetC3DrgRouteTable"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetC3DrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetC3UpgradeStatus Returns the DRG upgrade status. The status can be not updated, in progress, or updated. Also indicates how much of the upgrade is completed.
-func (client VirtualNetworkClient) GetC3UpgradeStatus(ctx context.Context, request GetC3UpgradeStatusRequest) (response GetC3UpgradeStatusResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getC3UpgradeStatus, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetC3UpgradeStatusResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetC3UpgradeStatusResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetC3UpgradeStatusResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetC3UpgradeStatusResponse")
-	}
-	return
-}
-
-// getC3UpgradeStatus implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getC3UpgradeStatus(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgs/{drgId}/actions/upgradeStatus", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetC3UpgradeStatusResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/Drg/GetC3UpgradeStatus"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetC3UpgradeStatus", apiReferenceLink)
 		return response, err
 	}
 
@@ -12673,11 +11950,10 @@ func (client VirtualNetworkClient) getCpe(ctx context.Context, request common.OC
 // The operation returns configuration information for *all* of the
 // IPSecConnection objects that use the specified CPE.
 // Here are similar operations:
-//   - GetIpsecCpeDeviceConfigContent
-//     returns CPE configuration content for all IPSec tunnels in a single IPSec connection.
-//   - GetTunnelCpeDeviceConfigContent
-//     returns CPE configuration content for a specific IPSec tunnel in an IPSec connection.
-//
+//   * GetIpsecCpeDeviceConfigContent
+//   returns CPE configuration content for all IPSec tunnels in a single IPSec connection.
+//   * GetTunnelCpeDeviceConfigContent
+//   returns CPE configuration content for a specific IPSec tunnel in an IPSec connection.
 // A default retry strategy applies to this operation GetCpeDeviceConfigContent()
 func (client VirtualNetworkClient) GetCpeDeviceConfigContent(ctx context.Context, request GetCpeDeviceConfigContentRequest) (response GetCpeDeviceConfigContentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -12735,10 +12011,9 @@ func (client VirtualNetworkClient) getCpeDeviceConfigContent(ctx context.Context
 // (see UpdateTunnelCpeDeviceConfig).
 // The service merges the answers with a template of other information for the CPE device type. The following
 // operations return the merged content:
-//   - GetCpeDeviceConfigContent
-//   - GetIpsecCpeDeviceConfigContent
-//   - GetTunnelCpeDeviceConfigContent
-//
+//   * GetCpeDeviceConfigContent
+//   * GetIpsecCpeDeviceConfigContent
+//   * GetTunnelCpeDeviceConfigContent
 // A default retry strategy applies to this operation GetCpeDeviceShape()
 func (client VirtualNetworkClient) GetCpeDeviceShape(ctx context.Context, request GetCpeDeviceShapeRequest) (response GetCpeDeviceShapeResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -13128,7 +12403,7 @@ func (client VirtualNetworkClient) getDatapathMessage(ctx context.Context, reque
 	return response, err
 }
 
-// GetDav Get the direct attached VNIC.
+// GetDav Get the Direct Attached Vnic.
 func (client VirtualNetworkClient) GetDav(ctx context.Context, request GetDavRequest) (response GetDavResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -13653,59 +12928,6 @@ func (client VirtualNetworkClient) getDrgRouteTable(ctx context.Context, request
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteTable/GetDrgRouteTable"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetDrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetEncryptionStatus Get the encryption status of the entity.
-func (client VirtualNetworkClient) GetEncryptionStatus(ctx context.Context, request GetEncryptionStatusRequest) (response GetEncryptionStatusResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getEncryptionStatus, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetEncryptionStatusResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetEncryptionStatusResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetEncryptionStatusResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetEncryptionStatusResponse")
-	}
-	return
-}
-
-// getEncryptionStatus implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getEncryptionStatus(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/internal/encryptionStatus/{encryptionStatusId}/actions/getEncryptionStatus", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetEncryptionStatusResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/EncryptionStatus/GetEncryptionStatus"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetEncryptionStatus", apiReferenceLink)
 		return response, err
 	}
 
@@ -14696,7 +13918,7 @@ func (client VirtualNetworkClient) getInternalDrgAttachment(ctx context.Context,
 	return response, err
 }
 
-// GetInternalDrgRouteTable Gets current version of DRG route table mapping for a given DRG_Attachment_Label.
+// GetInternalDrgRouteTable Gets current version of DRG Route Table mapping for a given DRG_Attachment_Label.
 // A default retry strategy applies to this operation GetInternalDrgRouteTable()
 func (client VirtualNetworkClient) GetInternalDrgRouteTable(ctx context.Context, request GetInternalDrgRouteTableRequest) (response GetInternalDrgRouteTableResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -14748,60 +13970,6 @@ func (client VirtualNetworkClient) getInternalDrgRouteTable(ctx context.Context,
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalDrgRouteTable/GetInternalDrgRouteTable"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetInternalDrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetInternalEcmpGroup Get an internal ecmp group.
-// A default retry strategy applies to this operation GetInternalEcmpGroup()
-func (client VirtualNetworkClient) GetInternalEcmpGroup(ctx context.Context, request GetInternalEcmpGroupRequest) (response GetInternalEcmpGroupResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.DefaultRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getInternalEcmpGroup, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetInternalEcmpGroupResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetInternalEcmpGroupResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetInternalEcmpGroupResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetInternalEcmpGroupResponse")
-	}
-	return
-}
-
-// getInternalEcmpGroup implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getInternalEcmpGroup(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/internalEcmpGroups/{internalEcmpGroupId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetInternalEcmpGroupResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalEcmpGroup/GetInternalEcmpGroup"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetInternalEcmpGroup", apiReferenceLink)
 		return response, err
 	}
 
@@ -15140,7 +14308,7 @@ func (client VirtualNetworkClient) getInternalSubnet(ctx context.Context, reques
 	return response, err
 }
 
-// GetInternalVnic Gets the information for the specified internal VNIC.
+// GetInternalVnic Gets the information for the specified internal vnic.
 func (client VirtualNetworkClient) GetInternalVnic(ctx context.Context, request GetInternalVnicRequest) (response GetInternalVnicResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -15311,11 +14479,10 @@ func (client VirtualNetworkClient) getInternetGateway(ctx context.Context, reque
 // The operation returns configuration information for all tunnels in the single specified
 // IPSecConnection object. Here are other similar
 // operations:
-//   - GetTunnelCpeDeviceConfigContent
-//     returns CPE configuration content for a specific tunnel within an IPSec connection.
-//   - GetCpeDeviceConfigContent
-//     returns CPE configuration content for *all* IPSec connections that use a specific CPE.
-//
+//   * GetTunnelCpeDeviceConfigContent
+//   returns CPE configuration content for a specific tunnel within an IPSec connection.
+//   * GetCpeDeviceConfigContent
+//   returns CPE configuration content for *all* IPSec connections that use a specific CPE.
 // A default retry strategy applies to this operation GetIpsecCpeDeviceConfigContent()
 func (client VirtualNetworkClient) GetIpsecCpeDeviceConfigContent(ctx context.Context, request GetIpsecCpeDeviceConfigContentRequest) (response GetIpsecCpeDeviceConfigContentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -16365,59 +15532,6 @@ func (client VirtualNetworkClient) getRemotePeeringConnection(ctx context.Contex
 	return response, err
 }
 
-// GetResourceIpInventory Gets the `IpInventory` resource.
-func (client VirtualNetworkClient) GetResourceIpInventory(ctx context.Context, request GetResourceIpInventoryRequest) (response GetResourceIpInventoryResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getResourceIpInventory, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetResourceIpInventoryResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetResourceIpInventoryResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetResourceIpInventoryResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetResourceIpInventoryResponse")
-	}
-	return
-}
-
-// getResourceIpInventory implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getResourceIpInventory(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/ipinventory/DataRequestId/{dataRequestId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetResourceIpInventoryResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/IpInventoryCollection/GetResourceIpInventory"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetResourceIpInventory", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // GetReverseConnectionNatIp Gets the reverse connection NAT IP address for the specified private endpoint. This is the IP
 // address to use as the destination when initiating reverse connections to the customer's IP address.
 func (client VirtualNetworkClient) GetReverseConnectionNatIp(ctx context.Context, request GetReverseConnectionNatIpRequest) (response GetReverseConnectionNatIpResponse, err error) {
@@ -16790,112 +15904,6 @@ func (client VirtualNetworkClient) getSubnet(ctx context.Context, request common
 	return response, err
 }
 
-// GetSubnetCidrUtilization Gets the CIDR utilization data of the specified subnet. Specify the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-func (client VirtualNetworkClient) GetSubnetCidrUtilization(ctx context.Context, request GetSubnetCidrUtilizationRequest) (response GetSubnetCidrUtilizationResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getSubnetCidrUtilization, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetSubnetCidrUtilizationResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetSubnetCidrUtilizationResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetSubnetCidrUtilizationResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetSubnetCidrUtilizationResponse")
-	}
-	return
-}
-
-// getSubnetCidrUtilization implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getSubnetCidrUtilization(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/ipInventory/subnets/{subnetId}/cidrs", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetSubnetCidrUtilizationResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/IpInventoryCidrUtilizationCollection/GetSubnetCidrUtilization"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetSubnetCidrUtilization", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetSubnetIpInventory Gets the IP Inventory data of the specified subnet. Specify the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-func (client VirtualNetworkClient) GetSubnetIpInventory(ctx context.Context, request GetSubnetIpInventoryRequest) (response GetSubnetIpInventoryResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.getSubnetIpInventory, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetSubnetIpInventoryResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetSubnetIpInventoryResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetSubnetIpInventoryResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetSubnetIpInventoryResponse")
-	}
-	return
-}
-
-// getSubnetIpInventory implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getSubnetIpInventory(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/ipInventory/subnets/{subnetId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetSubnetIpInventoryResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/IpInventorySubnetResourceCollection/GetSubnetIpInventory"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetSubnetIpInventory", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // GetSubnetTopology Gets a topology for a given subnet.
 func (client VirtualNetworkClient) GetSubnetTopology(ctx context.Context, request GetSubnetTopologyRequest) (response GetSubnetTopologyResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -17018,11 +16026,10 @@ func (client VirtualNetworkClient) getTunnelCpeDeviceConfig(ctx context.Context,
 // merged with a template of other information specific to the CPE device type.
 // The operation returns configuration information for only the specified IPSec tunnel.
 // Here are other similar operations:
-//   - GetIpsecCpeDeviceConfigContent
-//     returns CPE configuration content for all tunnels in a single IPSec connection.
-//   - GetCpeDeviceConfigContent
-//     returns CPE configuration content for *all* IPSec connections that use a specific CPE.
-//
+//   * GetIpsecCpeDeviceConfigContent
+//   returns CPE configuration content for all tunnels in a single IPSec connection.
+//   * GetCpeDeviceConfigContent
+//   returns CPE configuration content for *all* IPSec connections that use a specific CPE.
 // A default retry strategy applies to this operation GetTunnelCpeDeviceConfigContent()
 func (client VirtualNetworkClient) GetTunnelCpeDeviceConfigContent(ctx context.Context, request GetTunnelCpeDeviceConfigContentRequest) (response GetTunnelCpeDeviceConfigContentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -17449,64 +16456,6 @@ func (client VirtualNetworkClient) getVcnMappinglessStatus(ctx context.Context, 
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/Vcn/GetVcnMappinglessStatus"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetVcnMappinglessStatus", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// GetVcnOverlap Gets the CIDR overlap information of the specified VCN in selected compartments. Specify the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-func (client VirtualNetworkClient) GetVcnOverlap(ctx context.Context, request GetVcnOverlapRequest) (response GetVcnOverlapResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.getVcnOverlap, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = GetVcnOverlapResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = GetVcnOverlapResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(GetVcnOverlapResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into GetVcnOverlapResponse")
-	}
-	return
-}
-
-// getVcnOverlap implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) getVcnOverlap(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/ipInventory/vcns/{vcnId}/overlaps", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response GetVcnOverlapResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/IpInventoryVcnOverlapCollection/GetVcnOverlap"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "GetVcnOverlap", apiReferenceLink)
 		return response, err
 	}
 
@@ -18166,221 +17115,6 @@ func (client VirtualNetworkClient) listC3DrgAttachments(ctx context.Context, req
 	return response, err
 }
 
-// ListC3DrgRouteDistributionStatements Lists the statements for the specified route distribution.
-func (client VirtualNetworkClient) ListC3DrgRouteDistributionStatements(ctx context.Context, request ListC3DrgRouteDistributionStatementsRequest) (response ListC3DrgRouteDistributionStatementsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.listC3DrgRouteDistributionStatements, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListC3DrgRouteDistributionStatementsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ListC3DrgRouteDistributionStatementsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ListC3DrgRouteDistributionStatementsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListC3DrgRouteDistributionStatementsResponse")
-	}
-	return
-}
-
-// listC3DrgRouteDistributionStatements implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) listC3DrgRouteDistributionStatements(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgRouteDistributions/{drgRouteDistributionId}/drgRouteDistributionStatements", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListC3DrgRouteDistributionStatementsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistributionStatement/ListC3DrgRouteDistributionStatements"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ListC3DrgRouteDistributionStatements", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// ListC3DrgRouteDistributions Lists the route distributions in the specified DRG.
-// To retrieve the statements in a distribution, use the
-// ListDrgRouteDistributionStatements operation.
-func (client VirtualNetworkClient) ListC3DrgRouteDistributions(ctx context.Context, request ListC3DrgRouteDistributionsRequest) (response ListC3DrgRouteDistributionsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.listC3DrgRouteDistributions, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListC3DrgRouteDistributionsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ListC3DrgRouteDistributionsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ListC3DrgRouteDistributionsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListC3DrgRouteDistributionsResponse")
-	}
-	return
-}
-
-// listC3DrgRouteDistributions implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) listC3DrgRouteDistributions(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgRouteDistributions", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListC3DrgRouteDistributionsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistribution/ListC3DrgRouteDistributions"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ListC3DrgRouteDistributions", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// ListC3DrgRouteRules Lists the route rules in the specified DRG route table.
-func (client VirtualNetworkClient) ListC3DrgRouteRules(ctx context.Context, request ListC3DrgRouteRulesRequest) (response ListC3DrgRouteRulesResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.listC3DrgRouteRules, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListC3DrgRouteRulesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ListC3DrgRouteRulesResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ListC3DrgRouteRulesResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListC3DrgRouteRulesResponse")
-	}
-	return
-}
-
-// listC3DrgRouteRules implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) listC3DrgRouteRules(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgRouteTables/{drgRouteTableId}/drgRouteRules", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListC3DrgRouteRulesResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteRule/ListC3DrgRouteRules"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ListC3DrgRouteRules", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// ListC3DrgRouteTables Lists the DRG route tables for the specified DRG.
-// Use the `ListDrgRouteRules` operation to retrieve the route rules in a table.
-func (client VirtualNetworkClient) ListC3DrgRouteTables(ctx context.Context, request ListC3DrgRouteTablesRequest) (response ListC3DrgRouteTablesResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.listC3DrgRouteTables, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListC3DrgRouteTablesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ListC3DrgRouteTablesResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ListC3DrgRouteTablesResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListC3DrgRouteTablesResponse")
-	}
-	return
-}
-
-// listC3DrgRouteTables implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) listC3DrgRouteTables(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/c3_drgRouteTables", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListC3DrgRouteTablesResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteTable/ListC3DrgRouteTables"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ListC3DrgRouteTables", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // ListC3Drgs Lists the DRGs in the specified compartment.
 func (client VirtualNetworkClient) ListC3Drgs(ctx context.Context, request ListC3DrgsRequest) (response ListC3DrgsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -18602,10 +17336,9 @@ func (client VirtualNetworkClient) listClientVpns(ctx context.Context, request c
 // ensure that the Cpe object's `cpeDeviceShapeId` attribute is set
 // to the CPE device type's OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) (returned by this operation).
 // For information about generating CPE configuration content, see these operations:
-//   - GetCpeDeviceConfigContent
-//   - GetIpsecCpeDeviceConfigContent
-//   - GetTunnelCpeDeviceConfigContent
-//
+//   * GetCpeDeviceConfigContent
+//   * GetIpsecCpeDeviceConfigContent
+//   * GetTunnelCpeDeviceConfigContent
 // A default retry strategy applies to this operation ListCpeDeviceShapes()
 func (client VirtualNetworkClient) ListCpeDeviceShapes(ctx context.Context, request ListCpeDeviceShapesRequest) (response ListCpeDeviceShapesResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -20297,60 +19030,6 @@ func (client VirtualNetworkClient) listInternalDrgs(ctx context.Context, request
 	return response, err
 }
 
-// ListInternalEcmpGroups Gets a list of internal ecmp groups in the specified compartment
-// A default retry strategy applies to this operation ListInternalEcmpGroups()
-func (client VirtualNetworkClient) ListInternalEcmpGroups(ctx context.Context, request ListInternalEcmpGroupsRequest) (response ListInternalEcmpGroupsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.DefaultRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.listInternalEcmpGroups, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListInternalEcmpGroupsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ListInternalEcmpGroupsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ListInternalEcmpGroupsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListInternalEcmpGroupsResponse")
-	}
-	return
-}
-
-// listInternalEcmpGroups implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) listInternalEcmpGroups(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/internalEcmpGroups", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListInternalEcmpGroupsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalEcmpGroup/ListInternalEcmpGroups"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ListInternalEcmpGroups", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // ListInternalFloatingIps Get a list of floating IPs
 func (client VirtualNetworkClient) ListInternalFloatingIps(ctx context.Context, request ListInternalFloatingIpsRequest) (response ListInternalFloatingIpsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -20523,20 +19202,17 @@ func (client VirtualNetworkClient) listInternalPrivateIps(ctx context.Context, r
 // ListInternalPublicIps Lists the InternalPublicIp Objects
 // in the specified compartment. You can filter the list by using query parameters.
 // To list your reserved public IPs:
-//   - Set `scope` = `REGION`  (required)
-//   - Leave the `availabilityDomain` parameter empty
-//   - Set `lifetime` = `RESERVED`
-//
+//   * Set `scope` = `REGION`  (required)
+//   * Leave the `availabilityDomain` parameter empty
+//   * Set `lifetime` = `RESERVED`
 // To list the ephemeral public IPs assigned to a regional entity such as a NAT gateway:
-//   - Set `scope` = `REGION`  (required)
-//   - Leave the `availabilityDomain` parameter empty
-//   - Set `lifetime` = `EPHEMERAL`
-//
+//   * Set `scope` = `REGION`  (required)
+//   * Leave the `availabilityDomain` parameter empty
+//   * Set `lifetime` = `EPHEMERAL`
 // To list the ephemeral public IPs assigned to private IPs:
-//   - Set `scope` = `AVAILABILITY_DOMAIN` (required)
-//   - Set the `availabilityDomain` parameter to the desired availability domain (required)
-//   - Set `lifetime` = `EPHEMERAL`
-//
+//   * Set `scope` = `AVAILABILITY_DOMAIN` (required)
+//   * Set the `availabilityDomain` parameter to the desired availability domain (required)
+//   * Set `lifetime` = `EPHEMERAL`
 // **Note:** An ephemeral public IP assigned to a private IP
 // is always in the same availability domain and compartment as the private IP.
 func (client VirtualNetworkClient) ListInternalPublicIps(ctx context.Context, request ListInternalPublicIpsRequest) (response ListInternalPublicIpsResponse, err error) {
@@ -20751,66 +19427,13 @@ func (client VirtualNetworkClient) listInternetGateways(ctx context.Context, req
 	return response, err
 }
 
-// ListIpInventory Lists the IP Inventory information in the selected compartments.
-func (client VirtualNetworkClient) ListIpInventory(ctx context.Context, request ListIpInventoryRequest) (response ListIpInventoryResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.listIpInventory, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListIpInventoryResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = ListIpInventoryResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(ListIpInventoryResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListIpInventoryResponse")
-	}
-	return
-}
-
-// listIpInventory implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) listIpInventory(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/ipInventory", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response ListIpInventoryResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/Vcn/ListIpInventory"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "ListIpInventory", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // ListIpv6s Lists the Ipv6 objects based
 // on one of these filters:
-//   - Subnet OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-//   - VNIC OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-//   - Both IPv6 address and subnet OCID: This lets you get an `Ipv6` object based on its private
-//     IPv6 address (for example, 2001:0db8:0123:1111:abcd:ef01:2345:6789) and not its OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm). For comparison,
-//     GetIpv6 requires the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
+//   * Subnet OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
+//   * VNIC OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
+//   * Both IPv6 address and subnet OCID: This lets you get an `Ipv6` object based on its private
+//   IPv6 address (for example, 2001:0db8:0123:1111:abcd:ef01:2345:6789) and not its OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm). For comparison,
+//   GetIpv6 requires the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 func (client VirtualNetworkClient) ListIpv6s(ctx context.Context, request ListIpv6sRequest) (response ListIpv6sResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -21406,11 +20029,10 @@ func (client VirtualNetworkClient) listPrivateEndpoints(ctx context.Context, req
 //   - Subnet OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 //   - VNIC OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 //   - Both private IP address and subnet OCID: This lets
-//     you get a `privateIP` object based on its private IP
-//     address (for example, 10.0.3.3) and not its OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm). For comparison,
-//     GetPrivateIp
-//     requires the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-//
+//   you get a `privateIP` object based on its private IP
+//   address (for example, 10.0.3.3) and not its OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm). For comparison,
+//   GetPrivateIp
+//   requires the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 // If you're listing all the private IPs associated with a given subnet
 // or VNIC, the response includes both primary and secondary private IPs.
 // If you are an Oracle Cloud VMware Solution customer and have VLANs
@@ -21583,20 +20205,17 @@ func (client VirtualNetworkClient) listPublicIpPools(ctx context.Context, reques
 // ListPublicIps Lists the PublicIp objects
 // in the specified compartment. You can filter the list by using query parameters.
 // To list your reserved public IPs:
-//   - Set `scope` = `REGION`  (required)
-//   - Leave the `availabilityDomain` parameter empty
-//   - Set `lifetime` = `RESERVED`
-//
+//   * Set `scope` = `REGION`  (required)
+//   * Leave the `availabilityDomain` parameter empty
+//   * Set `lifetime` = `RESERVED`
 // To list the ephemeral public IPs assigned to a regional entity such as a NAT gateway:
-//   - Set `scope` = `REGION`  (required)
-//   - Leave the `availabilityDomain` parameter empty
-//   - Set `lifetime` = `EPHEMERAL`
-//
+//   * Set `scope` = `REGION`  (required)
+//   * Leave the `availabilityDomain` parameter empty
+//   * Set `lifetime` = `EPHEMERAL`
 // To list the ephemeral public IPs assigned to private IPs:
-//   - Set `scope` = `AVAILABILITY_DOMAIN` (required)
-//   - Set the `availabilityDomain` parameter to the desired availability domain (required)
-//   - Set `lifetime` = `EPHEMERAL`
-//
+//   * Set `scope` = `AVAILABILITY_DOMAIN` (required)
+//   * Set the `availabilityDomain` parameter to the desired availability domain (required)
+//   * Set `lifetime` = `EPHEMERAL`
 // **Note:** An ephemeral public IP assigned to a private IP
 // is always in the same availability domain and compartment as the private IP.
 func (client VirtualNetworkClient) ListPublicIps(ctx context.Context, request ListPublicIpsRequest) (response ListPublicIpsResponse, err error) {
@@ -22630,8 +21249,8 @@ func (client VirtualNetworkClient) listVlans(ctx context.Context, request common
 }
 
 // ListVnicWorkers Lists the vnicWorkers based on one of these filters:
-//   - Service VNIC OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
-//   - Instance OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
+//   * Service VNIC OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
+//   * Instance OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 func (client VirtualNetworkClient) ListVnicWorkers(ctx context.Context, request ListVnicWorkersRequest) (response ListVnicWorkersResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -23129,219 +21748,6 @@ func (client VirtualNetworkClient) removeAdditionalRouteRules(ctx context.Contex
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/RouteTable/RemoveAdditionalRouteRules"
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "RemoveAdditionalRouteRules", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// RemoveC3DrgRouteDistributionStatements Removes one or more route distribution statements from the specified route distribution's map.
-func (client VirtualNetworkClient) RemoveC3DrgRouteDistributionStatements(ctx context.Context, request RemoveC3DrgRouteDistributionStatementsRequest) (response RemoveC3DrgRouteDistributionStatementsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.removeC3DrgRouteDistributionStatements, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = RemoveC3DrgRouteDistributionStatementsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = RemoveC3DrgRouteDistributionStatementsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(RemoveC3DrgRouteDistributionStatementsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into RemoveC3DrgRouteDistributionStatementsResponse")
-	}
-	return
-}
-
-// removeC3DrgRouteDistributionStatements implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) removeC3DrgRouteDistributionStatements(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteDistributions/{drgRouteDistributionId}/actions/removeDrgRouteDistributionStatements", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response RemoveC3DrgRouteDistributionStatementsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistributionStatement/RemoveC3DrgRouteDistributionStatements"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "RemoveC3DrgRouteDistributionStatements", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// RemoveC3DrgRouteRules Removes one or more route rules from the specified DRG route table.
-func (client VirtualNetworkClient) RemoveC3DrgRouteRules(ctx context.Context, request RemoveC3DrgRouteRulesRequest) (response RemoveC3DrgRouteRulesResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.removeC3DrgRouteRules, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = RemoveC3DrgRouteRulesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = RemoveC3DrgRouteRulesResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(RemoveC3DrgRouteRulesResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into RemoveC3DrgRouteRulesResponse")
-	}
-	return
-}
-
-// removeC3DrgRouteRules implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) removeC3DrgRouteRules(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteTables/{drgRouteTableId}/actions/removeDrgRouteRules", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response RemoveC3DrgRouteRulesResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteRule/RemoveC3DrgRouteRules"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "RemoveC3DrgRouteRules", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// RemoveC3ExportDrgRouteDistribution Removes the export route distribution from the DRG attachment so no routes are advertised to it.
-func (client VirtualNetworkClient) RemoveC3ExportDrgRouteDistribution(ctx context.Context, request RemoveC3ExportDrgRouteDistributionRequest) (response RemoveC3ExportDrgRouteDistributionResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.removeC3ExportDrgRouteDistribution, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = RemoveC3ExportDrgRouteDistributionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = RemoveC3ExportDrgRouteDistributionResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(RemoveC3ExportDrgRouteDistributionResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into RemoveC3ExportDrgRouteDistributionResponse")
-	}
-	return
-}
-
-// removeC3ExportDrgRouteDistribution implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) removeC3ExportDrgRouteDistribution(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgAttachments/{drgAttachmentId}/actions/removeExportDrgRouteDistribution", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response RemoveC3ExportDrgRouteDistributionResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgAttachment/RemoveC3ExportDrgRouteDistribution"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "RemoveC3ExportDrgRouteDistribution", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// RemoveC3ImportDrgRouteDistribution Removes the import route distribution from the DRG route table so no routes are imported
-// into it.
-func (client VirtualNetworkClient) RemoveC3ImportDrgRouteDistribution(ctx context.Context, request RemoveC3ImportDrgRouteDistributionRequest) (response RemoveC3ImportDrgRouteDistributionResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.removeC3ImportDrgRouteDistribution, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = RemoveC3ImportDrgRouteDistributionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = RemoveC3ImportDrgRouteDistributionResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(RemoveC3ImportDrgRouteDistributionResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into RemoveC3ImportDrgRouteDistributionResponse")
-	}
-	return
-}
-
-// removeC3ImportDrgRouteDistribution implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) removeC3ImportDrgRouteDistribution(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteTables/{drgRouteTableId}/actions/removeImportDrgRouteDistribution", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response RemoveC3ImportDrgRouteDistributionResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteTable/RemoveC3ImportDrgRouteDistribution"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "RemoveC3ImportDrgRouteDistribution", apiReferenceLink)
 		return response, err
 	}
 
@@ -24309,64 +22715,6 @@ func (client VirtualNetworkClient) setDrgPeeringConnection(ctx context.Context, 
 	return response, err
 }
 
-// SetEncryptionStatus Enables/Disables encryption state of a region or VCN.
-func (client VirtualNetworkClient) SetEncryptionStatus(ctx context.Context, request SetEncryptionStatusRequest) (response SetEncryptionStatusResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.setEncryptionStatus, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = SetEncryptionStatusResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = SetEncryptionStatusResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(SetEncryptionStatusResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into SetEncryptionStatusResponse")
-	}
-	return
-}
-
-// setEncryptionStatus implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) setEncryptionStatus(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/internal/encryptionStatus/actions/setEncryptionStatus", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response SetEncryptionStatusResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/EncryptionStatus/SetEncryptionStatus"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "SetEncryptionStatus", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // SetInternalDrgRouteData Sets the route data for the given Drg.
 func (client VirtualNetworkClient) SetInternalDrgRouteData(ctx context.Context, request SetInternalDrgRouteDataRequest) (response SetInternalDrgRouteDataResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -24923,218 +23271,6 @@ func (client VirtualNetworkClient) updateC3DrgAttachment(ctx context.Context, re
 	return response, err
 }
 
-// UpdateC3DrgRouteDistribution Updates the specified route distribution
-func (client VirtualNetworkClient) UpdateC3DrgRouteDistribution(ctx context.Context, request UpdateC3DrgRouteDistributionRequest) (response UpdateC3DrgRouteDistributionResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.updateC3DrgRouteDistribution, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpdateC3DrgRouteDistributionResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpdateC3DrgRouteDistributionResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpdateC3DrgRouteDistributionResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpdateC3DrgRouteDistributionResponse")
-	}
-	return
-}
-
-// updateC3DrgRouteDistribution implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) updateC3DrgRouteDistribution(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPut, "/c3_drgRouteDistributions/{drgRouteDistributionId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpdateC3DrgRouteDistributionResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistribution/UpdateC3DrgRouteDistribution"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateC3DrgRouteDistribution", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// UpdateC3DrgRouteDistributionStatements Updates one or more route distribution statements in the specified route distribution.
-func (client VirtualNetworkClient) UpdateC3DrgRouteDistributionStatements(ctx context.Context, request UpdateC3DrgRouteDistributionStatementsRequest) (response UpdateC3DrgRouteDistributionStatementsResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.updateC3DrgRouteDistributionStatements, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpdateC3DrgRouteDistributionStatementsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpdateC3DrgRouteDistributionStatementsResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpdateC3DrgRouteDistributionStatementsResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpdateC3DrgRouteDistributionStatementsResponse")
-	}
-	return
-}
-
-// updateC3DrgRouteDistributionStatements implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) updateC3DrgRouteDistributionStatements(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteDistributions/{drgRouteDistributionId}/actions/updateDrgRouteDistributionStatements", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpdateC3DrgRouteDistributionStatementsResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteDistributionStatement/UpdateC3DrgRouteDistributionStatements"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateC3DrgRouteDistributionStatements", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// UpdateC3DrgRouteRules Updates one or more route rules in the specified DRG route table.
-func (client VirtualNetworkClient) UpdateC3DrgRouteRules(ctx context.Context, request UpdateC3DrgRouteRulesRequest) (response UpdateC3DrgRouteRulesResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.updateC3DrgRouteRules, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpdateC3DrgRouteRulesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpdateC3DrgRouteRulesResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpdateC3DrgRouteRulesResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpdateC3DrgRouteRulesResponse")
-	}
-	return
-}
-
-// updateC3DrgRouteRules implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) updateC3DrgRouteRules(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgRouteTables/{drgRouteTableId}/actions/updateDrgRouteRules", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpdateC3DrgRouteRulesResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteRule/UpdateC3DrgRouteRules"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateC3DrgRouteRules", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// UpdateC3DrgRouteTable Updates the specified DRG route table.
-func (client VirtualNetworkClient) UpdateC3DrgRouteTable(ctx context.Context, request UpdateC3DrgRouteTableRequest) (response UpdateC3DrgRouteTableResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.updateC3DrgRouteTable, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpdateC3DrgRouteTableResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpdateC3DrgRouteTableResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpdateC3DrgRouteTableResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpdateC3DrgRouteTableResponse")
-	}
-	return
-}
-
-// updateC3DrgRouteTable implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) updateC3DrgRouteTable(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPut, "/c3_drgRouteTables/{drgRouteTableId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpdateC3DrgRouteTableResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/DrgRouteTable/UpdateC3DrgRouteTable"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateC3DrgRouteTable", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // UpdateCaptureFilter Updates the specified VTAP capture filter's display name or tags.
 func (client VirtualNetworkClient) UpdateCaptureFilter(ctx context.Context, request UpdateCaptureFilterRequest) (response UpdateCaptureFilterResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -25523,7 +23659,7 @@ func (client VirtualNetworkClient) updateDatapathMessage(ctx context.Context, re
 	return response, err
 }
 
-// UpdateDav Update an existing direct attached VNIC.
+// UpdateDav Update an existing Direct Attached Vnic
 func (client VirtualNetworkClient) UpdateDav(ctx context.Context, request UpdateDavRequest) (response UpdateDavResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -25955,64 +24091,6 @@ func (client VirtualNetworkClient) updateDrgRouteTable(ctx context.Context, requ
 	return response, err
 }
 
-// UpdateEncryptionCapability Request to update the encryption capability of the given service VNIC.
-func (client VirtualNetworkClient) UpdateEncryptionCapability(ctx context.Context, request UpdateEncryptionCapabilityRequest) (response UpdateEncryptionCapabilityResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.updateEncryptionCapability, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpdateEncryptionCapabilityResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpdateEncryptionCapabilityResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpdateEncryptionCapabilityResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpdateEncryptionCapabilityResponse")
-	}
-	return
-}
-
-// updateEncryptionCapability implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) updateEncryptionCapability(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/internalVnics/vnicAttachments/actions/updateEncryptionCapability", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpdateEncryptionCapabilityResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalVnicAttachment/UpdateEncryptionCapability"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateEncryptionCapability", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // UpdateEndpointService Updates the specified endpoint service.
 func (client VirtualNetworkClient) UpdateEndpointService(ctx context.Context, request UpdateEndpointServiceRequest) (response UpdateEndpointServiceResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -26342,14 +24420,13 @@ func (client VirtualNetworkClient) updateIPSecConnection(ctx context.Context, re
 
 // UpdateIPSecConnectionTunnel Updates the specified tunnel. This operation lets you change tunnel attributes such as the
 // routing type (BGP dynamic routing or static routing). Here are some important notes:
-//   - If you change the tunnel's routing type or BGP session configuration, the tunnel will go
+//   * If you change the tunnel's routing type or BGP session configuration, the tunnel will go
 //     down while it's reprovisioned.
-//   - If you want to switch the tunnel's `routing` from `STATIC` to `BGP`, make sure the tunnel's
+//   * If you want to switch the tunnel's `routing` from `STATIC` to `BGP`, make sure the tunnel's
 //     BGP session configuration attributes have been set (BgpSessionInfo).
-//   - If you want to switch the tunnel's `routing` from `BGP` to `STATIC`, make sure the
+//   * If you want to switch the tunnel's `routing` from `BGP` to `STATIC`, make sure the
 //     IPSecConnection already has at least one valid CIDR
 //     static route.
-//
 // A default retry strategy applies to this operation UpdateIPSecConnectionTunnel()
 func (client VirtualNetworkClient) UpdateIPSecConnectionTunnel(ctx context.Context, request UpdateIPSecConnectionTunnelRequest) (response UpdateIPSecConnectionTunnelResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -26458,8 +24535,8 @@ func (client VirtualNetworkClient) updateIPSecConnectionTunnelSharedSecret(ctx c
 	return response, err
 }
 
-// UpdateInternalDnsRecord Updates the specified `DnsRecord`.
-// Currently, only the name, ttl, and value can be updated for `DnsRecord`.
+// UpdateInternalDnsRecord Updates the specified DnsRecord.
+// Currently, only the name, ttl, and value can be updated for DnsRecord.
 func (client VirtualNetworkClient) UpdateInternalDnsRecord(ctx context.Context, request UpdateInternalDnsRecordRequest) (response UpdateInternalDnsRecordResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -26619,60 +24696,6 @@ func (client VirtualNetworkClient) updateInternalDrgAttachment(ctx context.Conte
 	return response, err
 }
 
-// UpdateInternalEcmpGroup Updates the specified InternalEcmpGroup's display name or definedTags or freeformTags or nextHopEntries. Avoid entering confidential information.Note that the nextHopEntries` object you provide replaces the entire existing set of nextHopEntries.
-// A default retry strategy applies to this operation UpdateInternalEcmpGroup()
-func (client VirtualNetworkClient) UpdateInternalEcmpGroup(ctx context.Context, request UpdateInternalEcmpGroupRequest) (response UpdateInternalEcmpGroupResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.DefaultRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-	ociResponse, err = common.Retry(ctx, request, client.updateInternalEcmpGroup, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpdateInternalEcmpGroupResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpdateInternalEcmpGroupResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpdateInternalEcmpGroupResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpdateInternalEcmpGroupResponse")
-	}
-	return
-}
-
-// updateInternalEcmpGroup implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) updateInternalEcmpGroup(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPut, "/internalEcmpGroups/{internalEcmpGroupId}", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpdateInternalEcmpGroupResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InternalEcmpGroup/UpdateInternalEcmpGroup"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateInternalEcmpGroup", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
 // UpdateInternalGenericGateway Update an existing internal generic gateway
 func (client VirtualNetworkClient) UpdateInternalGenericGateway(ctx context.Context, request UpdateInternalGenericGatewayRequest) (response UpdateInternalGenericGatewayResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -26723,10 +24746,10 @@ func (client VirtualNetworkClient) updateInternalGenericGateway(ctx context.Cont
 
 // UpdateInternalIpv6 Updates the specified IPv6. You must specify the object's OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 // Use this operation if you want to:
-//   - Move an IPv6 to a different VNIC in the same subnet.
-//   - Enable/disable internet access for an IPv6.
-//   - Change the display name for an IPv6.
-//   - Update resource tags for an IPv6.
+//   * Move an IPv6 to a different VNIC in the same subnet.
+//   * Enable/disable internet access for an IPv6.
+//   * Change the display name for an IPv6.
+//   * Update resource tags for an IPv6.
 func (client VirtualNetworkClient) UpdateInternalIpv6(ctx context.Context, request UpdateInternalIpv6Request) (response UpdateInternalIpv6Response, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -26973,7 +24996,7 @@ func (client VirtualNetworkClient) updateInternalVnic(ctx context.Context, reque
 	return response, err
 }
 
-// UpdateInternalVnicMetadata Request to updates the customer facing metrics metadata for a VNIC attachment.
+// UpdateInternalVnicMetadata Request to updates the customer facing metrics metadata for a vnic attachment.
 func (client VirtualNetworkClient) UpdateInternalVnicMetadata(ctx context.Context, request UpdateInternalVnicMetadataRequest) (response UpdateInternalVnicMetadataResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -27089,10 +25112,10 @@ func (client VirtualNetworkClient) updateInternetGateway(ctx context.Context, re
 
 // UpdateIpv6 Updates the specified IPv6. You must specify the object's OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 // Use this operation if you want to:
-//   - Move an IPv6 to a different VNIC in the same subnet.
-//   - Enable/disable internet access for an IPv6.
-//   - Change the display name for an IPv6.
-//   - Update resource tags for an IPv6.
+//   * Move an IPv6 to a different VNIC in the same subnet.
+//   * Enable/disable internet access for an IPv6.
+//   * Change the display name for an IPv6.
+//   * Update resource tags for an IPv6.
 func (client VirtualNetworkClient) UpdateIpv6(ctx context.Context, request UpdateIpv6Request) (response UpdateIpv6Response, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -27531,7 +25554,6 @@ func (client VirtualNetworkClient) updatePrivateEndpoint(ctx context.Context, re
 //   - Move a secondary private IP to a different VNIC in the same subnet.
 //   - Change the display name for a secondary private IP.
 //   - Change the hostname for a secondary private IP.
-//
 // This operation cannot be used with primary private IPs.
 // To update the hostname for the primary IP on a VNIC, use
 // UpdateVnic.
@@ -28952,65 +26974,6 @@ func (client VirtualNetworkClient) updateVtap(ctx context.Context, request commo
 	if err != nil {
 		apiReferenceLink := ""
 		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpdateVtap", apiReferenceLink)
-		return response, err
-	}
-
-	err = common.UnmarshalResponse(httpResponse, &response)
-	return response, err
-}
-
-// UpgradeC3Drg Upgrades the DRG. After upgrade, you can control routing inside your DRG
-// via DRG attachments, route distributions, and DRG route tables.
-func (client VirtualNetworkClient) UpgradeC3Drg(ctx context.Context, request UpgradeC3DrgRequest) (response UpgradeC3DrgResponse, err error) {
-	var ociResponse common.OCIResponse
-	policy := common.NoRetryPolicy()
-	if client.RetryPolicy() != nil {
-		policy = *client.RetryPolicy()
-	}
-	if request.RetryPolicy() != nil {
-		policy = *request.RetryPolicy()
-	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.upgradeC3Drg, policy)
-	if err != nil {
-		if ociResponse != nil {
-			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
-				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = UpgradeC3DrgResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
-			} else {
-				response = UpgradeC3DrgResponse{}
-			}
-		}
-		return
-	}
-	if convertedResponse, ok := ociResponse.(UpgradeC3DrgResponse); ok {
-		response = convertedResponse
-	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into UpgradeC3DrgResponse")
-	}
-	return
-}
-
-// upgradeC3Drg implements the OCIOperation interface (enables retrying operations)
-func (client VirtualNetworkClient) upgradeC3Drg(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
-
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/c3_drgs/{drgId}/actions/upgrade", binaryReqBody, extraHeaders)
-	if err != nil {
-		return nil, err
-	}
-
-	var response UpgradeC3DrgResponse
-	var httpResponse *http.Response
-	httpResponse, err = client.Call(ctx, &httpRequest)
-	defer common.CloseBodyIfValid(httpResponse)
-	response.RawResponse = httpResponse
-	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/Drg/UpgradeC3Drg"
-		err = common.PostProcessServiceError(err, "VirtualNetwork", "UpgradeC3Drg", apiReferenceLink)
 		return response, err
 	}
 

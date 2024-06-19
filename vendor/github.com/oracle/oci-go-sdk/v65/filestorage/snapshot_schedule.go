@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -40,23 +40,20 @@ type SnapshotSchedule struct {
 	RetentionDurationInSeconds *int64 `mandatory:"false" json:"retentionDurationInSeconds"`
 
 	// The hour of the day to create a DAILY, WEEKLY, MONTHLY, or YEARLY snapshot.
-	// If not set, the system chooses a value at creation time.
+	// If not set, a value will be chosen at creation time.
 	HourOfDay *int `mandatory:"false" json:"hourOfDay"`
 
 	// The day of the week to create a scheduled snapshot.
 	// Used for WEEKLY snapshot schedules.
-	// If not set, the system chooses a value at creation time.
 	DayOfWeek SnapshotScheduleDayOfWeekEnum `mandatory:"false" json:"dayOfWeek,omitempty"`
 
 	// The day of the month to create a scheduled snapshot.
 	// If the day does not exist for the month, snapshot creation will be skipped.
 	// Used for MONTHLY and YEARLY snapshot schedules.
-	// If not set, the system chooses a value at creation time.
 	DayOfMonth *int `mandatory:"false" json:"dayOfMonth"`
 
 	// The month to create a scheduled snapshot.
 	// Used only for YEARLY snapshot schedules.
-	// If not set, the system chooses a value at creation time.
 	Month SnapshotScheduleMonthEnum `mandatory:"false" json:"month,omitempty"`
 }
 

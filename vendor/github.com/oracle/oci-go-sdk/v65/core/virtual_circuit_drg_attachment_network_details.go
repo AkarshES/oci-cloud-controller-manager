@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -44,7 +44,7 @@ type VirtualCircuitDrgAttachmentNetworkDetails struct {
 	// with the route target set to the value of the attachment's export route target.
 	ExportRouteTarget *string `mandatory:"false" json:"exportRouteTarget"`
 
-	// The MPLS label of the DRG attachment.
+	// The MPLS label of the DRG attachment
 	MplsLabel *int `mandatory:"false" json:"mplsLabel"`
 
 	// The BGP ASN to use for the IPSec connection's route target.
@@ -53,22 +53,12 @@ type VirtualCircuitDrgAttachmentNetworkDetails struct {
 	// The Oracle Cloud Infrastructure region name.
 	RegionName *string `mandatory:"false" json:"regionName"`
 
-	// Common Export route target to use for the DRG Attachment instead of per-attachment route target.
-	// This is applicable to DRG attachments that are assigned to a DRG route table which is whitelisted for high
-	// throughput mode.
-	CommonExportRT *string `mandatory:"false" json:"commonExportRT"`
-
-	// Common Import route target to use for the DRG attachment instead of per-attachment import route target.
-	// This is applicable to DRG attachments that are assigned to a DRG route table which is whitelisted for high
-	// throughput mode.
-	CommonImportRT *string `mandatory:"false" json:"commonImportRT"`
-
 	// Boolean flag that determines wether all traffic over the virtual circuits is encrypted.
 	// Example: `true`
 	TransportOnlyMode *bool `mandatory:"false" json:"transportOnlyMode"`
 }
 
-// GetId returns Id
+//GetId returns Id
 func (m VirtualCircuitDrgAttachmentNetworkDetails) GetId() *string {
 	return m.Id
 }

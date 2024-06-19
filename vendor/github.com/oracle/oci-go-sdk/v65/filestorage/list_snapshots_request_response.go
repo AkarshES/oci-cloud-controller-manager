@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -149,7 +149,6 @@ type ListSnapshotsLifecycleStateEnum string
 const (
 	ListSnapshotsLifecycleStateCreating ListSnapshotsLifecycleStateEnum = "CREATING"
 	ListSnapshotsLifecycleStateActive   ListSnapshotsLifecycleStateEnum = "ACTIVE"
-	ListSnapshotsLifecycleStateUpdating ListSnapshotsLifecycleStateEnum = "UPDATING"
 	ListSnapshotsLifecycleStateDeleting ListSnapshotsLifecycleStateEnum = "DELETING"
 	ListSnapshotsLifecycleStateDeleted  ListSnapshotsLifecycleStateEnum = "DELETED"
 	ListSnapshotsLifecycleStateFailed   ListSnapshotsLifecycleStateEnum = "FAILED"
@@ -158,7 +157,6 @@ const (
 var mappingListSnapshotsLifecycleStateEnum = map[string]ListSnapshotsLifecycleStateEnum{
 	"CREATING": ListSnapshotsLifecycleStateCreating,
 	"ACTIVE":   ListSnapshotsLifecycleStateActive,
-	"UPDATING": ListSnapshotsLifecycleStateUpdating,
 	"DELETING": ListSnapshotsLifecycleStateDeleting,
 	"DELETED":  ListSnapshotsLifecycleStateDeleted,
 	"FAILED":   ListSnapshotsLifecycleStateFailed,
@@ -167,7 +165,6 @@ var mappingListSnapshotsLifecycleStateEnum = map[string]ListSnapshotsLifecycleSt
 var mappingListSnapshotsLifecycleStateEnumLowerCase = map[string]ListSnapshotsLifecycleStateEnum{
 	"creating": ListSnapshotsLifecycleStateCreating,
 	"active":   ListSnapshotsLifecycleStateActive,
-	"updating": ListSnapshotsLifecycleStateUpdating,
 	"deleting": ListSnapshotsLifecycleStateDeleting,
 	"deleted":  ListSnapshotsLifecycleStateDeleted,
 	"failed":   ListSnapshotsLifecycleStateFailed,
@@ -187,7 +184,6 @@ func GetListSnapshotsLifecycleStateEnumStringValues() []string {
 	return []string{
 		"CREATING",
 		"ACTIVE",
-		"UPDATING",
 		"DELETING",
 		"DELETED",
 		"FAILED",

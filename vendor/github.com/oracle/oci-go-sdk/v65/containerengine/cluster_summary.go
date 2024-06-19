@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -59,7 +59,7 @@ type ClusterSummary struct {
 	// Metadata about the cluster.
 	Metadata *ClusterMetadata `mandatory:"false" json:"metadata"`
 
-	// The state of the cluster masters. For more information, see Monitoring Clusters (https://docs.cloud.oracle.com/Content/ContEng/Tasks/contengmonitoringclusters.htm)
+	// The state of the cluster masters.
 	LifecycleState ClusterLifecycleStateEnum `mandatory:"false" json:"lifecycleState,omitempty"`
 
 	// Details about the state of the cluster masters.
@@ -160,7 +160,10 @@ func (m *ClusterSummary) UnmarshalJSON(data []byte) (e error) {
 	m.Endpoints = model.Endpoints
 
 	m.AvailableKubernetesUpgrades = make([]string, len(model.AvailableKubernetesUpgrades))
-	copy(m.AvailableKubernetesUpgrades, model.AvailableKubernetesUpgrades)
+	for i, n := range model.AvailableKubernetesUpgrades {
+		m.AvailableKubernetesUpgrades[i] = n
+	}
+
 	m.ImagePolicyConfig = model.ImagePolicyConfig
 
 	m.ClusterPodNetworkOptions = make([]ClusterPodNetworkOptionDetails, len(model.ClusterPodNetworkOptions))
@@ -175,6 +178,7 @@ func (m *ClusterSummary) UnmarshalJSON(data []byte) (e error) {
 			m.ClusterPodNetworkOptions[i] = nil
 		}
 	}
+
 	m.Type = model.Type
 
 	return

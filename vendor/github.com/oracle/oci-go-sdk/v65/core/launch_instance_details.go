@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -182,9 +182,6 @@ type LaunchInstanceDetails struct {
 	SubnetId *string `mandatory:"false" json:"subnetId"`
 
 	// Volume attachments to create as part of the launch instance operation.
-	LaunchVolumeAttachments []LaunchAttachVolumeDetails `mandatory:"false" json:"launchVolumeAttachments"`
-
-	// Volume attachments to create as part of the launch instance operation.
 	VolumeAttachments []AttachVolumeDetails `mandatory:"false" json:"volumeAttachments"`
 
 	// Secondary VNICS to create and attach as part of the launch instance operation.
@@ -249,7 +246,6 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 		ShapeConfig                    *LaunchInstanceShapeConfigDetails                   `json:"shapeConfig"`
 		SourceDetails                  instancesourcedetails                               `json:"sourceDetails"`
 		SubnetId                       *string                                             `json:"subnetId"`
-		LaunchVolumeAttachments        []launchattachvolumedetails                         `json:"launchVolumeAttachments"`
 		VolumeAttachments              []attachvolumedetails                               `json:"volumeAttachments"`
 		SecondaryVnicAttachments       []AttachVnicDetails                                 `json:"secondaryVnicAttachments"`
 		IsPvEncryptionInTransitEnabled *bool                                               `json:"isPvEncryptionInTransitEnabled"`
@@ -319,18 +315,6 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 
 	m.SubnetId = model.SubnetId
 
-	m.LaunchVolumeAttachments = make([]LaunchAttachVolumeDetails, len(model.LaunchVolumeAttachments))
-	for i, n := range model.LaunchVolumeAttachments {
-		nn, e = n.UnmarshalPolymorphicJSON(n.JsonData)
-		if e != nil {
-			return e
-		}
-		if nn != nil {
-			m.LaunchVolumeAttachments[i] = nn.(LaunchAttachVolumeDetails)
-		} else {
-			m.LaunchVolumeAttachments[i] = nil
-		}
-	}
 	m.VolumeAttachments = make([]AttachVolumeDetails, len(model.VolumeAttachments))
 	for i, n := range model.VolumeAttachments {
 		nn, e = n.UnmarshalPolymorphicJSON(n.JsonData)
@@ -343,8 +327,12 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 			m.VolumeAttachments[i] = nil
 		}
 	}
+
 	m.SecondaryVnicAttachments = make([]AttachVnicDetails, len(model.SecondaryVnicAttachments))
-	copy(m.SecondaryVnicAttachments, model.SecondaryVnicAttachments)
+	for i, n := range model.SecondaryVnicAttachments {
+		m.SecondaryVnicAttachments[i] = n
+	}
+
 	m.IsPvEncryptionInTransitEnabled = model.IsPvEncryptionInTransitEnabled
 
 	m.PreferredMaintenanceAction = model.PreferredMaintenanceAction

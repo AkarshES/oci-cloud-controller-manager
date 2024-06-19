@@ -14,8 +14,8 @@ bitbucket.oci.oraclecorp.com/oke/bmc-go-sdk v0.0.0-20180119173458-fe578152e621/g
 bitbucket.oci.oraclecorp.com/oke/oci-go-common v1.0.4-0.20200706161333-eb59f40527dd/go.mod h1:vV+DBk4RXaIh/Fw9q5BIy7Z/oqPWb/jVeVHt6NkykKY=
 bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.1-0.20220429183118-f0129d710185 h1:ce+1Z2Bvv+gqbmC1n+RUZ8dMG9QGEMoW95PA6G1p11U=
 bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.1-0.20220429183118-f0129d710185/go.mod h1:UZ8NMW2U4h4NVbHaP6TYLjRKkvUBuSAtEspw23Um2WI=
-bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.62.0-p h1:I9qb6GFgeMbBo3qBPkLEJ1h00LJW6rUeF1sxCkn1SK8=
-bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.62.0-p/go.mod h1:IBEV9l1qBzUpo7zgGaRUhbB05BVfcDGYRFBCPlTcPp0=
+bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.43.0-p.0.20230711221337-6d708be342aa h1:XMN2jX3MunbARrM8XUBnvPlfAxaLY81PBfyyC5dhMwo=
+bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.43.0-p.0.20230711221337-6d708be342aa/go.mod h1:IBEV9l1qBzUpo7zgGaRUhbB05BVfcDGYRFBCPlTcPp0=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
 cloud.google.com/go v0.44.1/go.mod h1:iSa0KzasP4Uvy3f1mN/7PiObzGgflwredwwASm/v6AU=

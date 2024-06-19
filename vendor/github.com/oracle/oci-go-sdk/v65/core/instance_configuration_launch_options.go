@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -33,7 +33,6 @@ type InstanceConfigurationLaunchOptions struct {
 	// volumes on platform images.
 	// * `PARAVIRTUALIZED` - Paravirtualized disk. This is the default for boot volumes and remote block
 	// storage volumes on platform images.
-	// * `NVME` - NVMe attached remote block storage device.
 	BootVolumeType InstanceConfigurationLaunchOptionsBootVolumeTypeEnum `mandatory:"false" json:"bootVolumeType,omitempty"`
 
 	// Firmware used to boot VM. Select the option that matches your operating system.
@@ -58,14 +57,11 @@ type InstanceConfigurationLaunchOptions struct {
 	// volumes on platform images.
 	// * `PARAVIRTUALIZED` - Paravirtualized disk. This is the default for boot volumes and remote block
 	// storage volumes on platform images.
-	//   * `NVME` - NVMe attached remote block storage device.
 	RemoteDataVolumeType InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum `mandatory:"false" json:"remoteDataVolumeType,omitempty"`
 
-	// Deprecated. Use `isEncryptionInTransitEnabled` instead.
+	// Deprecated. Instead use `isPvEncryptionInTransitEnabled` in
+	// InstanceConfigurationLaunchInstanceDetails.
 	IsPvEncryptionInTransitEnabled *bool `mandatory:"false" json:"isPvEncryptionInTransitEnabled"`
-
-	// Whether in-transit encryption for the data volume's attachment is enabled or not.
-	IsEncryptionInTransitEnabled *bool `mandatory:"false" json:"isEncryptionInTransitEnabled"`
 
 	// Whether to enable consistent volume naming feature. Defaults to false.
 	IsConsistentVolumeNamingEnabled *bool `mandatory:"false" json:"isConsistentVolumeNamingEnabled"`
@@ -109,7 +105,6 @@ const (
 	InstanceConfigurationLaunchOptionsBootVolumeTypeIde             InstanceConfigurationLaunchOptionsBootVolumeTypeEnum = "IDE"
 	InstanceConfigurationLaunchOptionsBootVolumeTypeVfio            InstanceConfigurationLaunchOptionsBootVolumeTypeEnum = "VFIO"
 	InstanceConfigurationLaunchOptionsBootVolumeTypeParavirtualized InstanceConfigurationLaunchOptionsBootVolumeTypeEnum = "PARAVIRTUALIZED"
-	InstanceConfigurationLaunchOptionsBootVolumeTypeNvme            InstanceConfigurationLaunchOptionsBootVolumeTypeEnum = "NVME"
 )
 
 var mappingInstanceConfigurationLaunchOptionsBootVolumeTypeEnum = map[string]InstanceConfigurationLaunchOptionsBootVolumeTypeEnum{
@@ -118,7 +113,6 @@ var mappingInstanceConfigurationLaunchOptionsBootVolumeTypeEnum = map[string]Ins
 	"IDE":             InstanceConfigurationLaunchOptionsBootVolumeTypeIde,
 	"VFIO":            InstanceConfigurationLaunchOptionsBootVolumeTypeVfio,
 	"PARAVIRTUALIZED": InstanceConfigurationLaunchOptionsBootVolumeTypeParavirtualized,
-	"NVME":            InstanceConfigurationLaunchOptionsBootVolumeTypeNvme,
 }
 
 var mappingInstanceConfigurationLaunchOptionsBootVolumeTypeEnumLowerCase = map[string]InstanceConfigurationLaunchOptionsBootVolumeTypeEnum{
@@ -127,7 +121,6 @@ var mappingInstanceConfigurationLaunchOptionsBootVolumeTypeEnumLowerCase = map[s
 	"ide":             InstanceConfigurationLaunchOptionsBootVolumeTypeIde,
 	"vfio":            InstanceConfigurationLaunchOptionsBootVolumeTypeVfio,
 	"paravirtualized": InstanceConfigurationLaunchOptionsBootVolumeTypeParavirtualized,
-	"nvme":            InstanceConfigurationLaunchOptionsBootVolumeTypeNvme,
 }
 
 // GetInstanceConfigurationLaunchOptionsBootVolumeTypeEnumValues Enumerates the set of values for InstanceConfigurationLaunchOptionsBootVolumeTypeEnum
@@ -147,7 +140,6 @@ func GetInstanceConfigurationLaunchOptionsBootVolumeTypeEnumStringValues() []str
 		"IDE",
 		"VFIO",
 		"PARAVIRTUALIZED",
-		"NVME",
 	}
 }
 
@@ -255,7 +247,6 @@ const (
 	InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeIde             InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum = "IDE"
 	InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeVfio            InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum = "VFIO"
 	InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeParavirtualized InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum = "PARAVIRTUALIZED"
-	InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeNvme            InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum = "NVME"
 )
 
 var mappingInstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum = map[string]InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum{
@@ -264,7 +255,6 @@ var mappingInstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum = map[stri
 	"IDE":             InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeIde,
 	"VFIO":            InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeVfio,
 	"PARAVIRTUALIZED": InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeParavirtualized,
-	"NVME":            InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeNvme,
 }
 
 var mappingInstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnumLowerCase = map[string]InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum{
@@ -273,7 +263,6 @@ var mappingInstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnumLowerCase =
 	"ide":             InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeIde,
 	"vfio":            InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeVfio,
 	"paravirtualized": InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeParavirtualized,
-	"nvme":            InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeNvme,
 }
 
 // GetInstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnumValues Enumerates the set of values for InstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnum
@@ -293,7 +282,6 @@ func GetInstanceConfigurationLaunchOptionsRemoteDataVolumeTypeEnumStringValues()
 		"IDE",
 		"VFIO",
 		"PARAVIRTUALIZED",
-		"NVME",
 	}
 }
 
