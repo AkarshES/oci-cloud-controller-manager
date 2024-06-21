@@ -40,97 +40,97 @@ import (
 
 var (
 	instanceVnics = map[string]*core.Vnic{
-		"default": {
+		"ocid1.default": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("default"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"instance1": {
+		"ocid1.instance1": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("instance1"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"basic-complete": {
+		"ocid1.basic-complete": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("basic-complete"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"no-external-ip": {
+		"ocid1.no-external-ip": {
 			PrivateIp:     common.String("10.0.0.1"),
 			HostnameLabel: common.String("no-external-ip"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"no-internal-ip": {
+		"ocid1.no-internal-ip": {
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-internal-ip"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"invalid-internal-ip": {
+		"ocid1.invalid-internal-ip": {
 			PrivateIp:     common.String("10.0.0."),
 			HostnameLabel: common.String("no-internal-ip"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"invalid-external-ip": {
+		"ocid1.invalid-external-ip": {
 			PublicIp:      common.String("0.0.0."),
 			HostnameLabel: common.String("invalid-external-ip"),
 			SubnetId:      common.String("subnetwithdnslabel"),
 		},
-		"no-hostname-label": {
+		"ocid1.no-hostname-label": {
 			PrivateIp: common.String("10.0.0.1"),
 			PublicIp:  common.String("0.0.0.1"),
 			SubnetId:  common.String("subnetwithdnslabel"),
 		},
-		"no-subnet-dns-label": {
+		"ocid1.no-subnet-dns-label": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-subnet-dns-label"),
 			SubnetId:      common.String("subnetwithoutdnslabel"),
 		},
-		"no-vcn-dns-label": {
+		"ocid1.no-vcn-dns-label": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("subnetwithnovcndnslabel"),
 		},
-		"ipv6-instance": {
+		"ocid1.ipv6-instance": {
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("IPv6-subnet"),
 			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
 		},
-		"ipv6-instance-ula": {
+		"ocid1.ipv6-instance-ula": {
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("IPv6-subnet"),
 			Ipv6Addresses: []string{"fc00:0000:0000:0000:0000:0000:0000:0000"},
 		},
-		"ipv6-instance-2": {
+		"ocid1.ipv6-instance-2": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("IPv6-subnet"),
 			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:idfe"},
 		},
-		"instance-id-ipv4-ipv6": {
+		"ocid1.instance-id-ipv4-ipv6": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("IPv4-IPv6-subnet"),
 			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
 		},
-		"instance-id-ipv6": {
+		"ocid1.instance-id-ipv6": {
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("ipv6-instance"),
 			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
 		},
-		"instance-id-ipv4": {
+		"ocid1.instance-id-ipv4": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("subnetwithnovcndnslabel"),
 		},
-		"ipv6-gua-ipv4-instance": {
+		"ocid1.ipv6-gua-ipv4-instance": {
 			PrivateIp:     common.String("10.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("ipv6-gua-ipv4-instance"),
@@ -140,56 +140,69 @@ var (
 
 	instances = map[string]*core.Instance{
 		"basic-complete": {
+			Id:            common.String("ocid1.basic-complete"),
 			CompartmentId: common.String("default"),
 		},
 		"no-external-ip": {
+			Id:            common.String("ocid1.no-external-ip"),
 			CompartmentId: common.String("default"),
 		},
 		"no-internal-ip": {
+			Id:            common.String("ocid1.no-internal-ip"),
 			CompartmentId: common.String("default"),
 		},
 		"invalid-internal-ip": {
+			Id:            common.String("ocid1.invalid-internal-ip"),
 			CompartmentId: common.String("default"),
 		},
 		"invalid-external-ip": {
+			Id:            common.String("ocid1.invalid-external-ip"),
 			CompartmentId: common.String("default"),
 		},
 		"no-hostname-label": {
+			Id:            common.String("ocid1.no-hostname-label"),
 			CompartmentId: common.String("default"),
 		},
 		"no-subnet-dns-label": {
+			Id:            common.String("ocid1.no-subnet-dns-label"),
 			CompartmentId: common.String("default"),
 		},
 		"no-vcn-dns-label": {
+			Id:            common.String("ocid1.no-vcn-dns-label"),
 			CompartmentId: common.String("default"),
 		},
 		"instance1": {
 			CompartmentId: common.String("compartment1"),
-			Id:            common.String("instance1"),
+			Id:            common.String("ocid1.instance1"),
 			Shape:         common.String("VM.Standard1.2"),
 			DisplayName:   common.String("instance1"),
 		},
 		"instance_zone_test": {
 			AvailabilityDomain: common.String("NWuj:PHX-AD-1"),
 			CompartmentId:      common.String("compartment1"),
-			Id:                 common.String("instance_zone_test"),
+			Id:                 common.String("ocid1.instance_zone_test"),
 			Region:             common.String("PHX"),
 			Shape:              common.String("VM.Standard1.2"),
 			DisplayName:        common.String("instance_zone_test"),
 		},
 		"ipv6-instance": {
+			Id:            common.String("ocid1.ipv6-instance"),
 			CompartmentId: common.String("ipv6-instance"),
 		},
 		"instance-id-ipv4-ipv6": {
+			Id:            common.String("ocid1.instance-id-ipv4-ipv6"),
 			CompartmentId: common.String("instance-id-ipv4-ipv6"),
 		},
 		"instance-id-ipv4": {
+			Id:            common.String("ocid1.instance-id-ipv4"),
 			CompartmentId: common.String("instance-id-ipv4"),
 		},
 		"instance-id-ipv6": {
+			Id:            common.String("ocid1.instance-id-ipv6"),
 			CompartmentId: common.String("instance-id-ipv6"),
 		},
 		"ipv6-gua-ipv4-instance": {
+			Id:            common.String("ocid1.ipv6-gua-ipv4-instance"),
 			CompartmentId: common.String("ipv6-gua-ipv4-instance"),
 		},
 	}
@@ -302,7 +315,7 @@ var (
 				Name: "default",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "default",
+				ProviderID: "ocid1.default",
 			},
 		},
 		"instance1": {
@@ -313,7 +326,7 @@ var (
 				Name: "instance1",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instance1",
+				ProviderID: "ocid1.instance1",
 			},
 		},
 		"instanceWithAddress1": {
@@ -324,7 +337,7 @@ var (
 				Name: "instanceWithAddress1",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instanceWithAddress1",
+				ProviderID: "ocid1.instanceWithAddress1",
 			},
 			Status: v1.NodeStatus{
 				Addresses: []v1.NodeAddress{
@@ -343,7 +356,7 @@ var (
 				Name: "instanceWithAddress2",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instanceWithAddress2",
+				ProviderID: "ocid1.instanceWithAddress2",
 			},
 			Status: v1.NodeStatus{
 				Addresses: []v1.NodeAddress{
@@ -362,7 +375,7 @@ var (
 				Name: "instanceWithAddressIPv4IPv6",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instanceWithAddressIPv4IPv6",
+				ProviderID: "ocid1.instanceWithAddressIPv4IPv6",
 			},
 			Status: v1.NodeStatus{
 				Addresses: []v1.NodeAddress{
@@ -422,7 +435,7 @@ var (
 				Name: "Node-Ipv6",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "ipv6-instance",
+				ProviderID: "ocid1.ipv6-instance",
 			},
 		},
 		"ipv6-node-ula": {
@@ -437,7 +450,7 @@ var (
 				Name: "Node-Ipv6",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "ipv6-instance-ula",
+				ProviderID: "ocid1.ipv6-instance-ula",
 			},
 		},
 		"instance-id-ipv4-ipv6": {
@@ -452,7 +465,7 @@ var (
 				Name: "Node-Ipv6",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instance-id-ipv4-ipv6",
+				ProviderID: "ocid1.instance-id-ipv4-ipv6",
 			},
 		},
 		"instance-id-ipv4": {
@@ -466,7 +479,7 @@ var (
 				Name: "Node-Ipv6",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instance-id-ipv4",
+				ProviderID: "ocid1.instance-id-ipv4",
 			},
 		},
 		"instance-id-ipv6": {
@@ -480,7 +493,7 @@ var (
 				Name: "Node-Ipv6",
 			},
 			Spec: v1.NodeSpec{
-				ProviderID: "instance-id-ipv6",
+				ProviderID: "ocid1.instance-id-ipv6",
 			},
 		},
 	}
@@ -1362,9 +1375,12 @@ func (m mockInstanceCache) Get(obj interface{}) (item interface{}, exists bool, 
 }
 
 func (m mockInstanceCache) GetByKey(key string) (item interface{}, exists bool, err error) {
-	if instance, ok := instances[key]; ok {
-		return instance, true, nil
+	for _, instance := range instances {
+		if *instance.Id == key {
+			return instance, true, nil
+		}
 	}
+
 	return nil, false, nil
 }
 
@@ -1439,7 +1455,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 	}{
 		{
 			name: "basic-complete",
-			in:   "basic-complete",
+			in:   "ocid1.basic-complete",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
@@ -1450,7 +1466,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "no-external-ip",
-			in:   "no-external-ip",
+			in:   "ocid1.no-external-ip",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				// v1.NodeAddress{Type: v1.NodeHostName, Address: "no-external-ip.subnetwithdnslabel.vcnwithdnslabel.oraclevcn.com"},
@@ -1460,7 +1476,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "no-internal-ip",
-			in:   "no-internal-ip",
+			in:   "ocid1.no-internal-ip",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
 				// v1.NodeAddress{Type: v1.NodeHostName, Address: "no-internal-ip.subnetwithdnslabel.vcnwithdnslabel.oraclevcn.com"},
@@ -1470,19 +1486,19 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "invalid-external-ip",
-			in:   "invalid-external-ip",
+			in:   "ocid1.invalid-external-ip",
 			out:  nil,
 			err:  errors.New(`instance has invalid public address: "0.0.0."`),
 		},
 		{
 			name: "invalid-internal-ip",
-			in:   "invalid-internal-ip",
+			in:   "ocid1.invalid-internal-ip",
 			out:  nil,
 			err:  errors.New(`instance has invalid private address: "10.0.0."`),
 		},
 		{
 			name: "no-hostname-label",
-			in:   "no-hostname-label",
+			in:   "ocid1.no-hostname-label",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
@@ -1491,7 +1507,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "no-subnet-dns-label",
-			in:   "no-subnet-dns-label",
+			in:   "ocid1.no-subnet-dns-label",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
@@ -1500,7 +1516,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "no-vcn-dns-label",
-			in:   "no-vcn-dns-label",
+			in:   "ocid1.no-vcn-dns-label",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
@@ -1509,7 +1525,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "ipv6-instance",
-			in:   "ipv6-instance",
+			in:   "ocid1.ipv6-instance",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeExternalIP, Address: "2001:db8:85a3::8a2e:370:7334"},
 			},
@@ -1517,7 +1533,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		},
 		{
 			name: "ipv6-instance-ULA",
-			in:   "ipv6-instance-ula",
+			in:   "ocid1.ipv6-instance-ula",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "fc00::"},
 			},
@@ -1556,7 +1572,7 @@ func TestInstanceID(t *testing.T) {
 		{
 			name: "get instance id from instance in the cache",
 			in:   "instance1",
-			out:  "instance1",
+			out:  "ocid1.instance1",
 			err:  nil,
 		},
 		{
@@ -1639,19 +1655,19 @@ func TestGetNodeIpFamily(t *testing.T) {
 	}{
 		{
 			name: "IPv4",
-			in:   "instance-id-ipv4",
+			in:   "ocid1.instance-id-ipv4",
 			out:  []string{IPv4},
 			err:  nil,
 		},
 		{
 			name: "IPv6",
-			in:   "instance-id-ipv6",
+			in:   "ocid1.instance-id-ipv6",
 			out:  []string{IPv6},
 			err:  nil,
 		},
 		{
 			name: "IPv4 & IPv6",
-			in:   "instance-id-ipv4-ipv6",
+			in:   "ocid1.instance-id-ipv4-ipv6",
 			out:  []string{IPv4, IPv6},
 			err:  nil,
 		},
@@ -1687,7 +1703,7 @@ func TestInstanceTypeByProviderID(t *testing.T) {
 	}{
 		{
 			name: "provider id without provider prefix",
-			in:   "instance1",
+			in:   "ocid1.instance1",
 			out:  "VM.Standard1.2",
 			err:  nil,
 		},
@@ -1747,7 +1763,7 @@ func TestNodeAddressesByProviderID(t *testing.T) {
 	}{
 		{
 			name: "provider id without provider prefix",
-			in:   "basic-complete",
+			in:   "ocid1.basic-complete",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
@@ -1756,7 +1772,7 @@ func TestNodeAddressesByProviderID(t *testing.T) {
 		},
 		{
 			name: "provider id with provider prefix",
-			in:   providerPrefix + "basic-complete",
+			in:   providerPrefix + "ocid1.basic-complete",
 			out: []v1.NodeAddress{
 				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
 				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
@@ -1807,19 +1823,19 @@ func TestInstanceExistsByProviderID(t *testing.T) {
 	}{
 		{
 			name: "provider id without provider prefix",
-			in:   "instance1",
+			in:   "ocid1.instance1",
 			out:  true,
 			err:  nil,
 		},
 		{
 			name: "provider id with provider prefix",
-			in:   providerPrefix + "instance1",
+			in:   providerPrefix + "ocid1.instance1",
 			out:  true,
 			err:  nil,
 		},
 		{
 			name: "provider id with provider prefix and instance not in cache",
-			in:   providerPrefix + "noncacheinstance",
+			in:   providerPrefix + "ocid1.noncacheinstance",
 			out:  true,
 			err:  nil,
 		},
@@ -1868,19 +1884,19 @@ func TestInstanceShutdownByProviderID(t *testing.T) {
 	}{
 		{
 			name: "provider id without provider prefix",
-			in:   "instance1",
+			in:   "ocid1.instance1",
 			out:  false,
 			err:  nil,
 		},
 		{
 			name: "provider id with provider prefix",
-			in:   providerPrefix + "instance1",
+			in:   providerPrefix + "ocid1.instance1",
 			out:  false,
 			err:  nil,
 		},
 		{
 			name: "provider id with provider prefix and instance not in cache",
-			in:   providerPrefix + "noncacheinstance",
+			in:   providerPrefix + "ocid1.noncacheinstance",
 			out:  false,
 			err:  nil,
 		},
@@ -1928,19 +1944,19 @@ func TestGetCompartmentIDByInstanceID(t *testing.T) {
 	}{
 		{
 			name: "instance found in cache",
-			in:   "instance1",
+			in:   "ocid1.instance1",
 			out:  "compartment1",
 			err:  nil,
 		},
 		{
 			name: "instance found in node lister",
-			in:   "default",
+			in:   "ocid1.default",
 			out:  "default",
 			err:  nil,
 		},
 		{
 			name: "instance neither found in cache nor node lister",
-			in:   "instancex",
+			in:   "ocid1.instancex",
 			out:  "",
 			err:  errors.New("compartmentID annotation missing in the node. Would retry"),
 		},
