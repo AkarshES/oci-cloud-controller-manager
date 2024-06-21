@@ -17,7 +17,7 @@ import (
 var (
 	instanceCompID    = "instanceCompID"
 	instanceFD        = "instanceFD"
-	instanceID        = "instanceID"
+	instanceID        = "ocid1.instanceID"
 	virtualNodeId     = "ocid1.virtualnode.oc1.iad.default"
 	virtualNodePoolId = "vnpId"
 	virtualNodeFD     = "virtualNodeFD"
