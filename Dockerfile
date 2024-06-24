@@ -6,8 +6,7 @@ ENV SRC /gopath/src/github.com/oracle/oci-cloud-controller-manager
 
 RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/io-ol8-latest-yum-local && yum repolist enabled \
   && yum install -y make \
-  && yum clean all \
-  && rm -rf /var/lib/yum/* /var/lib/rpm/* /var/cache/yum/* /var/tmp/* /root/.gem /usr/share/doc/*
+  && yum clean all
 
 RUN mkdir -p /go/bin $SRC
 ADD . $SRC
@@ -16,24 +15,22 @@ WORKDIR $SRC
 RUN SRC_DIRS=${SRC_DIRS} make coverage
 RUN COMPONENT=${COMPONENT} make clean build
 
-FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips
+FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips as base
+
 RUN rm -f /etc/yum.repos.d/*
 COPY artifactory.repo /etc/yum.repos.d/.
-RUN microdnf install -y io-ol8-container-hardening
 
-RUN microdnf -y install util-linux e2fsprogs xfsprogs && \
+RUN microdnf install -y io-ol8-container-hardening && \
+    microdnf -y install util-linux e2fsprogs xfsprogs && \
     microdnf update && \
     microdnf clean all && \
-    rm -rf /var/cache/yum
+    rm -rf /var/cache/yum /var/lib/yum/* /var/lib/rpm/* /var/cache/yum/* /var/tmp/* /root/.gem /usr/share/doc/*
 
-COPY scripts/encrypt-mount /sbin/encrypt-mount
-COPY scripts/encrypt-umount /sbin/encrypt-umount
-COPY scripts/rpm-host /sbin/rpm-host
-COPY scripts/chroot-bash /sbin/chroot-bash
+COPY scripts/* /sbin/
 
-RUN chmod 755 /sbin/encrypt-mount
-RUN chmod 755 /sbin/encrypt-umount
-RUN chmod 755 /sbin/rpm-host
-RUN chmod 755 /sbin/chroot-bash
+RUN chmod 755 /sbin/encrypt-mount && \
+    chmod 755 /sbin/encrypt-umount && \
+    chmod 755 /sbin/rpm-host && \
+    chmod 755 /sbin/chroot-bash
 
 COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/* /usr/local/bin/
