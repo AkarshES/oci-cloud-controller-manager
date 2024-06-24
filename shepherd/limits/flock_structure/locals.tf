@@ -1,5 +1,5 @@
 locals {
-  shepherd_current_regions   = [for region in local.shepherd_all_regions : region if region.realm != "region1" && region.state == "Production" && ! contains(local.blacklist_realms, region.realm)]
+  shepherd_current_regions   = [for region in local.shepherd_all_regions : region if region.state == "Production" && ! contains(local.blacklist_realms, region.realm)]
   regions_under_build        = [for region in local.shepherd_all_regions : region if(region.state == "Building") && region.airport_code != "DCA" && region.airport_code != "QDF" && ! contains(local.blacklist_realms, region.realm)]
   build_region_to_realm      = { for region in local.regions_under_build : region.public_name => region.realm }
   region_to_realm            = { for region in local.shepherd_all_regions : region.public_name => region.realm }
@@ -9,7 +9,7 @@ locals {
   prod_phases                = [for realm in local.shepherd_all_realms : realm.name if ! contains(local.blacklist_realms, realm.name) && ! (realm.attributes.is_disconnected || realm.is_sovereign_realm)]
   home_region_by_realm       = { for realm in local.realm_by_name : realm.name => realm.attributes.first_region }
   realms_under_build         = [for region in local.regions_under_build : region.realm if local.home_region_by_realm[region.realm] == region.public_name]
-  blacklist_realms           = ["region1", "integ-next", "integ-stable", "dev", "oc7", "oc12"]
+  blacklist_realms           = ["integ-next", "integ-stable", "dev", "oc7", "oc12"]
   onsr_realm_by_name         = { for realm in local.shepherd_all_realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) && (realm.attributes.is_disconnected || realm.is_sovereign_realm) && ! contains(keys(local.build_region_by_name), realm.attributes.first_region) }
   prod_realm_by_name         = { for realm in local.shepherd_all_realms : realm.name => realm if ! contains(local.blacklist_realms, realm.name) && ! (realm.attributes.is_disconnected || realm.is_sovereign_realm) && ! contains(keys(local.build_region_by_name), realm.attributes.first_region) }
   build_region_by_name       = { for region in local.shepherd_all_regions : region.name => region if ! contains(local.blacklist_realms, region.realm) && (region.state == "Building") && region.airport_code != "DCA" && region.airport_code != "QDF" && ! contains(local.blacklist_realms, region.realm) }
@@ -413,6 +413,7 @@ locals {
         oc2 = "okeprodoc2"
         oc3 = "okeprodoc3"
         oc4 = "oke-prod-oc4"
+        region1 = "ocioker1"
       }
       default = "oke-prod"
     }
@@ -512,6 +513,18 @@ locals {
       // Configuration for image
       image_name = local.io_overlay_uek5_images["20201116"].name
       image_url  = local.io_overlay_uek5_images["20201116"].url
+    }
+    "prd.region1" = {
+      env          = "prd"
+      service_name = "okedev"
+
+      // Alarms configuration
+      alarms_enabled                    = false
+      mapi_api_alarms_enabled           = false
+      kmon_alarms_enabled               = false
+      worker_alarms_enabled             = false
+      ccm_alarms_enabled                = false
+      csi_alarms_enabled                = false
     }
 
     "integ.oc1.us-ashburn-1" = {
