@@ -7,11 +7,11 @@ locals {
         "default" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
         "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
         "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-        "v1.25" : "v1.25-d0b59914251-38@sha256:ffa44cb1e6bc5793859a1ebf7762bcd1731ec0dea426034c44bc77ffb12ece48",
-        "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
-        "v1.27" : "v1.27-15e83bc2e93-43@sha256:0118ffa026a6b81e768d643bb97cbd22e29ecd6babd2c315a74908b87629f094",
-        "v1.28" : "v1.28-01f1956dc37-38@sha256:da06aa81eb20b65c8531dcecfd92ef0320c3471e56a38ffb027fede0cb0f110b",
-        "v1.29" : "v1.29-0fec189c831-24@sha256:ffb0d5e02fa50706c752b65a37acbc0db0b3e184c6ba27f6f1456a2cf8cb81dd"
+        "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
+        "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
+        "v1.27" : "v1.27-88f1aaae3b3-33@sha256:7888a14ff06d0c8b4ebcdf1d27e33ff1da507e75e0692869b2f8bb918700ec12",
+        "v1.28" : "v1.28-82f08e51cb0-27@sha256:0f1de79957e0cbfa1cee9aaeb902db10ffaa45e91805e3c279b6cf2ef176c488",
+        "v1.29" : "v1.29-b4676b971bb-13@sha256:26c1e2c2d6b0f908bf11448bc13c5cb5c6625ea995ccaee59012cfa2872d9dc6"
       }
     }
   }
@@ -24,9 +24,9 @@ locals {
         "v1.24": "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
         "v1.25": "v1.25-e402eabbe0a-25@sha256:af01ae775ba15f965f797ccea9aa6dece9e98136f42fb23c56775d7047307394",
         "v1.26": "v1.26-d5c95b4f813-25@sha256:d401f00fc5f6d2710f916b44450c5f4264673f1403a4aabeba98393e318fcec1",
-        "v1.27": "v1.27-15e83bc2e93-43@sha256:0118ffa026a6b81e768d643bb97cbd22e29ecd6babd2c315a74908b87629f094",
-        "v1.28": "v1.28-01f1956dc37-38@sha256:da06aa81eb20b65c8531dcecfd92ef0320c3471e56a38ffb027fede0cb0f110b",
-        "v1.29": "v1.29-0fec189c831-24@sha256:ffb0d5e02fa50706c752b65a37acbc0db0b3e184c6ba27f6f1456a2cf8cb81dd"
+        "v1.27": "v1.27-ff66a5f1ae0-24@sha256:9c5992e61469ccf706979741bb32390b2986591464cc08c02958adad0572bd66",
+        "v1.28": "v1.28-5f2e34f4a04-16@sha256:705d41ca2f58182e445471a4188d6bd48ddbe0fe55b1246e32af3ca168030c08",
+        "v1.29": "v1.29-eaf7462813a-5@sha256:5608f1ea0b4dda66169d9d1076017dc04c437dec0d33c0fed2e1f25d96affb70"
       }
     }
   }
@@ -75,24 +75,6 @@ locals {
 
     oci-service-controller-enabled = {
       "default" = {
-        "all": "true"
-      }
-    }
-    cpo-enable-resource-attribution = {
-      "default" = {
-        "all": "false"
-      }
-      "dev.oc1" = {
-        "all": "false"
-        "iad": "true"
-      }
-      "integ.oc1" = {
-        "all": "true"
-      }
-      "prd.oc1" = {
-        "all": "true"
-      }
-      "prd.oc16" = {
         "all": "true"
       }
     }
