@@ -103,6 +103,14 @@ locals {
             env     = "prd"
             value   = jsonencode(local.oss_ccm_mapping_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq"
+          },
+          // Streaming prod tenancy bmc-streaming-live - OC1
+          // MRS, BOM, YYZ, ORD, IAD, PHX
+          {
+            regions = ["mrs", "bom", "yyz", "ord", "iad", "phx"]
+            env     = "prd"
+            value   = jsonencode(local.oss_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajqjeaxdh4zukw7ugptutjucry4k2ilpaixh5uxoc6uzqutxvl3ba"
           }
         ]
       },
@@ -398,6 +406,19 @@ locals {
           }
         ]
       }
+    }
+    "oc16" = {
+      "ccm-image-version-mapping" = {
+        overrides = [
+          // Streaming - OC16 tenancy
+          {
+            regions = ["sgu"]
+            env     = "prd"
+            value   = jsonencode(local.oss_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaattrvrnuijq5xuv6atnd3xstb5pcldipdqye4retd7bh2sxsoe2kq"
+          },
+        ]
+      },
     }
   }
 }
