@@ -32,7 +32,7 @@ locals {
     "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
     "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
     "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
-    "v1.27" : "v1.27-6316b402b65-3143@sha256:9375e501825f6e3c554e7d1fa319f1697d77526e2b0bf806ca4ab65952467817",
+    "v1.27" : "v1.27-278bfe54fe4-3357@sha256:f35960911d9f4958c145cd16458db3104fa211caae3871092a398694f1770032",
     "v1.28" : "v1.28-82f08e51cb0-27@sha256:0f1de79957e0cbfa1cee9aaeb902db10ffaa45e91805e3c279b6cf2ef176c488",
     "v1.29" : "v1.29-b4676b971bb-13@sha256:26c1e2c2d6b0f908bf11448bc13c5cb5c6625ea995ccaee59012cfa2872d9dc6"
   }
@@ -95,13 +95,22 @@ locals {
             value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaav4ijf6ej5k5o54cc7ikjjkyvsolqofhoahh7vtvlry6e7swkeznq"
           },
-          // Jira: https://jira.oci.oraclecorp.com/browse/OKE-30416
-          // CHANGE Tickets: https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2499240 & https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2504588 
+          // https://jira.oci.oraclecorp.com/browse/OKE-31683
+          // Streaming Dev tenancy ocid: ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq
+          // Dev Regions: BOM, IAD, YYZ, SIN, FRA, LHR
           {
-            regions = ["phx", "iad", "yyz", "bom", "sin", "lhr", "fra"]
+            regions = ["bom", "iad", "yyz", "sin", "lhr", "fra"]
             env     = "prd"
             value   = jsonencode(local.oss_ccm_mapping_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq"
+          },
+          // Streaming prod tenancy bmc-streaming-live - OC1
+          // MRS, BOM, YYZ, ORD, IAD, PHX
+          {
+            regions = ["mrs", "bom", "yyz", "ord", "iad", "phx"]
+            env     = "prd"
+            value   = jsonencode(local.oss_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajqjeaxdh4zukw7ugptutjucry4k2ilpaixh5uxoc6uzqutxvl3ba"
           }
         ]
       },
@@ -397,6 +406,19 @@ locals {
           }
         ]
       }
+    }
+    "oc16" = {
+      "ccm-image-version-mapping" = {
+        overrides = [
+          // Streaming - OC16 tenancy
+          {
+            regions = ["sgu"]
+            env     = "prd"
+            value   = jsonencode(local.oss_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaattrvrnuijq5xuv6atnd3xstb5pcldipdqye4retd7bh2sxsoe2kq"
+          },
+        ]
+      },
     }
   }
 }
