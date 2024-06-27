@@ -1,22 +1,4 @@
 locals {
-  // https://jira.oci.oraclecorp.com/browse/OKE-31246
-  rollback_ccm_backendset_tls_bug_override = {
-    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-    "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
-    "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-    "v1.25" : "v1.25-6a4968a0935-29@sha256:6f777676aeb0e6be4883e19d3137764de64c8f9c676fc35be3ad25605f8094d3",
-    "v1.26" : "v1.26-0685e05229e-33@sha256:8c45e52488527af0dea7b1b8876494846cb5c1a10537180e94c0882dd122c6f8",
-    "v1.27" : "v1.27-316b0447925-29@sha256:ac7294ee891380eb7e81960b51e9a4cae8b81ada85fcb8afb62048cbbc475c2d",
-    "v1.28" : "v1.28-51d751ef18e-24@sha256:3acc9a23fc49934b6ce9eb5f14b4fc6081126bb870ccb6322df0eecfdbf5c54e",
-    "v1.29" : "v1.29-8b155b26267-10@sha256:7577fda4aaf55a1e69fbd5421930890d9554d12508be2e26d931644fa709fb27"
-  }
 
   // https://jira.oci.oraclecorp.com/browse/OKE-30416
   oss_ccm_mapping_override = {
@@ -30,11 +12,12 @@ locals {
     "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
     "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
     "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-    "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
-    "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
+    "v1.25" : "v1.25-d0b59914251-38@sha256:ffa44cb1e6bc5793859a1ebf7762bcd1731ec0dea426034c44bc77ffb12ece48",
+    "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
     "v1.27" : "v1.27-278bfe54fe4-3357@sha256:f35960911d9f4958c145cd16458db3104fa211caae3871092a398694f1770032",
-    "v1.28" : "v1.28-82f08e51cb0-27@sha256:0f1de79957e0cbfa1cee9aaeb902db10ffaa45e91805e3c279b6cf2ef176c488",
-    "v1.29" : "v1.29-b4676b971bb-13@sha256:26c1e2c2d6b0f908bf11448bc13c5cb5c6625ea995ccaee59012cfa2872d9dc6"
+    "v1.28" : "v1.28-4fd3baa095d-43@sha256:cc615b9c7384c904d3d65cf006631a41cd80ebc97768e861aff4980412d863cc",
+    "v1.29" : "v1.29-3e680bb14b5-29@sha256:3194a54dcee20bd6a27d9355eb31ad4f05b9ea5016dd4b571e7b3557c32d88a2",
+    "v1.30" : "v1.30-cdc99090ccd-12@sha256:de3bc0d46c26183d3136be792c9bdff2344971df858550ac24474da2a8587ffd"
   }
 
   fss_dns_support_csi_override = {
@@ -60,41 +43,6 @@ locals {
     "oc1" = {
       "ccm-image-version-mapping" = {
         overrides = [
-          // OKE-99071 - https://devops.oci.oraclecorp.com/account/admin/detail/metadata/ocid1.tenancy.oc1..aaaaaaaa3dyh7zxuwzrhtjvt6tanreccuiooos3gg375dtu6rdtz5kkfoiba?realm=oc1
-          {
-            regions      = ["iad", "phx", "gru"]
-            env          = "prd"
-            value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3dyh7zxuwzrhtjvt6tanreccuiooos3gg375dtu6rdtz5kkfoiba"
-          },
-          // OKE-100196 - https://devops.oci.oraclecorp.com/account/admin/detail/metadata/ocid1.tenancy.oc1..aaaaaaaagyyxza4x4wvmo5y2fpjpcab3pa5hmzyalydc3pjnkbvom7su3tfa?realm=oc1
-          {
-            regions      = ["gru", "vcp"]
-            env          = "prd"
-            value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaagyyxza4x4wvmo5y2fpjpcab3pa5hmzyalydc3pjnkbvom7su3tfa"
-          },
-          // OKE-100436 - https://devops.oci.oraclecorp.com/account/admin/detail/metadata/ocid1.tenancy.oc1..aaaaaaaal4ttg3trryxjrd54cfjyeegtrlzton52f4vkppetr5gfticceh2a?realm=oc1
-          {
-            regions      = ["fra"]
-            env          = "prd"
-            value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaal4ttg3trryxjrd54cfjyeegtrlzton52f4vkppetr5gfticceh2a"
-          },
-          // OKE-100494 - https://devops.oci.oraclecorp.com/account/admin/detail/metadata/ocid1.tenancy.oc1..aaaaaaaamoh6gyx56apughitzevihxy47aikiewdeqgup5zkhjawpvkrb6sa?realm=oc1
-          {
-            regions      = ["fra", "sjc"]
-            env          = "prd"
-            value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaamoh6gyx56apughitzevihxy47aikiewdeqgup5zkhjawpvkrb6sa"
-          },
-          // OKE-100532 - https://devops.oci.oraclecorp.com/account/admin/detail/metadata/ocid1.tenancy.oc1..aaaaaaaav4ijf6ej5k5o54cc7ikjjkyvsolqofhoahh7vtvlry6e7swkeznq?realm=oc1
-          {
-            regions      = ["fra", "iad", "lhr", "phx", "gru", "ams", "scl", "mad"]
-            env          = "prd"
-            value        = jsonencode(local.rollback_ccm_backendset_tls_bug_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaav4ijf6ej5k5o54cc7ikjjkyvsolqofhoahh7vtvlry6e7swkeznq"
-          },
           // https://jira.oci.oraclecorp.com/browse/OKE-31683
           // Streaming Dev tenancy ocid: ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq
           // Dev Regions: BOM, IAD, YYZ, SIN, FRA, LHR
