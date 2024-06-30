@@ -2215,7 +2215,7 @@ var _ = Describe("LB Properties", func() {
 				sharedfw.ExpectNoError(err)
 				By("waiting upto 5m0s to verify whether LB has been created with public reservedIP")
 
-				reservedIPOCID, err := f.Client.Networking().GetPublicIpByIpAddress(ctx, reservedIP)
+				reservedIPOCID, err := f.Client.Networking(nil).GetPublicIpByIpAddress(ctx, reservedIP)
 				sharedfw.Logf("Loadbalancer reserved IP OCID is: %s  Expected reserved IP OCID: %s", *loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id)
 				Expect(strings.Compare(*loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id) == 0).To(BeTrue())
 
@@ -3491,7 +3491,7 @@ var _ = Describe("SKE - LB Properties", func() {
 				sharedfw.ExpectNoError(err)
 				By("waiting upto 5m0s to verify whether LB has been created with public reservedIP")
 
-				reservedIPOCID, err := f.Client.Networking().GetPublicIpByIpAddress(ctx, reservedIP)
+				reservedIPOCID, err := f.Client.Networking(nil).GetPublicIpByIpAddress(ctx, reservedIP)
 				sharedfw.Logf("Loadbalancer reserved IP OCID is: %s  Expected reserved IP OCID: %s", *loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id)
 				Expect(strings.Compare(*loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id) == 0).To(BeTrue())
 
