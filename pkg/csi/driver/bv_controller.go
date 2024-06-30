@@ -392,7 +392,7 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 
 	} else {
 		// Creating new volume
-		ad, err := d.client.Identity().GetAvailabilityDomainByName(ctx, d.config.CompartmentID, availableDomainShortName)
+		ad, err := d.client.Identity(nil).GetAvailabilityDomainByName(ctx, d.config.CompartmentID, availableDomainShortName)
 		if err != nil {
 			log.With("Compartment Id", d.config.CompartmentID,
 				"service", "identity", "verb", "get", "resource", "AD", "statusCode", util.GetHttpStatusCode(err)).

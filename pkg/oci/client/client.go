@@ -48,13 +48,18 @@ const ClusterIpFamilyEnv = "CLUSTER_IP_FAMILY"
 type Interface interface {
 	Compute() ComputeInterface
 	LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) GenericLoadBalancerInterface
-	Networking() NetworkingInterface
+	Networking(*OCIClientConfig) NetworkingInterface
 	BlockStorage() BlockStorageInterface
-	FSS() FileStorageInterface
-	Identity() IdentityInterface
+	FSS(*OCIClientConfig) FileStorageInterface
+	Identity(*OCIClientConfig) IdentityInterface
 	ContainerEngine() ContainerEngineInterface
 }
 
+type OCIClientConfig struct {
+	SaToken *authv1.TokenRequest
+	ParentRptURL string
+	TenancyId string
+}
 // RateLimiter reader and writer.
 type RateLimiter struct {
 	Reader flowcontrol.RateLimiter
@@ -430,7 +435,39 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTe
 	return nil
 }
 
-func (c *client) Networking() NetworkingInterface {
+func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterface {
+	if ociClientConfig == nil{
+		return c
+	}
+	if ociClientConfig.SaToken != nil {
+		configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+
+		network, err := core.NewVirtualNetworkClientWithConfigurationProvider(configProvider)
+		if err != nil {
+			c.logger.Errorf("Failed to create Network workload identity client %v", err)
+			return nil
+		}
+		signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
+		interceptor := func(r *http.Request) error {
+			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
+			return nil
+		}
+		setupBaseClient(&network.BaseClient, signer, interceptor, "")
+
+		err = configureCustomTransport(c.logger, &network.BaseClient)
+		if err != nil {
+			 c.logger.Error("Failed configure custom transport for Network Client %v", err)
+			return nil
+		}
+
+		return &client{
+			network:         &network,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
+		}
+	}
 	return c
 }
 
@@ -438,7 +475,41 @@ func (c *client) Compute() ComputeInterface {
 	return c
 }
 
-func (c *client) Identity() IdentityInterface {
+func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
+
+	if ociClientConfig == nil {
+		return c
+	}
+	if ociClientConfig.SaToken != nil {
+
+		configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+
+		identity, err := identity.NewIdentityClientWithConfigurationProvider(configProvider)
+		if err != nil {
+			c.logger.Errorf("Failed to create Identity workload identity  %v", err)
+			return nil
+		}
+		signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
+		interceptor := func(r *http.Request) error {
+			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
+			return nil
+		}
+		setupBaseClient(&identity.BaseClient, signer, interceptor, "")
+
+		err = configureCustomTransport(c.logger, &identity.BaseClient)
+		if err != nil {
+			 c.logger.Error("Failed configure custom transport for Identity Client %v", err)
+			return nil
+		}
+
+		return &client{
+			identity:        &identity,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
+		}
+	}
 	return c
 }
 
@@ -446,7 +517,41 @@ func (c *client) BlockStorage() BlockStorageInterface {
 	return c
 }
 
-func (c *client) FSS() FileStorageInterface {
+func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
+
+	if ociClientConfig == nil {
+		return c
+	}
+	if ociClientConfig.SaToken != nil {
+
+		configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+		fc, err := filestorage.NewFileStorageClientWithConfigurationProvider(configProvider)
+		if err != nil {
+			c.logger.Errorf("Failed to create FSS workload identity client %v", err)
+			return nil
+		}
+
+		signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
+		interceptor := func(r *http.Request) error {
+			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
+			return nil
+		}
+		setupBaseClient(&fc.BaseClient, signer, interceptor, "")
+
+		err = configureCustomTransport(c.logger, &fc.BaseClient)
+		if err != nil {
+			c.logger.Errorf("Failed configure custom transport for FSS Client %v", err.Error())
+			return nil
+		}
+
+		return &client{
+			filestorage:     &fc,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
+		}
+	}
 	return c
 }
 
@@ -468,4 +573,23 @@ func getDefaultRequestMetadata(existingRequestMetadata common.RequestMetadata) c
 		RetryPolicy: newRetryPolicy(),
 	}
 	return requestMetadata
+}
+
+func getConfigurationProvider(logger *zap.SugaredLogger, tokenRequest *authv1.TokenRequest, rptURL string) (common.ConfigurationProvider, error) {
+
+	tokenProvider := auth.NewSuppliedServiceAccountTokenProvider(tokenRequest.Status.Token)
+	configProvider, err := auth.OkeWorkloadIdentityConfigurationProviderWithServiceAccountTokenProvider(tokenProvider)
+	if err != nil {
+		logger.Errorf("failed to get workload identity configuration provider %v", err.Error())
+		return nil, err
+	}
+
+	if rptURL != "" {
+		configProvider, err = auth.ResourcePrincipalV3ConfiguratorBuilder(configProvider).WithParentRPSTURL("").WithParentRPTURL(rptURL).Build()
+		if err != nil {
+			logger.Errorf("failed to get resource Principal configuration provider %v", err.Error())
+			return nil, err
+		}
+	}
+	return configProvider, nil
 }

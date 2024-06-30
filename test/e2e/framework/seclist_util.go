@@ -38,7 +38,7 @@ func CountSinglePortSecListRules(oci client.Interface, egressSecListID, ingressS
 func CountEgressSinglePortRules(oci client.Interface, seclistID string, port int) int {
 	count := 0
 	if oci != nil && seclistID != "" {
-		secList, err := oci.Networking().GetSecurityList(context.Background(), seclistID)
+		secList, err := oci.Networking(nil).GetSecurityList(context.Background(), seclistID)
 		if err != nil {
 			Failf("Could not obtain security list: %v", err)
 		}
@@ -93,7 +93,7 @@ func WaitForSinglePortEgressRulesAfterPortChangeOrFail(oci client.Interface, sec
 func CountIngressSinglePortRules(oci client.Interface, seclistID string, port int) int {
 	count := 0
 	if oci != nil && seclistID != "" {
-		secList, err := oci.Networking().GetSecurityList(context.Background(), seclistID)
+		secList, err := oci.Networking(nil).GetSecurityList(context.Background(), seclistID)
 		if err != nil {
 			Failf("Could not obtain security list: %v", err)
 		}

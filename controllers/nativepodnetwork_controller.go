@@ -458,7 +458,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 				ipv4Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V4)
 				for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V4; innerIndex++ {
 					startTime := time.Now()
-					_, err := r.OCIClient.Networking().CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
+					_, err := r.OCIClient.Networking(nil).CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
 					if err != nil {
 						parallelLog.Error(err, "failed to create IPv4")
 					}
@@ -475,7 +475,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 				ipv6Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V6)
 				for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V6; innerIndex++ {
 					startTime := time.Now()
-					_, err := r.OCIClient.Networking().CreateIpv6(ctx, additionalIpsByVnic[outerIndex].vnicId)
+					_, err := r.OCIClient.Networking(nil).CreateIpv6(ctx, additionalIpsByVnic[outerIndex].vnicId)
 					if err != nil {
 						parallelLog.Error(err, "failed to create IPv6")
 					}
@@ -623,7 +623,7 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 			vnicAttachment.LifecycleState == core.VnicAttachmentLifecycleStateDetaching {
 			continue
 		}
-		vNIC, err := r.OCIClient.Networking().GetVNIC(ctx, *vnicAttachment.VnicId)
+		vNIC, err := r.OCIClient.Networking(nil).GetVNIC(ctx, *vnicAttachment.VnicId)
 		if err != nil {
 			log.Error(err, "failed to get VNIC from VNIC attachment")
 			return nil, nil, err
@@ -638,7 +638,7 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 			log.Info("Ignoring VNIC in terminating/terminated state")
 			continue
 		}
-		subnet, err := r.OCIClient.Networking().GetSubnet(ctx, *vNIC.SubnetId)
+		subnet, err := r.OCIClient.Networking(nil).GetSubnet(ctx, *vNIC.SubnetId)
 		if err != nil {
 			log.Error(err, "failed to get subnet for VNIC")
 			return nil, nil, err
@@ -657,14 +657,14 @@ func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context,
 		log := log.WithValues("vnicId", *secondary.Vnic.Id)
 		var err error
 		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
-			vnicSecondaryAddresses.V4, err = r.OCIClient.Networking().ListPrivateIps(ctx, *secondary.Vnic.Id)
+			vnicSecondaryAddresses.V4, err = r.OCIClient.Networking(nil).ListPrivateIps(ctx, *secondary.Vnic.Id)
 			if err != nil {
 				log.Error(err, "failed to list secondary IPv4 IPs for VNIC")
 				return nil, err
 			}
 		}
 		if contains(ipFamilies, IPv6) {
-			vnicSecondaryAddresses.V6, err = r.OCIClient.Networking().ListIpv6s(ctx, *secondary.Vnic.Id)
+			vnicSecondaryAddresses.V6, err = r.OCIClient.Networking(nil).ListIpv6s(ctx, *secondary.Vnic.Id)
 			if err != nil {
 				log.Error(err, "failed to list secondary IPv6 IPs for VNIC")
 				return nil, err
@@ -1056,7 +1056,7 @@ func (r *NativePodNetworkReconciler) ensureVnicAttachedAndAvailable(ctx context.
 			return false, nil
 		}
 
-		vNIC, err := r.OCIClient.Networking().GetVNIC(ctx, *vnicAttachment.VnicId)
+		vNIC, err := r.OCIClient.Networking(nil).GetVNIC(ctx, *vnicAttachment.VnicId)
 		if err != nil {
 			log.Error(err, "failed to ensure vnic attached and available")
 			return false, errors2.Wrap(err, "failed to get VNIC from VNIC attachment")
