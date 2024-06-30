@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
 	"k8s.io/utils/pointer"
@@ -91,6 +92,11 @@ func (c *client) GetSubnet(ctx context.Context, id string) (*core.Subnet, error)
 		SubnetId:        &id,
 		RequestMetadata: c.requestMetadata,
 	})
+	if resp.OpcRequestId != nil {
+		c.logger.With("service", "Networking", "verb", getVerb).
+			With("OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
+			Info("OPC Request ID recorded for GetSubnet call.")
+	}
 	incRequestCounter(err, getVerb, subnetResource)
 
 	if err != nil {
@@ -194,6 +200,11 @@ func (c *client) GetPrivateIp(ctx context.Context, id string) (*core.PrivateIp, 
 		PrivateIpId:     &id,
 		RequestMetadata: c.requestMetadata,
 	})
+	if resp.OpcRequestId != nil {
+		c.logger.With("service", "Networking", "verb", getVerb).
+			With("OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
+			Info("OPC Request ID recorded for GetIpv6GetPrivateIp call.")
+	}
 	incRequestCounter(err, getVerb, privateIPResource)
 
 	if err != nil {
@@ -277,6 +288,11 @@ func (c *client) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
 		Ipv6Id:          &id,
 		RequestMetadata: c.requestMetadata,
 	})
+	if resp.OpcRequestId != nil {
+		c.logger.With("service", "Networking", "verb", getVerb).
+			With("OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
+			Info("OPC Request ID recorded for GetIpv6 call.")
+	}
 	incRequestCounter(err, getVerb, ipv6IPResource)
 
 	if err != nil {

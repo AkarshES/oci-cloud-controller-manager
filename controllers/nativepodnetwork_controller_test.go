@@ -323,11 +323,11 @@ func (c MockOCIClient) BlockStorage() client.BlockStorageInterface {
 	return nil
 }
 
-func (c MockOCIClient) FSS() client.FileStorageInterface {
+func (c MockOCIClient) FSS(ociClientConfig *client.OCIClientConfig) client.FileStorageInterface {
 	return nil
 }
 
-func (c MockOCIClient) Identity() client.IdentityInterface {
+func (c MockOCIClient) Identity(ociClientConfig *client.OCIClientConfig) client.IdentityInterface {
 	return nil
 }
 
@@ -474,7 +474,7 @@ func (MockOCIClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }
 
-func (MockOCIClient) Networking() client.NetworkingInterface {
+func (MockOCIClient) Networking(ociClientConfig *client.OCIClientConfig) client.NetworkingInterface {
 	return &MockVirtualNetworkClient{}
 }
 

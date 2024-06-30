@@ -423,7 +423,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		ipAllocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips)
 		for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips; innerIndex++ {
 			startTime := time.Now()
-			_, err := r.OCIClient.Networking().CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
+			_, err := r.OCIClient.Networking(nil).CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
 			if err != nil {
 				parallelLog.Error(err, "failed to create private-ip")
 			}
@@ -545,7 +545,7 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 			vnicAttachment.LifecycleState == core.VnicAttachmentLifecycleStateDetaching {
 			continue
 		}
-		vNIC, err := r.OCIClient.Networking().GetVNIC(ctx, *vnicAttachment.VnicId)
+		vNIC, err := r.OCIClient.Networking(nil).GetVNIC(ctx, *vnicAttachment.VnicId)
 		if err != nil {
 			log.Error(err, "failed to get VNIC from VNIC attachment")
 			return nil, nil, err
@@ -560,7 +560,7 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 			log.Info("Ignoring VNIC in terminating/terminated state")
 			continue
 		}
-		subnet, err := r.OCIClient.Networking().GetSubnet(ctx, *vNIC.SubnetId)
+		subnet, err := r.OCIClient.Networking(nil).GetSubnet(ctx, *vNIC.SubnetId)
 		if err != nil {
 			log.Error(err, "failed to get subnet for VNIC")
 			return nil, nil, err
@@ -576,7 +576,7 @@ func (r *NativePodNetworkReconciler) getSecondaryPrivateIpsByVNICs(ctx context.C
 	log := log.FromContext(ctx)
 	for _, secondary := range existingSecondaryVNICs {
 		log := log.WithValues("vnicId", *secondary.Vnic.Id)
-		privateIps, err := r.OCIClient.Networking().ListPrivateIps(ctx, *secondary.Vnic.Id)
+		privateIps, err := r.OCIClient.Networking(nil).ListPrivateIps(ctx, *secondary.Vnic.Id)
 		if err != nil {
 			log.Error(err, "failed to list secondary IPs for VNIC")
 			return nil, err
@@ -789,7 +789,7 @@ func (r *NativePodNetworkReconciler) ensureVnicAttachedAndAvailable(ctx context.
 			return false, nil
 		}
 
-		vNIC, err := r.OCIClient.Networking().GetVNIC(ctx, *vnicAttachment.VnicId)
+		vNIC, err := r.OCIClient.Networking(nil).GetVNIC(ctx, *vnicAttachment.VnicId)
 		if err != nil {
 			log.Error(err, "failed to ensure vnic attached and available")
 			return false, errors2.Wrap(err, "failed to get VNIC from VNIC attachment")

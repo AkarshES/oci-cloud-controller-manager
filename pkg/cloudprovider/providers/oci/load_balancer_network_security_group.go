@@ -207,7 +207,7 @@ func (s *CloudProvider) getNsg(ctx context.Context, id string) (*core.NetworkSec
 	if id == "" {
 		return nil, errors.New("invalid; empty nsg id provided") // should never happen
 	}
-	response, _, err := s.client.Networking().GetNetworkSecurityGroup(ctx, id)
+	response, _, err := s.client.Networking(nil).GetNetworkSecurityGroup(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get nsg with id %s", id)
 	}
@@ -220,7 +220,7 @@ func (s *CloudProvider) listNsgRules(ctx context.Context, id string, direction c
 		return nil, errors.New("invalid; empty nsg id provided") // should never happen
 	}
 
-	response, err := s.client.Networking().ListNetworkSecurityGroupSecurityRules(ctx, id, direction)
+	response, err := s.client.Networking(nil).ListNetworkSecurityGroupSecurityRules(ctx, id, direction)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list Security Rules for nsg: %s", id)
 	}
@@ -233,7 +233,7 @@ func (s *CloudProvider) addNetworkSecurityGroupSecurityRules(ctx context.Context
 	var response *core.AddNetworkSecurityGroupSecurityRulesResponse
 	var err error
 	for i, _ := range rulesInBatches {
-		response, err = s.client.Networking().AddNetworkSecurityGroupSecurityRules(ctx,
+		response, err = s.client.Networking(nil).AddNetworkSecurityGroupSecurityRules(ctx,
 			*nsgId,
 			core.AddNetworkSecurityGroupSecurityRulesDetails{SecurityRules: securityRuleToAddSecurityRuleDetails(rulesInBatches[i])})
 		if err != nil {
@@ -250,7 +250,7 @@ func (s *CloudProvider) removeNetworkSecurityGroupSecurityRules(ctx context.Cont
 	var response *core.RemoveNetworkSecurityGroupSecurityRulesResponse
 	var err error
 	for i, _ := range rulesInBatches {
-		response, err = s.client.Networking().RemoveNetworkSecurityGroupSecurityRules(ctx, *nsgId,
+		response, err = s.client.Networking(nil).RemoveNetworkSecurityGroupSecurityRules(ctx, *nsgId,
 			core.RemoveNetworkSecurityGroupSecurityRulesDetails{SecurityRuleIds: rulesInBatches[i]})
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to remove security rules for nsg: %s OpcRequestId: %s", *nsgId, pointer.StringDeref(response.OpcRequestId, ""))
