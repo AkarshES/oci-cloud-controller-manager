@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -20,8 +20,10 @@ import (
 // CidrBlocks contains a name and list of CIDR block. Each of the CidrBlocks should have unique name
 // within the load balancer. CidrBlocks resource name can be used in rule conditions.
 // Example:
-//  "name" : `ClientRealIpCidrBlocks`
-//  "items" : `["129.213.176.0/24","150.136.187.0/24", "2002::1234:abcd:ffff:c0a8:101/64"]`
+//
+//	"name" : `ClientRealIpCidrBlocks`
+//	"items" : `["129.213.176.0/24","150.136.187.0/24", "2002::1234:abcd:ffff:c0a8:101/64"]`
+//
 // **Warning:** No confidential information should be passed in this API.
 type CidrBlocks struct {
 
