@@ -412,5 +412,47 @@
         "realmKey": "oc1",
         "regionIdentifier": "us-saltlake-2",
         "realmDomainComponent": "oraclecloud.com"
+    },
+    {
+        "regionKey": "ozz",
+        "realmKey": "oc27",
+        "regionIdentifier": "us-dcc-swjordan-1",
+        "realmDomainComponent": "oraclecloud27.com"
+    },
+    {
+        "regionKey": "drs",
+        "realmKey": "oc28",
+        "regionIdentifier": "us-dcc-swjordan-2",
+        "realmDomainComponent": "oraclecloud28.com"
+    },
+    {
+        "regionKey": "ahu",
+        "realmKey": "oc26",
+        "regionIdentifier": "me-abudhabi-3",
+        "realmDomainComponent": "oraclecloud26.com"
+    },
+    {
+        "regionKey": "rkt",
+        "realmKey": "oc29",
+        "regionIdentifier": "me-abudhabi-2",
+        "realmDomainComponent": "oraclecloud29.com"
+    },
+    {
+        "regionKey": "shj",
+        "realmKey": "oc29",
+        "regionIdentifier": "me-abudhabi-4",
+        "realmDomainComponent": "oraclecloud29.com"
+    },
+    {
+        "regionKey": "ebb",
+        "realmKey": "oc23",
+        "regionIdentifier": "us-somerset-1",
+        "realmDomainComponent": "oraclecloud23.com"
+    },
+    {
+        "regionKey": "ebl",
+        "realmKey": "oc23",
+        "regionIdentifier": "us-thames-1",
+        "realmDomainComponent": "oraclecloud23.com"
     }
 ]

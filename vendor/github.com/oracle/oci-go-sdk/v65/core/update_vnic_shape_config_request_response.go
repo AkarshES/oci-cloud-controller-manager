@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2023, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -14,7 +14,7 @@ import (
 // UpdateVnicShapeConfigRequest wrapper for the UpdateVnicShapeConfig operation
 type UpdateVnicShapeConfigRequest struct {
 
-	// Request to change the shape config of vnic attachment.
+	// Request to change the shape config of VNIC attachment.
 	UpdateVnicShapeConfigDetails `contributesTo:"body"`
 
 	// A token that uniquely identifies a request so it can be retried in case of a timeout or
