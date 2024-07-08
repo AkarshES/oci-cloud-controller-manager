@@ -49,11 +49,11 @@ require (
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/go-logr/zapr v1.2.4
 	github.com/golang/protobuf v1.5.4
-	github.com/kubernetes-csi/csi-lib-utils v0.14.0
-	github.com/kubernetes-csi/external-attacher v0.0.0-20230907161857-0ad858f55382 //v4.4.0
-	github.com/kubernetes-csi/external-provisioner v0.0.0-20230906013051-4b69bc58565d // v3.6.0
-	github.com/kubernetes-csi/external-resizer v0.0.0-20230911205811-42ecc22863e4 // v1.9.0
-	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.2.0
+	github.com/kubernetes-csi/csi-lib-utils v0.14.1
+	github.com/kubernetes-csi/external-attacher v0.0.0-20231226133336-f0b6d691b0ad //v4.4.3
+	github.com/kubernetes-csi/external-provisioner v0.0.0-20240320213157-06d4a2dd8fa5 // v3.6.4
+	github.com/kubernetes-csi/external-resizer v1.9.3 // v1.9.3
+	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.10
 	github.com/oracle/oci-go-sdk/v65 v65.2.0
@@ -90,7 +90,7 @@ require (
 
 require (
 	bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19
-	github.com/kubernetes-csi/external-snapshotter/v6 v6.2.0
+	github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
 	golang.org/x/sync v0.6.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -114,7 +114,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
-	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
+	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
