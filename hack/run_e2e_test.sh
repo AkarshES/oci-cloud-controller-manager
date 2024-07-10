@@ -407,7 +407,7 @@ function declare_setup () {
 }
 
 function set_focus () {
-    # The FOCUS environment variable can be set with a regex to tun selected tests
+    # The FOCUS environment variable can be set with a regex to run selected tests
     # e.g. export FOCUS="\[cloudprovider\]"
     export FOCUS_OPT=""
     export FOCUS_FP_OPT=""

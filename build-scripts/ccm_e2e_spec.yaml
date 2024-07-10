@@ -1,0 +1,92 @@
+version: 0.1
+component: test
+timeoutInSeconds: 25000
+failImmediatelyOnError: true
+
+env:
+  variables:
+    OCI_LBRGNSUBNET: ocid1.subnet.oc1.phx.aaaaaaaa5rdyws4w3g3dppzynq6oyl2ridtlnd4i5pko3aejudm3wdh5ym4q
+    OCI_RGNSUBNET: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    OCI_NODESUBNET_AMD: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    OCI_NODESUBNET_ARM: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    POD_SUBNET: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    POD_SUBNET_AMD: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    POD_SUBNET_ARM: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    POD_SUBNET_DUAL_STACK: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    POD_SUBNET_IPV6: ocid1.subnet.oc1.phx.aaaaaaaadk6nf6yyxg6ivhrnfgrs2d546xxtls3bwlx3tkpeye7c4ji2z4kq
+    OCI_K8SSUBNET: ocid1.subnet.oc1.phx.aaaaaaaabytz7q26sbtkv2bfwrkckfgaq4gqgpxri6vanekwecbvfk5v7bra
+    OCI_REGION: us-phoenix-1
+    OCI_TENANCY: ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq
+    OCI_USER: ocid1.user.oc1..aaaaaaaa6sztipmbkosybj7wcwdybdbuactz4gj37axo45axftftlcwjpdfa
+    OCI_FINGERPRINT: ce:5d:fd:a2:60:13:83:86:70:52:5d:bb:fd:0d:c4:48
+    OCI_KEY: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBdHk5ZHRyN2J2cGVkMW5XcDNUcWZOenZhYnRxZStYWHlnQVJacGNMTTZFYUhCc0hRCjFjL1lqSWNjVFdzanVXdDBOMkY3Z3NUd1l0cTVra2JHVHVKNlphc3JZa1JkRktpcmRaRlREWDh6Q0w3RE43QTgKNjZEemN6eHFZaGhOYlg2QkxJTW8xQndISlBYRzE4UmU2K0dGWmZWWnNkSTE1MUtLK3Q2N0Rvc1JRYjVXRWRHMwpSLy9kSmg2SUIxakRhUmZyR2oxNGVDR2hDck5Ud29YZld4RlpXUzZsRytQN01RNEFvNHhBdStVaU5kcjlsQUN0Cmc3MkdzdDRtRTA5bjVKZndLckdyYUhSZHR6SE5aLzFZYnQzRnZFc3NrWHU5MERlMmhxcWppNWFmcGxmRUZSSzEKRFpJYVdHRFdRZFprREVXU0gzc21PcnQ0SkxTQ3lVMUVzc3NhZndJREFRQUJBb0lCQUFRMlY1NVRKelJyd2hwagpYRU9WRElJMW95RTNiNzVtd3V2RXJkY004cTlJcCtRMDRydDM2dy9ZTDROc09rY1NQSHJsaC9TSzJNZzlKVlZDCndWNmhBSldENlJ4NlcvV1VwMVN0d2M0bXBhTEcyREJZb2gzODlud280SDFlOTdEVDN0NktLWTh2RWM3OHc5VEUKVkRaeVdpSHRFV0h3Wm9McU4vM3F6enhYWUU4MXFram85KzNEazUyYU5NcGYxTnRCY3J2OStZdlR6d1FHd05IYQpNM2VoUUx5RVBtaHBPeWpRR3VhSlZBK2wrMlc5MFN1UFJSU0c5OFBoZGpkS093T1dJaGptcE0yeEhTamw5SWxlCk5obkxJSnFBT2RPQTQvNk5LdFZGSnorYzdrN095SUg0MDhwa1ZlL3JaaEZQcFNUSUN2NjFlU2FVL0Q5a0RkMCsKT25TNE1zRUNnWUVBM1BMVm1oS2xiYXdIb2ZyVWVWd09iOHRrVDhpaEtER01Rc1M0eHB6Wk1UR0lRUndrd1NVUwphZ0VYYnBZMkZDTnBLUWxsenZkNitRMTdLYmN1Y1V2bWc3STNiUWRHVFhzK1ZpTWVUZXFacWhwdFVoc1lYMWlICldOcmlsOVlxVW5zT2hqZjVJSnllSXZhY0xxaE1vOUFFVTBjNi9IbmhiR1hRYnRVdVRkSTFZVjhDZ1lFQTFEN2cKeXJIMGNsV1l5UkpiVDNqYThCdEJpam9QQmQ4akwzZEI2bVZzUHZVSDZUMGgveGZVT2ZHL29qOG9WbERBZnpOaQppRWxTVFVvZ05Yck0wdlE2NThzVWloWWNGUDBVQWdCSTluaUJpT3lqM3V6V29QdW5UQm1GdFBGYnF0QmpXVUZFCnhLWHVwUE1maWhkTEtQbWg4UldxVzYvWFcxcEdPTVFINmFMUE91RUNnWUVBdTNYODdRQXRBMlFXQmNSL1NZaGwKWjB5MkMwczZFSlFaWVB6dm1QT3pBeDMzY09haitJdXZsK2pkTEtLZHQzQmo1TUZvYzdWZHpMazNhaWxWYWlMdgpyWVVqcVltbWlFNnNrUUN5MFlEZVo0aU1nRUVrNktDQUZVK0JPVG9vSmxycDg4N0J2SDJsWGh6R1huL0VwcWZ6ClE0VUg4dmFsNEFaeVZkYmh0bjFIZFJrQ2dZQUx3TE9YNWNUQWRBYnkwMlprL3k4NGJubnhtb2RzYnMrMitDYVoKUVNaK1Vma3ZMQ2h1eExZR3cyRTJMY01oREhXc1ZYOFdSdUVjMEliNkR5TzZaclhBVWhtQUQvdGNHaXQ2ZE9PVgphbFRaN1NpaDFvR0lCb2RjQ21uQi9EOTBOUGZiWUdiYmNNakhMNE5HbFVXZkxqdU9hd0cwOUFhNzAwTGlMOUMwCldrU1pZUUtCZ1FESVdqRndrc0NtT0twaXRmOUkwalRVY0kxekdsRkJPMUVRNVdtMkhqT3g3dkRCMXpuMm1SczIKZDhHOE4rSlFBSEY4ZnF5ZmNNV0ZWdFdTR1JWbm1CeXkzTi9OZUUyZytmNGsvWUxrNnp2Ni9DTXprMW1Zc0xhagpkSEt3aXdJaWdTdWFrZGUrTXlZZEFNZ1ZncEwyenFuRnFybzA2K0lUemkzaC9zd25qem1ib3c9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=%
+    SOPS_OCI_KEY: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBNTUwSG5WV2xDd3AycW04KzlLTVh1ZkN2Q3MwdzlLNjh2RFRZK3RFdEJacFRqN0g1CjZKcnE4NUJWNnpnVlNVL21oUFQySEdxaXpxWTlYTXJTS09BUDJuU2pJYTRPdFZLcWZLa1dEZm9GY1lHdlNMVFIKVGxBc0RNV1prbjc4cWtzYU1RaVBVZVdyeDUwK09Uc3hWUkNUbnJqQ0MwNlNvYzg4NUgyZFVONjlpS29hTS9BcQorUVpHRGNzM3ZxMGRrK1NlbFBmakdhRnZQaGhnY3EyOXJZZURqZjJtN0I2dlZUc2g0Z3VhZWZ6dzMxZ2NtTW1ICm8zN3BvbHZ1UU4xekZXZHlmSlNZaTdxWU01N1BZWW9tRzlweTZqVjExNU1yeHdpV211eDZnb3IxbS9palowSFAKanBoYjlZZ1BHVHpTK3hGaEFKTkpUNmo5b3Q3N05zUGMrTW04aHdJREFRQUJBb0lCQUhTejNPaGNCU05CREhYbwpRL0tFVXlvdnFpTnBMS2U5ZS8vaEtRdUlab1VTTTlTTnV2eUhRcWVqTElldTVKcmlGYWNjdnYybWhZNVdtVWl1Ck1hTEM4M29CbDBrYktQSVlTeXN4RDVuUFJ2cmdlMi9KSEVXM2c5cVRua1FBbEZOQ01GcFFrOWFTUVRIOWV5TGYKUG9ZOEtnV3AxcXhYMU82UE80RnVBZHlEdjBDaWI2cHhIYmhhbmRBQnpvTGFKNDVZWHZQRTRnaXE3aVN4QUh3OApRZ1J4VWVyN0czT0cvSkRUenc2WlY2dytGVHgvUXZNUnVCOUpSVWVEd3g0NlRjbDVhMjh1QXVaYVNHMFhsU0JLClpwVXU5N1lFKzlNdURMcGt2RFd1S2k4UTNkTFY1K004WkFlMWxMNlJSMmZNdUJKKzJFWWZ5cjYxNnk4eDM3UUUKN1NHbDdyRUNnWUVBL1NlZjJMMEZWRnRvQ0hJSXo0VGs4VHdiRE9tcUU3cENHcUNCRGRTN3ZRSndmWkNlYS9yWQpIV2NacFh1c25qQ1FicFFVT2Rob3NXRXVrZWVOVk5QM2g4aXR4L1UvMHhndDRvOE9KUEF5dk5GMjk2dDBNd01vCjgxeDhka3JRdW9BVTFXc25Ybll1VTQwRGtoaVZNTE5KcnBaYSt4YlhoMHVmc2lRWkRudWdGZnNDZ1lFQTZqZHQKTkpmaDh0N1B5cjdjVWhZQjZrK2JpQ3V0NzViQ2J0Wk8vMEhRdEF1bzVYVDQxK1FCTHRvTWIrYytsdW80dXNxegpFOVFaaklSbDR1cE5qMDJOZGtIR1pNTzJwTHpzZHp3VGF2YU4rMTFSQjdManltTUU2QlVCZTlQcU1pWkR3aUZYCi9HKzFsWlFWL0ZYU1liVjhLc0Y3QkJyamhyU01CdjRDaWhlOHllVUNnWUFhUVZyTnNzVHp1OHN0WFE1VzMzU1QKSkdXMTBDSW9pNS9CZlRZRlJqUDJaV05mVW5scnY0ZGNmVTNtb000RlZnb1V2ZHpmSnZlc3RlU0xrMVZRSCsvRApNR2Y5bmd6eGlzZHZnT0M1cWdQSkczeFlNWHNLczJBeTVUdXZWUkVTMXFmU2ZwdUZxNElnZmphSmwyMFpzTzZLClllT3J1UEcvZ1hOZG1XclQyclIrc3dLQmdRQ2hKWCtDbHhtRHc5K043R0drTExZbW81MHNSSGxKQmg1Q3FqcnkKRHpOc0hUV1lvakZ3UU5TN2lwVFNEWFdYMmhFc0c3aTRaTThyU2hEYjNqOTg0R3Y3T0dncS9pbFZFUk5WT2tWVgo2OHRtYmg4SlFBRFFSKzZoUzRxWXl3WXdlUGxYd1I5TGRRU25wSnEzNGNoOUo2UUZ1dGRMek1CTTl6Mzh0Wm5ECnIyOWFMUUtCZ1FEY0cvU0ZNYzhZTWh4blJPK3hQQXRkR3JORFNLblFVZllkamdsZ2ttMHBubnM2UThSOGc0dC8KWHc2UTNSWXVRTFJ6ZlNOUkZxcU1GaytVREpybVVhcjVQSEZONUo5aVVZNGpPeHRBc2R5ZUR6N1daSlNtTFNFUwpZblZKUFJKNENtbmVqVXk2dU1KR0Urckg2dlRtWks5dzhHcG95M2g0MDc0QmtoUHRDRU8rZ1E9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=%
+    PUB_SSHKEY: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC07ybO1OfwsfoVwEi95aelL7j3/Eiyzh28sqCeihN0HHtBTw8UrHSsl5lV7MerhUH7iH4hfY91vcby0K2tpoMl1FWjf26s6rDtzjawJA8Q2wSV3NUI0GP+r7VoH+YbxrfXXDhbDlYcBYjOIDhH5GL0/3vRL7kGnUmXV9RzWmfVbz/24u/uA/pK0GUvKWwXAXBYqDle6GtWBDngocSbEF0nc+SJBONH0oqPlCUxt1LpmxxOtBsA1UvxsTzrZIuP2Wf4vigVqAogqMc5g13G/flSE5dCXqLDacOyobrNhSc6GgAWF+ZnEEF2dX/aR5d08Zwh9xymmdPNFKftr4Jzb8UPh4Ha3NUZT7TJipKOz8uj2ezGYXx+ltfg55Kapx4tOP0xU7u07vu1favfd/pn7QKJWp3QYO2tKIZk5euIBR+5MZPQnAItfQbRXA1EvTRY39J7hmwBfeArs6LHKWeRjBri11UJX5wzM44orY23HeCb4hsF0QH7/Y3vQOon3q/OeCTJNJbwiVJwaw0SevbDRGCZkLxy0wLtoNdv4I+dEXF/Dbevv73gdsDbk7tCMk5I/nlV6q1oM9aMrvtwjsYysKrkCSCY3eu/d10sAfbzJzaf1htUj07OkHEgRaG3oQ3+Rn+MgEyIsOPJjeoYiHZRSZbf+F8Y/qboBKvcPQ63evbRKQ== e2e_user@oracle.com
+    HOME_LOC: /opt/tssagent/workspace
+    TMPDIR: /opt/tssagent/workspace/ccm_e2e/tempdir
+    DOCKER_CONFIG_DIR: /opt/tssagent/workspace/ccm_e2e/work
+    DIND_NAME: ccm-e2e-test
+
+steps:
+  - type: shell
+    name: Check Basic details
+    command: |
+      echo "Running instance: `hostname -I`"
+      echo "Printing Disk usage: `df -h`"
+      echo "TMPDIR: ${TMPDIR}"
+      echo "DOCKER_CONFIG_DIR: ${DOCKER_CONFIG_DIR}"
+    failImmediatelyOnError: true
+    timeoutInSeconds: 300
+
+  - type: shell
+    name: Pre Test Cleanup
+    command: |
+      docker rm -f ccm-e2e-test
+      rm -rf ${HOME_LOC}/ccm_e2e
+      mkdir -p ${HOME_LOC}/ccm_e2e || exit
+      echo "Cleaning up working directory"
+    failImmediatelyOnError: false
+    timeoutInSeconds: 600
+
+  - type: shell
+    name: Get CCM Repo
+    command: |
+      cd ccm_e2e
+      git clone ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git || exit
+      cd oci-cloud-controller-manager/ || exit
+      git checkout ${E2E_BRANCH} || exit
+      git status
+    failImmediatelyOnError: true
+    timeoutInSeconds: 1200
+
+  - type: shell
+    name: Start Docker-in-Docker
+    command: |
+      mkdir -p ${TMPDIR} ${DOCKER_CONFIG_DIR}
+      [[ $(docker ps -f "name=$DIND_NAME" --format '{{.Names}}') == $DIND_NAME ]] || docker --config $DOCKER_CONFIG_DIR run -t --privileged --net=host -v $DOCKER_CONFIG_DIR:/root/.docker -v $TMPDIR:/var/lib/docker --name $DIND_NAME -d iad.ocir.io/odx-oke/oke/dind:0.2.0
+      docker ps -a
+    failImmediatelyOnError: true
+    timeoutInSeconds: 600
+    onFailure:
+      - type: shell
+        command: |
+          docker rm -f ccm-e2e-test
+          sudo rm -rf ${HOME_LOC}/ccm_e2e
+        timeoutInSeconds: 400
+
+  - type: shell
+    name: Run test
+    command: |
+      echo "Running CCM E2E Test"
+      cd ccm_e2e/oci-cloud-controller-manager
+      export env_file=$(mktemp)
+      env > $env_file
+      ./build-scripts/run_dind.sh run-ccm-e2e-tests-local
+    failImmediatelyOnError: true
+    timeoutInSeconds: 3600
+    onFailure:
+      - type: shell
+        command: |
+          docker rm -f ccm-e2e-test
+          sudo rm -rf ${HOME_LOC}/ccm_e2e
+        timeoutInSeconds: 400
