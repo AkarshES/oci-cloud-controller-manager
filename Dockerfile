@@ -18,7 +18,7 @@ WORKDIR $SRC
 RUN SRC_DIRS=${SRC_DIRS} make coverage
 RUN COMPONENT=${COMPONENT} make clean build
 
-FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips
+FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips as base
 RUN rm -f /etc/yum.repos.d/*
 COPY artifactory.repo /etc/yum.repos.d/.
 RUN microdnf install -y io-ol8-container-hardening
@@ -38,4 +38,6 @@ RUN chmod 755 /sbin/encrypt-umount
 RUN chmod 755 /sbin/rpm-host
 RUN chmod 755 /sbin/chroot-bash
 
+FROM scratch
+COPY --from=base / /
 COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/* /usr/local/bin/
