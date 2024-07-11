@@ -1,6 +1,6 @@
 version: 0.1
-component: test
-timeoutInSeconds: 25000
+component: general-purpose
+timeoutInSeconds: 120
 failImmediatelyOnError: true
 
 env:
