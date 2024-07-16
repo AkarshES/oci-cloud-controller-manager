@@ -55,7 +55,7 @@ locals {
           // Streaming prod tenancy bmc-streaming-live - OC1
           // MRS, BOM, YYZ, ORD, IAD, PHX
           {
-            regions = ["mrs", "bom", "yyz", "ord", "iad", "phx"]
+            regions = ["mrs", "bom", "yyz", "syd", "fra", "ord", "iad", "phx"]
             env     = "prd"
             value   = jsonencode(local.oss_ccm_mapping_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajqjeaxdh4zukw7ugptutjucry4k2ilpaixh5uxoc6uzqutxvl3ba"
