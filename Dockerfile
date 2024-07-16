@@ -26,7 +26,7 @@ RUN microdnf install -y io-ol8-container-hardening
 RUN microdnf -y install util-linux e2fsprogs xfsprogs && \
     microdnf update && \
     microdnf clean all && \
-    rm -rf /var/cache/yum
+    rm -rf /var/cache/yum /var/lib/yum/* /var/lib/rpm/* /var/cache/yum/* /var/tmp/* /root/.gem /usr/share/doc/* /var/lib/dnf/
 
 COPY scripts/encrypt-mount /sbin/encrypt-mount
 COPY scripts/encrypt-umount /sbin/encrypt-umount
