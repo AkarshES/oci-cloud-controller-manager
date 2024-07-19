@@ -36,6 +36,11 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 			}
 		}
 
+		if setupF.ExistingClusterOcid != "" {
+			clusterOCID = setupF.ExistingClusterOcid
+			sharedfw.Logf("Using existing cluster %s ", clusterOCID)
+		}
+
 		if clusterOCID == "" {
 			sharedfw.Logf("Creating the cluster...")
 			clusterOCID = setupF.CreateCluster()
@@ -58,7 +63,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		err = setupF.SaveCloudConfig(cloudConfig)
 		Expect(err).Should(BeNil())
 
-		if (!setupF.IsPreUpgrade && !setupF.IsPostUpgrade) || createUpgradeTestingNodepool {
+		if ((!setupF.IsPreUpgrade && !setupF.IsPostUpgrade) || createUpgradeTestingNodepool) && setupF.ExistingClusterOcid == "" {
 			if !setupF.CreateUhpNodepool {
 				var ocpus = float32(1.0)
 				var memoryInGBs = float32(6.0)

@@ -325,13 +325,32 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 		}
 	}
 
+	var ipFamilies []oke.ClusterCreateOptionsIpFamiliesEnum
+	if f.ClusterIPFamily != "" {
+		for _, ipFamily := range strings.Split(f.ClusterIPFamily, ",") {
+			if clusterIPFamilyEnum, exists := oke.GetMappingClusterCreateOptionsIpFamiliesEnum(ipFamily); exists {
+				ipFamilies = append(ipFamilies, clusterIPFamilyEnum)
+			}
+		}
+	} else {
+		ipFamilies = append(ipFamilies, oke.ClusterCreateOptionsIpFamiliesIpv4)
+	}
+
+	var clusterPodNetworkOptions []oke.ClusterPodNetworkOptionDetails
+	if cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative {
+		clusterPodNetworkOptions = []oke.ClusterPodNetworkOptionDetails{oke.OciVcnIpNativeClusterPodNetworkOptionDetails{}}
+	} else {
+		clusterPodNetworkOptions = []oke.ClusterPodNetworkOptionDetails{oke.FlannelOverlayClusterPodNetworkOptionDetails{}}
+	}
 	request := oke.CreateClusterRequest{
 		CreateClusterDetails: oke.CreateClusterDetails{
-			Name:              &clusterName,
-			CompartmentId:     &f.Compartment1,
-			VcnId:             &f.Vcn,
-			KubernetesVersion: &version,
+			Name:                     &clusterName,
+			CompartmentId:            &f.Compartment1,
+			VcnId:                    &f.Vcn,
+			KubernetesVersion:        &version,
+			ClusterPodNetworkOptions: clusterPodNetworkOptions,
 			Options: &oke.ClusterCreateOptions{
+				IpFamilies:         ipFamilies,
 				ServiceLbSubnetIds: subnets,
 				KubernetesNetworkConfig: &oke.KubernetesNetworkConfig{
 					ServicesCidr: &cfg.ServiceCIDR,
@@ -343,7 +362,7 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 	}
 
 	isPublicIpEnabled := true
-	if f.Architecture == "ARM" {
+	if f.Architecture == "ARM" || (f.Architecture == "AMD" && cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative) {
 		request.CreateClusterDetails.EndpointConfig = &oke.CreateClusterEndpointConfigDetails{
 			SubnetId:          &f.K8sSubnet,
 			NsgIds:            strings.Split(f.NsgOCIDS, ","),
@@ -442,6 +461,10 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 
 // DeleteCluster deletes the specified cluster (and child nodepools).
 func (f *Framework) DeleteCluster(clusterID string, waitForDeleted bool) {
+	if strings.EqualFold(f.SkipClusterDeletion, "true") {
+		Logf("Skipping cluster deletion based on env SKIP_CLUSTER_DELETION.")
+		return
+	}
 	Logf("Deleting cluster, clusterID: '%s'", clusterID)
 	// The nodepools are now deleted by the cluster delete
 	// Fetch the current OKE cluster objects.
