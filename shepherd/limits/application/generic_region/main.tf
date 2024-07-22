@@ -1,6 +1,7 @@
 module "oke-cpo-images" {
-  source                   = "./shared_modules"
+  source = "./cpo-images"
   service_artifact_version = local.artifact_versions
+  realm = local.execution_target.region.realm
 }
 
 resource "capability_require_capability" "oke_regional_infrastructure" {
