@@ -798,6 +798,156 @@ var _ = Describe("BackendSet only enabled TLS", func() {
 	})
 })
 
+// Ensure LB BackendSet has expected Certificate after NodePool scaling
+var _ = Describe("BackendSet only enabled TLS - NodePool Scaling", func() {
+
+	baseName := "backendset-service"
+	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		Expect(len(nodes.Items)).To(BeZero())
+	})
+
+	Context("[cloudprovider][ccm][lb][backend-tls-only][nodepool-update]", func() {
+		It("should be possible to create a Service type:LoadBalancer and ensure LB BackendSet has expected Certificate after NodePool scaling", func() {
+			serviceName := "backendset-tls-lb-test"
+			ns := f.Namespace.Name
+
+			jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+			sslSecretName := "ssl-certificate-secret"
+			_, err := f.ClientSet.CoreV1().Secrets(ns).Create(context.Background(), &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: ns,
+					Name:      sslSecretName,
+				},
+				Data: map[string][]byte{
+					cloudprovider.SSLCAFileName:          []byte(sharedfw.SSLCAData),
+					cloudprovider.SSLCertificateFileName: []byte(sharedfw.SSLCertificateData),
+					cloudprovider.SSLPrivateKeyFileName:  []byte(sharedfw.SSLPrivateData),
+					cloudprovider.SSLPassphrase:          []byte(sharedfw.SSLPassphrase),
+				},
+			}, metav1.CreateOptions{})
+			sharedfw.ExpectNoError(err)
+			loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+			if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+				loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+			}
+
+			requestedIP := ""
+
+			tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeLoadBalancer
+				s.Spec.LoadBalancerIP = requestedIP
+				s.Spec.Ports = []v1.ServicePort{v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
+					v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:            "443",
+					cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret: sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:            "true",
+				}
+			})
+
+			svcPort := int(tcpService.Spec.Ports[0].Port)
+
+			By("creating a pod to be part of the TCP service " + serviceName)
+			jig.RunOrFail(ns, nil)
+
+			By("waiting for the TCP service to have a load balancer")
+			// Wait for the load balancer to be created asynchronously
+			tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+			sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+			if requestedIP != "" && sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0]) != requestedIP {
+				sharedfw.Failf("unexpected TCP Status.LoadBalancer.Ingress (expected %s, got %s)", requestedIP, sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0]))
+			}
+			lbName := cloudprovider.GetLoadBalancerName(tcpService)
+			sharedfw.Logf("LB Name is %s", lbName)
+			ctx := context.TODO()
+			compartmentId := ""
+			if setupF.Compartment1 != "" {
+				compartmentId = setupF.Compartment1
+			} else if f.CloudProviderConfig.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.CompartmentID
+			} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+			} else {
+				sharedfw.Failf("Compartment Id undefined.")
+			}
+			sharedfw.Logf("Cluster ocid from setup is %s", setupF.ClusterOcid)
+			npList := setupF.ListNodePools(setupF.ClusterOcid)
+			if len(npList) == 0 {
+				sharedfw.Failf("NodePool not found.")
+			}
+			npOcid := npList[0].Id
+			nodePool := setupF.GetNodePool(*npOcid)
+			var newNodeCount, oldNodeCount = 3, 0
+			for _, node := range nodePool.Nodes {
+				if node.LifecycleState == containerengine.NodeLifecycleStateCreating ||
+					node.LifecycleState == containerengine.NodeLifecycleStateActive ||
+					node.LifecycleState == containerengine.NodeLifecycleStateUpdating {
+					oldNodeCount++
+				}
+			}
+			if oldNodeCount > 2 {
+				newNodeCount = 2
+			}
+			By(fmt.Sprintf("waiting for the nodepool to scale from %d to %d nodes", oldNodeCount, newNodeCount))
+			setupF.ScaleNodePool(nodePool, newNodeCount)
+
+			sharedfw.WaitReadySchedulableNodesOrDie(f.ClientSet, newNodeCount)
+
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			sharedfw.ExpectNoError(err)
+
+			By("waiting for the LB backends to match nodes on cluster")
+			err = f.VerifyLoadBalancerBackendSetsWithPodsOnMixedCluster(tcpService, ns, *loadBalancer.Id, "lb")
+			sharedfw.ExpectNoError(err)
+
+			var sslConfig *cloudprovider.SSLConfig
+			sslEnabledPorts, err := cloudprovider.GetSSLEnabledPorts(tcpService)
+			if err != nil {
+				Fail("Unable to get SSL Enabled Ports for the service: " + tcpService.Name)
+			}
+			secretListenerString := tcpService.Annotations[cloudprovider.ServiceAnnotationLoadBalancerTLSSecret]
+			secretBackendSetString := tcpService.Annotations[cloudprovider.ServiceAnnotationLoadBalancerTLSBackendSetSecret]
+			sslConfig = cloudprovider.NewSSLConfig(secretListenerString, secretBackendSetString, tcpService, sslEnabledPorts, nil)
+
+			for backendSetName, backendSet := range loadBalancer.BackendSets {
+				if *loadBalancer.Listeners[backendSetName].Port == sslEnabledPorts[0] {
+					var expectedSSL = cloudprovider.GetSSLConfiguration(sslConfig, sslConfig.BackendSetSSLSecretName, sslEnabledPorts[0])
+					fmt.Println("Actual SSL Config for ", sslEnabledPorts[0], ":", backendSet.SslConfiguration.CertificateName)
+					fmt.Println("Expected SSL Config for ", sslEnabledPorts[0], ":", expectedSSL.CertificateName)
+					if !reflect.DeepEqual(backendSet.SslConfiguration.CertificateName, expectedSSL.CertificateName) {
+						sharedfw.Failf("SSL Config Mismatch! Expected: %v, Got: %v", backendSet.SslConfiguration.CertificateName, expectedSSL.CertificateName)
+					}
+					break
+				}
+			}
+
+			tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+			sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+			By("changing TCP service back to type=ClusterIP")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeClusterIP
+				s.Spec.Ports[0].NodePort = 0
+				s.Spec.Ports[1].NodePort = 0
+			})
+
+			// Wait for the load balancer to be destroyed asynchronously
+			tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+			err = f.ClientSet.CoreV1().Secrets(ns).Delete(context.Background(), sslSecretName, metav1.DeleteOptions{})
+			sharedfw.ExpectNoError(err)
+		})
+	})
+})
+
 var _ = Describe("Listener only enabled TLS", func() {
 
 	baseName := "listener-service"

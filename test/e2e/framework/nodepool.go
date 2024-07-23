@@ -593,6 +593,21 @@ func IsVersion2NodePool(pool *oke.NodePool) bool {
 	return pool.QuantityPerSubnet == nil || *pool.QuantityPerSubnet == 0
 }
 
+func (f *Framework) ScaleNodePool(np *oke.NodePool, nodeCount int) {
+	ctx := context.Background()
+	_, err := f.clustersClient.UpdateNodePool(ctx, oke.UpdateNodePoolRequest{
+		NodePoolId: np.Id,
+		UpdateNodePoolDetails: oke.UpdateNodePoolDetails{
+			NodeConfigDetails: &oke.UpdateNodePoolNodeConfigDetails{
+				Size: &nodeCount,
+			},
+		},
+	})
+	if err != nil {
+		Failf("Error while scaling Node Pool %n", *(np.Id))
+	}
+	f.WaitForActiveStateInNodePool(*np.Id)
+}
 func (f *Framework) EnableBVMPluginOnNodepool(np *oke.NodePool) {
 	agentDisabled := false
 	pluginName := "Block Volume Management"
