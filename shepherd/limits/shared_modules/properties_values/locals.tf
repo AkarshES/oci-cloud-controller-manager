@@ -20,25 +20,6 @@ locals {
     "v1.30" : "v1.30-cdc99090ccd-12@sha256:de3bc0d46c26183d3136be792c9bdff2344971df858550ac24474da2a8587ffd"
   }
 
-  fss_dns_support_csi_override = {
-    "default":"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.16":"oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.17":"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.18":"oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.19":"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-    "v1.20":"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-    "v1.21":"oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-    "v1.22":"oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
-    "v1.23":"oke-multiarch-1.23-4c65264-146@sha256:defa64f16f0a16b84f3009cd6d902e4ce547dff68d3a5b85e510749d982de164",
-    "v1.24":"v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-    "v1.25":"v1.25-e402eabbe0a-25@sha256:af01ae775ba15f965f797ccea9aa6dece9e98136f42fb23c56775d7047307394",
-    "v1.26":"v1.26-d5c95b4f813-25@sha256:d401f00fc5f6d2710f916b44450c5f4264673f1403a4aabeba98393e318fcec1",
-    "v1.27": "v1.27-1d94a946745-2@sha256:ea558342fc43242a4683487358989435ce86d46bceee56158dce8a27318f665e",
-    "v1.28": "v1.28-3f6172ed2bd-2@sha256:3fa8e91ddf84f844999c49991181265c7491c302205e289b2b5f06a39d3b0b3a",
-    "v1.29": "v1.29-0391787a442-2@sha256:d0d52bf24c2faaf13d590b5c562e78ea028b53e95f67c2621e84fceb8911c35d",
-    "v1.30": "v1.30-28240e5024c-2@sha256:9a0caff67541c710f71dbec14346c0dc298e38550792c8bd0565288cc224bd53"
-  }
-
   tenancy_property_overrides = {
     "oc1" = {
       "ccm-image-version-mapping" = {
@@ -63,22 +44,7 @@ locals {
         ]
       },
       "csi-image-version-mapping" = {
-        overrides = [
-          // FSS tenancy
-          {
-            regions      = ["fra"]
-            env          = "prd"
-            value        = jsonencode(local.fss_dns_support_csi_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaznz6dvb7goamdqoenmhlpngfqjalldgdox6kvs5w3pnkptpiehyq"
-          },
-          // cohere tenancy
-          {
-            regions      = ["iad"]
-            env          = "prd"
-            value        = jsonencode(local.fss_dns_support_csi_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa24og2rzmhbnzskmkjhd6fnaeayhecgur2hrx5wmitpt5qylacwoq"
-          }
-        ]
+        overrides = []
       },
       "oci-service-controller-enabled" = {
         overrides = [
