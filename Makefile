@@ -263,7 +263,7 @@ checkout-e2e-branch-build-service:
 	  StrictHostKeyChecking no\
 	Host *\
 	  StrictHostKeyChecking no" >> /root/.ssh/config
-	sudo chmod 600 /root/.ssh/config
+	chmod 600 /root/.ssh/config
 	touch /etc/gitconfig
 	echo "[user]\
 			email = oke_K8s_providers_grp@oracle.com\
