@@ -247,4 +247,4 @@ npn-generate:
 
 .PHONY: checkout-e2e-branch-build-service
 checkout-e2e-branch-build-service:
-	git checkout $E2E_BRANCH && rm -rf .git
+	git checkout $E2E_BRANCH && rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcvf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
