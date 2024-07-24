@@ -243,3 +243,8 @@ install-controller-runtime:
 .PHONY: npn-generate
 npn-generate:
 	$(GOPATH)/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./api/..."
+
+
+.PHONY: checkout-e2e-branch-build-service
+checkout-e2e-branch-build-service:
+	git checkout $E2E_BRANCH && rm -rf .git

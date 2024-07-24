@@ -49,10 +49,11 @@ function install_oci_cli () {
 # create the oci config file for authenticating the cli calls
 function createOCIConfig() {
     # OCI_CONFIG_DIR="$HOME/e2e/oci"
+    echo "Current user: $(whoami); HOME Loc: ${HOME}"
     OCI_CONFIG_DIR="$HOME/.oci"
 
     # Create config directory.
-    mkdir -p ${OCI_CONFIG_DIR}
+    mkdir -p ${OCI_CONFIG_DIR} || exit
     if [ $? -ne 0 ]; then
          echo "Could not create oci config directory at ${OCI_CONFIG_DIR}"
          exit 1
@@ -62,7 +63,7 @@ function createOCIConfig() {
     # Create OCI key (PEM) file.
     KEY_PEM_FILE=${OCI_CONFIG_DIR}/oci_api_key.pem
 
-    echo $OCI_KEY | sed 's/ //g' | openssl enc -base64 -d -A > $KEY_PEM_FILE
+    echo $OCI_KEY | sed 's/ //g' | openssl enc -base64 -d -A > $KEY_PEM_FILE || exit
     echo "Created oci key file at $KEY_PEM_FILE"
     oci setup repair-file-permissions --file ${KEY_PEM_FILE}
 
@@ -71,9 +72,8 @@ function createOCIConfig() {
     CONFIG_CONTENT="[DEFAULT]\nuser=$OCI_USER\nfingerprint=$OCI_FINGERPRINT\nkey_file=$KEY_PEM_FILE\ntenancy=$OCI_TENANCY\nregion=$OCI_REGION\n"
     echo -e $CONFIG_CONTENT > $CONFIG_FILE
     echo "Created oci config file at $CONFIG_FILE"
-    export export CONFIG_FILE
+    export CONFIG_FILE
     oci setup repair-file-permissions --file ${CONFIG_FILE}
-
 }
 
 # test that the cli can authenticate
@@ -482,11 +482,10 @@ function declare_environment () {
         # The docker image installs these already
         install_dependencies
         install_oci_cli
-        createOCIConfig
         fi
-
-    # uncomment this to verify authentication if needed
-    # test_oci
+        createOCIConfig
+        # uncomment this to verify authentication if needed
+        test_oci
     fi
 }
 
