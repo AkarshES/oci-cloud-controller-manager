@@ -251,52 +251,53 @@ checkout-e2e-branch-build-service:
 	tree -a -L 2
 	pwd
 	#echo $$BLD_SSH_KEY > /root/.ssh/id_rsa.pub
-	mkdir -p /root/.ssh
-	touch /root/.ssh/config
-	echo "Host bitbucket.oci.oraclecorp.com\
-	  User git\
-	  AddKeysToAgent yes\
-	  IdentityFile /home/tss-user/.ssh/bb_access_key\
-	  IdentitiesOnly yes\
-	  Port 7999\
-	  StrictHostKeyChecking no\
-	Host github.com\
-	  StrictHostKeyChecking no\
-	Host *\
-	  StrictHostKeyChecking no" >> /root/.ssh/config
-	chmod 600 /root/.ssh/config
-	touch /etc/gitconfig
-	echo "[user]\
-			email = oke_K8s_providers_grp@oracle.com\
-			name = K8s Providers BS Bot\
-	[core]\
-			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
-	touch /tmp/get-secret.py
-	echo "import oci\
-    import base64\
-    import sys\
-    secret_id = \"ocid1.vaultsecret.oc1.phx.amaaaaaaod2gdkyaggvhamrjlptevxon63y2dsl3rcbt446gxjzam72adgpa\"\
-    signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()\
-    secret_client = oci.secrets.SecretsClient(config={}, signer=signer)\
-    def read_secret_value(secret_client, secret_id):\
-        response = secret_client.get_secret_bundle(secret_id)\
-        base64_Secret_content = response.data.secret_bundle_content.content\
-        base64_secret_bytes = base64_Secret_content.encode('ascii')\
-        base64_message_bytes = base64.b64decode(base64_secret_bytes)\
-        secret_content = base64_message_bytes.decode('ascii')\
-        return secret_content\
-    secret_contents = read_secret_value(secret_client, secret_id)\
-    bb_access_key_file = open(\"bb_access_key\", \"w\")\
-    bb_access_key_file.write(format(secret_contents) + \"\n\")\
-    bb_access_key_file.close()" > /tmp/get-secret.py
-	python -m venv oracle-cli
-#	source ./oracle-cli/bin/activate
-	pip install oci
-	python /tmp/get-secret.py
+#	mkdir -p /root/.ssh
+#	touch /root/.ssh/config
+#	echo "Host bitbucket.oci.oraclecorp.com\
+#	  User git\
+#	  AddKeysToAgent yes\
+#	  IdentityFile /home/tss-user/.ssh/bb_access_key\
+#	  IdentitiesOnly yes\
+#	  Port 7999\
+#	  StrictHostKeyChecking no\
+#	Host github.com\
+#	  StrictHostKeyChecking no\
+#	Host *\
+#	  StrictHostKeyChecking no" >> /root/.ssh/config
+#	chmod 600 /root/.ssh/config
+#	touch /etc/gitconfig
+#	echo "[user]\
+#			email = oke_K8s_providers_grp@oracle.com\
+#			name = K8s Providers BS Bot\
+#	[core]\
+#			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
+#	touch /tmp/get-secret.py
+#	echo "import oci\
+#    import base64\
+#    import sys\
+#    secret_id = \"ocid1.vaultsecret.oc1.phx.amaaaaaaod2gdkyaggvhamrjlptevxon63y2dsl3rcbt446gxjzam72adgpa\"\
+#    signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()\
+#    secret_client = oci.secrets.SecretsClient(config={}, signer=signer)\
+#    def read_secret_value(secret_client, secret_id):\
+#        response = secret_client.get_secret_bundle(secret_id)\
+#        base64_Secret_content = response.data.secret_bundle_content.content\
+#        base64_secret_bytes = base64_Secret_content.encode('ascii')\
+#        base64_message_bytes = base64.b64decode(base64_secret_bytes)\
+#        secret_content = base64_message_bytes.decode('ascii')\
+#        return secret_content\
+#    secret_contents = read_secret_value(secret_client, secret_id)\
+#    bb_access_key_file = open(\"bb_access_key\", \"w\")\
+#    bb_access_key_file.write(format(secret_contents) + \"\n\")\
+#    bb_access_key_file.close()" > /tmp/get-secret.py
+#	python -m venv oracle-cli
+##	source ./oracle-cli/bin/activate
+#	pip install oci
+#	python /tmp/get-secret.py
+	echo $$BITBUCKET_KEY > bb_access_key
 	chmod 600 bb_access_key
 	mv bb_access_key /root/.ssh/
 	eval $(ssh-agent -s)
-	ssh-add /home/tss-user/.ssh/bb_access_key
+	ssh-add /root/.ssh/bb_access_key
 	git fetch origin/$$E2E_BRANCH
 	git checkout origin/$$E2E_BRANCH
 	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
