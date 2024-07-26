@@ -290,7 +290,6 @@ checkout-e2e-branch-build-service:
     bb_access_key_file.close()" > /tmp/get-secret.py
 #	python3 -m venv oracle-cli
 #	source ./oracle-cli/bin/activate
-	pip install --upgrade pip
 	pip install oci
 	python /tmp/get-secret.py
 	chmod 600 bb_access_key
