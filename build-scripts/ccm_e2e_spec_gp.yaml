@@ -10,8 +10,8 @@ env:
   vaultVariables:
     "ARTIFACTORY_ACCESS_TOKEN": "ocid1.vaultsecret.oc1.iad.amaaaaaa34hgvtyat6umms6niu4p4yq4ws6gwuwtg7y4czoeufyjj6sjb44a"
   exportedVariables:
-    OCI_TRIGGER_COMMIT_HASH: ${OCI_TRIGGER_SOURCE_BRANCH_NAME}
-    OCI_TRIGGER_SOURCE_BRANCH_NAME: ${OCI_TRIGGER_SOURCE_BRANCH_NAME}
+    OCI_TRIGGER_COMMIT_HASH: $OCI_TRIGGER_SOURCE_BRANCH_NAME
+    OCI_TRIGGER_SOURCE_BRANCH_NAME: $OCI_TRIGGER_SOURCE_BRANCH_NAME
 steps:
   - type: Command
     name: Check Basic details
