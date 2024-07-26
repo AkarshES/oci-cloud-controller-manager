@@ -21,8 +21,7 @@ steps:
       echo "build version is: $BLD_VERSION"
       bitbucket login --access-key-secret-id ${bitbucketSecretId}
       git clone --depth 1 --single-branch --branch ${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
-      git fetch origin/${E2E_BRANCH} && git checkout origin/${E2E_BRANCH}
       rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-v${CCM_RELEASE_VERSION_E2E}-${OCI_TRIGGER_COMMIT_HASH}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-v${CCM_RELEASE_VERSION_E2E}-${OCI_TRIGGER_COMMIT_HASH}.tar.gz $$base/
-      curl -H "Authorization: Bearer ${ARTIFACTORY_ACCESS_TOKEN}" -T gp-stage-file-update.txt https://artifactory.oci.oraclecorp.com/odo-docker-signed-local/oke-public-cloud-provider-oci-e2e-v${CCM_RELEASE_VERSION_E2E}-${OCI_TRIGGER_COMMIT_HASH}.tar.gz
+      curl -H "Authorization: Bearer ${ARTIFACTORY_ACCESS_TOKEN}" -T oci-cloud-controller-manager-v${CCM_RELEASE_VERSION_E2E}-${OCI_TRIGGER_COMMIT_HASH}.tar.gz https://artifactory.oci.oraclecorp.com/odo-docker-signed-local/oke-public-cloud-provider-oci-e2e-v${CCM_RELEASE_VERSION_E2E}-${OCI_TRIGGER_COMMIT_HASH}.tar.gz
     failImmediatelyOnError: true
     timeoutInSeconds: 300

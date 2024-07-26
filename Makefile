@@ -249,6 +249,7 @@ npn-generate:
 checkout-e2e-branch-build-service:
 	yum install -y tree python-pip
 	tree -a -L 2
+	pwd
 	#echo $$BLD_SSH_KEY > /root/.ssh/id_rsa.pub
 	mkdir -p /root/.ssh
 	touch /root/.ssh/config
@@ -288,14 +289,14 @@ checkout-e2e-branch-build-service:
     bb_access_key_file = open(\"bb_access_key\", \"w\")\
     bb_access_key_file.write(format(secret_contents) + \"\n\")\
     bb_access_key_file.close()" > /tmp/get-secret.py
-#	python3 -m venv oracle-cli
+	python -m venv oracle-cli
 #	source ./oracle-cli/bin/activate
-#	pip install oci
-#	python /tmp/get-secret.py
-#	chmod 600 bb_access_key
-#	mv bb_access_key /root/.ssh/
-#	eval $(ssh-agent -s)
-#	ssh-add /home/tss-user/.ssh/bb_access_key
-#	git fetch origin/$$E2E_BRANCH
-#	git checkout origin/$$E2E_BRANCH
-#	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
+	pip install oci
+	python /tmp/get-secret.py
+	chmod 600 bb_access_key
+	mv bb_access_key /root/.ssh/
+	eval $(ssh-agent -s)
+	ssh-add /home/tss-user/.ssh/bb_access_key
+	git fetch origin/$$E2E_BRANCH
+	git checkout origin/$$E2E_BRANCH
+	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
