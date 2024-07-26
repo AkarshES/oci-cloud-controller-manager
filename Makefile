@@ -247,7 +247,7 @@ npn-generate:
 
 .PHONY: checkout-e2e-branch-build-service
 checkout-e2e-branch-build-service:
-	yum install -y tree
+	yum install -y tree python-pip
 	tree -a -L 2
 	#echo $$BLD_SSH_KEY > /root/.ssh/id_rsa.pub
 	mkdir -p /root/.ssh

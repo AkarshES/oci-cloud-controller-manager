@@ -27,6 +27,12 @@ env:
 
 steps:
   - type: shell
+    name: downloadE2eCode
+    command: |
+      cd ${OCI_ARTIFACTS_DIR}
+      curl -O https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/cicd-release-maven-local/com/oracle/pic/cicd/teststage/test-stage-service-api/${BLD_VERSION}/test-stage-service-api-${BLD_VERSION}.jar
+    timeoutInSeconds: 3000
+  - type: shell
     name: Check Basic details
     command: |
       echo "Running instance: `hostname -I`"
