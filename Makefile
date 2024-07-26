@@ -288,8 +288,8 @@ checkout-e2e-branch-build-service:
     bb_access_key_file = open(\"bb_access_key\", \"w\")\
     bb_access_key_file.write(format(secret_contents) + \"\n\")\
     bb_access_key_file.close()" > /tmp/get-secret.py
-	python3 -m venv oracle-cli
-	source ./oracle-cli/bin/activate
+#	python3 -m venv oracle-cli
+#	source ./oracle-cli/bin/activate
 	pip install --proxy http://10.68.69.53:80 --upgrade pip
 	pip install --proxy http://10.68.69.53:80 oci
 	python /tmp/get-secret.py
