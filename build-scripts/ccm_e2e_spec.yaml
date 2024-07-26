@@ -24,6 +24,7 @@ env:
     TMPDIR: /opt/tssagent/workspace/ccm_e2e/tempdir
     DOCKER_CONFIG_DIR: /opt/tssagent/workspace/ccm_e2e/work
     DIND_NAME: ccm-e2e-test
+    bitbucketSecretId:
 
 steps:
   - type: shell
