@@ -40,7 +40,10 @@ steps:
       echo "Printing Disk usage: `df -h`"
       echo "TMPDIR: ${TMPDIR}"
       echo "DOCKER_CONFIG_DIR: ${DOCKER_CONFIG_DIR}"
-      ls -lh
+      yum -y install tree
+      tree -a -L 2
+      echo ${OCI_ARTIFACTS_DIR}
+      ls -lh ${OCI_ARTIFACTS_DIR}
       ls -lh /oci-cloud-controller-manager-e2e/
     failImmediatelyOnError: true
     timeoutInSeconds: 300
