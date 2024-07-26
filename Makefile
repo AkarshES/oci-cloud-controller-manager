@@ -247,7 +247,7 @@ npn-generate:
 
 .PHONY: checkout-e2e-branch-build-service
 checkout-e2e-branch-build-service:
-	yum install -y tree python-pip
+	yum install -y tree python-pip3
 	tree -a -L 2
 	#echo $$BLD_SSH_KEY > /root/.ssh/id_rsa.pub
 	mkdir -p /root/.ssh
@@ -290,9 +290,9 @@ checkout-e2e-branch-build-service:
     bb_access_key_file.close()" > /tmp/get-secret.py
 #	python3 -m venv oracle-cli
 #	source ./oracle-cli/bin/activate
-	pip install --proxy http://10.68.69.53:80 --upgrade pip
-	pip install --proxy http://10.68.69.53:80 oci
-	python /tmp/get-secret.py
+	pip3 install --upgrade pip
+	pip3 install oci
+	python3 /tmp/get-secret.py
 	chmod 600 bb_access_key
 	mv bb_access_key /root/.ssh/
 	eval $(ssh-agent -s)
