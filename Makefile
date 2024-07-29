@@ -252,7 +252,7 @@ checkout-e2e-branch-build-service:
 	pwd
 	mkdir -p ~/.ssh
 	#Need to convert one-line ssh key from secret service to multi line ssh
-	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{64\}/&\n/g"|sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
+	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g"|sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
 	chmod 600 ~/.ssh/*
 	ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
 	cat ~/.ssh/id_rsa
