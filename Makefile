@@ -251,26 +251,26 @@ checkout-e2e-branch-build-service:
 	tree -a -L 2
 	pwd
 	#echo $$BLD_SSH_KEY > /root/.ssh/id_rsa.pub
-#	mkdir -p /root/.ssh
-#	touch /root/.ssh/config
-#	echo "Host bitbucket.oci.oraclecorp.com\
-#	  User git\
-#	  AddKeysToAgent yes\
-#	  IdentityFile /home/tss-user/.ssh/bb_access_key\
-#	  IdentitiesOnly yes\
-#	  Port 7999\
-#	  StrictHostKeyChecking no\
-#	Host github.com\
-#	  StrictHostKeyChecking no\
-#	Host *\
-#	  StrictHostKeyChecking no" >> /root/.ssh/config
-#	chmod 600 /root/.ssh/config
-#	touch /etc/gitconfig
-#	echo "[user]\
-#			email = oke_K8s_providers_grp@oracle.com\
-#			name = K8s Providers BS Bot\
-#	[core]\
-#			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
+	mkdir -p /root/.ssh
+	touch /root/.ssh/config
+	echo "Host bitbucket.oci.oraclecorp.com\
+	  User git\
+	  AddKeysToAgent yes\
+	  IdentityFile /home/tss-user/.ssh/bb_access_key\
+	  IdentitiesOnly yes\
+	  Port 7999\
+	  StrictHostKeyChecking no\
+	Host github.com\
+	  StrictHostKeyChecking no\
+	Host *\
+	  StrictHostKeyChecking no" >> /root/.ssh/config
+	chmod 600 /root/.ssh/config
+	touch /etc/gitconfig
+	echo "[user]\
+			email = oke_K8s_providers_grp@oracle.com\
+			name = K8s Providers BS Bot\
+	[core]\
+			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
 #	touch /tmp/get-secret.py
 #	echo "import oci\
 #    import base64\
