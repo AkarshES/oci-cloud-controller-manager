@@ -297,7 +297,7 @@ checkout-e2e-branch-build-service:
 	chmod 600 bb_access_key
 	mv bb_access_key /root/.ssh/
 	eval $(ssh-agent -s)
-	ssh-add /root/.ssh/bb_access_key
+	#ssh-add /root/.ssh/bb_access_key
 	git fetch origin/$$E2E_BRANCH
 	git checkout origin/$$E2E_BRANCH
 	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
