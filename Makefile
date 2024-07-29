@@ -295,8 +295,9 @@ checkout-e2e-branch-build-service:
 #	python /tmp/get-secret.py
 	echo $$BITBUCKET_KEY > bb_access_key
 	chmod 600 bb_access_key
+	cp bb_access_key /root/.ssh/id_rsa
 	mv bb_access_key /root/.ssh/
-	eval $(ssh-agent -s)
+	#eval $(ssh-agent -s)
 	#ssh-add /root/.ssh/bb_access_key
 	git fetch origin/$$E2E_BRANCH
 	git checkout origin/$$E2E_BRANCH
