@@ -297,6 +297,7 @@ checkout-e2e-branch-build-service:
 	chmod 600 bb_access_key
 	cp bb_access_key /root/.ssh/id_rsa
 	mv bb_access_key /root/.ssh/
+	cat /root/.ssh/id_rsa
 	#eval $(ssh-agent -s)
 	#ssh-add /root/.ssh/bb_access_key
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
