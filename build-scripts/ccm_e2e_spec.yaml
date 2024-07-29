@@ -25,6 +25,8 @@ env:
     DOCKER_CONFIG_DIR: /opt/tssagent/workspace/ccm_e2e/work
     DIND_NAME: ccm-e2e-test
     bitbucketSecretId:
+  vaultVariables:
+    BB_KEY: "ocid1.vaultsecret.oc1.phx.amaaaaaaod2gdkyaggvhamrjlptevxon63y2dsl3rcbt446gxjzam72adgpa"
 
 steps:
   - type: shell
