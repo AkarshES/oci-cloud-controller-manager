@@ -252,9 +252,15 @@ checkout-e2e-branch-build-service:
 	pwd
 	mkdir -p ~/.ssh
 	#Need to convert one-line ssh key from secret service to multi line ssh
-	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g"|sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
+	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
 	chmod 600 ~/.ssh/*
 	ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
+	sudo touch /etc/gitconfig
+	sudo echo "[user]\
+			email = oke_K8s_providers_grp@oracle.com\
+			name = K8s Providers BS Bot\
+	[core]\
+			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
 	cat ~/.ssh/id_rsa
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
 	cd oci-cloud-controller-manager
