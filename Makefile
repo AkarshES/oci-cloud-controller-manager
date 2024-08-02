@@ -251,6 +251,7 @@ checkout-e2e-branch-build-service:
 	tree -a -L 2
 	pwd
 	mkdir -p ~/.ssh
+	mkdir -p /tmp/
 	#Need to convert one-line ssh key from secret service to multi line ssh
 	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
 	chmod 600 ~/.ssh/*
@@ -262,7 +263,7 @@ checkout-e2e-branch-build-service:
 	[core]\
 			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
 	cat ~/.ssh/id_rsa
-	eval "ssh-agent -s && echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID"
+	eval "ssh-agent -s" && echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
 	#eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa
 	touch ~/.ssh/config
 	echo "Host *\
