@@ -263,7 +263,7 @@ checkout-e2e-branch-build-service:
 			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
 	cat ~/.ssh/bb_access_key
 	#eval "ssh-agent -s && echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID && ssh-add ~/.ssh/bb_access_key"
-	exec ssh-agent bash && ssh-add ~/.ssh/bb_access_key
+	exec ssh-agent bash && eval "$(ssh-agent -s)" && ssh-add ~/.ssh/bb_access_key
 	touch ~/.ssh/config
 	echo "Host *\
         StrictHostKeyChecking no" > ~/.ssh/config
