@@ -265,7 +265,7 @@ checkout-e2e-branch-build-service:
 	cat ~/.ssh/id_rsa
 	eval "ssh-agent -s"
 	echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
-	ssh-add ~/.ssh/id_rsa
+	#ssh-add ~/.ssh/id_rsa
 	touch ~/.ssh/config
 	echo "Host *\
         StrictHostKeyChecking no" > ~/.ssh/config
