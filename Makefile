@@ -263,13 +263,14 @@ checkout-e2e-branch-build-service:
 	[core]\
 			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
 	cat ~/.ssh/id_rsa
-	eval "ssh-agent -s" && echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
-	#eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa
+	eval "ssh-agent -s"
+	echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
+	ssh-add ~/.ssh/id_rsa
 	touch ~/.ssh/config
 	echo "Host *\
         StrictHostKeyChecking no" > ~/.ssh/config
 	chmod 400 ~/.ssh/config
-	git checkout $${E2E_BRANCH}
-	#git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
-#	cd oci-cloud-controller-manager && ls -lh
+	#git checkout $${E2E_BRANCH}
+	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
+	cd oci-cloud-controller-manager && ls -lh
 #	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
