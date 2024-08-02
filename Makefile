@@ -252,7 +252,7 @@ checkout-e2e-branch-build-service:
 	pwd
 	mkdir -p ~/.ssh
 	#Need to convert one-line ssh key from secret service to multi line ssh
-	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/bb_access_key
+	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
 	chmod 600 ~/.ssh/*
 	ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
 	touch /etc/gitconfig
@@ -261,13 +261,14 @@ checkout-e2e-branch-build-service:
 			name = K8s Providers BS Bot\
 	[core]\
 			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
-	cat ~/.ssh/bb_access_key
+	cat ~/.ssh/id_rsa
 	#eval "ssh-agent -s && echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID && ssh-add ~/.ssh/bb_access_key"
-	eval "$(ssh-agent -s)" && ssh-add ~/.ssh/bb_access_key
+	#eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa
 	touch ~/.ssh/config
 	echo "Host *\
         StrictHostKeyChecking no" > ~/.ssh/config
 	chmod 400 ~/.ssh/config
-#	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
+	git checkout $${E2E_BRANCH}
+	#git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
 #	cd oci-cloud-controller-manager && ls -lh
 #	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
