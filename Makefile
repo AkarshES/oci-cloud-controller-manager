@@ -252,7 +252,7 @@ checkout-e2e-branch-build-service:
 	pwd
 	mkdir -p ~/.ssh
 	#Need to convert one-line ssh key from secret service to multi line ssh
-	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
+	echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/bb_access_key
 	chmod 600 ~/.ssh/*
 	ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
 	touch /etc/gitconfig
@@ -261,7 +261,9 @@ checkout-e2e-branch-build-service:
 			name = K8s Providers BS Bot\
 	[core]\
 			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
-	cat ~/.ssh/id_rsa
+	cat ~/.ssh/bb_access_key
+	eval $(ssh-agent -s)
+	ssh-add ~/.ssh/bb_access_key
 	touch ~/.ssh/config
 	echo "Host *\
         StrictHostKeyChecking no" > ~/.ssh/config
