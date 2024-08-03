@@ -22,14 +22,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/common"
+	"github.com/oracle/oci-go-sdk/v65/core"
+	errors2 "github.com/pkg/errors"
 	"go.uber.org/zap"
 	authv1 "k8s.io/api/authentication/v1"
-
-	"github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
-	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
-	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
 func TestComputeAveragesByReturnCode(t *testing.T) {
@@ -107,55 +107,305 @@ func TestComputeAveragesByReturnCode(t *testing.T) {
 }
 
 var (
-	trueVal      = true
-	falseVal     = false
-	testAddress1 = "1.1.1.1"
-	testAddress2 = "2.2.2.2"
+	trueVal          = true
+	falseVal         = false
+	testAddress1     = "1.1.1.1"
+	testAddress2     = "2.2.2.2"
+	testIPv6Address1 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+	testIPv6Address2 = "2001:0db8:85a3:0000:0000:8a2e:0370:1fde"
 )
 
-func TestFilterPrivateIp(t *testing.T) {
+func TestFilterPrimaryIp(t *testing.T) {
 	testCases := []struct {
 		name     string
-		ips      []core.PrivateIp
-		expected []core.PrivateIp
+		ips      *vnicSecondaryAddresses
+		expected *vnicSecondaryAddresses
 	}{
 		{
-			name:     "base case",
-			ips:      []core.PrivateIp{},
-			expected: []core.PrivateIp{},
+			name: "base case",
+			ips:  &vnicSecondaryAddresses{},
+			expected: &vnicSecondaryAddresses{
+				V6: []core.Ipv6{},
+				V4: []core.PrivateIp{},
+			},
 		},
 		{
-			name: "only primary ip",
-			ips: []core.PrivateIp{
-				{IsPrimary: &trueVal},
+			name: "filter primary ip",
+			ips: &vnicSecondaryAddresses{
+				V4: []core.PrivateIp{
+					{
+						IsPrimary: &trueVal,
+						IpAddress: &testAddress1,
+					},
+				},
 			},
-			expected: []core.PrivateIp{},
+			expected: &vnicSecondaryAddresses{
+				V6: []core.Ipv6{},
+				V4: []core.PrivateIp{},
+			},
 		},
 		{
 			name: "primary and secondary ip",
-			ips: []core.PrivateIp{
-				{IsPrimary: &trueVal},
-				{IsPrimary: &falseVal, IpAddress: &testAddress1},
+			ips: &vnicSecondaryAddresses{
+				V4: []core.PrivateIp{
+					{IsPrimary: &trueVal, IpAddress: &testAddress1},
+					{IsPrimary: &falseVal, IpAddress: &testAddress2},
+				},
+				V6: []core.Ipv6{
+					{IpAddress: &testIPv6Address1},
+					{IpAddress: &testIPv6Address2},
+				},
 			},
-			expected: []core.PrivateIp{
-				{IsPrimary: &falseVal, IpAddress: &testAddress1},
+			expected: &vnicSecondaryAddresses{
+				V4: []core.PrivateIp{
+					{IsPrimary: &falseVal, IpAddress: &testAddress2},
+				},
+				V6: []core.Ipv6{
+					{IpAddress: &testIPv6Address1},
+					{IpAddress: &testIPv6Address2},
+				},
 			},
 		},
 		{
-			name: "only secondary ip",
-			ips: []core.PrivateIp{
-				{IsPrimary: &falseVal, IpAddress: &testAddress1},
+			name: "only secondary ipv6",
+			ips: &vnicSecondaryAddresses{
+				V6: []core.Ipv6{
+					{IpAddress: &testIPv6Address2},
+				},
 			},
-			expected: []core.PrivateIp{
-				{IsPrimary: &falseVal, IpAddress: &testAddress1},
+			expected: &vnicSecondaryAddresses{
+				V4: []core.PrivateIp{},
+				V6: []core.Ipv6{
+					{IpAddress: &testIPv6Address2},
+				},
 			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			filtered := filterPrivateIp(tc.ips)
+			filtered := filterPrimaryIp(tc.ips)
 			if !reflect.DeepEqual(filtered, tc.expected) {
 				t.Errorf("expected ips:\n%+v\nbut got:\n%+v", tc.expected, filtered)
+			}
+		})
+	}
+}
+
+func TestGetHostIpAddress(t *testing.T) {
+	testCases := []struct {
+		name       string
+		ipFamilies []string
+		vnics      map[string]*vnicSecondaryAddresses
+		expected   map[string]*vnicSecondaryAddresses
+	}{
+		{
+			name:       "single vnic",
+			ipFamilies: []string{IPv4, IPv6},
+			vnics: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+				},
+			},
+			expected: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6:       []core.Ipv6{{IpAddress: &testIPv6Address2}},
+					V4:       []core.PrivateIp{{IpAddress: &testAddress2}},
+					hostIpv4: &testAddress1,
+					hostIpv6: &testIPv6Address1,
+				},
+			},
+		},
+		{
+			name:       "multiple vnic",
+			ipFamilies: []string{IPv4, IPv6},
+			vnics: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+				},
+				"vnic-2": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+				},
+			},
+			expected: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1},
+					},
+					hostIpv4: &testAddress1,
+					hostIpv6: &testIPv6Address1,
+				},
+				"vnic-2": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress2},
+					},
+					hostIpv4: &testAddress1,
+					hostIpv6: &testIPv6Address1,
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			filtered := assignHostIpAddressForVnic(tc.vnics, tc.ipFamilies)
+			if !reflect.DeepEqual(filtered, tc.expected) {
+				t.Errorf("expected ips:\n%+v\nbut got:\n%+v", tc.expected, filtered)
+			}
+		})
+	}
+}
+
+func TestValidateMaxPodCountWithSecondaryIPCount(t *testing.T) {
+	testCases := []struct {
+		name        string
+		ipFamilies  []string
+		maxPodCount int
+		vnics       map[string]*vnicSecondaryAddresses
+		expectedErr error
+	}{
+		{
+			name:       "single vnic",
+			ipFamilies: []string{IPv4, IPv6},
+			vnics: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+				},
+			},
+			maxPodCount: 2,
+			expectedErr: nil,
+		},
+		{
+			name:       "multiple vnic",
+			ipFamilies: []string{IPv4, IPv6},
+			vnics: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+				},
+				"vnic-2": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+				},
+			},
+			maxPodCount: 34,
+			expectedErr: nil,
+		},
+		{
+			name:       "single vnic IPv4",
+			ipFamilies: []string{IPv4},
+			vnics: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+				},
+			},
+			maxPodCount: 3,
+			expectedErr: errors2.Errorf("Allocated IPv4 count != maxPodCount (3 != 2)"),
+		},
+		{
+			name:       "single vnic IPv6",
+			ipFamilies: []string{IPv6},
+			vnics: map[string]*vnicSecondaryAddresses{
+				"vnic": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+				},
+			},
+			maxPodCount: 3,
+			expectedErr: errors2.Errorf("Allocated IPv6 count != maxPodCount (3 != 2)"),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateMaxPodCountWithSecondaryIPCount(tc.vnics, tc.maxPodCount, tc.ipFamilies)
+
+			if err != nil {
+				if !reflect.DeepEqual(err.Error(), tc.expectedErr.Error()) {
+					t.Errorf("expected err:\n%+v\nbut got:\n%+v", tc.expectedErr, err)
+				}
 			}
 		})
 	}
@@ -164,28 +414,79 @@ func TestFilterPrivateIp(t *testing.T) {
 func TestTotalAllocatedSecondaryIpsForInstance(t *testing.T) {
 	testCases := []struct {
 		name     string
-		ips      map[string][]core.PrivateIp
-		expected int
+		ips      map[string]*vnicSecondaryAddresses
+		expected IpAddressCountByVersion
 	}{
 		{
 			name:     "base case",
-			ips:      map[string][]core.PrivateIp{},
-			expected: 0,
+			ips:      map[string]*vnicSecondaryAddresses{},
+			expected: IpAddressCountByVersion{V4: 0, V6: 0},
 		},
 		{
 			name: "one vnic, two ips",
-			ips: map[string][]core.PrivateIp{
-				"one": {{IpAddress: &testAddress1}, {IpAddress: &testAddress2}},
+			ips: map[string]*vnicSecondaryAddresses{
+				"one": {V4: []core.PrivateIp{
+					{IpAddress: &testAddress1},
+					{IpAddress: &testAddress2},
+				}},
 			},
-			expected: 2,
+			expected: IpAddressCountByVersion{V4: 2, V6: 0},
 		},
 		{
 			name: "two vnic, 1/2 ips ",
-			ips: map[string][]core.PrivateIp{
-				"one": {{IpAddress: &testAddress1}, {IpAddress: &testAddress2}},
-				"two": {{IpAddress: &testAddress2}},
+			ips: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					}},
+				"two": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress2},
+					}},
 			},
-			expected: 3,
+			expected: IpAddressCountByVersion{V4: 3, V6: 0},
+		},
+		{
+			name: "three vnic, 1/2 IPv4  1/2 IPv6 ips ",
+			ips: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+				},
+				"two": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress2},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
+				},
+			},
+			expected: IpAddressCountByVersion{V4: 3, V6: 3},
+		},
+		{
+			name: "three vnic 1/2 IPv6 ips ",
+			ips: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+				},
+				"two": {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
+				},
+			},
+			expected: IpAddressCountByVersion{V4: 0, V6: 3},
 		},
 	}
 	for _, tc := range testCases {
@@ -200,54 +501,156 @@ func TestTotalAllocatedSecondaryIpsForInstance(t *testing.T) {
 
 func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 	testCases := []struct {
-		name                   string
-		existingIpsByVnic      map[string][]core.PrivateIp
-		additionalSecondaryIps int
-		expected               []VnicIPAllocations
-		err                    error
+		name                  string
+		existingIpsByVnic     map[string]*vnicSecondaryAddresses
+		ipFamilies            []string
+		allocatedSecondaryIps IpAddressCountByVersion
+		maxPodCount           int
+		expected              []VnicIPAllocations
+		err                   error
 	}{
 		{
-			name:                   "base case",
-			existingIpsByVnic:      map[string][]core.PrivateIp{},
-			additionalSecondaryIps: 0,
-			expected:               []VnicIPAllocations{},
-			err:                    nil,
+			name:                  "base case",
+			existingIpsByVnic:     map[string]*vnicSecondaryAddresses{},
+			ipFamilies:            []string{IPv4},
+			maxPodCount:           0,
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected:              []VnicIPAllocations{},
+			err:                   nil,
 		},
 		{
-			name: "one vnic with one additional IP required",
-			existingIpsByVnic: map[string][]core.PrivateIp{
-				"one": {{IpAddress: &testAddress1}},
+			name:        "one vnic with one additional IP required",
+			ipFamilies:  []string{IPv4},
+			maxPodCount: 2,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+					}},
 			},
-			additionalSecondaryIps: 1,
-			expected:               []VnicIPAllocations{{"one", 1}},
-			err:                    nil,
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 1, V6: 0},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 0}}},
+			err:                   nil,
 		},
 		{
-			name: "one vnic with space for required IPs",
-			existingIpsByVnic: map[string][]core.PrivateIp{
-				"one": {{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
-					{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
-					{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}},
+			name:        "one vnic with space for required IPs",
+			ipFamilies:  []string{IPv4},
+			maxPodCount: 31,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+				},
 			},
-			additionalSecondaryIps: 13,
-			expected:               []VnicIPAllocations{{"one", 13}},
-			err:                    nil,
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 0},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 14, V6: 0}}},
+			err:                   nil,
 		},
 		{
-			name: "one vnic without space for required IPs",
-			existingIpsByVnic: map[string][]core.PrivateIp{
-				"one": {{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
-					{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
-					{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}},
+			name:        "one vnic without space for required IPs",
+			ipFamilies:  []string{IPv4},
+			maxPodCount: 31,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1},
+					},
+				},
 			},
-			additionalSecondaryIps: 31,
-			expected:               nil,
-			err:                    errors.New("failed to allocate the required number of IPs with existing VNICs"),
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 19, V6: 0},
+			expected:              nil,
+			err:                   errors.New("failed to allocate the required number of IPs with existing VNICs"),
+		},
+		{
+			name:        "one vnic for required IPv4 and IPv6",
+			ipFamilies:  []string{IPv4, IPv6},
+			maxPodCount: 31,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+					},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 18},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 14, V6: 14}}},
+			err:                   nil,
+		},
+		{
+			name:        "two vnic for required IPv4 and IPv6",
+			ipFamilies:  []string{IPv4, IPv6},
+			maxPodCount: 31,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+					},
+				},
+				"two": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+					},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 18},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 2}}, {"two", IpAddressCountByVersion{V4: 13, V6: 13}}},
+			err:                   nil,
+		},
+		{
+			name:        "two vnic for required IPv4 and IPv6",
+			ipFamilies:  []string{IPv4, IPv6},
+			maxPodCount: 34,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+				"two": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 32, V6: 32}}, {"two", IpAddressCountByVersion{V4: 4, V6: 4}}},
+			err:                   nil,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			allocation, err := getAdditionalSecondaryIPsNeededPerVNIC(tc.existingIpsByVnic, tc.additionalSecondaryIps)
+			allocation, err := getAdditionalSecondaryIPsNeededPerVNIC(tc.existingIpsByVnic, tc.maxPodCount, tc.allocatedSecondaryIps, tc.ipFamilies)
 			if (err == nil && tc.err != nil) || err != nil && tc.err == nil {
 				t.Errorf("expected err:\n%+v\nbut got err:\n%+v", tc.err, err)
 				t.FailNow()
@@ -255,28 +658,166 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			if err != nil && err.Error() != tc.err.Error() {
 				t.Errorf("expected err:\n%+v\nbut got err:\n%+v", tc.expected, allocation)
 			}
-			if !reflect.DeepEqual(allocation, tc.expected) {
+
+			gotSumV4, gotSumV6 := 0, 0
+			expectedSumV4, expectedSumV6 := 0, 0
+			for _, v := range allocation {
+				gotSumV4 += v.ips.V4
+				gotSumV6 += v.ips.V6
+			}
+			for _, v := range tc.expected {
+				expectedSumV4 += v.ips.V4
+				expectedSumV6 += v.ips.V6
+			}
+
+			t.Logf("expected ip allocation:\n%+v\n got ip allocation:\n%+v", tc.expected, allocation)
+			if gotSumV4 != expectedSumV4 && gotSumV6 != expectedSumV6 {
 				t.Errorf("expected ip allocation:\n%+v\nbut got:\n%+v", tc.expected, allocation)
 			}
 		})
 	}
 }
 
+func TestGetIpFamilies(t *testing.T) {
+	ipVersion4 := "IPv4"
+	ipVersion6 := "IPv6"
+	testCases := []struct {
+		name     string
+		npn      v1beta1.NativePodNetwork
+		ipFamily []string
+		ctx      context.Context
+		expected []string
+	}{
+		{
+			name:     "nil case",
+			npn:      v1beta1.NativePodNetwork{Spec: v1beta1.NativePodNetworkSpec{IPFamilies: nil}},
+			expected: []string{},
+		},
+		{
+			name:     "Dual stack IPv4 preferred",
+			npn:      v1beta1.NativePodNetwork{Spec: v1beta1.NativePodNetworkSpec{IPFamilies: []*string{&ipVersion4, &ipVersion6}}},
+			expected: []string{IPv4, IPv6},
+		},
+		{
+			name:     "Dual stack IPv6 preferred",
+			npn:      v1beta1.NativePodNetwork{Spec: v1beta1.NativePodNetworkSpec{IPFamilies: []*string{&ipVersion6, &ipVersion4}}},
+			expected: []string{IPv6, IPv4},
+		},
+		{
+			name:     "Single stack IPv4",
+			npn:      v1beta1.NativePodNetwork{Spec: v1beta1.NativePodNetworkSpec{IPFamilies: []*string{&ipVersion4}}},
+			expected: []string{IPv4},
+		},
+		{
+			name:     "Single stack IPv6",
+			npn:      v1beta1.NativePodNetwork{Spec: v1beta1.NativePodNetworkSpec{IPFamilies: []*string{&ipVersion6}}},
+			expected: []string{IPv6},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ipFamilies, _ := getIpFamilies(tc.ctx, tc.npn)
+			if !reflect.DeepEqual(ipFamilies, tc.expected) {
+				t.Errorf("expected ips:\n%+v\nbut got:\n%+v", tc.expected, ipFamilies)
+			}
+		})
+	}
+}
+
 var (
-	one         = "one"
-	mac1        = "11.bb.cc.dd.ee.66"
-	routerIP1   = "192.168.1.1"
-	cidr1       = "10.0.0.0/64"
-	subnetVnic1 = SubnetVnic{
+	one             = "one"
+	mac1            = "11.bb.cc.dd.ee.66"
+	routerIP1       = "192.168.1.1"
+	ipv6routerIP    = "2001:db8:1234:1a00::"
+	cidr1           = "10.0.0.0/64"
+	ipv6cidr        = "2001:0db8:/32"
+	hostAddressIpv4 = "1.0.0.0"
+	hostAddressIpv6 = "2001:db8:1234:1a01::"
+	subnetVnic1     = SubnetVnic{
 		Vnic:   &core.Vnic{Id: &one, MacAddress: &mac1},
-		Subnet: &core.Subnet{VirtualRouterIp: &routerIP1, CidrBlock: &cidr1},
+		Subnet: &core.Subnet{VirtualRouterIp: &routerIP1, CidrBlock: &cidr1, Ipv6CidrBlock: &ipv6cidr, Ipv6VirtualRouterIp: &ipv6routerIP},
+	}
+	subnetVnic2 = SubnetVnic{
+		Vnic:   &core.Vnic{Id: &one, MacAddress: &mac1},
+		Subnet: &core.Subnet{VirtualRouterIp: &routerIP1, CidrBlock: &cidr1, Ipv6CidrBlock: nil, Ipv6CidrBlocks: []string{ipv6cidr}, Ipv6VirtualRouterIp: &ipv6routerIP},
 	}
 	npnVnic1 = v1beta1.VNICAddress{
+		VNICID:      &one,
+		MACAddress:  &mac1,
+		RouterIP:    &routerIP1,
+		HostAddress: &hostAddressIpv4,
+		Addresses:   []*string{&testAddress1, &testAddress2},
+		SubnetCidr:  &cidr1,
+	}
+	singleStackIPv4 = v1beta1.VNICAddress{
+		VNICID:      &one,
+		MACAddress:  &mac1,
+		RouterIP:    &routerIP1,
+		Addresses:   []*string{&testAddress1, &testAddress2},
+		HostAddress: &hostAddressIpv4,
+		HostAddresses: []v1beta1.HostAddress{
+			{V4: &hostAddressIpv4},
+		},
+		PodAddresses: []v1beta1.PodAddress{
+			{V4: &testAddress1},
+			{V4: &testAddress2},
+		},
+		RouterIPs: []v1beta1.RouterIP{
+			{V4: &routerIP1},
+		},
+		SubnetCidr:  &cidr1,
+		SubnetCidrs: []v1beta1.SubnetCidr{{V4: &cidr1}},
+	}
+	singleStackIPv6 = v1beta1.VNICAddress{
 		VNICID:     &one,
 		MACAddress: &mac1,
-		RouterIP:   &routerIP1,
-		Addresses:  []*string{&testAddress1, &testAddress2},
+		HostAddresses: []v1beta1.HostAddress{
+			{
+				V4: nil,
+				V6: &hostAddressIpv6,
+			},
+		},
+		PodAddresses: []v1beta1.PodAddress{
+			{V6: &testIPv6Address1},
+			{V6: &testIPv6Address2},
+		},
+		RouterIPs: []v1beta1.RouterIP{{
+			V6: &ipv6routerIP,
+			V4: nil,
+		}},
+		SubnetCidrs: []v1beta1.SubnetCidr{{
+			V4: nil,
+			V6: &ipv6cidr,
+		}},
+		RouterIP:    nil,
+		SubnetCidr:  nil,
+		HostAddress: nil,
+	}
+	dualStack = v1beta1.VNICAddress{
+		VNICID:      &one,
+		MACAddress:  &mac1,
+		RouterIP:    &routerIP1,
+		Addresses:   []*string{&testAddress1},
+		HostAddress: &hostAddressIpv4,
+		HostAddresses: []v1beta1.HostAddress{
+			{
+				V4: &hostAddressIpv4,
+				V6: &hostAddressIpv6,
+			},
+		},
+		PodAddresses: []v1beta1.PodAddress{{
+			V4: &testAddress1,
+			V6: &testIPv6Address1,
+		}},
+		RouterIPs: []v1beta1.RouterIP{{
+			V4: &routerIP1,
+			V6: &ipv6routerIP,
+		}},
 		SubnetCidr: &cidr1,
+		SubnetCidrs: []v1beta1.SubnetCidr{{
+			V4: &cidr1,
+			V6: &ipv6cidr,
+		}},
 	}
 )
 
@@ -284,27 +825,104 @@ func TestConvertCoreVNICtoNPNStatus(t *testing.T) {
 	testCases := []struct {
 		name                   string
 		existingSecondaryVNICs []SubnetVnic
-		additionalSecondaryIps map[string][]core.PrivateIp
+		additionalSecondaryIps map[string]*vnicSecondaryAddresses
+		ipFamilies             []string
 		expected               []v1beta1.VNICAddress
 	}{
 		{
 			name:                   "base case",
 			existingSecondaryVNICs: []SubnetVnic{},
-			additionalSecondaryIps: map[string][]core.PrivateIp{},
-			expected:               []v1beta1.VNICAddress{},
+			ipFamilies:             []string{},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				"vnic1": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			expected: []v1beta1.VNICAddress{},
 		},
 		{
-			name:                   "base case",
+			name:                   "backward compatibility",
 			existingSecondaryVNICs: []SubnetVnic{subnetVnic1},
-			additionalSecondaryIps: map[string][]core.PrivateIp{
-				one: {{IpAddress: &testAddress1}, {IpAddress: &testAddress2}},
+			ipFamilies:             []string{},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				one: {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+					hostIpv4: &hostAddressIpv4,
+				},
 			},
 			expected: []v1beta1.VNICAddress{npnVnic1},
+		},
+		{
+			name:                   "Dual stack",
+			existingSecondaryVNICs: []SubnetVnic{subnetVnic1},
+			ipFamilies:             []string{IPv4, IPv6},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				one: {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
+					hostIpv4: &hostAddressIpv4,
+					hostIpv6: &hostAddressIpv6,
+				},
+			},
+			expected: []v1beta1.VNICAddress{dualStack},
+		},
+		{
+			name:                   "Single stack IPv4",
+			existingSecondaryVNICs: []SubnetVnic{subnetVnic1},
+			ipFamilies:             []string{IPv4},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				one: {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1},
+						{IpAddress: &testAddress2},
+					},
+					hostIpv4: &hostAddressIpv4,
+				},
+			},
+			expected: []v1beta1.VNICAddress{singleStackIPv4},
+		},
+		{
+			name:                   "Single stack IPv6",
+			existingSecondaryVNICs: []SubnetVnic{subnetVnic1},
+			ipFamilies:             []string{IPv6},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				one: {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					hostIpv6: &hostAddressIpv6,
+				},
+			},
+			expected: []v1beta1.VNICAddress{singleStackIPv6},
+		},
+		{
+			name:                   "Single stack IPv6 ULA prefix CIDR",
+			existingSecondaryVNICs: []SubnetVnic{subnetVnic2},
+			ipFamilies:             []string{IPv6},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				one: {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					hostIpv6: &hostAddressIpv6,
+				},
+			},
+			expected: []v1beta1.VNICAddress{singleStackIPv6},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			vnics := convertCoreVNICtoNPNStatus(tc.existingSecondaryVNICs, tc.additionalSecondaryIps)
+			vnics := convertCoreVNICtoNPNStatus(tc.existingSecondaryVNICs, tc.additionalSecondaryIps, tc.ipFamilies)
 			if !reflect.DeepEqual(vnics, tc.expected) {
 				t.Errorf("expected npnVNIC to be:\n%+v\nbut got:\n%+v", tc.expected, vnics)
 			}
@@ -404,7 +1022,13 @@ func (c *MockVirtualNetworkClient) UpdateSecurityList(ctx context.Context, id st
 }
 
 func (c *MockVirtualNetworkClient) ListPrivateIps(ctx context.Context, vnicId string) ([]core.PrivateIp, error) {
-	return nil, nil
+	if &vnicId == nil {
+		return nil, errors.New("vnic id is nil")
+	}
+	if vnicId == "err" {
+		return nil, errors.New("failed to list ipv4")
+	}
+	return privateIps[vnicId], nil
 }
 
 func (c *MockVirtualNetworkClient) GetPrivateIp(ctx context.Context, id string) (*core.PrivateIp, error) {
@@ -416,6 +1040,20 @@ func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicID s
 }
 
 func (c *MockVirtualNetworkClient) GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error) {
+	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string) ([]core.Ipv6, error) {
+	if &vnicId == nil {
+		return nil, errors.New("vnic id is nil")
+	}
+	if vnicId == "err" {
+		return nil, errors.New("failed to list ipv6")
+	}
+	return ipv6s[vnicId], nil
+}
+
+func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error) {
 	return nil, nil
 }
 
@@ -640,6 +1278,41 @@ var (
 		},
 	}
 
+	privateIps = map[string][]core.PrivateIp{
+		"vnic1": {
+			{
+				IsPrimary: &falseVal,
+				IpAddress: &testAddress1,
+			},
+			{
+				IsPrimary: &falseVal,
+				IpAddress: &testAddress1,
+			},
+			{
+				IsPrimary: &falseVal,
+				IpAddress: &testAddress1,
+			},
+			{
+				IsPrimary: &falseVal,
+				IpAddress: &testAddress1,
+			},
+			{
+				IsPrimary: &falseVal,
+				IpAddress: &testAddress1,
+			},
+		},
+	}
+
+	ipv6s = map[string][]core.Ipv6{
+		"vnic1": {
+			{IpAddress: &testIPv6Address1},
+			{IpAddress: &testIPv6Address2},
+			{IpAddress: &testIPv6Address1},
+			{IpAddress: &testIPv6Address2},
+			{IpAddress: &testIPv6Address1},
+		},
+	}
+
 	attachedVnicsList = map[string][]core.VnicAttachment{
 		"vnics attached": {
 			{
@@ -783,6 +1456,69 @@ func TestValidateVnicAttachmentsAreInAttachedState(t *testing.T) {
 			}
 			if !reflect.DeepEqual(result, tt.output) {
 				t.Errorf("validateVnicAttachmentsAreInAttachedState(%s) => %t, want %t", tt.in, result, tt.output)
+			}
+		})
+	}
+}
+
+func TestGetSecondaryIpsByVNICs(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		ipFamilies            []string
+		existingSecondaryVnic []SubnetVnic
+		output                map[string]*vnicSecondaryAddresses
+		err                   error
+	}{
+		{
+			name:       "List call IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
+				Id: common.String("vnic1"),
+			}}},
+			output: map[string]*vnicSecondaryAddresses{
+				"vnic1": {
+					V6:       ipv6s["vnic1"],
+					V4:       privateIps["vnic1"],
+					hostIpv6: nil,
+					hostIpv4: nil,
+				},
+			},
+			err: nil,
+		},
+		{
+			name:       "Error to List IPv4",
+			ipFamilies: []string{IPv4},
+			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
+				Id: common.String("err"),
+			}}},
+			output: nil,
+			err:    errors.New("failed to list ipv4"),
+		},
+		{
+			name:       "Error to List IPv6",
+			ipFamilies: []string{IPv6},
+			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
+				Id: common.String("err"),
+			}}},
+			output: nil,
+			err:    errors.New("failed to list ipv6"),
+		},
+	}
+
+	npn := &NativePodNetworkReconciler{
+		OCIClient: MockOCIClient{},
+	}
+
+	t.Parallel()
+	for _, tt := range testCases {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic, tt.ipFamilies)
+			if err != nil && err.Error() != tt.err.Error() {
+				t.Errorf("got error %s, expected %s", err, tt.err)
+			}
+			if !reflect.DeepEqual(ipsByVNICs, tt.output) {
+				t.Errorf("getSecondaryIpsByVNICs=> %+v, want %+v", ipsByVNICs, tt.output)
 			}
 		})
 	}

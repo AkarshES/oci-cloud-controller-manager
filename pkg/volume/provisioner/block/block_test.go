@@ -324,6 +324,15 @@ func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicId s
 func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
 	return &core.Ipv6{}, nil
 }
+
+func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string) ([]core.Ipv6, error) {
+	return []core.Ipv6{}, nil
+}
+
+func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
 func (c *MockVirtualNetworkClient) GetSubnet(ctx context.Context, id string) (*core.Subnet, error) {
 	return nil, nil
 }

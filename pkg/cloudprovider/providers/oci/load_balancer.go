@@ -710,9 +710,9 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 					return nil, err
 				}
 				freeformTags := resp.FreeformTags
-				if _, ok := freeformTags["ManagedBy"]; !ok {
+				if _, ok := freeformTags[client.ManagedBy]; !ok {
 					if etag != nil {
-						freeformTags["ManagedBy"] = "CCM"
+						freeformTags[client.ManagedBy] = client.CCM
 						response, err := cp.client.Networking().UpdateNetworkSecurityGroup(ctx, nsg, *etag, freeformTags)
 						if err != nil {
 							logger.With(zap.Error(err)).Errorf("Failed to update nsg %s", nsg)
@@ -1924,7 +1924,7 @@ func (cp *CloudProvider) getFrontendNsg(ctx context.Context, logger *zap.Sugared
 		logger.Errorf("failed to get nsg %s", id)
 		return "", nil, err
 	}
-	freeFormTags := map[string]string{"CreatedBy": "CCM", "ServiceUid": uid}
+	freeFormTags := map[string]string{client.CreatedBy: client.CCM, "ServiceUid": uid}
 	if reflect.DeepEqual(nsg.FreeformTags, freeFormTags) {
 		nsgId := pointer.StringDeref(nsg.Id, "")
 		logger.Infof("Found managed frontend nsg %s", nsgId)

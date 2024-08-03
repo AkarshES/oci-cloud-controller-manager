@@ -24,11 +24,36 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type VNICAddress struct {
-	VNICID     *string   `json:"vnicId,omitempty"`
-	MACAddress *string   `json:"macAddress,omitempty"`
-	RouterIP   *string   `json:"routerIp,omitempty"`
-	Addresses  []*string `json:"addresses,omitempty"`
-	SubnetCidr *string   `json:"subnetCidr,omitempty"`
+	VNICID        *string       `json:"vnicId,omitempty"`
+	MACAddress    *string       `json:"macAddress,omitempty"`
+	RouterIP      *string       `json:"routerIp,omitempty"`
+	RouterIPs     []RouterIP    `json:"routerIps,omitempty"`
+	Addresses     []*string     `json:"addresses,omitempty"`
+	PodAddresses  []PodAddress  `json:"podAddresses,omitempty"`
+	SubnetCidr    *string       `json:"subnetCidr,omitempty"`
+	SubnetCidrs   []SubnetCidr  `json:"subnetCidrs,omitempty"`
+	HostAddress   *string       `json:"hostAddress,omitempty"`
+	HostAddresses []HostAddress `json:"hostAddresses,omitempty"`
+}
+
+type RouterIP struct {
+	V4 *string `json:"v4,omitempty"`
+	V6 *string `json:"v6,omitempty"`
+}
+
+type PodAddress struct {
+	V4 *string `json:"v4,omitempty"`
+	V6 *string `json:"v6,omitempty"`
+}
+
+type SubnetCidr struct {
+	V4 *string `json:"v4,omitempty"`
+	V6 *string `json:"v6,omitempty"`
+}
+
+type HostAddress struct {
+	V4 *string `json:"v4,omitempty"`
+	V6 *string `json:"v6,omitempty"`
 }
 
 // NativePodNetworkSpec defines the desired state of NativePodNetwork
@@ -37,6 +62,7 @@ type NativePodNetworkSpec struct {
 	PodSubnetIds            []*string `json:"podSubnetIds,omitempty"`
 	Id                      *string   `json:"id,omitempty"`
 	NetworkSecurityGroupIds []*string `json:"networkSecurityGroupIds,omitempty"`
+	IPFamilies              []*string `json:"ipFamilies,omitempty"`
 }
 
 // NativePodNetworkStatus defines the observed state of NativePodNetwork
