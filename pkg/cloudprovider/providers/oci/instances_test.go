@@ -40,6 +40,18 @@ import (
 
 var (
 	instanceVnics = map[string]*core.Vnic{
+		"default": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("default"),
+			SubnetId:      common.String("subnetwithdnslabel"),
+		},
+		"instance1": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("instance1"),
+			SubnetId:      common.String("subnetwithdnslabel"),
+		},
 		"basic-complete": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
@@ -78,6 +90,41 @@ var (
 			SubnetId:      common.String("subnetwithoutdnslabel"),
 		},
 		"no-vcn-dns-label": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("no-vcn-dns-label"),
+			SubnetId:      common.String("subnetwithnovcndnslabel"),
+		},
+		"ipv6-instance": {
+			HostnameLabel: common.String("no-vcn-dns-label"),
+			SubnetId:      common.String("IPv6-subnet"),
+			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
+		},
+		"ipv6-instance-ula": {
+			HostnameLabel: common.String("no-vcn-dns-label"),
+			SubnetId:      common.String("IPv6-subnet"),
+			Ipv6Addresses: []string{"fc00:0000:0000:0000:0000:0000:0000:0000"},
+		},
+		"ipv6-instance-2": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("no-vcn-dns-label"),
+			SubnetId:      common.String("IPv6-subnet"),
+			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:idfe"},
+		},
+		"instance-id-ipv4-ipv6": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("no-vcn-dns-label"),
+			SubnetId:      common.String("IPv4-IPv6-subnet"),
+			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
+		},
+		"instance-id-ipv6": {
+			HostnameLabel: common.String("no-vcn-dns-label"),
+			SubnetId:      common.String("ipv6-instance"),
+			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
+		},
+		"instance-id-ipv4": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
@@ -124,6 +171,18 @@ var (
 			Shape:              common.String("VM.Standard1.2"),
 			DisplayName:        common.String("instance_zone_test"),
 		},
+		"ipv6-instance": {
+			CompartmentId: common.String("ipv6-instance"),
+		},
+		"instance-id-ipv4-ipv6": {
+			CompartmentId: common.String("instance-id-ipv4-ipv6"),
+		},
+		"instance-id-ipv4": {
+			CompartmentId: common.String("instance-id-ipv4"),
+		},
+		"instance-id-ipv6": {
+			CompartmentId: common.String("instance-id-ipv6"),
+		},
 	}
 	subnets = map[string]*core.Subnet{
 		"subnetwithdnslabel": {
@@ -169,6 +228,30 @@ var (
 			DnsLabel:           common.String("subnetwithnovcndnslabel"),
 			VcnId:              common.String("vcnwithoutdnslabel"),
 			AvailabilityDomain: nil,
+		},
+		"IPv4-subnet": {
+			Id:                 common.String("IPv4-subnet"),
+			DnsLabel:           common.String("subnetwithnovcndnslabel"),
+			VcnId:              common.String("vcnwithoutdnslabel"),
+			AvailabilityDomain: nil,
+			CidrBlock:          common.String("10.0.0.0/16"),
+		},
+		"IPv6-subnet": {
+			Id:                 common.String("IPv6-subnet"),
+			DnsLabel:           common.String("subnetwithnovcndnslabel"),
+			VcnId:              common.String("vcnwithoutdnslabel"),
+			AvailabilityDomain: nil,
+			Ipv6CidrBlock:      common.String("IPv6Cidr"),
+			Ipv6CidrBlocks:     []string{"IPv6Cidr"},
+		},
+		"IPv4-IPv6-subnet": {
+			Id:                 common.String("IPv4-IPv6-subnet"),
+			DnsLabel:           common.String("subnetwithnovcndnslabel"),
+			VcnId:              common.String("vcnwithoutdnslabel"),
+			AvailabilityDomain: nil,
+			CidrBlock:          common.String("10.0.0.0/16"),
+			Ipv6CidrBlocks:     []string{},
+			Ipv6CidrBlock:      common.String("IPv6Cidr"),
 		},
 	}
 
@@ -255,6 +338,29 @@ var (
 				},
 			},
 		},
+		"instanceWithAddressIPv4IPv6": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "compartment1",
+				},
+				Name: "instanceWithAddressIPv4IPv6",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "instanceWithAddressIPv4IPv6",
+			},
+			Status: v1.NodeStatus{
+				Addresses: []v1.NodeAddress{
+					{
+						Address: "0.0.0.1",
+						Type:    "InternalIP",
+					},
+					{
+						Address: "2001:0db8:85a3:0000:0000:8a2e:0370:7335",
+						Type:    "InternalIP",
+					},
+				},
+			},
+		},
 		"virtualNodeDefault": {
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
@@ -288,6 +394,79 @@ var (
 				ProviderID: "ocid1.virtualnode.oc1.iad.noncache",
 			},
 		},
+		"ipv6-node": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "default",
+				},
+				Labels: map[string]string{
+					IPv4NodeIPFamilyLabel: "true",
+					IPv6NodeIPFamilyLabel: "true",
+				},
+				Name: "Node-Ipv6",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "ipv6-instance",
+			},
+		},
+		"ipv6-node-ula": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "default",
+				},
+				Labels: map[string]string{
+					IPv4NodeIPFamilyLabel: "true",
+					IPv6NodeIPFamilyLabel: "true",
+				},
+				Name: "Node-Ipv6",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "ipv6-instance-ula",
+			},
+		},
+		"instance-id-ipv4-ipv6": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "default",
+				},
+				Labels: map[string]string{
+					IPv4NodeIPFamilyLabel: "true",
+					IPv6NodeIPFamilyLabel: "true",
+				},
+				Name: "Node-Ipv6",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "instance-id-ipv4-ipv6",
+			},
+		},
+		"instance-id-ipv4": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "default",
+				},
+				Labels: map[string]string{
+					IPv4NodeIPFamilyLabel: "true",
+				},
+				Name: "Node-Ipv6",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "instance-id-ipv4",
+			},
+		},
+		"instance-id-ipv6": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "default",
+				},
+				Labels: map[string]string{
+					IPv6NodeIPFamilyLabel: "true",
+				},
+				Name: "Node-Ipv6",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "instance-id-ipv6",
+			},
+		},
 	}
 
 	podList = map[string]*v1.Pod{
@@ -314,6 +493,27 @@ var (
 			},
 			Status: v1.PodStatus{
 				PodIP: "0.0.0.10",
+				PodIPs: []v1.PodIP{
+					{"0.0.0.10"},
+				},
+			},
+		},
+		"virtualPodIPv4Ipv6": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "virtualPodIPv4Ipv6",
+				Labels: map[string]string{
+					"app": "pod3",
+				},
+			},
+			Spec: v1.PodSpec{
+				NodeName: "virtualNodeDefault",
+			},
+			Status: v1.PodStatus{
+				PodIP: "0.0.0.20",
+				PodIPs: []v1.PodIP{
+					{"0.0.0.20"},
+					{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
+				},
 			},
 		},
 		"regularPod1": {
@@ -613,11 +813,11 @@ var (
 
 type MockSecurityListManager struct{}
 
-func (MockSecurityListManager) Update(ctx context.Context, lbSubnets []*core.Subnet, _ []*core.Subnet, sourceCIDRs []string, actualPorts *portSpec, desiredPorts portSpec, isPreserveSource bool) error {
+func (MockSecurityListManager) Update(ctx context.Context, sc securityRuleComponents) error {
 	return nil
 }
 
-func (MockSecurityListManager) Delete(ctx context.Context, lbSubnets []*core.Subnet, backendSubnets []*core.Subnet, ports portSpec, sourceCIDRs []string, isPreserveSource bool) error {
+func (MockSecurityListManager) Delete(ctx context.Context, sc securityRuleComponents) error {
 	return nil
 }
 
@@ -801,7 +1001,7 @@ func (c *MockVirtualNetworkClient) GetVNIC(ctx context.Context, id string) (*cor
 	return &core.Vnic{}, nil
 }
 
-func (c *MockVirtualNetworkClient) GetSubnetFromCacheByIP(ip string) (*core.Subnet, error) {
+func (c *MockVirtualNetworkClient) GetSubnetFromCacheByIP(ip client.IpAddresses) (*core.Subnet, error) {
 	return nil, nil
 }
 
@@ -1291,6 +1491,22 @@ func TestExtractNodeAddresses(t *testing.T) {
 			},
 			err: nil,
 		},
+		{
+			name: "ipv6-instance",
+			in:   "ipv6-instance",
+			out: []v1.NodeAddress{
+				{Type: v1.NodeExternalIP, Address: "2001:db8:85a3::8a2e:370:7334"},
+			},
+			err: nil,
+		},
+		{
+			name: "ipv6-instance-ULA",
+			in:   "ipv6-instance-ula",
+			out: []v1.NodeAddress{
+				{Type: v1.NodeInternalIP, Address: "fc00::"},
+			},
+			err: nil,
+		},
 	}
 
 	cp := &CloudProvider{
@@ -1298,6 +1514,7 @@ func TestExtractNodeAddresses(t *testing.T) {
 		config:        &providercfg.Config{CompartmentID: "testCompartment"},
 		NodeLister:    &mockNodeLister{},
 		instanceCache: &mockInstanceCache{},
+		logger:        zap.S(),
 	}
 
 	for _, tt := range testCases {
@@ -1392,6 +1609,54 @@ func TestInstanceType(t *testing.T) {
 			}
 			if !reflect.DeepEqual(result, tt.out) {
 				t.Errorf("InstanceType(context, %+v) => %+v, want %+v", tt.in, result, tt.out)
+			}
+		})
+	}
+}
+
+func TestGetNodeIpFamily(t *testing.T) {
+	testCases := []struct {
+		name string
+		in   string
+		out  []string
+		err  error
+	}{
+		{
+			name: "IPv4",
+			in:   "instance-id-ipv4",
+			out:  []string{IPv4},
+			err:  nil,
+		},
+		{
+			name: "IPv6",
+			in:   "instance-id-ipv6",
+			out:  []string{IPv6},
+			err:  nil,
+		},
+		{
+			name: "IPv4 & IPv6",
+			in:   "instance-id-ipv4-ipv6",
+			out:  []string{IPv4, IPv6},
+			err:  nil,
+		},
+	}
+
+	cp := &CloudProvider{
+		NodeLister:    &mockNodeLister{},
+		client:        MockOCIClient{},
+		config:        &providercfg.Config{CompartmentID: "testCompartment"},
+		logger:        zap.S(),
+		instanceCache: &mockInstanceCache{},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := cp.getNodeIpFamily(tt.in)
+			if err != nil && err.Error() != tt.err.Error() {
+				t.Errorf("getNodeIpFamily(context, %+v) got error %v, expected %v", tt.in, err, tt.err)
+			}
+			if !reflect.DeepEqual(result, tt.out) {
+				t.Errorf("getNodeIpFamily(context, %+v) => %+v, want %+v", tt.name, result, tt.out)
 			}
 		})
 	}
