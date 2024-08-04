@@ -20,6 +20,7 @@ import (
 
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
+	"k8s.io/utils/pointer"
 )
 
 // ComputeInterface defines the subset of the OCI compute API utilised by the CCM.
@@ -310,11 +311,12 @@ func (c *client) AttachVnic(ctx context.Context, instanceID, subnetId *string, n
 				NsgIds:              stringPointerToStringSlice(nsgIds),
 				SkipSourceDestCheck: skipSourceDestCheck,
 				AssignPublicIp:      &assignPublicIp,
+				FreeformTags:        map[string]string{CreatedBy: CCM, "InstanceId": pointer.StringDeref(instanceID, "")},
 			},
 			InstanceId: instanceID,
 		},
 		RequestMetadata: requestMetadata})
-	incRequestCounter(err, listVerb, vnicAttachmentResource)
+	incRequestCounter(err, createVerb, vnicAttachmentResource)
 
 	if err != nil {
 		return response, errors.WithStack(err)

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -42,15 +43,18 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
+	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	errors2 "github.com/pkg/errors"
 )
 
 const (
-	CREATE_PRIVATE_IP             = "CREATE_PRIVATE_IP"
-	ATTACH_VNIC                   = "ATTACH_VNIC"
-	INITIALIZE_NPN_NODE           = "INITIALIZE_NPN_NODE"
-	maxSecondaryPrivateIPsPerVNIC = 31
+	CREATE_PRIVATE_IP      = "CREATE_PRIVATE_IP"
+	ATTACH_VNIC            = "ATTACH_VNIC"
+	INITIALIZE_NPN_NODE    = "INITIALIZE_NPN_NODE"
+	maxSecondaryIpsPerVNIC = 32
+	IPv4                   = "IPv4"
+	IPv6                   = "IPv6"
 	// GetNodeTimeout is the timeout for the node object to be created in Kubernetes
 	GetNodeTimeout                             = 20 * time.Minute
 	ensureVnicAttachedAndAvailablePollDuration = 2 * time.Minute
@@ -103,15 +107,26 @@ type VnicAttachmentResponse struct {
 	timeTaken      float64
 }
 
+type IpAddressCountByVersion struct {
+	V4 int
+	V6 int
+}
+
+type IpAllocations struct {
+	V4 []IPAllocation
+	V6 []IPAllocation
+}
+
 type VnicIPAllocations struct {
 	vnicId string
-	ips    int
+	ips    IpAddressCountByVersion
 }
 
 type VnicIPAllocationResponse struct {
 	vnicId        string
-	err           error
-	ipAllocations []IPAllocation
+	errIPv4       error
+	errIPv6       error
+	ipAllocations IpAllocations
 }
 type VnicAttachmentResponseSlice []VnicAttachmentResponse
 
@@ -132,6 +147,13 @@ type SubnetVnic struct {
 	Vnic       *core.Vnic
 	Subnet     *core.Subnet
 	Attachment *core.VnicAttachment
+}
+
+type vnicSecondaryAddresses struct {
+	V4       []core.PrivateIp
+	V6       []core.Ipv6
+	hostIpv4 *string
+	hostIpv6 *string
 }
 
 type ErrorMetric interface {
@@ -286,7 +308,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	log.WithValues("instanceId", *npn.Spec.Id).Info(FetchingInstance)
-	requiredSecondaryVNICs := int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxSecondaryPrivateIPsPerVNIC))
+	requiredSecondaryVNICs := int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxSecondaryIpsPerVNIC))
 	instance, err := r.OCIClient.Compute().GetInstance(ctx, *npn.Spec.Id)
 	if err != nil || instance.Id == nil {
 		failReason, failMessage = "GetInstanceFailed", "failed to get OCI compute instance"
@@ -389,8 +411,15 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
+	ipFamilies, err := getIpFamilies(ctx, npn)
+	if err != nil {
+		log.Error(err, "failed to get IpFamilies from NPN CR")
+		r.handleError(ctx, req, err, "GetNPN_IPFamilies")
+		return ctrl.Result{}, err
+	}
+
 	log.Info(FetchingPrivateIPsForSecondaryVNICs)
-	existingSecondaryIpsbyVNIC, err := r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
+	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, ipFamilies)
 	if err != nil {
 		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
@@ -400,10 +429,11 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).Info(FetchedPrivateIPsForSecondaryVNICs)
 
 	log.Info(ComputingAdditionalIpsByVnic)
-	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount-totalAllocatedSecondaryIPs)
+	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount, totalAllocatedSecondaryIPs, ipFamilies)
 	if err != nil {
 		failReason, failMessage = "AllocatePrivateIPsFailed", "failed to allocate the required IP addresses"
-		log.WithValues("additionalIpsRequired", *npn.Spec.MaxPodCount-totalAllocatedSecondaryIPs).Error(err, failMessage)
+		log.WithValues("maxPodCount", *npn.Spec.MaxPodCount).Error(err, failMessage)
+		log.WithValues("totalAllocatedSecondaryIPs", totalAllocatedSecondaryIPs).Error(err, failMessage)
 		r.handleError(ctx, req, err, "AllocatePrivateIP")
 		return ctrl.Result{}, err
 	}
@@ -413,36 +443,66 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	vnicAdditionalIpAllocations := make([]VnicIPAllocationResponse, requiredSecondaryVNICs)
 	workqueue.ParallelizeUntil(ctx, requiredSecondaryVNICs, requiredSecondaryVNICs, func(outerIndex int) {
 		parallelLog := log.WithValues("vnicId", additionalIpsByVnic[outerIndex].vnicId).WithValues("requiredIPs", additionalIpsByVnic[outerIndex].ips)
-		if additionalIpsByVnic[outerIndex].ips <= 0 {
-			mutex.Lock()
-			vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, nil, []IPAllocation{}}
-			mutex.Unlock()
-			return
-		}
-		parallelLog.Info("Need to allocate secondary IPs for VNIC")
-		ipAllocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips)
-		for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips; innerIndex++ {
-			startTime := time.Now()
-			_, err := r.OCIClient.Networking().CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
-			if err != nil {
-				parallelLog.Error(err, "failed to create private-ip")
+		var errIPv4 error = nil
+		var errIPv6 error = nil
+		allocations := IpAllocations{}
+		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+			if additionalIpsByVnic[outerIndex].ips.V4 > 0 {
+				parallelLog.Info("Need to allocate secondary IPv4 for VNIC")
+				ipv4Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V4)
+				for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V4; innerIndex++ {
+					startTime := time.Now()
+					_, err := r.OCIClient.Networking().CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
+					if err != nil {
+						parallelLog.Error(err, "failed to create IPv4")
+					}
+					ipv4Allocations[innerIndex].err = err
+					ipv4Allocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
+				}
+				errIPv4 = validateVnicIpAllocation(ipv4Allocations)
+				allocations.V4 = ipv4Allocations
 			}
-			ipAllocations[innerIndex].err = err
-			ipAllocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
 		}
-		err := validateVnicIpAllocation(ipAllocations)
+		if contains(ipFamilies, IPv6) {
+			if additionalIpsByVnic[outerIndex].ips.V6 > 0 {
+				parallelLog.Info("Need to allocate secondary IPv6 for VNIC")
+				ipv6Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V6)
+				for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V6; innerIndex++ {
+					startTime := time.Now()
+					_, err := r.OCIClient.Networking().CreateIpv6(ctx, additionalIpsByVnic[outerIndex].vnicId)
+					if err != nil {
+						parallelLog.Error(err, "failed to create IPv6")
+					}
+					ipv6Allocations[innerIndex].err = err
+					ipv6Allocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
+				}
+				errIPv6 = validateVnicIpAllocation(ipv6Allocations)
+				allocations.V6 = ipv6Allocations
+			}
+		}
 		mutex.Lock()
-		vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, err, ipAllocations}
+		vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, errIPv4, errIPv6, allocations}
 		mutex.Unlock()
 	})
 	for _, ips := range vnicAdditionalIpAllocations {
-		if ips.err != nil {
-			failReason, failMessage = "CreatePrivateIPFailed", ips.err.Error()
-			r.handleError(ctx, req, ips.err, "CreatePrivateIP")
-			r.PushMetric(IPAllocationSlice(ips.ipAllocations).ErrorMetric())
-			return ctrl.Result{}, ips.err
+		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+			if ips.errIPv4 != nil {
+				failReason, failMessage = "CreatePrivateIPFailed", ips.errIPv4.Error()
+				r.handleError(ctx, req, ips.errIPv4, "CreatePrivateIP")
+				r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric())
+				return ctrl.Result{}, ips.errIPv4
+			}
+			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric())
 		}
-		r.PushMetric(IPAllocationSlice(ips.ipAllocations).ErrorMetric())
+		if contains(ipFamilies, IPv6) {
+			if ips.errIPv6 != nil {
+				failReason, failMessage = "CreateIPv6Failed", ips.errIPv6.Error()
+				r.handleError(ctx, req, ips.errIPv6, "CreateIPv6")
+				r.PushMetric(IPAllocationSlice(ips.ipAllocations.V6).ErrorMetric())
+				return ctrl.Result{}, ips.errIPv6
+			}
+			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V6).ErrorMetric())
+		}
 	}
 
 	log.Info(FetchingSecondaryVNICsAndIPsForInstance)
@@ -455,7 +515,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("existingSecondaryVNICs", existingSecondaryVNICs).
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(FetchedExistingSecondaryVNICsForInstance)
-	existingSecondaryIpsbyVNIC, err = r.getSecondaryPrivateIpsByVNICs(ctx, existingSecondaryVNICs)
+	existingSecondaryIpsbyVNIC, err = r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, ipFamilies)
 	if err != nil {
 		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
@@ -466,6 +526,18 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("secondaryIpsbyVNIC", existingSecondaryIpsbyVNIC).
 		WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).
 		Info("Fetched existingSecondaryIp for instance")
+
+	// assign host IP address here per vnic
+	existingSecondaryIpsbyVNIC = assignHostIpAddressForVnic(existingSecondaryIpsbyVNIC, ipFamilies)
+
+	// validate if maxPodCount = number of secondary IPs available on the vnics
+	err = validateMaxPodCountWithSecondaryIPCount(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount, ipFamilies)
+	if err != nil {
+		failReason = "IPsNotEqualToMaxPodCount"
+		log.Error(err, "secondary IPs are not equal to MaxPodCount")
+		r.handleError(ctx, req, err, "validateMaxPodCountWithSecondaryIPCount")
+		return ctrl.Result{}, err
+	}
 
 	log.Info("Fetching NPN CR for owner ref & status update")
 	updateNPN := npnv1beta1.NativePodNetwork{}
@@ -502,7 +574,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	updateNPN.Status.State = &STATE_SUCCESS
 	updateNPN.Status.Reason = &COMPLETED
-	updateNPN.Status.VNICs = convertCoreVNICtoNPNStatus(existingSecondaryVNICs, existingSecondaryIpsbyVNIC)
+	updateNPN.Status.VNICs = convertCoreVNICtoNPNStatus(existingSecondaryVNICs, existingSecondaryIpsbyVNIC, ipFamilies)
 	r.Recorder.Event(&npn, v1.EventTypeNormal, "NPN_CR_Success", "NPN CR reconciled successfully")
 	err = r.Status().Update(ctx, &updateNPN)
 	if err != nil {
@@ -571,20 +643,65 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 }
 
 // get the list of secondary private ips allocated on the given VNIC
-func (r *NativePodNetworkReconciler) getSecondaryPrivateIpsByVNICs(ctx context.Context, existingSecondaryVNICs []SubnetVnic) (map[string][]core.PrivateIp, error) {
-	privateIPsbyVNICs := make(map[string][]core.PrivateIp)
+func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context, existingSecondaryVNICs []SubnetVnic, ipFamilies []string) (map[string]*vnicSecondaryAddresses, error) {
+	ipsByVNICs := make(map[string]*vnicSecondaryAddresses)
 	log := log.FromContext(ctx)
 	for _, secondary := range existingSecondaryVNICs {
+		vnicSecondaryAddresses := &vnicSecondaryAddresses{}
 		log := log.WithValues("vnicId", *secondary.Vnic.Id)
-		privateIps, err := r.OCIClient.Networking().ListPrivateIps(ctx, *secondary.Vnic.Id)
-		if err != nil {
-			log.Error(err, "failed to list secondary IPs for VNIC")
-			return nil, err
+		var err error
+		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+			vnicSecondaryAddresses.V4, err = r.OCIClient.Networking().ListPrivateIps(ctx, *secondary.Vnic.Id)
+			if err != nil {
+				log.Error(err, "failed to list secondary IPv4 IPs for VNIC")
+				return nil, err
+			}
 		}
-		privateIps = filterPrivateIp(privateIps)
-		privateIPsbyVNICs[*secondary.Vnic.Id] = privateIps
+		if contains(ipFamilies, IPv6) {
+			vnicSecondaryAddresses.V6, err = r.OCIClient.Networking().ListIpv6s(ctx, *secondary.Vnic.Id)
+			if err != nil {
+				log.Error(err, "failed to list secondary IPv6 IPs for VNIC")
+				return nil, err
+			}
+		}
+		vnicSecondaryAddresses = filterPrimaryIp(vnicSecondaryAddresses)
+		ipsByVNICs[*secondary.Vnic.Id] = vnicSecondaryAddresses
 	}
-	return privateIPsbyVNICs, nil
+	return ipsByVNICs, nil
+}
+
+// assignHostIpAddressForVnic is a util method to get HostIP Address per vnic
+func assignHostIpAddressForVnic(existingSecondaryVNICs map[string]*vnicSecondaryAddresses, ipFamilies []string) map[string]*vnicSecondaryAddresses {
+	IPsbyVNICs := make(map[string]*vnicSecondaryAddresses)
+	for k, vnic := range existingSecondaryVNICs {
+		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+			if len(vnic.V4) >= 1 {
+				vnic.hostIpv4, vnic.V4 = vnic.V4[0].IpAddress, vnic.V4[1:]
+			}
+		}
+		if contains(ipFamilies, IPv6) {
+			if len(vnic.V6) >= 1 {
+				vnic.hostIpv6, vnic.V6 = vnic.V6[0].IpAddress, vnic.V6[1:]
+			}
+		}
+		IPsbyVNICs[k] = vnic
+	}
+	return IPsbyVNICs
+}
+
+func validateMaxPodCountWithSecondaryIPCount(existingSecondaryVNICs map[string]*vnicSecondaryAddresses, maxPodCount int, ipFamilies []string) error {
+	V4IPs, V6IPs := 0, 0
+	for _, vnic := range existingSecondaryVNICs {
+		V4IPs = V4IPs + len(vnic.V4)
+		V6IPs = V6IPs + len(vnic.V6)
+	}
+	if (len(ipFamilies) == 0 || contains(ipFamilies, IPv4)) && V4IPs != maxPodCount {
+		return errors2.Errorf("Allocated IPv4 count != maxPodCount (%d != %d)", maxPodCount, V4IPs)
+	}
+	if contains(ipFamilies, IPv6) && V6IPs != maxPodCount {
+		return errors2.Errorf("Allocated IPv6 count != maxPodCount (%d != %d)", maxPodCount, V6IPs)
+	}
+	return nil
 }
 
 // util method to handle logging when thre is an error and updating the NPN status appropriately
@@ -607,24 +724,47 @@ func (r *NativePodNetworkReconciler) handleError(ctx context.Context, req ctrl.R
 	}
 }
 
+// contains is a utility method to check if a string is part of a slice
+func contains(slice []string, searchString string) bool {
+	for _, element := range slice {
+		if element == searchString {
+			return true
+		}
+	}
+	return false
+}
+
 // exclude the primary IPs in the list of private IPs on VNIC
-func filterPrivateIp(privateIps []core.PrivateIp) []core.PrivateIp {
-	secondaryIps := []core.PrivateIp{}
-	for _, ip := range privateIps {
+func filterPrimaryIp(ips *vnicSecondaryAddresses) *vnicSecondaryAddresses {
+	Ips := &vnicSecondaryAddresses{
+		V6: []core.Ipv6{},
+		V4: []core.PrivateIp{},
+	}
+	for _, ip := range ips.V4 {
 		// ignore primary IP
 		if *ip.IsPrimary {
 			continue
 		}
-		secondaryIps = append(secondaryIps, ip)
+		Ips.V4 = append(Ips.V4, ip)
 	}
-	return secondaryIps
+	for _, ip := range ips.V6 {
+		Ips.V6 = append(Ips.V6, ip)
+	}
+
+	return Ips
 }
 
 // compute the total number of allocated secondary ips on secondary vnics for this compute instance
-func totalAllocatedSecondaryIpsForInstance(vnicToIpMap map[string][]core.PrivateIp) int {
-	totalSecondaryIps := 0
+func totalAllocatedSecondaryIpsForInstance(vnicToIpMap map[string]*vnicSecondaryAddresses) IpAddressCountByVersion {
+	totalSecondaryIPv4, totalSecondaryIPv6 := 0, 0
+
 	for _, Ips := range vnicToIpMap {
-		totalSecondaryIps += len(Ips)
+		totalSecondaryIPv4 += len(Ips.V4)
+		totalSecondaryIPv6 += len(Ips.V6)
+	}
+	totalSecondaryIps := IpAddressCountByVersion{
+		V4: totalSecondaryIPv4,
+		V6: totalSecondaryIPv6,
 	}
 	return totalSecondaryIps
 }
@@ -640,25 +780,55 @@ func validateAdditionalVnicAttachments(vnics []VnicAttachmentResponse) error {
 }
 
 // compute the number of (additional) IPs needed to be allocated per VNIC
-func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string][]core.PrivateIp, additionalSecondaryIps int) ([]VnicIPAllocations, error) {
-	requiredAdditionalSecondaryIps := additionalSecondaryIps
+func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSecondaryAddresses, maxPodCount int, allocatedSecondaryIps IpAddressCountByVersion, ipFamilies []string) ([]VnicIPAllocations, error) {
+	if maxPodCount == 0 {
+		return []VnicIPAllocations{}, nil
+	}
+
+	// Required Host Addresses is supposed to be one host address per vnic
+	requiredHostAddresses := len(existingIpsByVnic)
+
+	requiredSecondaryIPv4 := 0
+	requiredSecondaryIPv6 := 0
+	var requireIPv6, requireIPv4 bool
+	if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+		requiredSecondaryIPv4 = maxPodCount - allocatedSecondaryIps.V4 + requiredHostAddresses
+		requireIPv4 = true
+	}
+	if contains(ipFamilies, IPv6) {
+		requiredSecondaryIPv6 = maxPodCount - allocatedSecondaryIps.V6 + requiredHostAddresses
+		requireIPv6 = true
+	}
 	additionalIpsByVnic := make([]VnicIPAllocations, 0)
 	for vnic, existingIps := range existingIpsByVnic {
-		// VNIC already has max secondary IPs
-		if len(existingIps) == maxSecondaryPrivateIPsPerVNIC {
-			additionalIpsByVnic = append(additionalIpsByVnic, VnicIPAllocations{vnic, 0})
-			continue
+		ipAllocation := IpAddressCountByVersion{}
+		if requireIPv4 {
+			allocatableIPv4 := maxSecondaryIpsPerVNIC - len(existingIps.V4)
+			if len(existingIps.V4) == maxSecondaryIpsPerVNIC {
+				ipAllocation.V4 = 0
+			} else if allocatableIPv4 > requiredSecondaryIPv4 {
+				ipAllocation.V4 = requiredSecondaryIPv4
+				requiredSecondaryIPv4 -= requiredSecondaryIPv4
+			} else {
+				ipAllocation.V4 = allocatableIPv4
+				requiredSecondaryIPv4 -= allocatableIPv4
+			}
 		}
-		allocatableIps := maxSecondaryPrivateIPsPerVNIC - len(existingIps)
-		if allocatableIps > requiredAdditionalSecondaryIps {
-			additionalIpsByVnic = append(additionalIpsByVnic, VnicIPAllocations{vnic, requiredAdditionalSecondaryIps})
-			requiredAdditionalSecondaryIps -= requiredAdditionalSecondaryIps
-			continue
+		if requireIPv6 {
+			allocatableIPv6 := maxSecondaryIpsPerVNIC - len(existingIps.V6)
+			if len(existingIps.V6) == maxSecondaryIpsPerVNIC {
+				ipAllocation.V6 = 0
+			} else if allocatableIPv6 > requiredSecondaryIPv6 {
+				ipAllocation.V6 = requiredSecondaryIPv6
+				requiredSecondaryIPv6 -= requiredSecondaryIPv6
+			} else {
+				ipAllocation.V6 = allocatableIPv6
+				requiredSecondaryIPv6 -= allocatableIPv6
+			}
 		}
-		additionalIpsByVnic = append(additionalIpsByVnic, VnicIPAllocations{vnic, allocatableIps})
-		requiredAdditionalSecondaryIps -= allocatableIps
+		additionalIpsByVnic = append(additionalIpsByVnic, VnicIPAllocations{vnic, ipAllocation})
 	}
-	if requiredAdditionalSecondaryIps > 0 {
+	if requiredSecondaryIPv4 > 0 || requiredSecondaryIPv6 > 0 {
 		return nil, errors.New("failed to allocate the required number of IPs with existing VNICs")
 	}
 	return additionalIpsByVnic, nil
@@ -675,22 +845,96 @@ func validateVnicIpAllocation(ipAllocations []IPAllocation) error {
 }
 
 // util method to translate OCI objects to NPN status fields
-func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSecondaryIpsbyVNIC map[string][]core.PrivateIp) []npnv1beta1.VNICAddress {
-	npnVNICAddress := make([]npnv1beta1.VNICAddress, 0, len(existingSecondaryIpsbyVNIC))
+func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSecondaryIpsByVNIC map[string]*vnicSecondaryAddresses, ipFamilies []string) []npnv1beta1.VNICAddress {
+	requireIPv6s, requireIPv4s := contains(ipFamilies, IPv6), contains(ipFamilies, IPv4)
+
+	npnVNICAddresses := make([]npnv1beta1.VNICAddress, 0, len(existingSecondaryIpsByVNIC))
 	for _, vnic := range existingSecondaryVNICs {
-		vnicIps := make([]*string, 0, len(existingSecondaryIpsbyVNIC[*vnic.Vnic.Id]))
-		for _, ip := range existingSecondaryIpsbyVNIC[*vnic.Vnic.Id] {
-			vnicIps = append(vnicIps, ip.IpAddress)
-		}
-		npnVNICAddress = append(npnVNICAddress, npnv1beta1.VNICAddress{
+		npnVNICAddress := npnv1beta1.VNICAddress{
 			VNICID:     vnic.Vnic.Id,
 			MACAddress: vnic.Vnic.MacAddress,
-			RouterIP:   vnic.Subnet.VirtualRouterIp,
-			Addresses:  vnicIps,
-			SubnetCidr: vnic.Subnet.CidrBlock,
-		})
+		}
+		vnicSecondaryAddresses := existingSecondaryIpsByVNIC[*vnic.Vnic.Id]
+		var hostIPv4, hostIPv6, subnetCidrV4, subnetCidrV6, routerIPv4, routerIPv6 *string
+		if requireIPv4s {
+			subnetCidrV4 = vnic.Subnet.CidrBlock
+			routerIPv4 = vnic.Subnet.VirtualRouterIp
+		}
+		if requireIPv6s {
+			if vnic.Subnet.Ipv6CidrBlock != nil {
+				// this value will be nil in case of Ipv6 of type ULA
+				subnetCidrV6 = vnic.Subnet.Ipv6CidrBlock
+			} else if len(vnic.Subnet.Ipv6CidrBlocks) > 0 {
+				// default to first IPv6 ULA prefix. eventually we want this CIDR block to be passed via the NPN CRD as a parameter as Ipv6AddressIpv6SubnetCidrPairDetails
+				subnetCidrV6 = common.String(vnic.Subnet.Ipv6CidrBlocks[0])
+			}
+			routerIPv6 = vnic.Subnet.Ipv6VirtualRouterIp
+		}
+		if len(ipFamilies) > 0 {
+			hostIPv4 = vnicSecondaryAddresses.hostIpv4
+			hostIPv6 = vnicSecondaryAddresses.hostIpv6
+			// Populate new fields only in case of IPFamilies being present in CRD
+			npnVNICAddress.HostAddresses = []npnv1beta1.HostAddress{
+				{
+					V4: hostIPv4,
+					V6: hostIPv6,
+				},
+			}
+			npnVNICAddress.RouterIPs = []npnv1beta1.RouterIP{
+				{
+					V4: routerIPv4,
+					V6: routerIPv6,
+				},
+			}
+			npnVNICAddress.SubnetCidrs = []npnv1beta1.SubnetCidr{
+				{
+					V4: subnetCidrV4,
+					V6: subnetCidrV6,
+				},
+			}
+		}
+		var secondaryIpCount int
+		if len(ipFamilies) == 0 || requireIPv4s {
+			secondaryIpCount = len(existingSecondaryIpsByVNIC[*vnic.Vnic.Id].V4)
+		}
+		if requireIPv6s {
+			secondaryIpCount = len(existingSecondaryIpsByVNIC[*vnic.Vnic.Id].V6)
+		}
+		vnicAddresses := make([]*string, 0, secondaryIpCount)
+		vnicPodAddresses := make([]npnv1beta1.PodAddress, 0, secondaryIpCount)
+		var ipv4IP, ipv6IP *string
+		for i := 0; i < secondaryIpCount; i++ {
+			if len(ipFamilies) == 0 || requireIPv4s {
+				// Populate the old fields in case of IPv4 or ipFamilies length == 0
+				vnicAddresses = append(vnicAddresses, vnicSecondaryAddresses.V4[i].IpAddress)
+			}
+			if requireIPv4s {
+				ipv4IP = vnicSecondaryAddresses.V4[i].IpAddress
+			}
+			if requireIPv6s {
+				ipv6IP = vnicSecondaryAddresses.V6[i].IpAddress
+			}
+			if len(ipFamilies) > 0 {
+				// Populate new fields only in case of IPFamilies being present in CRD
+				vnicPodAddresses = append(vnicPodAddresses, npnv1beta1.PodAddress{
+					V4: ipv4IP,
+					V6: ipv6IP,
+				})
+			}
+		}
+
+		if len(ipFamilies) == 0 || requireIPv4s {
+			npnVNICAddress.HostAddress = vnicSecondaryAddresses.hostIpv4
+			npnVNICAddress.RouterIP = vnic.Subnet.VirtualRouterIp
+			npnVNICAddress.SubnetCidr = vnic.Subnet.CidrBlock
+			npnVNICAddress.Addresses = vnicAddresses
+		}
+		if requireIPv6s || requireIPv4s {
+			npnVNICAddress.PodAddresses = vnicPodAddresses
+		}
+		npnVNICAddresses = append(npnVNICAddresses, npnVNICAddress)
 	}
-	return npnVNICAddress
+	return npnVNICAddresses
 }
 
 // wait for the Kubernetes object to be created in the cluster so that the owner reference of the NPN CR
@@ -727,6 +971,23 @@ func (r *NativePodNetworkReconciler) getNodeObjectInCluster(ctx context.Context,
 		log.Error(err, "timed out waiting for node object to be present in the cluster")
 	}
 	return &nodeObject, err
+}
+
+// getIpFamilies is a method to get ip families (IPv4/IPv6) from the NPN CRD
+func getIpFamilies(ctx context.Context, npn npnv1beta1.NativePodNetwork) ([]string, error) {
+	log := log.FromContext(ctx, "name", npn.Name)
+
+	ipFamilies := []string{}
+	if npn.Spec.IPFamilies != nil {
+		for _, ipFamily := range npn.Spec.IPFamilies {
+			if ipFamily != nil && len(*ipFamily) != 0 {
+				ipFamilies = append(ipFamilies, *ipFamily)
+			}
+		}
+	}
+	log.WithValues("ipFamilies", fmt.Sprint(ipFamilies)).Info("IpFamily for NPN CR")
+
+	return ipFamilies, nil
 }
 
 // wait for the compute instance to move to running state
