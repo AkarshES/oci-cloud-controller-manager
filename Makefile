@@ -274,10 +274,9 @@ secrets:
 
 checkout-e2e-branch-build-service: secrets
 	yum install -y tree python-pip
-	tree -a -L 2
+	#tree -a -L 2
 	pwd
-	cd ~/.ssh
-	pwd
+	pwd ~/.ssh
 	#mkdir -p ~/.ssh
 	#mkdir -p /tmp/
 	#Need to convert one-line ssh key from secret service to multi line ssh
