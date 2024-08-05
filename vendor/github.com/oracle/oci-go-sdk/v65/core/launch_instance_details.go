@@ -48,6 +48,10 @@ type LaunchInstanceDetails struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
@@ -202,6 +206,9 @@ type LaunchInstanceDetails struct {
 
 	// The OCID of the Instance Configuration containing instance launch details. Any other fields supplied in this instance launch request will override the details stored in the Instance Configuration for this instance launch.
 	InstanceConfigurationId *string `mandatory:"false" json:"instanceConfigurationId"`
+
+	// List of licensing configurations associated with target launch values.
+	LicensingConfigs []LaunchInstanceLicensingConfig `mandatory:"false" json:"licensingConfigs"`
 }
 
 func (m LaunchInstanceDetails) String() string {
@@ -230,6 +237,7 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 		CreateVnicDetails              *CreateVnicDetails                                  `json:"createVnicDetails"`
 		DedicatedVmHostId              *string                                             `json:"dedicatedVmHostId"`
 		DefinedTags                    map[string]map[string]interface{}                   `json:"definedTags"`
+		SecurityAttributes             map[string]map[string]interface{}                   `json:"securityAttributes"`
 		DisplayName                    *string                                             `json:"displayName"`
 		ExtendedMetadata               map[string]interface{}                              `json:"extendedMetadata"`
 		FaultDomain                    *string                                             `json:"faultDomain"`
@@ -256,6 +264,7 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 		PreferredMaintenanceAction     LaunchInstanceDetailsPreferredMaintenanceActionEnum `json:"preferredMaintenanceAction"`
 		PlatformConfig                 launchinstanceplatformconfig                        `json:"platformConfig"`
 		InstanceConfigurationId        *string                                             `json:"instanceConfigurationId"`
+		LicensingConfigs               []launchinstancelicensingconfig                     `json:"licensingConfigs"`
 		AvailabilityDomain             *string                                             `json:"availabilityDomain"`
 		CompartmentId                  *string                                             `json:"compartmentId"`
 	}{}
@@ -272,6 +281,8 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 	m.DedicatedVmHostId = model.DedicatedVmHostId
 
 	m.DefinedTags = model.DefinedTags
+
+	m.SecurityAttributes = model.SecurityAttributes
 
 	m.DisplayName = model.DisplayName
 
@@ -361,6 +372,18 @@ func (m *LaunchInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 
 	m.InstanceConfigurationId = model.InstanceConfigurationId
 
+	m.LicensingConfigs = make([]LaunchInstanceLicensingConfig, len(model.LicensingConfigs))
+	for i, n := range model.LicensingConfigs {
+		nn, e = n.UnmarshalPolymorphicJSON(n.JsonData)
+		if e != nil {
+			return e
+		}
+		if nn != nil {
+			m.LicensingConfigs[i] = nn.(LaunchInstanceLicensingConfig)
+		} else {
+			m.LicensingConfigs[i] = nil
+		}
+	}
 	m.AvailabilityDomain = model.AvailabilityDomain
 
 	m.CompartmentId = model.CompartmentId

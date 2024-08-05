@@ -68,7 +68,7 @@ func newFileStorageClientFromBaseClient(baseClient common.BaseClient, configProv
 
 // SetRegion overrides the region of this client.
 func (client *FileStorageClient) SetRegion(region string) {
-	client.Host = common.StringToRegion(region).EndpointForTemplate("filestorage", "https://filestorage.{region}.{secondLevelDomain}")
+	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("filestorage", "https://{dualStack?ds.:}filestorage.{region}.oci.{secondLevelDomain}", "filestorage")
 }
 
 // SetConfigurationProvider sets the configuration provider including the region, returns an error if is not valid
@@ -92,9 +92,14 @@ func (client *FileStorageClient) ConfigurationProvider() *common.ConfigurationPr
 	return client.config
 }
 
-// AddQuotaRule Add an FS level, user or group quota rule given the `fileSystemId`, `principalId`, `principalType` and
-// `isHardQuota` parameters.
-func (client FileStorageClient) AddQuotaRule(ctx context.Context, request AddQuotaRuleRequest) (response AddQuotaRuleResponse, err error) {
+// EnableDualStackEndpoints Determines whether dual stack endpoint should be used or not.
+// Default value is false
+func (client *FileStorageClient) EnableDualStackEndpoints(enableDualStack bool) {
+	client.BaseClient.EnableDualStackEndpoints(enableDualStack)
+}
+
+// AddExportLock Adds a lock to a resource.
+func (client FileStorageClient) AddExportLock(ctx context.Context, request AddExportLockRequest) (response AddExportLockResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
 	if client.RetryPolicy() != nil {
@@ -103,47 +108,469 @@ func (client FileStorageClient) AddQuotaRule(ctx context.Context, request AddQuo
 	if request.RetryPolicy() != nil {
 		policy = *request.RetryPolicy()
 	}
-
-	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
-		request.OpcRetryToken = common.String(common.RetryToken())
-	}
-
-	ociResponse, err = common.Retry(ctx, request, client.addQuotaRule, policy)
+	ociResponse, err = common.Retry(ctx, request, client.addExportLock, policy)
 	if err != nil {
 		if ociResponse != nil {
 			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
 				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = AddQuotaRuleResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+				response = AddExportLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
 			} else {
-				response = AddQuotaRuleResponse{}
+				response = AddExportLockResponse{}
 			}
 		}
 		return
 	}
-	if convertedResponse, ok := ociResponse.(AddQuotaRuleResponse); ok {
+	if convertedResponse, ok := ociResponse.(AddExportLockResponse); ok {
 		response = convertedResponse
 	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into AddQuotaRuleResponse")
+		err = fmt.Errorf("failed to convert OCIResponse into AddExportLockResponse")
 	}
 	return
 }
 
-// addQuotaRule implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) addQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+// addExportLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addExportLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
 
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/actions/addQuotaRule", binaryReqBody, extraHeaders)
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/exports/{exportId}/actions/addLock", binaryReqBody, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var response AddQuotaRuleResponse
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddExportLockResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
 	defer common.CloseBodyIfValid(httpResponse)
 	response.RawResponse = httpResponse
 	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/AddQuotaRule"
-		err = common.PostProcessServiceError(err, "FileStorage", "AddQuotaRule", apiReferenceLink)
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Export/AddExportLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddExportLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// AddFileSystemLock Adds a lock to a resource.
+func (client FileStorageClient) AddFileSystemLock(ctx context.Context, request AddFileSystemLockRequest) (response AddFileSystemLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.addFileSystemLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddFileSystemLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddFileSystemLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddFileSystemLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddFileSystemLockResponse")
+	}
+	return
+}
+
+// addFileSystemLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addFileSystemLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddFileSystemLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/AddFileSystemLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddFileSystemLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// AddFilesystemSnapshotPolicyLock Adds a lock to a resource.
+func (client FileStorageClient) AddFilesystemSnapshotPolicyLock(ctx context.Context, request AddFilesystemSnapshotPolicyLockRequest) (response AddFilesystemSnapshotPolicyLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.addFilesystemSnapshotPolicyLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddFilesystemSnapshotPolicyLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddFilesystemSnapshotPolicyLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddFilesystemSnapshotPolicyLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddFilesystemSnapshotPolicyLockResponse")
+	}
+	return
+}
+
+// addFilesystemSnapshotPolicyLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addFilesystemSnapshotPolicyLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/filesystemSnapshotPolicies/{filesystemSnapshotPolicyId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddFilesystemSnapshotPolicyLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FilesystemSnapshotPolicy/AddFilesystemSnapshotPolicyLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddFilesystemSnapshotPolicyLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// AddMountTargetLock Adds a lock to a resource.
+func (client FileStorageClient) AddMountTargetLock(ctx context.Context, request AddMountTargetLockRequest) (response AddMountTargetLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.addMountTargetLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddMountTargetLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddMountTargetLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddMountTargetLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddMountTargetLockResponse")
+	}
+	return
+}
+
+// addMountTargetLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addMountTargetLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddMountTargetLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/AddMountTargetLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddMountTargetLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// AddOutboundConnectorLock Adds a lock to a resource.
+func (client FileStorageClient) AddOutboundConnectorLock(ctx context.Context, request AddOutboundConnectorLockRequest) (response AddOutboundConnectorLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.addOutboundConnectorLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddOutboundConnectorLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddOutboundConnectorLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddOutboundConnectorLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddOutboundConnectorLockResponse")
+	}
+	return
+}
+
+// addOutboundConnectorLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addOutboundConnectorLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/outboundConnectors/{outboundConnectorId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddOutboundConnectorLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/OutboundConnector/AddOutboundConnectorLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddOutboundConnectorLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponseWithPolymorphicBody(httpResponse, &response, &outboundconnector{})
+	return response, err
+}
+
+// AddReplicationLock Adds a lock to a resource.
+func (client FileStorageClient) AddReplicationLock(ctx context.Context, request AddReplicationLockRequest) (response AddReplicationLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.addReplicationLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddReplicationLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddReplicationLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddReplicationLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddReplicationLockResponse")
+	}
+	return
+}
+
+// addReplicationLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addReplicationLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/replications/{replicationId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddReplicationLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Replication/AddReplicationLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddReplicationLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// AddSnapshotLock Adds a lock to a resource.
+func (client FileStorageClient) AddSnapshotLock(ctx context.Context, request AddSnapshotLockRequest) (response AddSnapshotLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.addSnapshotLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddSnapshotLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddSnapshotLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddSnapshotLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddSnapshotLockResponse")
+	}
+	return
+}
+
+// addSnapshotLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) addSnapshotLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/snapshots/{snapshotId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddSnapshotLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Snapshot/AddSnapshotLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "AddSnapshotLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// CancelDowngradeShapeMountTarget Cancel scheduled downgrade shape request for mount target.
+func (client FileStorageClient) CancelDowngradeShapeMountTarget(ctx context.Context, request CancelDowngradeShapeMountTargetRequest) (response CancelDowngradeShapeMountTargetResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.cancelDowngradeShapeMountTarget, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = CancelDowngradeShapeMountTargetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = CancelDowngradeShapeMountTargetResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(CancelDowngradeShapeMountTargetResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into CancelDowngradeShapeMountTargetResponse")
+	}
+	return
+}
+
+// cancelDowngradeShapeMountTarget implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) cancelDowngradeShapeMountTarget(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/cancelShapeDowngrade", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response CancelDowngradeShapeMountTargetResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/CancelDowngradeShapeMountTarget"
+		err = common.PostProcessServiceError(err, "FileStorage", "CancelDowngradeShapeMountTarget", apiReferenceLink)
 		return response, err
 	}
 
@@ -188,6 +615,13 @@ func (client FileStorageClient) changeFileSystemCompartment(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ChangeFileSystemCompartmentResponse
 	var httpResponse *http.Response
@@ -242,6 +676,13 @@ func (client FileStorageClient) changeFilesystemSnapshotPolicyCompartment(ctx co
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ChangeFilesystemSnapshotPolicyCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -294,6 +735,13 @@ func (client FileStorageClient) changeMountTargetCompartment(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ChangeMountTargetCompartmentResponse
 	var httpResponse *http.Response
@@ -350,6 +798,13 @@ func (client FileStorageClient) changeOutboundConnectorCompartment(ctx context.C
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ChangeOutboundConnectorCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -403,6 +858,13 @@ func (client FileStorageClient) changeReplicationCompartment(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ChangeReplicationCompartmentResponse
 	var httpResponse *http.Response
@@ -458,6 +920,13 @@ func (client FileStorageClient) changeReplicationTargetCompartment(ctx context.C
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ChangeReplicationTargetCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -510,6 +979,13 @@ func (client FileStorageClient) checkReconciliation(ctx context.Context, request
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CheckReconciliationResponse
 	var httpResponse *http.Response
@@ -569,6 +1045,13 @@ func (client FileStorageClient) createExport(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateExportResponse
 	var httpResponse *http.Response
@@ -651,6 +1134,13 @@ func (client FileStorageClient) createFileSystem(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateFileSystemResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -711,6 +1201,13 @@ func (client FileStorageClient) createFilesystemSnapshotPolicy(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateFilesystemSnapshotPolicyResponse
 	var httpResponse *http.Response
@@ -797,6 +1294,13 @@ func (client FileStorageClient) createMountTarget(ctx context.Context, request c
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateMountTargetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -871,6 +1375,13 @@ func (client FileStorageClient) createOutboundConnector(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateOutboundConnectorResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -883,6 +1394,72 @@ func (client FileStorageClient) createOutboundConnector(ctx context.Context, req
 	}
 
 	err = common.UnmarshalResponseWithPolymorphicBody(httpResponse, &response, &outboundconnector{})
+	return response, err
+}
+
+// CreateQuotaRule Create an FS level, user or group quota rule given the `fileSystemId`, `principalId`, `principalType` and
+// `isHardQuota` parameters.
+func (client FileStorageClient) CreateQuotaRule(ctx context.Context, request CreateQuotaRuleRequest) (response CreateQuotaRuleResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.createQuotaRule, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = CreateQuotaRuleResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = CreateQuotaRuleResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(CreateQuotaRuleResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into CreateQuotaRuleResponse")
+	}
+	return
+}
+
+// createQuotaRule implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) createQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/quotaRules", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response CreateQuotaRuleResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/CreateQuotaRule"
+		err = common.PostProcessServiceError(err, "FileStorage", "CreateQuotaRule", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
 	return response, err
 }
 
@@ -952,6 +1529,13 @@ func (client FileStorageClient) createReplication(ctx context.Context, request c
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateReplicationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1010,6 +1594,13 @@ func (client FileStorageClient) createReplicationTarget(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateReplicationTargetResponse
 	var httpResponse *http.Response
@@ -1070,6 +1661,13 @@ func (client FileStorageClient) createShare(ctx context.Context, request common.
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateShareResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1129,6 +1727,13 @@ func (client FileStorageClient) createSnapshot(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateSnapshotResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1181,6 +1786,13 @@ func (client FileStorageClient) deleteExport(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteExportResponse
 	var httpResponse *http.Response
@@ -1237,6 +1849,13 @@ func (client FileStorageClient) deleteFileSystem(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteFileSystemResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1289,6 +1908,13 @@ func (client FileStorageClient) deleteFilesystemSnapshotPolicy(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteFilesystemSnapshotPolicyResponse
 	var httpResponse *http.Response
@@ -1344,6 +1970,13 @@ func (client FileStorageClient) deleteMountTarget(ctx context.Context, request c
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteMountTargetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1397,6 +2030,13 @@ func (client FileStorageClient) deleteOutboundConnector(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteOutboundConnectorResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1405,6 +2045,66 @@ func (client FileStorageClient) deleteOutboundConnector(ctx context.Context, req
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/OutboundConnector/DeleteOutboundConnector"
 		err = common.PostProcessServiceError(err, "FileStorage", "DeleteOutboundConnector", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// DeleteQuotaRule Remove an FS level, user or group quota rule given the `fileSystemId` and `quotaRuleId` parameters.
+func (client FileStorageClient) DeleteQuotaRule(ctx context.Context, request DeleteQuotaRuleRequest) (response DeleteQuotaRuleResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.deleteQuotaRule, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = DeleteQuotaRuleResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = DeleteQuotaRuleResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(DeleteQuotaRuleResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into DeleteQuotaRuleResponse")
+	}
+	return
+}
+
+// deleteQuotaRule implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) deleteQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/fileSystems/{fileSystemId}/quotaRules/{quotaRuleId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response DeleteQuotaRuleResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/DeleteQuotaRule"
+		err = common.PostProcessServiceError(err, "FileStorage", "DeleteQuotaRule", apiReferenceLink)
 		return response, err
 	}
 
@@ -1449,6 +2149,13 @@ func (client FileStorageClient) deleteReplication(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteReplicationResponse
 	var httpResponse *http.Response
@@ -1506,6 +2213,13 @@ func (client FileStorageClient) deleteReplicationTarget(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteReplicationTargetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1558,6 +2272,13 @@ func (client FileStorageClient) deleteShare(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteShareResponse
 	var httpResponse *http.Response
@@ -1612,6 +2333,13 @@ func (client FileStorageClient) deleteSnapshot(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteSnapshotResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1664,6 +2392,13 @@ func (client FileStorageClient) detachClone(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DetachCloneResponse
 	var httpResponse *http.Response
@@ -1718,6 +2453,13 @@ func (client FileStorageClient) estimateReplication(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response EstimateReplicationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1770,6 +2512,13 @@ func (client FileStorageClient) failoverMountTarget(ctx context.Context, request
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response FailoverMountTargetResponse
 	var httpResponse *http.Response
@@ -1824,6 +2573,13 @@ func (client FileStorageClient) getExport(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetExportResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1876,6 +2632,13 @@ func (client FileStorageClient) getExportSet(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetExportSetResponse
 	var httpResponse *http.Response
@@ -1930,6 +2693,13 @@ func (client FileStorageClient) getFileSystem(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetFileSystemResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1982,6 +2752,13 @@ func (client FileStorageClient) getFilesystemSnapshotPolicy(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetFilesystemSnapshotPolicyResponse
 	var httpResponse *http.Response
@@ -2036,6 +2813,13 @@ func (client FileStorageClient) getMountTarget(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetMountTargetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2089,6 +2873,13 @@ func (client FileStorageClient) getOutboundConnector(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetOutboundConnectorResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2104,8 +2895,7 @@ func (client FileStorageClient) getOutboundConnector(ctx context.Context, reques
 	return response, err
 }
 
-// GetQuotaRule Get an FS level, user or group quota rule given the `fileSystemId`, `principalId`, `principalType` and
-// `isHardQuota` parameters.
+// GetQuotaRule Get an FS level, user or group quota rule given the `fileSystemId` and `quotaRuleId` parameters.
 func (client FileStorageClient) GetQuotaRule(ctx context.Context, request GetQuotaRuleRequest) (response GetQuotaRuleResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -2138,10 +2928,17 @@ func (client FileStorageClient) GetQuotaRule(ctx context.Context, request GetQuo
 // getQuotaRule implements the OCIOperation interface (enables retrying operations)
 func (client FileStorageClient) getQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
 
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/fileSystems/{fileSystemId}/actions/quotaRule", binaryReqBody, extraHeaders)
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/fileSystems/{fileSystemId}/quotaRules/{quotaRuleId}", binaryReqBody, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetQuotaRuleResponse
 	var httpResponse *http.Response
@@ -2196,6 +2993,13 @@ func (client FileStorageClient) getReplication(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetReplicationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2248,6 +3052,13 @@ func (client FileStorageClient) getReplicationTarget(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetReplicationTargetResponse
 	var httpResponse *http.Response
@@ -2302,6 +3113,13 @@ func (client FileStorageClient) getReplicationTargetProgress(ctx context.Context
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetReplicationTargetProgressResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2354,6 +3172,13 @@ func (client FileStorageClient) getShare(ctx context.Context, request common.OCI
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetShareResponse
 	var httpResponse *http.Response
@@ -2408,6 +3233,13 @@ func (client FileStorageClient) getShareSet(ctx context.Context, request common.
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetShareSetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2460,6 +3292,13 @@ func (client FileStorageClient) getSnapshot(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetSnapshotResponse
 	var httpResponse *http.Response
@@ -2514,6 +3353,13 @@ func (client FileStorageClient) getTagSlug(ctx context.Context, request common.O
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetTagSlugResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2522,6 +3368,126 @@ func (client FileStorageClient) getTagSlug(ctx context.Context, request common.O
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Tagslug/GetTagSlug"
 		err = common.PostProcessServiceError(err, "FileStorage", "GetTagSlug", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// GetWorkRequest Retrieves the status of the work request with the given ID.
+func (client FileStorageClient) GetWorkRequest(ctx context.Context, request GetWorkRequestRequest) (response GetWorkRequestResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getWorkRequest, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetWorkRequestResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetWorkRequestResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetWorkRequestResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetWorkRequestResponse")
+	}
+	return
+}
+
+// getWorkRequest implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) getWorkRequest(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/workRequests/{workRequestId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response GetWorkRequestResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/WorkRequest/GetWorkRequest"
+		err = common.PostProcessServiceError(err, "FileStorage", "GetWorkRequest", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// GetWorkflowOrReplicationTarget Getting the existence of an active workflow or the replication target if the workflow completes
+func (client FileStorageClient) GetWorkflowOrReplicationTarget(ctx context.Context, request GetWorkflowOrReplicationTargetRequest) (response GetWorkflowOrReplicationTargetResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getWorkflowOrReplicationTarget, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetWorkflowOrReplicationTargetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetWorkflowOrReplicationTargetResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetWorkflowOrReplicationTargetResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetWorkflowOrReplicationTargetResponse")
+	}
+	return
+}
+
+// getWorkflowOrReplicationTarget implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) getWorkflowOrReplicationTarget(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/replicationTargets/actions/getWorkflowOrReplicationTarget", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response GetWorkflowOrReplicationTargetResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/ReplicationTarget/GetWorkflowOrReplicationTarget"
+		err = common.PostProcessServiceError(err, "FileStorage", "GetWorkflowOrReplicationTarget", apiReferenceLink)
 		return response, err
 	}
 
@@ -2566,6 +3532,13 @@ func (client FileStorageClient) listExportSets(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListExportSetsResponse
 	var httpResponse *http.Response
@@ -2622,6 +3595,13 @@ func (client FileStorageClient) listExports(ctx context.Context, request common.
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListExportsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2676,6 +3656,13 @@ func (client FileStorageClient) listFileSystems(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListFileSystemsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2729,6 +3716,13 @@ func (client FileStorageClient) listFilesystemSnapshotPolicies(ctx context.Conte
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListFilesystemSnapshotPoliciesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2781,6 +3775,13 @@ func (client FileStorageClient) listMountTargets(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListMountTargetsResponse
 	var httpResponse *http.Response
@@ -2851,6 +3852,13 @@ func (client FileStorageClient) listOutboundConnectors(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListOutboundConnectorsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2863,6 +3871,66 @@ func (client FileStorageClient) listOutboundConnectors(ctx context.Context, requ
 	}
 
 	err = common.UnmarshalResponseWithPolymorphicBody(httpResponse, &response, &listoutboundconnectorsummary{})
+	return response, err
+}
+
+// ListQuotaRules List user or group usages and their quota rules by certain principal type.
+func (client FileStorageClient) ListQuotaRules(ctx context.Context, request ListQuotaRulesRequest) (response ListQuotaRulesResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listQuotaRules, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListQuotaRulesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListQuotaRulesResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListQuotaRulesResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListQuotaRulesResponse")
+	}
+	return
+}
+
+// listQuotaRules implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) listQuotaRules(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/fileSystems/{fileSystemId}/quotaRules", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response ListQuotaRulesResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/ListQuotaRules"
+		err = common.PostProcessServiceError(err, "FileStorage", "ListQuotaRules", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
 	return response, err
 }
 
@@ -2903,6 +3971,13 @@ func (client FileStorageClient) listReplicationTargets(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListReplicationTargetsResponse
 	var httpResponse *http.Response
@@ -2957,6 +4032,13 @@ func (client FileStorageClient) listReplications(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListReplicationsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3009,6 +4091,13 @@ func (client FileStorageClient) listShareSets(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListShareSetsResponse
 	var httpResponse *http.Response
@@ -3064,6 +4153,13 @@ func (client FileStorageClient) listShares(ctx context.Context, request common.O
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListSharesResponse
 	var httpResponse *http.Response
@@ -3122,6 +4218,13 @@ func (client FileStorageClient) listSnapshots(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListSnapshotsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3137,8 +4240,8 @@ func (client FileStorageClient) listSnapshots(ctx context.Context, request commo
 	return response, err
 }
 
-// ListUsagesAndQuotas List user or group usages and their quota rules by certain principal type.
-func (client FileStorageClient) ListUsagesAndQuotas(ctx context.Context, request ListUsagesAndQuotasRequest) (response ListUsagesAndQuotasResponse, err error) {
+// ListWorkRequestErrors Returns a list of errors for a given work request.
+func (client FileStorageClient) ListWorkRequestErrors(ctx context.Context, request ListWorkRequestErrorsRequest) (response ListWorkRequestErrorsResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
 	if client.RetryPolicy() != nil {
@@ -3147,42 +4250,49 @@ func (client FileStorageClient) ListUsagesAndQuotas(ctx context.Context, request
 	if request.RetryPolicy() != nil {
 		policy = *request.RetryPolicy()
 	}
-	ociResponse, err = common.Retry(ctx, request, client.listUsagesAndQuotas, policy)
+	ociResponse, err = common.Retry(ctx, request, client.listWorkRequestErrors, policy)
 	if err != nil {
 		if ociResponse != nil {
 			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
 				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ListUsagesAndQuotasResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+				response = ListWorkRequestErrorsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
 			} else {
-				response = ListUsagesAndQuotasResponse{}
+				response = ListWorkRequestErrorsResponse{}
 			}
 		}
 		return
 	}
-	if convertedResponse, ok := ociResponse.(ListUsagesAndQuotasResponse); ok {
+	if convertedResponse, ok := ociResponse.(ListWorkRequestErrorsResponse); ok {
 		response = convertedResponse
 	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ListUsagesAndQuotasResponse")
+		err = fmt.Errorf("failed to convert OCIResponse into ListWorkRequestErrorsResponse")
 	}
 	return
 }
 
-// listUsagesAndQuotas implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) listUsagesAndQuotas(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+// listWorkRequestErrors implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) listWorkRequestErrors(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
 
-	httpRequest, err := request.HTTPRequest(http.MethodGet, "/fileSystems/{fileSystemId}/actions/usageAndQuota", binaryReqBody, extraHeaders)
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/workRequests/{workRequestId}/errors", binaryReqBody, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var response ListUsagesAndQuotasResponse
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response ListWorkRequestErrorsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
 	defer common.CloseBodyIfValid(httpResponse)
 	response.RawResponse = httpResponse
 	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/ListUsagesAndQuotas"
-		err = common.PostProcessServiceError(err, "FileStorage", "ListUsagesAndQuotas", apiReferenceLink)
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/WorkRequest/ListWorkRequestErrors"
+		err = common.PostProcessServiceError(err, "FileStorage", "ListWorkRequestErrors", apiReferenceLink)
 		return response, err
 	}
 
@@ -3190,9 +4300,8 @@ func (client FileStorageClient) listUsagesAndQuotas(ctx context.Context, request
 	return response, err
 }
 
-// ModifyQuotaRule Edit an FS level, user or group quota rule given the `fileSystemId`, `principalId`, `principalType` and
-// `isHardQuota` parameters.
-func (client FileStorageClient) ModifyQuotaRule(ctx context.Context, request ModifyQuotaRuleRequest) (response ModifyQuotaRuleResponse, err error) {
+// ListWorkRequests Lists the work requests in a compartment.
+func (client FileStorageClient) ListWorkRequests(ctx context.Context, request ListWorkRequestsRequest) (response ListWorkRequestsResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
 	if client.RetryPolicy() != nil {
@@ -3201,42 +4310,49 @@ func (client FileStorageClient) ModifyQuotaRule(ctx context.Context, request Mod
 	if request.RetryPolicy() != nil {
 		policy = *request.RetryPolicy()
 	}
-	ociResponse, err = common.Retry(ctx, request, client.modifyQuotaRule, policy)
+	ociResponse, err = common.Retry(ctx, request, client.listWorkRequests, policy)
 	if err != nil {
 		if ociResponse != nil {
 			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
 				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = ModifyQuotaRuleResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+				response = ListWorkRequestsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
 			} else {
-				response = ModifyQuotaRuleResponse{}
+				response = ListWorkRequestsResponse{}
 			}
 		}
 		return
 	}
-	if convertedResponse, ok := ociResponse.(ModifyQuotaRuleResponse); ok {
+	if convertedResponse, ok := ociResponse.(ListWorkRequestsResponse); ok {
 		response = convertedResponse
 	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into ModifyQuotaRuleResponse")
+		err = fmt.Errorf("failed to convert OCIResponse into ListWorkRequestsResponse")
 	}
 	return
 }
 
-// modifyQuotaRule implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) modifyQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+// listWorkRequests implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) listWorkRequests(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
 
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/actions/modifyQuotaRule", binaryReqBody, extraHeaders)
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/workRequests", binaryReqBody, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var response ModifyQuotaRuleResponse
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response ListWorkRequestsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
 	defer common.CloseBodyIfValid(httpResponse)
 	response.RawResponse = httpResponse
 	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/ModifyQuotaRule"
-		err = common.PostProcessServiceError(err, "FileStorage", "ModifyQuotaRule", apiReferenceLink)
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/WorkRequest/ListWorkRequests"
+		err = common.PostProcessServiceError(err, "FileStorage", "ListWorkRequests", apiReferenceLink)
 		return response, err
 	}
 
@@ -3286,6 +4402,13 @@ func (client FileStorageClient) pauseFilesystemSnapshotPolicy(ctx context.Contex
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response PauseFilesystemSnapshotPolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3301,9 +4424,8 @@ func (client FileStorageClient) pauseFilesystemSnapshotPolicy(ctx context.Contex
 	return response, err
 }
 
-// RemoveQuotaRule Remove an FS level, user or group quota rule given the `fileSystemId`, `principalId`, `principalType` and
-// `isHardQuota` parameters.
-func (client FileStorageClient) RemoveQuotaRule(ctx context.Context, request RemoveQuotaRuleRequest) (response RemoveQuotaRuleResponse, err error) {
+// RemoveExportLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveExportLock(ctx context.Context, request RemoveExportLockRequest) (response RemoveExportLockResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
 	if client.RetryPolicy() != nil {
@@ -3312,42 +4434,409 @@ func (client FileStorageClient) RemoveQuotaRule(ctx context.Context, request Rem
 	if request.RetryPolicy() != nil {
 		policy = *request.RetryPolicy()
 	}
-	ociResponse, err = common.Retry(ctx, request, client.removeQuotaRule, policy)
+	ociResponse, err = common.Retry(ctx, request, client.removeExportLock, policy)
 	if err != nil {
 		if ociResponse != nil {
 			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
 				opcRequestId := httpResponse.Header.Get("opc-request-id")
-				response = RemoveQuotaRuleResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+				response = RemoveExportLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
 			} else {
-				response = RemoveQuotaRuleResponse{}
+				response = RemoveExportLockResponse{}
 			}
 		}
 		return
 	}
-	if convertedResponse, ok := ociResponse.(RemoveQuotaRuleResponse); ok {
+	if convertedResponse, ok := ociResponse.(RemoveExportLockResponse); ok {
 		response = convertedResponse
 	} else {
-		err = fmt.Errorf("failed to convert OCIResponse into RemoveQuotaRuleResponse")
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveExportLockResponse")
 	}
 	return
 }
 
-// removeQuotaRule implements the OCIOperation interface (enables retrying operations)
-func (client FileStorageClient) removeQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+// removeExportLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeExportLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
 
-	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/actions/removeQuotaRule", binaryReqBody, extraHeaders)
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/exports/{exportId}/actions/removeLock", binaryReqBody, extraHeaders)
 	if err != nil {
 		return nil, err
 	}
 
-	var response RemoveQuotaRuleResponse
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveExportLockResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
 	defer common.CloseBodyIfValid(httpResponse)
 	response.RawResponse = httpResponse
 	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/RemoveQuotaRule"
-		err = common.PostProcessServiceError(err, "FileStorage", "RemoveQuotaRule", apiReferenceLink)
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Export/RemoveExportLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveExportLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// RemoveFileSystemLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveFileSystemLock(ctx context.Context, request RemoveFileSystemLockRequest) (response RemoveFileSystemLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.removeFileSystemLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemoveFileSystemLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemoveFileSystemLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemoveFileSystemLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveFileSystemLockResponse")
+	}
+	return
+}
+
+// removeFileSystemLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeFileSystemLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/fileSystems/{fileSystemId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveFileSystemLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/RemoveFileSystemLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveFileSystemLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// RemoveFilesystemSnapshotPolicyLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveFilesystemSnapshotPolicyLock(ctx context.Context, request RemoveFilesystemSnapshotPolicyLockRequest) (response RemoveFilesystemSnapshotPolicyLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.removeFilesystemSnapshotPolicyLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemoveFilesystemSnapshotPolicyLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemoveFilesystemSnapshotPolicyLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemoveFilesystemSnapshotPolicyLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveFilesystemSnapshotPolicyLockResponse")
+	}
+	return
+}
+
+// removeFilesystemSnapshotPolicyLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeFilesystemSnapshotPolicyLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/filesystemSnapshotPolicies/{filesystemSnapshotPolicyId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveFilesystemSnapshotPolicyLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FilesystemSnapshotPolicy/RemoveFilesystemSnapshotPolicyLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveFilesystemSnapshotPolicyLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// RemoveMountTargetLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveMountTargetLock(ctx context.Context, request RemoveMountTargetLockRequest) (response RemoveMountTargetLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.removeMountTargetLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemoveMountTargetLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemoveMountTargetLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemoveMountTargetLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveMountTargetLockResponse")
+	}
+	return
+}
+
+// removeMountTargetLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeMountTargetLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveMountTargetLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/RemoveMountTargetLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveMountTargetLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// RemoveOutboundConnectorLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveOutboundConnectorLock(ctx context.Context, request RemoveOutboundConnectorLockRequest) (response RemoveOutboundConnectorLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.removeOutboundConnectorLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemoveOutboundConnectorLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemoveOutboundConnectorLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemoveOutboundConnectorLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveOutboundConnectorLockResponse")
+	}
+	return
+}
+
+// removeOutboundConnectorLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeOutboundConnectorLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/outboundConnectors/{outboundConnectorId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveOutboundConnectorLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/OutboundConnector/RemoveOutboundConnectorLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveOutboundConnectorLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponseWithPolymorphicBody(httpResponse, &response, &outboundconnector{})
+	return response, err
+}
+
+// RemoveReplicationLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveReplicationLock(ctx context.Context, request RemoveReplicationLockRequest) (response RemoveReplicationLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.removeReplicationLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemoveReplicationLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemoveReplicationLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemoveReplicationLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveReplicationLockResponse")
+	}
+	return
+}
+
+// removeReplicationLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeReplicationLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/replications/{replicationId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveReplicationLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Replication/RemoveReplicationLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveReplicationLock", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// RemoveSnapshotLock Removes a lock to a resource.
+func (client FileStorageClient) RemoveSnapshotLock(ctx context.Context, request RemoveSnapshotLockRequest) (response RemoveSnapshotLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.removeSnapshotLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemoveSnapshotLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemoveSnapshotLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemoveSnapshotLockResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemoveSnapshotLockResponse")
+	}
+	return
+}
+
+// removeSnapshotLock implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) removeSnapshotLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/snapshots/{snapshotId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemoveSnapshotLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Snapshot/RemoveSnapshotLock"
+		err = common.PostProcessServiceError(err, "FileStorage", "RemoveSnapshotLock", apiReferenceLink)
 		return response, err
 	}
 
@@ -3392,6 +4881,13 @@ func (client FileStorageClient) replicationFail(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ReplicationFailResponse
 	var httpResponse *http.Response
@@ -3446,6 +4942,13 @@ func (client FileStorageClient) replicationStatusUpdate(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ReplicationStatusUpdateResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3498,6 +5001,13 @@ func (client FileStorageClient) replicationTargetDelete(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ReplicationTargetDeleteResponse
 	var httpResponse *http.Response
@@ -3552,6 +5062,13 @@ func (client FileStorageClient) replicationTargetFail(ctx context.Context, reque
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ReplicationTargetFailResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3604,6 +5121,13 @@ func (client FileStorageClient) replicationTargetFileSystemGet(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ReplicationTargetFileSystemGetResponse
 	var httpResponse *http.Response
@@ -3658,6 +5182,13 @@ func (client FileStorageClient) replicationTargetGet(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ReplicationTargetGetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3711,6 +5242,13 @@ func (client FileStorageClient) replicationTargetStatusUpdate(ctx context.Contex
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ReplicationTargetStatusUpdateResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3719,6 +5257,72 @@ func (client FileStorageClient) replicationTargetStatusUpdate(ctx context.Contex
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/ReplicationTarget/ReplicationTargetStatusUpdate"
 		err = common.PostProcessServiceError(err, "FileStorage", "ReplicationTargetStatusUpdate", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ReserveAndCreateReplicationTarget Reserves the target file system and creates a new replication target in the specified compartment.
+// To be used for internal only purposes.
+func (client FileStorageClient) ReserveAndCreateReplicationTarget(ctx context.Context, request ReserveAndCreateReplicationTargetRequest) (response ReserveAndCreateReplicationTargetResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.reserveAndCreateReplicationTarget, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ReserveAndCreateReplicationTargetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ReserveAndCreateReplicationTargetResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ReserveAndCreateReplicationTargetResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ReserveAndCreateReplicationTargetResponse")
+	}
+	return
+}
+
+// reserveAndCreateReplicationTarget implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) reserveAndCreateReplicationTarget(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/replicationTargets/actions/reserveAndCreateReplicationTarget", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response ReserveAndCreateReplicationTargetResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/ReplicationTarget/ReserveAndCreateReplicationTarget"
+		err = common.PostProcessServiceError(err, "FileStorage", "ReserveAndCreateReplicationTarget", apiReferenceLink)
 		return response, err
 	}
 
@@ -3764,6 +5368,13 @@ func (client FileStorageClient) reserveTargetNum(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ReserveTargetNumResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3772,6 +5383,66 @@ func (client FileStorageClient) reserveTargetNum(ctx context.Context, request co
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/ReplicationTarget/ReserveTargetNum"
 		err = common.PostProcessServiceError(err, "FileStorage", "ReserveTargetNum", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ScheduleDowngradeShapeMountTarget Schedule a downgrade shape of the mount target.
+func (client FileStorageClient) ScheduleDowngradeShapeMountTarget(ctx context.Context, request ScheduleDowngradeShapeMountTargetRequest) (response ScheduleDowngradeShapeMountTargetResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.scheduleDowngradeShapeMountTarget, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ScheduleDowngradeShapeMountTargetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ScheduleDowngradeShapeMountTargetResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ScheduleDowngradeShapeMountTargetResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ScheduleDowngradeShapeMountTargetResponse")
+	}
+	return
+}
+
+// scheduleDowngradeShapeMountTarget implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) scheduleDowngradeShapeMountTarget(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/scheduleShapeDowngrade", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response ScheduleDowngradeShapeMountTargetResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/ScheduleDowngradeShapeMountTarget"
+		err = common.PostProcessServiceError(err, "FileStorage", "ScheduleDowngradeShapeMountTarget", apiReferenceLink)
 		return response, err
 	}
 
@@ -3816,6 +5487,13 @@ func (client FileStorageClient) shareSetJoinDomain(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ShareSetJoinDomainResponse
 	var httpResponse *http.Response
@@ -3869,6 +5547,13 @@ func (client FileStorageClient) sourceTriggeredDelete(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response SourceTriggeredDeleteResponse
 	var httpResponse *http.Response
@@ -3928,6 +5613,13 @@ func (client FileStorageClient) startLoggingMt(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response StartLoggingMtResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3986,6 +5678,13 @@ func (client FileStorageClient) stopLoggingMt(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response StopLoggingMtResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4038,6 +5737,13 @@ func (client FileStorageClient) stopMountTargetRebalancing(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response StopMountTargetRebalancingResponse
 	var httpResponse *http.Response
@@ -4092,6 +5798,13 @@ func (client FileStorageClient) targetFileSystemGet(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response TargetFileSystemGetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4119,6 +5832,11 @@ func (client FileStorageClient) ToggleQuotaRules(ctx context.Context, request To
 	if request.RetryPolicy() != nil {
 		policy = *request.RetryPolicy()
 	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
 	ociResponse, err = common.Retry(ctx, request, client.toggleQuotaRules, policy)
 	if err != nil {
 		if ociResponse != nil {
@@ -4146,6 +5864,13 @@ func (client FileStorageClient) toggleQuotaRules(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ToggleQuotaRulesResponse
 	var httpResponse *http.Response
@@ -4203,6 +5928,13 @@ func (client FileStorageClient) unpauseFilesystemSnapshotPolicy(ctx context.Cont
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UnpauseFilesystemSnapshotPolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4256,6 +5988,13 @@ func (client FileStorageClient) updateExport(ctx context.Context, request common
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateExportResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4308,6 +6047,13 @@ func (client FileStorageClient) updateExportSet(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateExportSetResponse
 	var httpResponse *http.Response
@@ -4363,6 +6109,13 @@ func (client FileStorageClient) updateFileSystem(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateFileSystemResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4415,6 +6168,13 @@ func (client FileStorageClient) updateFilesystemSnapshotPolicy(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateFilesystemSnapshotPolicyResponse
 	var httpResponse *http.Response
@@ -4474,6 +6234,13 @@ func (client FileStorageClient) updateLoggingMt(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateLoggingMtResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4526,6 +6293,13 @@ func (client FileStorageClient) updateMountTarget(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateMountTargetResponse
 	var httpResponse *http.Response
@@ -4580,6 +6354,13 @@ func (client FileStorageClient) updateOutboundConnector(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateOutboundConnectorResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4592,6 +6373,66 @@ func (client FileStorageClient) updateOutboundConnector(ctx context.Context, req
 	}
 
 	err = common.UnmarshalResponseWithPolymorphicBody(httpResponse, &response, &outboundconnector{})
+	return response, err
+}
+
+// UpdateQuotaRule Edit an FS level, user or group quota rule given the `fileSystemId` and `quotaRuleId` parameters.
+func (client FileStorageClient) UpdateQuotaRule(ctx context.Context, request UpdateQuotaRuleRequest) (response UpdateQuotaRuleResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.updateQuotaRule, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = UpdateQuotaRuleResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = UpdateQuotaRuleResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(UpdateQuotaRuleResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into UpdateQuotaRuleResponse")
+	}
+	return
+}
+
+// updateQuotaRule implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) updateQuotaRule(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPut, "/fileSystems/{fileSystemId}/quotaRules/{quotaRuleId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response UpdateQuotaRuleResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/FileSystem/UpdateQuotaRule"
+		err = common.PostProcessServiceError(err, "FileStorage", "UpdateQuotaRule", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
 	return response, err
 }
 
@@ -4632,6 +6473,13 @@ func (client FileStorageClient) updateReplication(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateReplicationResponse
 	var httpResponse *http.Response
@@ -4687,6 +6535,13 @@ func (client FileStorageClient) updateReplicationTarget(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateReplicationTargetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4739,6 +6594,13 @@ func (client FileStorageClient) updateShare(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateShareResponse
 	var httpResponse *http.Response
@@ -4793,6 +6655,13 @@ func (client FileStorageClient) updateShareSet(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateShareSetResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4846,6 +6715,13 @@ func (client FileStorageClient) updateSnapshot(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateSnapshotResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4854,6 +6730,66 @@ func (client FileStorageClient) updateSnapshot(ctx context.Context, request comm
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/Snapshot/UpdateSnapshot"
 		err = common.PostProcessServiceError(err, "FileStorage", "UpdateSnapshot", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// UpgradeShapeMountTarget Upgrade shape request for mount target.
+func (client FileStorageClient) UpgradeShapeMountTarget(ctx context.Context, request UpgradeShapeMountTargetRequest) (response UpgradeShapeMountTargetResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.upgradeShapeMountTarget, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = UpgradeShapeMountTargetResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = UpgradeShapeMountTargetResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(UpgradeShapeMountTargetResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into UpgradeShapeMountTargetResponse")
+	}
+	return
+}
+
+// upgradeShapeMountTarget implements the OCIOperation interface (enables retrying operations)
+func (client FileStorageClient) upgradeShapeMountTarget(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/mountTargets/{mountTargetId}/actions/upgradeShape", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response UpgradeShapeMountTargetResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/filestorage/20171215/MountTarget/UpgradeShapeMountTarget"
+		err = common.PostProcessServiceError(err, "FileStorage", "UpgradeShapeMountTarget", apiReferenceLink)
 		return response, err
 	}
 
@@ -4900,6 +6836,13 @@ func (client FileStorageClient) validateKeyTabs(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ValidateKeyTabsResponse
 	var httpResponse *http.Response

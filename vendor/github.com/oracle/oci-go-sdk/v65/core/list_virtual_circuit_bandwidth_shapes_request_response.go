@@ -17,6 +17,9 @@ type ListVirtualCircuitBandwidthShapesRequest struct {
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment.
 	CompartmentId *string `mandatory:"true" contributesTo:"query" name:"compartmentId"`
 
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the cross-connect or cross-connect group.
+	CrossConnectOrCrossConnectGroupId *string `mandatory:"false" contributesTo:"query" name:"crossConnectOrCrossConnectGroupId"`
+
 	// For list pagination. The maximum number of results per page, or items to return in a paginated
 	// "List" call. For important details about how pagination works, see
 	// List Pagination (https://docs.cloud.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
@@ -56,6 +59,21 @@ func (request ListVirtualCircuitBandwidthShapesRequest) BinaryRequestBody() (*co
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request ListVirtualCircuitBandwidthShapesRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["compartmentId"] != nil {
+		templateParam := mandatoryParamMap["compartmentId"]
+		for _, template := range templateParam {
+			replacementParam := *request.CompartmentId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

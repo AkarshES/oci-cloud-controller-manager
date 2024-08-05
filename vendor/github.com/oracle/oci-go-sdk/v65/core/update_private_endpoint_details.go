@@ -36,6 +36,9 @@ type UpdatePrivateEndpointDetails struct {
 	// NetworkSecurityGroup.
 	NsgIds []string `mandatory:"false" json:"nsgIds"`
 
+	// This optional field will indicate to assign IPv6 address to the private endpoint when it is created in Dualstack subnet.
+	IsAssignDualstackIpv6 *bool `mandatory:"false" json:"isAssignDualstackIpv6"`
+
 	// The three-label FQDN to use for the private endpoint. The customer VCN's DNS records are
 	// updated with this FQDN.
 	// For important information about how this attribute is used, see the discussion
@@ -58,6 +61,10 @@ type UpdatePrivateEndpointDetails struct {
 	// predefined name, type, or namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
+
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
 }
 
 func (m UpdatePrivateEndpointDetails) String() string {

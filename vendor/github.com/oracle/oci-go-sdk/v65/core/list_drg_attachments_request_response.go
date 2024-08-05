@@ -63,7 +63,7 @@ type ListDrgAttachmentsRequest struct {
 	// state. The value is case insensitive.
 	LifecycleState DrgAttachmentLifecycleStateEnum `mandatory:"false" contributesTo:"query" name:"lifecycleState" omitEmpty:"true"`
 
-	// Internal query parameter to filter DRG attachments on internalType
+	// Internal query parameter to filter DRG attachments on `internalType`
 	InternalType ListDrgAttachmentsInternalTypeEnum `mandatory:"false" contributesTo:"query" name:"internalType" omitEmpty:"true"`
 
 	// Unique Oracle-assigned identifier for the request.
@@ -94,6 +94,21 @@ func (request ListDrgAttachmentsRequest) BinaryRequestBody() (*common.OCIReadSee
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request ListDrgAttachmentsRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["compartmentId"] != nil {
+		templateParam := mandatoryParamMap["compartmentId"]
+		for _, template := range templateParam {
+			replacementParam := *request.CompartmentId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

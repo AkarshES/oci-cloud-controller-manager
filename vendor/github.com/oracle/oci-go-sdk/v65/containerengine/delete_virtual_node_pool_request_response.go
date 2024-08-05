@@ -26,11 +26,11 @@ type DeleteVirtualNodePoolRequest struct {
 	// Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
 
-	// Duration after which Sk8s will give up eviction of the pods on the node.
+	// Duration after which SKE will give up eviction of the pods on the node.
 	// PT0M will indicate you want to delete the virtual node without cordon and drain. Default PT60M, Min PT0M, Max: PT60M. Format ISO 8601 e.g PT30M
 	OverrideEvictionGraceDurationVnp *string `mandatory:"false" contributesTo:"query" name:"overrideEvictionGraceDurationVnp"`
 
-	// Deprecated, this field does not apply to virtual node pools.  If the underlying virtual node should be deleted if you cannot evict all the pods in grace period.
+	// If the underlying virtual node should be force deleted if all the pods are not evicted in the evictionGraceDuration.
 	IsForceDeletionAfterOverrideGraceDurationVnp *bool `mandatory:"false" contributesTo:"query" name:"isForceDeletionAfterOverrideGraceDurationVnp"`
 
 	// Metadata about the request. This information will not be transmitted to the service, but
@@ -57,6 +57,21 @@ func (request DeleteVirtualNodePoolRequest) BinaryRequestBody() (*common.OCIRead
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request DeleteVirtualNodePoolRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["virtualNodePoolId"] != nil {
+		templateParam := mandatoryParamMap["virtualNodePoolId"]
+		for _, template := range templateParam {
+			replacementParam := *request.VirtualNodePoolId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

@@ -97,8 +97,12 @@ func (m *instanceconfigurationattachvolumedetails) UnmarshalPolymorphicJSON(data
 		mm := InstanceConfigurationParavirtualizedAttachVolumeDetails{}
 		err = json.Unmarshal(data, &mm)
 		return mm, err
+	case "nvme":
+		mm := InstanceConfigurationNvmeAttachVolumeDetails{}
+		err = json.Unmarshal(data, &mm)
+		return mm, err
 	default:
-		common.Logf("Recieved unsupported enum value for InstanceConfigurationAttachVolumeDetails: %s.", m.Type)
+		common.Logf("Received unsupported enum value for InstanceConfigurationAttachVolumeDetails: %s.", m.Type)
 		return *m, nil
 	}
 }

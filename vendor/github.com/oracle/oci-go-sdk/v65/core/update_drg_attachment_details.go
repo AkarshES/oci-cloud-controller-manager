@@ -56,6 +56,10 @@ type UpdateDrgAttachmentDetails struct {
 	// If this value is null, no routes are advertised through this attachment.
 	ExportDrgRouteDistributionId *string `mandatory:"false" json:"exportDrgRouteDistributionId"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// This is the OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the route table that is used to route the traffic as it enters a VCN through this attachment.
 	// For information about why you would associate a route table with a DRG attachment, see:
 	//   * Transit Routing: Access to Multiple VCNs in Same Region (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/transitrouting.htm)
@@ -92,6 +96,7 @@ func (m *UpdateDrgAttachmentDetails) UnmarshalJSON(data []byte) (e error) {
 		DefinedTags                  map[string]map[string]interface{}       `json:"definedTags"`
 		FreeformTags                 map[string]string                       `json:"freeformTags"`
 		ExportDrgRouteDistributionId *string                                 `json:"exportDrgRouteDistributionId"`
+		SecurityAttributes           map[string]map[string]interface{}       `json:"securityAttributes"`
 		RouteTableId                 *string                                 `json:"routeTableId"`
 	}{}
 
@@ -121,6 +126,8 @@ func (m *UpdateDrgAttachmentDetails) UnmarshalJSON(data []byte) (e error) {
 	m.FreeformTags = model.FreeformTags
 
 	m.ExportDrgRouteDistributionId = model.ExportDrgRouteDistributionId
+
+	m.SecurityAttributes = model.SecurityAttributes
 
 	m.RouteTableId = model.RouteTableId
 

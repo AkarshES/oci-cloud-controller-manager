@@ -50,6 +50,7 @@ import (
 
 const (
 	CREATE_PRIVATE_IP      = "CREATE_PRIVATE_IP"
+	CREATE_IPV6            = "CREATE_IPV6"
 	ATTACH_VNIC            = "ATTACH_VNIC"
 	INITIALIZE_NPN_NODE    = "INITIALIZE_NPN_NODE"
 	maxSecondaryIpsPerVNIC = 32
@@ -157,7 +158,7 @@ type vnicSecondaryAddresses struct {
 }
 
 type ErrorMetric interface {
-	GetMetricName() string
+	GetMetricName(IpVersion string) string
 	GetTimeTaken() float64
 	GetError() error
 }
@@ -165,12 +166,12 @@ type ConvertToErrorMetric interface {
 	ErrorMetric() []ErrorMetric
 }
 
-func (r *NativePodNetworkReconciler) PushMetric(errorArray []ErrorMetric) {
+func (r *NativePodNetworkReconciler) PushMetric(errorArray []ErrorMetric, ipVersion string) {
 	averageByReturnCode := computeAveragesByReturnCode(errorArray)
 	if len(errorArray) == 0 {
 		return
 	}
-	metricName := errorArray[0].GetMetricName()
+	metricName := errorArray[0].GetMetricName(ipVersion)
 	for k, v := range averageByReturnCode {
 		dimensions := map[string]string{"component": k}
 		metrics.SendMetricData(r.MetricPusher, metricName, v, dimensions)
@@ -180,8 +181,13 @@ func (r *NativePodNetworkReconciler) PushMetric(errorArray []ErrorMetric) {
 func (v IPAllocation) GetTimeTaken() float64 {
 	return v.timeTaken
 }
-func (v IPAllocation) GetMetricName() string {
-	return CREATE_PRIVATE_IP
+func (v IPAllocation) GetMetricName(ipVersion string) string {
+	switch ipVersion {
+	case IPv6:
+		return CREATE_IPV6
+	default:
+		return CREATE_PRIVATE_IP
+	}
 }
 func (v IPAllocation) GetError() error {
 	return v.err
@@ -190,7 +196,7 @@ func (v IPAllocation) GetError() error {
 func (v VnicAttachmentResponse) GetTimeTaken() float64 {
 	return v.timeTaken
 }
-func (v VnicAttachmentResponse) GetMetricName() string {
+func (v VnicAttachmentResponse) GetMetricName(ipVersion string) string {
 	return ATTACH_VNIC
 }
 func (v VnicAttachmentResponse) GetError() error {
@@ -200,7 +206,7 @@ func (v VnicAttachmentResponse) GetError() error {
 func (v endToEndLatency) GetTimeTaken() float64 {
 	return v.timeTaken
 }
-func (v endToEndLatency) GetMetricName() string {
+func (v endToEndLatency) GetMetricName(ipVersion string) string {
 	return INITIALIZE_NPN_NODE
 }
 func (v endToEndLatency) GetError() error {
@@ -370,7 +376,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 				failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to attach VNIC to instance: "+additionalVNICAttachments[index].err.Error()
 				log.Error(additionalVNICAttachments[index].err, "failed to attach VNIC to instance")
 				r.handleError(ctx, req, err, "AttachVNIC")
-				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
+				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric(), "")
 				return ctrl.Result{}, err
 			}
 			additionalVNICAttachments[index].timeTaken = float64(time.Since(startTime).Seconds())
@@ -381,14 +387,14 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 				log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).
 					Error(err, failMessage)
 				r.handleError(ctx, req, err, "AttachVNIC")
-				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
+				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric(), "")
 				if errors.Is(err, wait.ErrWaitTimeout) {
 					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 				}
 				return ctrl.Result{}, err
 			}
 		}
-		r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric())
+		r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric(), "")
 		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocatedAdditionalVNICsToInstance)
 	}
 
@@ -489,19 +495,19 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			if ips.errIPv4 != nil {
 				failReason, failMessage = "CreatePrivateIPFailed", ips.errIPv4.Error()
 				r.handleError(ctx, req, ips.errIPv4, "CreatePrivateIP")
-				r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric())
+				r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric(), IPv4)
 				return ctrl.Result{}, ips.errIPv4
 			}
-			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric())
+			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric(), IPv4)
 		}
 		if contains(ipFamilies, IPv6) {
 			if ips.errIPv6 != nil {
 				failReason, failMessage = "CreateIPv6Failed", ips.errIPv6.Error()
 				r.handleError(ctx, req, ips.errIPv6, "CreateIPv6")
-				r.PushMetric(IPAllocationSlice(ips.ipAllocations.V6).ErrorMetric())
+				r.PushMetric(IPAllocationSlice(ips.ipAllocations.V6).ErrorMetric(), IPv6)
 				return ctrl.Result{}, ips.errIPv6
 			}
-			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V6).ErrorMetric())
+			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V6).ErrorMetric(), IPv6)
 		}
 	}
 
@@ -584,7 +590,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 	log.Info("NativePodNetwork CR reconciled successfully")
 
-	r.PushMetric(endToEndLatencySlice{{time.Since(startTime.(time.Time)).Seconds()}}.ErrorMetric())
+	r.PushMetric(endToEndLatencySlice{{time.Since(startTime.(time.Time)).Seconds()}}.ErrorMetric(), "")
 	return ctrl.Result{}, nil
 }
 
