@@ -15,10 +15,11 @@
 package oci
 
 import (
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes/fake"
 	"testing"
 	"time"
+
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes/fake"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -30,13 +31,13 @@ func TestMapProviderIDToInstanceID(t *testing.T) {
 		error      bool
 	}{
 		"no cloud prefix": {
-			providerID: "testid",
-			instanceID: "testid",
+			providerID: "ocid1.testid",
+			instanceID: "ocid1.testid",
 			error:      false,
 		},
 		"cloud prefix": {
-			providerID: providerPrefix + "testid",
-			instanceID: "testid",
+			providerID: providerPrefix + "ocid1.testid",
+			instanceID: "ocid1.testid",
 			error:      false,
 		},
 		"empty string": {
@@ -213,10 +214,10 @@ func TestIsVirtualNode(t *testing.T) {
 }
 
 func TestVirtualNodeExists(t *testing.T) {
-	tests := map[string]struct{
+	tests := map[string]struct {
 		nodeList []*v1.Node
 		exists   bool
-	} {
+	}{
 		"No nodes exist": {
 			nodeList: []*v1.Node{},
 			exists:   false,
