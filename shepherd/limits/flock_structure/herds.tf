@@ -54,7 +54,7 @@ resource "shepherd_execution_target" "herds_et" {
   name                      = each.key
   region                    = split(".", each.key)[2]
   predecessors              = lookup(each.value, "predecessor", "") != "" ? [lookup(each.value, "predecessor", "")] : tonumber(split("cell", each.key)[1]) > 0 ? [format("%s.cell%s", split(".cell", each.key)[0], tonumber(split(".cell", each.key)[1]) - 1)] : []
-  phase                     = lookup(merge(each.value, lookup(local.overrides, split(".cell", each.key)[0], {})), "phase", join(".", [split(".", each.key)[0], split(".", each.key)[1]]))
+  phase                     = lookup(merge(lookup(local.overrides, each.key, {})), "phase", join(".", ["herds", split(".", each.key)[2]]))
   uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
   tenancy_name              = lookup(lookup(local.overrides.tenancy_info, "rbaas", {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
@@ -64,6 +64,9 @@ resource "shepherd_execution_target" "herds_et" {
     labels           = [format(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "watch_mp_release_label_format"), split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1])]
   }
   ignored_region_build_capabilities = ["grafana_dashboard"]
+  labels = {
+    herd = "993ddcbe-99c5-49ac-a791-889537ecb67a"
+  }
 }
 
 resource "shepherd_execution_target" "herds_env_setup_et" {
@@ -82,22 +85,29 @@ resource "shepherd_execution_target" "herds_env_setup_et" {
     labels = [ for idx in range(each.value.cell_count) : format("oke-mp-release-cells%s",idx)]
     #labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
   }
+  labels = {
+    herd = "993ddcbe-99c5-49ac-a791-889537ecb67a"
+  }
 }
 
 resource "shepherd_execution_target" "herds_spectre_setup_et" {
   for_each                          = local.herds_spectre_setup_ets
   name                              = format("spectre.setup.%s", each.key)
-  region                            = each.value.region
+  region                            = local.home_region_by_realm[split(".", each.key)[1]]
   phase                             = lookup(each.value, "phase", each.key)
   predecessors                      = ["env.setup.${each.key}"]
   uniquifier                        = format("spectre-setup-%s", replace(each.key, ".", "-"))
   tenancy_name                      = lookup(lookup(local.overrides.tenancy_info, each.value.env, {}), each.value.realm, local.overrides.tenancy_info.default)
   snowflake_config_location         = "spectre_region"
   additional_locals                 = each.value.additional_locals
+  scope                             = format("%s%s", "eu-frankfurt-1", "~home-region")
   ignored_region_build_capabilities = ["grafana_dashboard"]
   alarms_to_watch {
     compartment_name = "assets"
     labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+  }
+  labels = {
+    herd = "993ddcbe-99c5-49ac-a791-889537ecb67a"
   }
 }
 

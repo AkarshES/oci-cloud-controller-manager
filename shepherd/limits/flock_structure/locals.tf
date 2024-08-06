@@ -64,13 +64,13 @@ locals {
       alarms_compartment              = "" // Defaults to orchestration compartment
       alarms_enabled                  = false
       mapi_api_alarms_enabled         = false
-      mapi_alarms_fleet_format        = "okerbaas.oke-rbaas-mapi-cell%d"
-      mapi_alarms_hostmetrics_fleet   = "okerbaas.oke-mp-api-rbaas"
+      mapi_alarms_fleet_format        = "okerbaastest.oke-rbaas-mapi-cell%d"
+      mapi_alarms_hostmetrics_fleet   = "okerbaastest.oke-mp-api-rbaas"
       kmon_alarms_enabled             = false
-      kmon_alarms_fleet_format        = "okerbaas.oke-rbaas-kmon-cell%d"
+      kmon_alarms_fleet_format        = "okerbaastest.oke-rbaas-kmon-cell%d"
       worker_alarms_enabled           = false
-      worker_alarms_fleet_format      = "okerbaas.oke-rbaas-wfworker-cell%d"
-      worker_alarms_hostmetrics_fleet = "okerbaas.oke-mp-worker-rbaas"
+      worker_alarms_fleet_format      = "okerbaastest.oke-rbaas-wfworker-cell%d"
+      worker_alarms_hostmetrics_fleet = "okerbaastest.oke-mp-worker-rbaas"
 
       // API ODO Configuration
       api_pool_alias_format = "oke-rbaas-mapi-cell%d"
@@ -99,7 +99,7 @@ locals {
 
       // T2
       t2_namespace      = "oci_oke_rbaas"
-      t2_fleet_template = "okerbaas.rbaas-oke-clusters-%s"
+      t2_fleet_template = "okerbaastest.rbaas-oke-clusters-%s"
 
       cp_vcn_compartment = "oke-cp-api"
       pl_vcn_name        = "oke-admin"
@@ -396,7 +396,7 @@ locals {
     // For tenancy OCID
     tenancy_info = {
       rbaas = {
-        oc1 = "okerbaas"
+        oc1 = "okerbaastest"
       }
       dev = {
         oc1 = "ociokedev"
