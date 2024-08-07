@@ -247,43 +247,17 @@ npn-generate:
 
 .PHONY: checkout-e2e-branch-build-service
 secrets:
-	#echo "transferring private key from secret to root ssh"
 	mkdir -p ~/.ssh
-#	@touch ~/.ssh/config
-#	@echo 'Host bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
-#	@echo '  HostName bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
-#	@echo '  IdentityFile /root/.ssh/id_rsa' >> ~/.ssh/config
-#	@echo '  StrictHostKeyChecking no' >> ~/.ssh/config
 	touch ~/.ssh/id_ed25519
 	echo "$$BITBUCKET_KEY" > ~/.ssh/id_ed25519
 	ssh-keyscan -p 7999 -t ed25519 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
 	chmod 600 ~/.ssh/*
-#	touch /etc/gitconfig
-#	echo "[user]\
-#			email = oke_K8s_providers_grp@oracle.com\
-#			name = K8s Providers BS Bot\
-#	[core]\
-#			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
 	cat ~/.ssh/id_ed25519
-	#eval "ssh-agent -s"
-	#echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
-	#ssh-add ~/.ssh/id_rsa
-#	echo "Host *\
-#        StrictHostKeyChecking no" > ~/.ssh/config
-#	chmod 400 ~/.ssh/config
 
 checkout-e2e-branch-build-service: secrets
 	yum install -y tree python-pip
-	#tree -a -L 2
 	pwd
 	pwd ~/.ssh
-	#mkdir -p ~/.ssh
-	#mkdir -p /tmp/
-	#Need to convert one-line ssh key from secret service to multi line ssh
-	#echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
-	#echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPayVVuqv+0crlGBFZI/cCOMMvYahlqOph/EXRgWbQxA K8sProvidersTeam" > ~/.ssh/id_rsa.pub
-	#chmod 600 ~/.ssh/*
-	#git checkout $${E2E_BRANCH}
 	mkdir -p /opt/tssagent/workspace/
 	cd /opt/tssagent/workspace/
 	git config --global user.email oke_K8s_providers_grp@oracle.com
