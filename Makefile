@@ -254,17 +254,17 @@ secrets:
 #	@echo '  HostName bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
 #	@echo '  IdentityFile /root/.ssh/id_rsa' >> ~/.ssh/config
 #	@echo '  StrictHostKeyChecking no' >> ~/.ssh/config
-#	@touch ~/.ssh/id_rsa
-	@echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
+	@touch ~/.ssh/id_ed25519
+	@echo "$$BITBUCKET_KEY" > ~/.ssh/id_ed25519
+	@ssh-keyscan -p 7999 -t ed25519 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
 	@chmod 600 ~/.ssh/*
-	@ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
 #	touch /etc/gitconfig
 #	echo "[user]\
 #			email = oke_K8s_providers_grp@oracle.com\
 #			name = K8s Providers BS Bot\
 #	[core]\
 #			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
-	@cat ~/.ssh/id_rsa
+	@cat ~/.ssh/id_ed25519
 	#eval "ssh-agent -s"
 	#echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
 	#ssh-add ~/.ssh/id_rsa
