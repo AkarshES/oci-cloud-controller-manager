@@ -35,6 +35,10 @@ type UpdateInstanceDetails struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
@@ -140,6 +144,9 @@ type UpdateInstanceDetails struct {
 	DedicatedVmHostId *string `mandatory:"false" json:"dedicatedVmHostId"`
 
 	PlatformConfig UpdateInstancePlatformConfig `mandatory:"false" json:"platformConfig"`
+
+	// The list of liscensing configurations with target update values.
+	LicensingConfigs []UpdateInstanceLicensingConfig `mandatory:"false" json:"licensingConfigs"`
 }
 
 func (m UpdateInstanceDetails) String() string {
@@ -169,6 +176,7 @@ func (m *UpdateInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 	model := struct {
 		CapacityReservationId      *string                                             `json:"capacityReservationId"`
 		DefinedTags                map[string]map[string]interface{}                   `json:"definedTags"`
+		SecurityAttributes         map[string]map[string]interface{}                   `json:"securityAttributes"`
 		DisplayName                *string                                             `json:"displayName"`
 		FreeformTags               map[string]string                                   `json:"freeformTags"`
 		AgentConfig                *UpdateInstanceAgentConfigDetails                   `json:"agentConfig"`
@@ -186,6 +194,7 @@ func (m *UpdateInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 		TimeMaintenanceRebootDue   *common.SDKTime                                     `json:"timeMaintenanceRebootDue"`
 		DedicatedVmHostId          *string                                             `json:"dedicatedVmHostId"`
 		PlatformConfig             updateinstanceplatformconfig                        `json:"platformConfig"`
+		LicensingConfigs           []updateinstancelicensingconfig                     `json:"licensingConfigs"`
 	}{}
 
 	e = json.Unmarshal(data, &model)
@@ -196,6 +205,8 @@ func (m *UpdateInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 	m.CapacityReservationId = model.CapacityReservationId
 
 	m.DefinedTags = model.DefinedTags
+
+	m.SecurityAttributes = model.SecurityAttributes
 
 	m.DisplayName = model.DisplayName
 
@@ -247,6 +258,18 @@ func (m *UpdateInstanceDetails) UnmarshalJSON(data []byte) (e error) {
 		m.PlatformConfig = nil
 	}
 
+	m.LicensingConfigs = make([]UpdateInstanceLicensingConfig, len(model.LicensingConfigs))
+	for i, n := range model.LicensingConfigs {
+		nn, e = n.UnmarshalPolymorphicJSON(n.JsonData)
+		if e != nil {
+			return e
+		}
+		if nn != nil {
+			m.LicensingConfigs[i] = nn.(UpdateInstanceLicensingConfig)
+		} else {
+			m.LicensingConfigs[i] = nil
+		}
+	}
 	return
 }
 

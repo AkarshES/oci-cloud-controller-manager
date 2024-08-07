@@ -4,7 +4,7 @@ go 1.20
 
 replace (
 	github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
-	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.62.0-p
+	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.71.0-p
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.16.0
 	k8s.io/api => k8s.io/api v0.28.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.2

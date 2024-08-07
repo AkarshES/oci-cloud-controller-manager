@@ -29,6 +29,9 @@ type OpenIdConnectTokenAuthenticationConfig struct {
 	// A client id that all tokens must be issued for.
 	ClientId *string `mandatory:"true" json:"clientId"`
 
+	// Whether the cluster has OIDC Auth Config enabled. Defaults to false.
+	IsOpenIdConnectAuthEnabled *bool `mandatory:"true" json:"isOpenIdConnectAuthEnabled"`
+
 	// JWT claim to use as the user name. By default sub, which is expected to be a unique identifier of the end
 	// user. Admins can choose other claims, such as email or name, depending on their provider. However, claims
 	// other than email will be prefixed with the issuer URL to prevent naming clashes with other plugins.
@@ -50,8 +53,7 @@ type OpenIdConnectTokenAuthenticationConfig struct {
 	// in the ID Token with a matching value. Repeat this flag to specify multiple claims.
 	RequiredClaims []KeyValue `mandatory:"false" json:"requiredClaims"`
 
-	// The path to the certificate for the CA that signed your identity provider's web certificate. Defaults to the
-	// host's root CAs.
+	// A Base64 encoded public RSA or ECDSA certificates used to signed your identity provider's web certificate.
 	CaCertificate *string `mandatory:"false" json:"caCertificate"`
 
 	// The signing algorithms accepted. Default is ["RS256"].

@@ -100,6 +100,10 @@ type PrivateEndpoint struct {
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
@@ -110,6 +114,13 @@ type PrivateEndpoint struct {
 	// The date and time the private endpoint was created, in the format defined by RFC3339 (https://tools.ietf.org/html/rfc3339).
 	// Example: `2016-08-25T21:10:29.600Z`
 	TimeCreated *common.SDKTime `mandatory:"false" json:"timeCreated"`
+
+	// The private IPv6 address (in the customer's VCN) that represents the access point for the
+	// associated endpoint service. (Optional field)
+	PrivateEndpointIpv6 *string `mandatory:"false" json:"privateEndpointIpv6"`
+
+	// This optional field will indicate to assign IPv6 address to the private endpoint when it is created in Dualstack subnet.
+	IsAssignDualstackIpv6 *bool `mandatory:"false" json:"isAssignDualstackIpv6"`
 
 	// The three-label FQDN to use for the private endpoint. The customer VCN's DNS records are
 	// updated with this FQDN.
@@ -167,6 +178,10 @@ type PrivateEndpoint struct {
 	FailoverState PrivateEndpointFailoverStateEnum `mandatory:"false" json:"failoverState,omitempty"`
 
 	ReverseConnectionConfiguration *ReverseConnectionConfiguration `mandatory:"false" json:"reverseConnectionConfiguration"`
+
+	// The Cluster Proximity Group OCID to be used for the PE ServiceVnic placement.
+	// Optional and valid only for Private Access to support ADB-S low latency support.
+	CpgId *string `mandatory:"false" json:"cpgId"`
 }
 
 func (m PrivateEndpoint) String() string {

@@ -98,12 +98,16 @@ func (m *launchattachvolumedetails) UnmarshalPolymorphicJSON(data []byte) (inter
 
 	var err error
 	switch m.Type {
+	case "paravirtualized":
+		mm := LaunchAttachParavirtualizedVolumeDetails{}
+		err = json.Unmarshal(data, &mm)
+		return mm, err
 	case "iscsi":
 		mm := LaunchAttachIScsiVolumeDetails{}
 		err = json.Unmarshal(data, &mm)
 		return mm, err
 	default:
-		common.Logf("Recieved unsupported enum value for LaunchAttachVolumeDetails: %s.", m.Type)
+		common.Logf("Received unsupported enum value for LaunchAttachVolumeDetails: %s.", m.Type)
 		return *m, nil
 	}
 }

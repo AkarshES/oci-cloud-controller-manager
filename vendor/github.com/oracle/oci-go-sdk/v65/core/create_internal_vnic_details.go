@@ -73,6 +73,10 @@ type CreateInternalVnicDetails struct {
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// Free-form tags for this resource. Each tag is a simple key-value pair with no
 	// predefined name, type, or namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Department": "Finance"}`
@@ -151,6 +155,15 @@ type CreateInternalVnicDetails struct {
 	// Example: `10.0.3.3`
 	PrivateIp *string `mandatory:"false" json:"privateIp"`
 
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the private IP to assign the vnic.
+	PrivateIpId *string `mandatory:"false" json:"privateIpId"`
+
+	// Lifetime of the IP address.
+	// There are two types of IPv6 IPs:
+	//  - Ephemeral
+	//  - Reserved
+	Lifetime CreateInternalVnicDetailsLifetimeEnum `mandatory:"false" json:"lifetime,omitempty"`
+
 	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the pool object created by the current tenancy
 	PublicIpPoolId *string `mandatory:"false" json:"publicIpPoolId"`
 
@@ -218,6 +231,13 @@ type CreateInternalVnicDetails struct {
 	VnicShapeConfig *VnicShapeConfig `mandatory:"false" json:"vnicShapeConfig"`
 
 	VnicaasVnicShapeConfig *VnicaasVnicShapeConfig `mandatory:"false" json:"vnicaasVnicShapeConfig"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of `Cluster Placement Group` to be used
+	// for the ServiceVnic placement.
+	CpgId *string `mandatory:"false" json:"cpgId"`
+
+	// Indicates if the security attributes is owned at the parent resource (e.g., Compute Instance) or by the VNIC.
+	IsGroupedSecurityAttributes *bool `mandatory:"false" json:"isGroupedSecurityAttributes"`
 }
 
 func (m CreateInternalVnicDetails) String() string {
@@ -232,6 +252,9 @@ func (m CreateInternalVnicDetails) ValidateEnumValue() (bool, error) {
 
 	if _, ok := GetMappingCreateInternalVnicDetailsInternalPoolNameEnum(string(m.InternalPoolName)); !ok && m.InternalPoolName != "" {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for InternalPoolName: %s. Supported values are: %s.", m.InternalPoolName, strings.Join(GetCreateInternalVnicDetailsInternalPoolNameEnumStringValues(), ",")))
+	}
+	if _, ok := GetMappingCreateInternalVnicDetailsLifetimeEnum(string(m.Lifetime)); !ok && m.Lifetime != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for Lifetime: %s. Supported values are: %s.", m.Lifetime, strings.Join(GetCreateInternalVnicDetailsLifetimeEnumStringValues(), ",")))
 	}
 	if _, ok := GetMappingCreateInternalVnicDetailsServiceVnicTypeEnum(string(m.ServiceVnicType)); !ok && m.ServiceVnicType != "" {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for ServiceVnicType: %s. Supported values are: %s.", m.ServiceVnicType, strings.Join(GetCreateInternalVnicDetailsServiceVnicTypeEnumStringValues(), ",")))
@@ -284,6 +307,48 @@ func GetCreateInternalVnicDetailsInternalPoolNameEnumStringValues() []string {
 // GetMappingCreateInternalVnicDetailsInternalPoolNameEnum performs case Insensitive comparison on enum value and return the desired enum
 func GetMappingCreateInternalVnicDetailsInternalPoolNameEnum(val string) (CreateInternalVnicDetailsInternalPoolNameEnum, bool) {
 	enum, ok := mappingCreateInternalVnicDetailsInternalPoolNameEnumLowerCase[strings.ToLower(val)]
+	return enum, ok
+}
+
+// CreateInternalVnicDetailsLifetimeEnum Enum with underlying type: string
+type CreateInternalVnicDetailsLifetimeEnum string
+
+// Set of constants representing the allowable values for CreateInternalVnicDetailsLifetimeEnum
+const (
+	CreateInternalVnicDetailsLifetimeEphemeral CreateInternalVnicDetailsLifetimeEnum = "EPHEMERAL"
+	CreateInternalVnicDetailsLifetimeReserved  CreateInternalVnicDetailsLifetimeEnum = "RESERVED"
+)
+
+var mappingCreateInternalVnicDetailsLifetimeEnum = map[string]CreateInternalVnicDetailsLifetimeEnum{
+	"EPHEMERAL": CreateInternalVnicDetailsLifetimeEphemeral,
+	"RESERVED":  CreateInternalVnicDetailsLifetimeReserved,
+}
+
+var mappingCreateInternalVnicDetailsLifetimeEnumLowerCase = map[string]CreateInternalVnicDetailsLifetimeEnum{
+	"ephemeral": CreateInternalVnicDetailsLifetimeEphemeral,
+	"reserved":  CreateInternalVnicDetailsLifetimeReserved,
+}
+
+// GetCreateInternalVnicDetailsLifetimeEnumValues Enumerates the set of values for CreateInternalVnicDetailsLifetimeEnum
+func GetCreateInternalVnicDetailsLifetimeEnumValues() []CreateInternalVnicDetailsLifetimeEnum {
+	values := make([]CreateInternalVnicDetailsLifetimeEnum, 0)
+	for _, v := range mappingCreateInternalVnicDetailsLifetimeEnum {
+		values = append(values, v)
+	}
+	return values
+}
+
+// GetCreateInternalVnicDetailsLifetimeEnumStringValues Enumerates the set of values in String for CreateInternalVnicDetailsLifetimeEnum
+func GetCreateInternalVnicDetailsLifetimeEnumStringValues() []string {
+	return []string{
+		"EPHEMERAL",
+		"RESERVED",
+	}
+}
+
+// GetMappingCreateInternalVnicDetailsLifetimeEnum performs case Insensitive comparison on enum value and return the desired enum
+func GetMappingCreateInternalVnicDetailsLifetimeEnum(val string) (CreateInternalVnicDetailsLifetimeEnum, bool) {
+	enum, ok := mappingCreateInternalVnicDetailsLifetimeEnumLowerCase[strings.ToLower(val)]
 	return enum, ok
 }
 

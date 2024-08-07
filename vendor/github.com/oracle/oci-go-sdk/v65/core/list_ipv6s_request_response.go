@@ -35,6 +35,15 @@ type ListIpv6sRequest struct {
 	// The OCID of the VNIC.
 	VnicId *string `mandatory:"false" contributesTo:"query" name:"vnicId"`
 
+	// State of the IP address. If an IP address is assigned to a VNIC it is ASSIGNED otherwise AVAILABLE
+	IpState *string `mandatory:"false" contributesTo:"query" name:"ipState"`
+
+	// Lifetime of the IP address.
+	// There are two types of IPs:
+	//  - Ephemeral
+	//  - Reserved
+	Lifetime *string `mandatory:"false" contributesTo:"query" name:"lifetime"`
+
 	// Unique identifier for the request.
 	// If you need to contact Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
@@ -63,6 +72,11 @@ func (request ListIpv6sRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, 
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request ListIpv6sRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

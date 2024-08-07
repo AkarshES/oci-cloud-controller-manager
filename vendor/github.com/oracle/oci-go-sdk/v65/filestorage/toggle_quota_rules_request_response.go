@@ -29,6 +29,13 @@ type ToggleQuotaRulesRequest struct {
 	// provide matches the resource's current etag value.
 	IfMatch *string `mandatory:"false" contributesTo:"header" name:"if-match"`
 
+	// A token that uniquely identifies a request so it can be retried in case of a timeout or
+	// server error without risk of executing that same action again. Retry tokens expire after 24
+	// hours, but can be invalidated before then due to conflicting operations. For example, if a resource
+	// has been deleted and purged from the system, then a retry of the original creation request
+	// might be rejected.
+	OpcRetryToken *string `mandatory:"false" contributesTo:"header" name:"opc-retry-token"`
+
 	// Unique identifier for the request.
 	// If you need to contact Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
@@ -59,6 +66,21 @@ func (request ToggleQuotaRulesRequest) BinaryRequestBody() (*common.OCIReadSeekC
 
 }
 
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request ToggleQuotaRulesRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["fileSystemId"] != nil {
+		templateParam := mandatoryParamMap["fileSystemId"]
+		for _, template := range templateParam {
+			replacementParam := *request.FileSystemId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
+}
+
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
 func (request ToggleQuotaRulesRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
@@ -85,6 +107,9 @@ type ToggleQuotaRulesResponse struct {
 	// you need to contact Oracle about a particular request,
 	// please provide the request ID.
 	OpcRequestId *string `presentIn:"header" name:"opc-request-id"`
+
+	// Unique Oracle-assigned identifier for the asynchronous request. You can use this to query status of the asynchronous operation.
+	OpcWorkRequestId *string `presentIn:"header" name:"opc-work-request-id"`
 }
 
 func (response ToggleQuotaRulesResponse) String() string {

@@ -46,6 +46,10 @@ type CreatePrivateEndpointDetails struct {
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
@@ -76,6 +80,15 @@ type CreatePrivateEndpointDetails struct {
 	// If you do not provide a value, an available IP address in the subnet is automatically chosen.
 	PrivateEndpointIp *string `mandatory:"false" json:"privateEndpointIp"`
 
+	// The private IPv6 address to assign to this private endpoint. If you provide a value,
+	// it must be an available IP address in the customer's subnet. If it's not available, an error
+	// is returned.
+	// If you do not provide a value, an available IP address in the subnet is automatically chosen.(Optional field)
+	PrivateEndpointIpv6 *string `mandatory:"false" json:"privateEndpointIpv6"`
+
+	// This optional field will indicate to assign IPv6 address to the private endpoint when it is created in Dualstack subnet.
+	IsAssignDualstackIpv6 *bool `mandatory:"false" json:"isAssignDualstackIpv6"`
+
 	// Custom shape of the VNIC that is used when provisioning private endpoint. If the value is empty
 	// then default shape is used.
 	// Allowed Values:
@@ -96,6 +109,10 @@ type CreatePrivateEndpointDetails struct {
 	// when primary provisioned availability domain fails.
 	// example: 'phx-ad-1'
 	FailoverDomain *string `mandatory:"false" json:"failoverDomain"`
+
+	// The Cluster Proximity Group OCID to be used for the PE ServiceVnic placement.
+	// Optional and valid only for Private Access to support ADB-S low latency support.
+	CpgId *string `mandatory:"false" json:"cpgId"`
 }
 
 func (m CreatePrivateEndpointDetails) String() string {
