@@ -247,36 +247,36 @@ npn-generate:
 
 .PHONY: checkout-e2e-branch-build-service
 secrets:
-	@echo "transferring private key from secret to root ssh"
+	@#echo "transferring private key from secret to root ssh"
 	@mkdir -p ~/.ssh
-	@touch ~/.ssh/config
-	@echo 'Host bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
-	@echo '  HostName bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
-	@echo '  IdentityFile /root/.ssh/id_rsa' >> ~/.ssh/config
-	@echo '  StrictHostKeyChecking no' >> ~/.ssh/config
-	@touch ~/.ssh/id_rsa
-	@chmod 600 ~/.ssh/*
+#	@touch ~/.ssh/config
+#	@echo 'Host bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
+#	@echo '  HostName bitbucket.oci.oraclecorp.com' >> ~/.ssh/config
+#	@echo '  IdentityFile /root/.ssh/id_rsa' >> ~/.ssh/config
+#	@echo '  StrictHostKeyChecking no' >> ~/.ssh/config
+#	@touch ~/.ssh/id_rsa
 	@echo $$BITBUCKET_KEY | sed -e "s/-*- /&\n/" -e "s/ -*-/\n&/" -e "s/\S\{70\}/&\n/g" | sed -e 's/^[ \t]*//' > ~/.ssh/id_rsa
-	ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
-	touch /etc/gitconfig
-	echo "[user]\
-			email = oke_K8s_providers_grp@oracle.com\
-			name = K8s Providers BS Bot\
-	[core]\
-			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
-	cat ~/.ssh/id_rsa
+	@chmod 600 ~/.ssh/*
+	@ssh-keyscan -p 7999 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
+#	touch /etc/gitconfig
+#	echo "[user]\
+#			email = oke_K8s_providers_grp@oracle.com\
+#			name = K8s Providers BS Bot\
+#	[core]\
+#			sshCommand = ssh -o StrictHostKeyChecking=no" > /etc/gitconfig
+	@cat ~/.ssh/id_rsa
 	#eval "ssh-agent -s"
-	echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
+	#echo $$SSH_AUTH_SOCK && echo $$SSH_AGENT_PID
 	#ssh-add ~/.ssh/id_rsa
 #	echo "Host *\
 #        StrictHostKeyChecking no" > ~/.ssh/config
 #	chmod 400 ~/.ssh/config
 
 checkout-e2e-branch-build-service: secrets
-	yum install -y tree python-pip
+	@yum install -y tree python-pip
 	#tree -a -L 2
-	pwd
-	pwd ~/.ssh
+	@pwd
+	@pwd ~/.ssh
 	#mkdir -p ~/.ssh
 	#mkdir -p /tmp/
 	#Need to convert one-line ssh key from secret service to multi line ssh
@@ -284,8 +284,8 @@ checkout-e2e-branch-build-service: secrets
 	#echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPayVVuqv+0crlGBFZI/cCOMMvYahlqOph/EXRgWbQxA K8sProvidersTeam" > ~/.ssh/id_rsa.pub
 	#chmod 600 ~/.ssh/*
 	#git checkout $${E2E_BRANCH}
-	mkdir -p /opt/tssagent/workspace/
-	cd /opt/tssagent/workspace/
-	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
-	cd oci-cloud-controller-manager && ls -lh
+	@mkdir -p /opt/tssagent/workspace/
+	@cd /opt/tssagent/workspace/
+	@git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
+	@cd oci-cloud-controller-manager && ls -lh
 #	rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
