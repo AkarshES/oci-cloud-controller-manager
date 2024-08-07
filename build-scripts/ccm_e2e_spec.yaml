@@ -33,7 +33,7 @@ steps:
     name: downloadE2eCode
     command: |
       cd ${OCI_ARTIFACTS_DIR}
-      curl -O https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/odo-docker-signed-local/oke-public-cloud-provider-oci-e2e-v${CCM_RELEASE_VERSION_E2E}-${OCI_TRIGGER_COMMIT_HASH}.tar.gz
+      curl -O https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/odo-docker-signed-local/oke-public-cloud-provider-oci-e2e-v${BLD_VERSION}.tar.gz
     timeoutInSeconds: 3000
   - type: shell
     name: Check Basic details
