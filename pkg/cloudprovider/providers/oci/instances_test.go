@@ -130,7 +130,7 @@ var (
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("subnetwithnovcndnslabel"),
 		},
-		"ipv6-gua-ipv4-instance": {
+		"ocid1.ipv6-gua-ipv4-instance": {
 			PrivateIp:     common.String("10.0.0.1"),
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("ipv6-gua-ipv4-instance"),
@@ -202,6 +202,7 @@ var (
 			CompartmentId: common.String("instance-id-ipv6"),
 		},
 		"ipv6-gua-ipv4-instance": {
+			Id:            common.String("ocid1.ipv6-gua-ipv4-instance"),
 			CompartmentId: common.String("ipv6-gua-ipv4-instance"),
 		},
 	}
