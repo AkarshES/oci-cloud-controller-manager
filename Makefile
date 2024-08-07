@@ -13,56 +13,56 @@
 # limitations under the License.
 
 # temp directory for which we pull repos to.
-export TMP_DEP_DIR		:= ${PWD}/temp_repos
-
-# ioke/screts repository settings (clone-secrets))
-SECRETS_REPO	:= ssh://git@bitbucket.oci.oraclecorp.com:7999/okei/secrets.git
-
-ifeq ($(TC_BUILD),0)
-export SECRETS_LOCAL	?= ${TMP_DEP_DIR}/secrets
-export SECRETS_DIR		:= ${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}
-export KUBECONFIG		:= ${SECRETS_DIR}/kubeconfig.TNL
-else
-export SECRETS_LOCAL	:= /secrets
-export SECRETS_DIR      := ${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}
-export KUBECONFIG		:= ${SECRETS_DIR}/kubeconfig.TNL
-endif
-
-PKG := github.com/oracle/oci-cloud-controller-manager
-REGISTRY ?= odo-docker-signed-local.artifactory.oci.oraclecorp.com
-IMAGE ?= $(REGISTRY)/oke-public-cloud-provider-oci
-COMPONENT ?= oci-cloud-controller-manager oci-volume-provisioner oci-flexvolume-driver cloud-provider-oci oci-csi-controller-driver oci-csi-node-driver
-OCI_CLI_VERSION ?= master
-KUBECTL_VERSION ?= 1.11.0
-
-GIT_COMMIT := $(shell GCOMMIT=`git rev-parse --short HEAD`; if [ -n "`git status . --porcelain`" ]; then echo "$$GCOMMIT-dirty"; else echo $$GCOMMIT; fi)
-DOCKER_REPO_ROOT?=/go/src/github.com/oracle/oci-cloud-controller-manager
-# Allow overriding for release versions else just equal the build (git hash)
-ifeq "$(BUILD_NUMBER)" ""
-    VERSION_SUFFIX   ?= $(GIT_COMMIT)
-else
-    VERSION_SUFFIX   ?= $(GIT_COMMIT)-$(BUILD_NUMBER)
-endif
-
-K8S_VERSION := $(shell cat VERSION)
-VERSION ?= oke-$(K8S_VERSION)-$(VERSION_SUFFIX)
-BUILD = $(VERSION)
-
-GOOS ?= linux
-ARCH ?= amd64
-
-SRC_DIRS := cmd controllers pkg # directories which hold app source (not vendored)
-
-# Allows overriding where the CCM should look for the cloud provider config
-# when running via make run-dev.
-CLOUD_PROVIDER_CFG ?= $$(pwd)/cloud-provider.yaml
-
-RETURN_CODE := $(shell sed --version >/dev/null 2>&1; echo $$?)
-ifeq ($(RETURN_CODE),1)
-    SED_INPLACE = -i ''
-else
-    SED_INPLACE = -i
-endif
+#export TMP_DEP_DIR		:= ${PWD}/temp_repos
+#
+## ioke/screts repository settings (clone-secrets))
+#SECRETS_REPO	:= ssh://git@bitbucket.oci.oraclecorp.com:7999/okei/secrets.git
+#
+#ifeq ($(TC_BUILD),0)
+#export SECRETS_LOCAL	?= ${TMP_DEP_DIR}/secrets
+#export SECRETS_DIR		:= ${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}
+#export KUBECONFIG		:= ${SECRETS_DIR}/kubeconfig.TNL
+#else
+#export SECRETS_LOCAL	:= /secrets
+#export SECRETS_DIR      := ${SECRETS_LOCAL}/k8-infra/${REGION_SECRETS}
+#export KUBECONFIG		:= ${SECRETS_DIR}/kubeconfig.TNL
+#endif
+#
+#PKG := github.com/oracle/oci-cloud-controller-manager
+#REGISTRY ?= odo-docker-signed-local.artifactory.oci.oraclecorp.com
+#IMAGE ?= $(REGISTRY)/oke-public-cloud-provider-oci
+#COMPONENT ?= oci-cloud-controller-manager oci-volume-provisioner oci-flexvolume-driver cloud-provider-oci oci-csi-controller-driver oci-csi-node-driver
+#OCI_CLI_VERSION ?= master
+#KUBECTL_VERSION ?= 1.11.0
+#
+#GIT_COMMIT := $(shell GCOMMIT=`git rev-parse --short HEAD`; if [ -n "`git status . --porcelain`" ]; then echo "$$GCOMMIT-dirty"; else echo $$GCOMMIT; fi)
+#DOCKER_REPO_ROOT?=/go/src/github.com/oracle/oci-cloud-controller-manager
+## Allow overriding for release versions else just equal the build (git hash)
+#ifeq "$(BUILD_NUMBER)" ""
+#    VERSION_SUFFIX   ?= $(GIT_COMMIT)
+#else
+#    VERSION_SUFFIX   ?= $(GIT_COMMIT)-$(BUILD_NUMBER)
+#endif
+#
+#K8S_VERSION := $(shell cat VERSION)
+#VERSION ?= oke-$(K8S_VERSION)-$(VERSION_SUFFIX)
+#BUILD = $(VERSION)
+#
+#GOOS ?= linux
+#ARCH ?= amd64
+#
+#SRC_DIRS := cmd controllers pkg # directories which hold app source (not vendored)
+#
+## Allows overriding where the CCM should look for the cloud provider config
+## when running via make run-dev.
+#CLOUD_PROVIDER_CFG ?= $$(pwd)/cloud-provider.yaml
+#
+#RETURN_CODE := $(shell sed --version >/dev/null 2>&1; echo $$?)
+#ifeq ($(RETURN_CODE),1)
+#    SED_INPLACE = -i ''
+#else
+#    SED_INPLACE = -i
+#endif
 
 .PHONY: all
 all: check test build
