@@ -16,8 +16,8 @@ import (
 	"strings"
 )
 
-// ModifyQuotaRuleDetails Details for updating a quota rule in the file system.
-type ModifyQuotaRuleDetails struct {
+// UpdateQuotaRuleDetails Details for updating a quota rule in the file system.
+type UpdateQuotaRuleDetails struct {
 
 	// A user-friendly name that the quota rule will be renamed to. It does not have to be unique.
 	// Avoid entering confidential information.
@@ -28,14 +28,14 @@ type ModifyQuotaRuleDetails struct {
 	QuotaLimitInGigabytes *int `mandatory:"false" json:"quotaLimitInGigabytes"`
 }
 
-func (m ModifyQuotaRuleDetails) String() string {
+func (m UpdateQuotaRuleDetails) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ModifyQuotaRuleDetails) ValidateEnumValue() (bool, error) {
+func (m UpdateQuotaRuleDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

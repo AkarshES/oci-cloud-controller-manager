@@ -84,6 +84,10 @@ type InternalVnic struct {
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// Free-form tags for this resource. Each tag is a simple key-value pair with no
 	// predefined name, type, or namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Department": "Finance"}`
@@ -118,6 +122,15 @@ type InternalVnic struct {
 	// **Note: ** This is null if the VNIC is in a subnet that has `isLearningEnabled` = `true`.
 	// Example: `10.0.3.3`
 	PrivateIp *string `mandatory:"false" json:"privateIp"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the private IP to assign the vnic.
+	PrivateIpId *string `mandatory:"false" json:"privateIpId"`
+
+	// Lifetime of the IP address.
+	// There are two types of IPv6 IPs:
+	//  - Ephemeral
+	//  - Reserved
+	Lifetime InternalVnicLifetimeEnum `mandatory:"false" json:"lifetime,omitempty"`
 
 	// The public IP address of the VNIC, if one is assigned.
 	PublicIp *string `mandatory:"false" json:"publicIp"`
@@ -187,6 +200,10 @@ type InternalVnic struct {
 	// List of IPv6 addresses assigned to the VNIC.
 	// Example: `2001:DB8::`
 	Ipv6Addresses []string `mandatory:"false" json:"ipv6Addresses"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of `Cluster Placement Group` to be used
+	// for the ServiceVnic placement.
+	CpgId *string `mandatory:"false" json:"cpgId"`
 }
 
 func (m InternalVnic) String() string {
@@ -202,6 +219,9 @@ func (m InternalVnic) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetInternalVnicLifecycleStateEnumStringValues(), ",")))
 	}
 
+	if _, ok := GetMappingInternalVnicLifetimeEnum(string(m.Lifetime)); !ok && m.Lifetime != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for Lifetime: %s. Supported values are: %s.", m.Lifetime, strings.Join(GetInternalVnicLifetimeEnumStringValues(), ",")))
+	}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
 	}
@@ -255,5 +275,47 @@ func GetInternalVnicLifecycleStateEnumStringValues() []string {
 // GetMappingInternalVnicLifecycleStateEnum performs case Insensitive comparison on enum value and return the desired enum
 func GetMappingInternalVnicLifecycleStateEnum(val string) (InternalVnicLifecycleStateEnum, bool) {
 	enum, ok := mappingInternalVnicLifecycleStateEnumLowerCase[strings.ToLower(val)]
+	return enum, ok
+}
+
+// InternalVnicLifetimeEnum Enum with underlying type: string
+type InternalVnicLifetimeEnum string
+
+// Set of constants representing the allowable values for InternalVnicLifetimeEnum
+const (
+	InternalVnicLifetimeEphemeral InternalVnicLifetimeEnum = "EPHEMERAL"
+	InternalVnicLifetimeReserved  InternalVnicLifetimeEnum = "RESERVED"
+)
+
+var mappingInternalVnicLifetimeEnum = map[string]InternalVnicLifetimeEnum{
+	"EPHEMERAL": InternalVnicLifetimeEphemeral,
+	"RESERVED":  InternalVnicLifetimeReserved,
+}
+
+var mappingInternalVnicLifetimeEnumLowerCase = map[string]InternalVnicLifetimeEnum{
+	"ephemeral": InternalVnicLifetimeEphemeral,
+	"reserved":  InternalVnicLifetimeReserved,
+}
+
+// GetInternalVnicLifetimeEnumValues Enumerates the set of values for InternalVnicLifetimeEnum
+func GetInternalVnicLifetimeEnumValues() []InternalVnicLifetimeEnum {
+	values := make([]InternalVnicLifetimeEnum, 0)
+	for _, v := range mappingInternalVnicLifetimeEnum {
+		values = append(values, v)
+	}
+	return values
+}
+
+// GetInternalVnicLifetimeEnumStringValues Enumerates the set of values in String for InternalVnicLifetimeEnum
+func GetInternalVnicLifetimeEnumStringValues() []string {
+	return []string{
+		"EPHEMERAL",
+		"RESERVED",
+	}
+}
+
+// GetMappingInternalVnicLifetimeEnum performs case Insensitive comparison on enum value and return the desired enum
+func GetMappingInternalVnicLifetimeEnum(val string) (InternalVnicLifetimeEnum, bool) {
+	enum, ok := mappingInternalVnicLifetimeEnumLowerCase[strings.ToLower(val)]
 	return enum, ok
 }

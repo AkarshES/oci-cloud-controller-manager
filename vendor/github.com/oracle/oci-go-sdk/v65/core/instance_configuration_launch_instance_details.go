@@ -49,6 +49,10 @@ type InstanceConfigurationLaunchInstanceDetails struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
@@ -157,6 +161,7 @@ type InstanceConfigurationLaunchInstanceDetails struct {
 	// * `NATIVE` - VM instances launch with iSCSI boot and VFIO devices. The default value for platform images.
 	// * `EMULATED` - VM instances launch with emulated devices, such as the E1000 network driver and emulated SCSI disk controller.
 	// * `PARAVIRTUALIZED` - VM instances launch with paravirtualized devices using VirtIO drivers.
+	// * `VDPA` - VM instances launch with hardware-assisted paravirtualized networking type.
 	// * `CUSTOM` - VM instances launch with custom configuration settings specified in the `LaunchOptions` parameter.
 	LaunchMode InstanceConfigurationLaunchInstanceDetailsLaunchModeEnum `mandatory:"false" json:"launchMode,omitempty"`
 
@@ -177,6 +182,9 @@ type InstanceConfigurationLaunchInstanceDetails struct {
 	AvailabilityConfig *InstanceConfigurationAvailabilityConfig `mandatory:"false" json:"availabilityConfig"`
 
 	PreemptibleInstanceConfig *PreemptibleInstanceConfigDetails `mandatory:"false" json:"preemptibleInstanceConfig"`
+
+	// List of licensing configurations associated with target launch values.
+	LicensingConfigs []LaunchInstanceLicensingConfig `mandatory:"false" json:"licensingConfigs"`
 }
 
 func (m InstanceConfigurationLaunchInstanceDetails) String() string {
@@ -210,6 +218,7 @@ func (m *InstanceConfigurationLaunchInstanceDetails) UnmarshalJSON(data []byte) 
 		ClusterPlacementGroupId        *string                                                                  `json:"clusterPlacementGroupId"`
 		CreateVnicDetails              *InstanceConfigurationCreateVnicDetails                                  `json:"createVnicDetails"`
 		DefinedTags                    map[string]map[string]interface{}                                        `json:"definedTags"`
+		SecurityAttributes             map[string]map[string]interface{}                                        `json:"securityAttributes"`
 		DisplayName                    *string                                                                  `json:"displayName"`
 		ExtendedMetadata               map[string]interface{}                                                   `json:"extendedMetadata"`
 		FreeformTags                   map[string]string                                                        `json:"freeformTags"`
@@ -229,6 +238,7 @@ func (m *InstanceConfigurationLaunchInstanceDetails) UnmarshalJSON(data []byte) 
 		InstanceOptions                *InstanceConfigurationInstanceOptions                                    `json:"instanceOptions"`
 		AvailabilityConfig             *InstanceConfigurationAvailabilityConfig                                 `json:"availabilityConfig"`
 		PreemptibleInstanceConfig      *PreemptibleInstanceConfigDetails                                        `json:"preemptibleInstanceConfig"`
+		LicensingConfigs               []launchinstancelicensingconfig                                          `json:"licensingConfigs"`
 	}{}
 
 	e = json.Unmarshal(data, &model)
@@ -247,6 +257,8 @@ func (m *InstanceConfigurationLaunchInstanceDetails) UnmarshalJSON(data []byte) 
 	m.CreateVnicDetails = model.CreateVnicDetails
 
 	m.DefinedTags = model.DefinedTags
+
+	m.SecurityAttributes = model.SecurityAttributes
 
 	m.DisplayName = model.DisplayName
 
@@ -302,6 +314,18 @@ func (m *InstanceConfigurationLaunchInstanceDetails) UnmarshalJSON(data []byte) 
 
 	m.PreemptibleInstanceConfig = model.PreemptibleInstanceConfig
 
+	m.LicensingConfigs = make([]LaunchInstanceLicensingConfig, len(model.LicensingConfigs))
+	for i, n := range model.LicensingConfigs {
+		nn, e = n.UnmarshalPolymorphicJSON(n.JsonData)
+		if e != nil {
+			return e
+		}
+		if nn != nil {
+			m.LicensingConfigs[i] = nn.(LaunchInstanceLicensingConfig)
+		} else {
+			m.LicensingConfigs[i] = nil
+		}
+	}
 	return
 }
 
@@ -313,6 +337,7 @@ const (
 	InstanceConfigurationLaunchInstanceDetailsLaunchModeNative          InstanceConfigurationLaunchInstanceDetailsLaunchModeEnum = "NATIVE"
 	InstanceConfigurationLaunchInstanceDetailsLaunchModeEmulated        InstanceConfigurationLaunchInstanceDetailsLaunchModeEnum = "EMULATED"
 	InstanceConfigurationLaunchInstanceDetailsLaunchModeParavirtualized InstanceConfigurationLaunchInstanceDetailsLaunchModeEnum = "PARAVIRTUALIZED"
+	InstanceConfigurationLaunchInstanceDetailsLaunchModeVdpa            InstanceConfigurationLaunchInstanceDetailsLaunchModeEnum = "VDPA"
 	InstanceConfigurationLaunchInstanceDetailsLaunchModeCustom          InstanceConfigurationLaunchInstanceDetailsLaunchModeEnum = "CUSTOM"
 )
 
@@ -320,6 +345,7 @@ var mappingInstanceConfigurationLaunchInstanceDetailsLaunchModeEnum = map[string
 	"NATIVE":          InstanceConfigurationLaunchInstanceDetailsLaunchModeNative,
 	"EMULATED":        InstanceConfigurationLaunchInstanceDetailsLaunchModeEmulated,
 	"PARAVIRTUALIZED": InstanceConfigurationLaunchInstanceDetailsLaunchModeParavirtualized,
+	"VDPA":            InstanceConfigurationLaunchInstanceDetailsLaunchModeVdpa,
 	"CUSTOM":          InstanceConfigurationLaunchInstanceDetailsLaunchModeCustom,
 }
 
@@ -327,6 +353,7 @@ var mappingInstanceConfigurationLaunchInstanceDetailsLaunchModeEnumLowerCase = m
 	"native":          InstanceConfigurationLaunchInstanceDetailsLaunchModeNative,
 	"emulated":        InstanceConfigurationLaunchInstanceDetailsLaunchModeEmulated,
 	"paravirtualized": InstanceConfigurationLaunchInstanceDetailsLaunchModeParavirtualized,
+	"vdpa":            InstanceConfigurationLaunchInstanceDetailsLaunchModeVdpa,
 	"custom":          InstanceConfigurationLaunchInstanceDetailsLaunchModeCustom,
 }
 
@@ -345,6 +372,7 @@ func GetInstanceConfigurationLaunchInstanceDetailsLaunchModeEnumStringValues() [
 		"NATIVE",
 		"EMULATED",
 		"PARAVIRTUALIZED",
+		"VDPA",
 		"CUSTOM",
 	}
 }

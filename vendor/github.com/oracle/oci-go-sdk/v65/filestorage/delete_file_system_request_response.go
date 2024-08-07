@@ -28,6 +28,9 @@ type DeleteFileSystemRequest struct {
 	// If you need to contact Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
 
+	// Whether to override locks (if any exist).
+	IsLockOverride *bool `mandatory:"false" contributesTo:"query" name:"isLockOverride"`
+
 	// If the value is set to true, then the file system will be deleted by detaching its child file system, turning
 	// the child file system into an independent File System.
 	CanDetachChildFileSystem *bool `mandatory:"false" contributesTo:"query" name:"canDetachChildFileSystem"`
@@ -56,6 +59,21 @@ func (request DeleteFileSystemRequest) BinaryRequestBody() (*common.OCIReadSeekC
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request DeleteFileSystemRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["fileSystemId"] != nil {
+		templateParam := mandatoryParamMap["fileSystemId"]
+		for _, template := range templateParam {
+			replacementParam := *request.FileSystemId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

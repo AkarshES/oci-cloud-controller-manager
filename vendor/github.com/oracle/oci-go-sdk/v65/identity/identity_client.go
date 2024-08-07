@@ -16,12 +16,15 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
 	"net/http"
 	"time"
+
+	"regexp"
 )
 
 // IdentityClient a client for Identity
 type IdentityClient struct {
 	common.BaseClient
-	config *common.ConfigurationProvider
+	config                   *common.ConfigurationProvider
+	requiredParamsInEndpoint map[string][]common.TemplateParamForPerRealmEndpoint
 }
 
 // NewIdentityClientWithConfigurationProvider Creates a new default Identity client with the given configuration provider.
@@ -68,7 +71,8 @@ func newIdentityClientFromBaseClient(baseClient common.BaseClient, configProvide
 
 // SetRegion overrides the region of this client.
 func (client *IdentityClient) SetRegion(region string) {
-	client.Host = common.StringToRegion(region).EndpointForTemplate("identity", "https://identity.{region}.oci.{secondLevelDomain}")
+	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("identity", client.getEndpointTemplatePerRealm(region), "identity")
+	client.parseEndpointTemplatePerRealm()
 }
 
 // SetConfigurationProvider sets the configuration provider including the region, returns an error if is not valid
@@ -90,6 +94,63 @@ func (client *IdentityClient) setConfigurationProvider(configProvider common.Con
 // ConfigurationProvider the ConfigurationProvider used in this client, or null if none set
 func (client *IdentityClient) ConfigurationProvider() *common.ConfigurationProvider {
 	return client.config
+}
+
+// EnableDualStackEndpoints Determines whether dual stack endpoint should be used or not.
+// Default value is false
+func (client *IdentityClient) EnableDualStackEndpoints(enableDualStack bool) {
+	client.BaseClient.EnableDualStackEndpoints(enableDualStack)
+}
+
+// getEndpointTemplatePerRealm returns the endpoint template for the given region, if not found, returns the default endpoint template
+func (client *IdentityClient) getEndpointTemplatePerRealm(region string) string {
+	if client.IsOciRealmSpecificServiceEndpointTemplateEnabled() {
+		realm, _ := common.StringToRegion(region).RealmID()
+		templatePerRealmDict := map[string]string{
+			"oc1": "https://{dualStack?ds.:}identity.{region}.oci.{secondLevelDomain}",
+		}
+		if template, ok := templatePerRealmDict[realm]; ok {
+			return template
+		}
+	}
+	return "https://identity.{region}.oci.{secondLevelDomain}"
+}
+
+// parseEndpointTemplatePerRealm parses the endpoint template per realm from the service endpoint template
+// This function will build a map of template params to their values, this map is used when building the API endpoint
+func (client *IdentityClient) parseEndpointTemplatePerRealm() {
+	client.requiredParamsInEndpoint = make(map[string][]common.TemplateParamForPerRealmEndpoint)
+	templateRegex := regexp.MustCompile(`{.*?}`)
+	templateSubRegex := regexp.MustCompile(`{(.+)\+Dot}`)
+	templates := templateRegex.FindAllString(client.Host, -1)
+	for _, template := range templates {
+		templateParam := templateSubRegex.FindStringSubmatch(template)
+		if len(templateParam) > 1 {
+			client.requiredParamsInEndpoint[templateParam[1]] = append(client.requiredParamsInEndpoint[templateParam[1]], common.TemplateParamForPerRealmEndpoint{
+				Template:    templateParam[0],
+				EndsWithDot: true,
+			})
+		} else {
+			templateParam := template[1 : len(template)-1]
+			client.requiredParamsInEndpoint[templateParam] = append(client.requiredParamsInEndpoint[templateParam], common.TemplateParamForPerRealmEndpoint{
+				Template:    template,
+				EndsWithDot: false,
+			})
+		}
+	}
+}
+
+// SetCustomClientConfiguration sets client with retry and other custom configurations
+func (client *IdentityClient) SetCustomClientConfiguration(config common.CustomClientConfiguration) {
+	client.Configuration = config
+	client.refreshRegion()
+}
+
+// refreshRegion will refresh the region of this client, this function will be called after setting the CustomClientConfiguration
+func (client *IdentityClient) refreshRegion() {
+	configProvider := *client.config
+	region, _ := configProvider.Region()
+	client.SetRegion(region)
 }
 
 // ActivateDomain (For tenancies that support identity domains) Activates a deactivated identity domain. You can only activate identity domains that your user account is not a part of.
@@ -140,6 +201,14 @@ func (client IdentityClient) activateDomain(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ActivateDomainRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ActivateDomainResponse
 	var httpResponse *http.Response
@@ -201,6 +270,14 @@ func (client IdentityClient) activateMfaTotpDevice(ctx context.Context, request 
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ActivateMfaTotpDeviceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ActivateMfaTotpDeviceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -209,6 +286,74 @@ func (client IdentityClient) activateMfaTotpDevice(ctx context.Context, request 
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/identity/20160918/MfaTotpDeviceSummary/ActivateMfaTotpDevice"
 		err = common.PostProcessServiceError(err, "Identity", "ActivateMfaTotpDevice", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// AddPolicyLock Add a resource lock to a tag namespace.
+// A default retry strategy applies to this operation AddPolicyLock()
+func (client IdentityClient) AddPolicyLock(ctx context.Context, request AddPolicyLockRequest) (response AddPolicyLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.addPolicyLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = AddPolicyLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = AddPolicyLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(AddPolicyLockResponse); ok {
+		common.EcContext.UpdateEndOfWindow(time.Duration(240 * time.Second))
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into AddPolicyLockResponse")
+	}
+	return
+}
+
+// addPolicyLock implements the OCIOperation interface (enables retrying operations)
+func (client IdentityClient) addPolicyLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/policies/{policyId}/actions/addLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	request.(AddPolicyLockRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response AddPolicyLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/identity/20160918/Policy/AddPolicyLock"
+		err = common.PostProcessServiceError(err, "Identity", "AddPolicyLock", apiReferenceLink)
 		return response, err
 	}
 
@@ -260,6 +405,14 @@ func (client IdentityClient) addTagDefaultLock(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(AddTagDefaultLockRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response AddTagDefaultLockResponse
 	var httpResponse *http.Response
@@ -320,6 +473,14 @@ func (client IdentityClient) addTagNamespaceLock(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(AddTagNamespaceLockRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response AddTagNamespaceLockResponse
 	var httpResponse *http.Response
@@ -383,6 +544,14 @@ func (client IdentityClient) addUserToGroup(ctx context.Context, request common.
 		return nil, err
 	}
 
+	host := client.Host
+	request.(AddUserToGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response AddUserToGroupResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -439,6 +608,14 @@ func (client IdentityClient) assembleEffectiveTagSet(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(AssembleEffectiveTagSetRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response AssembleEffectiveTagSetResponse
 	var httpResponse *http.Response
@@ -503,6 +680,14 @@ func (client IdentityClient) bulkDeleteResources(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(BulkDeleteResourcesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response BulkDeleteResourcesResponse
 	var httpResponse *http.Response
@@ -579,6 +764,14 @@ func (client IdentityClient) bulkDeleteTags(ctx context.Context, request common.
 		return nil, err
 	}
 
+	host := client.Host
+	request.(BulkDeleteTagsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response BulkDeleteTagsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -650,6 +843,14 @@ func (client IdentityClient) bulkEditTags(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(BulkEditTagsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response BulkEditTagsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -713,6 +914,14 @@ func (client IdentityClient) bulkMoveResources(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(BulkMoveResourcesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response BulkMoveResourcesResponse
 	var httpResponse *http.Response
@@ -787,6 +996,14 @@ func (client IdentityClient) cascadeDeleteTagNamespace(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CascadeDeleteTagNamespaceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CascadeDeleteTagNamespaceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -848,6 +1065,14 @@ func (client IdentityClient) changeDomainCompartment(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ChangeDomainCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ChangeDomainCompartmentResponse
 	var httpResponse *http.Response
@@ -915,6 +1140,14 @@ func (client IdentityClient) changeDomainLicenseType(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ChangeDomainLicenseTypeRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ChangeDomainLicenseTypeResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -977,6 +1210,14 @@ func (client IdentityClient) changeTagNamespaceCompartment(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ChangeTagNamespaceCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ChangeTagNamespaceCompartmentResponse
 	var httpResponse *http.Response
@@ -1044,6 +1285,14 @@ func (client IdentityClient) createAuthToken(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateAuthTokenRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateAuthTokenResponse
 	var httpResponse *http.Response
@@ -1117,6 +1366,14 @@ func (client IdentityClient) createCompartment(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1176,6 +1433,14 @@ func (client IdentityClient) createCompartmentsServiceSetting(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateCompartmentsServiceSettingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateCompartmentsServiceSettingResponse
 	var httpResponse *http.Response
@@ -1245,6 +1510,14 @@ func (client IdentityClient) createCustomerSecretKey(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateCustomerSecretKeyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateCustomerSecretKeyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1304,6 +1577,14 @@ func (client IdentityClient) createDbCredential(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateDbCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateDbCredentialResponse
 	var httpResponse *http.Response
@@ -1369,6 +1650,14 @@ func (client IdentityClient) createDomain(ctx context.Context, request common.OC
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateDomainRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateDomainResponse
 	var httpResponse *http.Response
@@ -1442,6 +1731,14 @@ func (client IdentityClient) createDynamicGroup(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateDynamicGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateDynamicGroupResponse
 	var httpResponse *http.Response
@@ -1518,6 +1815,14 @@ func (client IdentityClient) createGroup(ctx context.Context, request common.OCI
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateGroupResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1592,6 +1897,14 @@ func (client IdentityClient) createIdentityProvider(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateIdentityProviderRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateIdentityProviderResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1653,6 +1966,14 @@ func (client IdentityClient) createIdpGroupMapping(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateIdpGroupMappingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateIdpGroupMappingResponse
 	var httpResponse *http.Response
@@ -1719,6 +2040,14 @@ func (client IdentityClient) createManagedCompartment(ctx context.Context, reque
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateManagedCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateManagedCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1778,6 +2107,14 @@ func (client IdentityClient) createMfaTotpDevice(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateMfaTotpDeviceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateMfaTotpDeviceResponse
 	var httpResponse *http.Response
@@ -1839,6 +2176,14 @@ func (client IdentityClient) createNetworkAccessPolicy(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateNetworkAccessPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateNetworkAccessPolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1898,6 +2243,14 @@ func (client IdentityClient) createNetworkLocation(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateNetworkLocationRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateNetworkLocationResponse
 	var httpResponse *http.Response
@@ -1974,6 +2327,14 @@ func (client IdentityClient) createNetworkSource(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateNetworkSourceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateNetworkSourceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2033,6 +2394,14 @@ func (client IdentityClient) createOAuthClientCredential(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateOAuthClientCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateOAuthClientCredentialResponse
 	var httpResponse *http.Response
@@ -2105,6 +2474,14 @@ func (client IdentityClient) createOrResetUIPassword(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateOrResetUIPasswordRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateOrResetUIPasswordResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2176,6 +2553,14 @@ func (client IdentityClient) createPolicy(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreatePolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreatePolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2235,6 +2620,14 @@ func (client IdentityClient) createRegionSubscription(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateRegionSubscriptionRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateRegionSubscriptionResponse
 	var httpResponse *http.Response
@@ -2298,6 +2691,14 @@ func (client IdentityClient) createSmtpCredential(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateSmtpCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateSmtpCredentialResponse
 	var httpResponse *http.Response
@@ -2366,6 +2767,14 @@ func (client IdentityClient) createSwiftPassword(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateSwiftPasswordRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateSwiftPasswordResponse
 	var httpResponse *http.Response
@@ -2443,6 +2852,14 @@ func (client IdentityClient) createTag(ctx context.Context, request common.OCIRe
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateTagRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateTagResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2507,6 +2924,14 @@ func (client IdentityClient) createTagDefault(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateTagDefaultRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateTagDefaultResponse
 	var httpResponse *http.Response
@@ -2578,6 +3003,14 @@ func (client IdentityClient) createTagNamespace(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateTagNamespaceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateTagNamespaceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2645,6 +3078,14 @@ func (client IdentityClient) createTagRule(ctx context.Context, request common.O
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(CreateTagRuleRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response CreateTagRuleResponse
 	var httpResponse *http.Response
@@ -2734,6 +3175,14 @@ func (client IdentityClient) createUser(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
+	host := client.Host
+	request.(CreateUserRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response CreateUserResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2800,6 +3249,14 @@ func (client IdentityClient) deactivateDomain(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeactivateDomainRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeactivateDomainResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2858,6 +3315,14 @@ func (client IdentityClient) deleteApiKey(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteApiKeyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteApiKeyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2911,6 +3376,14 @@ func (client IdentityClient) deleteAuthToken(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteAuthTokenRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteAuthTokenResponse
 	var httpResponse *http.Response
@@ -2966,6 +3439,14 @@ func (client IdentityClient) deleteCompartment(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3019,6 +3500,14 @@ func (client IdentityClient) deleteCompartmentsServiceSetting(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteCompartmentsServiceSettingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteCompartmentsServiceSettingResponse
 	var httpResponse *http.Response
@@ -3074,6 +3563,14 @@ func (client IdentityClient) deleteCustomerSecretKey(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteCustomerSecretKeyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteCustomerSecretKeyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3128,6 +3625,14 @@ func (client IdentityClient) deleteDbCredential(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteDbCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteDbCredentialResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3147,7 +3652,6 @@ func (client IdentityClient) deleteDbCredential(ctx context.Context, request com
 // the underlying IDCS stripe. You must also deactivate the identity domain, rendering the `lifecycleState` of the identity domain INACTIVE.
 // Furthermore, as the authenticated user performing the operation, you cannot be a member of the identity domain you are deleting.
 // Lastly, you cannot delete the default identity domain. A tenancy must always have at least the default identity domain.
-//
 // To track the progress of the request, submitting an HTTP GET on the /iamWorkRequests/{iamWorkRequestsId} endpoint retrieves
 // the operation's status.
 // A default retry strategy applies to this operation DeleteDomain()
@@ -3187,6 +3691,14 @@ func (client IdentityClient) deleteDomain(ctx context.Context, request common.OC
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteDomainRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteDomainResponse
 	var httpResponse *http.Response
@@ -3242,6 +3754,14 @@ func (client IdentityClient) deleteDynamicGroup(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteDynamicGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteDynamicGroupResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3295,6 +3815,14 @@ func (client IdentityClient) deleteGroup(ctx context.Context, request common.OCI
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteGroupResponse
 	var httpResponse *http.Response
@@ -3352,6 +3880,14 @@ func (client IdentityClient) deleteIdentityProvider(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteIdentityProviderRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteIdentityProviderResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3407,6 +3943,14 @@ func (client IdentityClient) deleteIdpGroupMapping(ctx context.Context, request 
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteIdpGroupMappingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteIdpGroupMappingResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3460,6 +4004,14 @@ func (client IdentityClient) deleteMfaTotpDevice(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteMfaTotpDeviceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteMfaTotpDeviceResponse
 	var httpResponse *http.Response
@@ -3515,6 +4067,14 @@ func (client IdentityClient) deleteNetworkAccessPolicy(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteNetworkAccessPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteNetworkAccessPolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3568,6 +4128,14 @@ func (client IdentityClient) deleteNetworkLocation(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteNetworkLocationRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteNetworkLocationResponse
 	var httpResponse *http.Response
@@ -3623,6 +4191,14 @@ func (client IdentityClient) deleteNetworkSource(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteNetworkSourceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteNetworkSourceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3676,6 +4252,14 @@ func (client IdentityClient) deleteOAuthClientCredential(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteOAuthClientCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteOAuthClientCredentialResponse
 	var httpResponse *http.Response
@@ -3731,6 +4315,14 @@ func (client IdentityClient) deletePolicy(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeletePolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeletePolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3784,6 +4376,14 @@ func (client IdentityClient) deleteSmtpCredential(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteSmtpCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteSmtpCredentialResponse
 	var httpResponse *http.Response
@@ -3839,6 +4439,14 @@ func (client IdentityClient) deleteSwiftPassword(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteSwiftPasswordRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteSwiftPasswordResponse
 	var httpResponse *http.Response
@@ -3909,6 +4517,14 @@ func (client IdentityClient) deleteTag(ctx context.Context, request common.OCIRe
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteTagRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteTagResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3962,6 +4578,14 @@ func (client IdentityClient) deleteTagDefault(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteTagDefaultRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteTagDefaultResponse
 	var httpResponse *http.Response
@@ -4021,6 +4645,14 @@ func (client IdentityClient) deleteTagNamespace(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteTagNamespaceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteTagNamespaceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4075,6 +4707,14 @@ func (client IdentityClient) deleteTagRule(ctx context.Context, request common.O
 		return nil, err
 	}
 
+	host := client.Host
+	request.(DeleteTagRuleRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response DeleteTagRuleResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4128,6 +4768,14 @@ func (client IdentityClient) deleteUser(ctx context.Context, request common.OCIR
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(DeleteUserRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response DeleteUserResponse
 	var httpResponse *http.Response
@@ -4196,6 +4844,14 @@ func (client IdentityClient) enableReplicationToRegion(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(EnableReplicationToRegionRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response EnableReplicationToRegionResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4251,6 +4907,14 @@ func (client IdentityClient) generateTotpSeed(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GenerateTotpSeedRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GenerateTotpSeedResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4304,6 +4968,14 @@ func (client IdentityClient) getAccountByEntitlementId(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetAccountByEntitlementIdRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetAccountByEntitlementIdResponse
 	var httpResponse *http.Response
@@ -4359,6 +5031,14 @@ func (client IdentityClient) getAuthenticationPolicy(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetAuthenticationPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetAuthenticationPolicyResponse
 	var httpResponse *http.Response
@@ -4420,6 +5100,14 @@ func (client IdentityClient) getCompartment(ctx context.Context, request common.
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4473,6 +5161,14 @@ func (client IdentityClient) getCompartmentsServiceSetting(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetCompartmentsServiceSettingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetCompartmentsServiceSettingResponse
 	var httpResponse *http.Response
@@ -4528,6 +5224,14 @@ func (client IdentityClient) getDomain(ctx context.Context, request common.OCIRe
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetDomainRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetDomainResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4581,6 +5285,14 @@ func (client IdentityClient) getDynamicGroup(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetDynamicGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetDynamicGroupResponse
 	var httpResponse *http.Response
@@ -4639,6 +5351,14 @@ func (client IdentityClient) getGroup(ctx context.Context, request common.OCIReq
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetGroupResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4654,7 +5374,7 @@ func (client IdentityClient) getGroup(ctx context.Context, request common.OCIReq
 	return response, err
 }
 
-// GetIamWorkRequest Gets the details of a specified IAM work request. The workRequestID is returned in the opc-workrequest-id header for any asynchronous operation in the Identity and Access Management service.
+// GetIamWorkRequest Gets the details of a specified IAM work request. The workRequestID is returned in the opc-work-request-id header for any asynchronous operation in the Identity and Access Management service.
 // A default retry strategy applies to this operation GetIamWorkRequest()
 func (client IdentityClient) GetIamWorkRequest(ctx context.Context, request GetIamWorkRequestRequest) (response GetIamWorkRequestResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -4692,6 +5412,14 @@ func (client IdentityClient) getIamWorkRequest(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetIamWorkRequestRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetIamWorkRequestResponse
 	var httpResponse *http.Response
@@ -4748,6 +5476,14 @@ func (client IdentityClient) getIdentityProvider(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetIdentityProviderRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetIdentityProviderResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4803,6 +5539,14 @@ func (client IdentityClient) getIdpGroupMapping(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetIdpGroupMappingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetIdpGroupMappingResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4856,6 +5600,14 @@ func (client IdentityClient) getMfaTotpDevice(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetMfaTotpDeviceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetMfaTotpDeviceResponse
 	var httpResponse *http.Response
@@ -4911,6 +5663,14 @@ func (client IdentityClient) getNetworkAccessPolicy(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetNetworkAccessPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetNetworkAccessPolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4964,6 +5724,14 @@ func (client IdentityClient) getNetworkLocation(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetNetworkLocationRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetNetworkLocationResponse
 	var httpResponse *http.Response
@@ -5019,6 +5787,14 @@ func (client IdentityClient) getNetworkSource(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetNetworkSourceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetNetworkSourceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5072,6 +5848,14 @@ func (client IdentityClient) getPolicy(ctx context.Context, request common.OCIRe
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetPolicyResponse
 	var httpResponse *http.Response
@@ -5127,6 +5911,14 @@ func (client IdentityClient) getStandardTagTemplate(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetStandardTagTemplateRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetStandardTagTemplateResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5180,6 +5972,14 @@ func (client IdentityClient) getTag(ctx context.Context, request common.OCIReque
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetTagRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetTagResponse
 	var httpResponse *http.Response
@@ -5235,6 +6035,14 @@ func (client IdentityClient) getTagDefault(ctx context.Context, request common.O
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetTagDefaultRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetTagDefaultResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5288,6 +6096,14 @@ func (client IdentityClient) getTagNamespace(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetTagNamespaceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetTagNamespaceResponse
 	var httpResponse *http.Response
@@ -5343,6 +6159,14 @@ func (client IdentityClient) getTagRule(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetTagRuleRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetTagRuleResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5358,7 +6182,7 @@ func (client IdentityClient) getTagRule(ctx context.Context, request common.OCIR
 	return response, err
 }
 
-// GetTaggingWorkRequest Gets details on a specified work request. The workRequestID is returned in the opc-workrequest-id header
+// GetTaggingWorkRequest Gets details on a specified work request. The workRequestID is returned in the opc-work-request-id header
 // for any asynchronous operation in tagging service.
 // A default retry strategy applies to this operation GetTaggingWorkRequest()
 func (client IdentityClient) GetTaggingWorkRequest(ctx context.Context, request GetTaggingWorkRequestRequest) (response GetTaggingWorkRequestResponse, err error) {
@@ -5397,6 +6221,14 @@ func (client IdentityClient) getTaggingWorkRequest(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetTaggingWorkRequestRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetTaggingWorkRequestResponse
 	var httpResponse *http.Response
@@ -5452,6 +6284,14 @@ func (client IdentityClient) getTenancy(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetTenancyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetTenancyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5506,6 +6346,14 @@ func (client IdentityClient) getUser(ctx context.Context, request common.OCIRequ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetUserRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetUserResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5559,6 +6407,14 @@ func (client IdentityClient) getUserGroupMembership(ctx context.Context, request
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetUserGroupMembershipRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetUserGroupMembershipResponse
 	var httpResponse *http.Response
@@ -5615,6 +6471,14 @@ func (client IdentityClient) getUserUIPasswordInformation(ctx context.Context, r
 		return nil, err
 	}
 
+	host := client.Host
+	request.(GetUserUIPasswordInformationRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response GetUserUIPasswordInformationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5630,7 +6494,7 @@ func (client IdentityClient) getUserUIPasswordInformation(ctx context.Context, r
 	return response, err
 }
 
-// GetWorkRequest Gets details on a specified work request. The workRequestID is returned in the opc-workrequest-id header
+// GetWorkRequest Gets details on a specified work request. The workRequestID is returned in the opc-work-request-id header
 // for any asynchronous operation in the compartment service.
 // A default retry strategy applies to this operation GetWorkRequest()
 func (client IdentityClient) GetWorkRequest(ctx context.Context, request GetWorkRequestRequest) (response GetWorkRequestResponse, err error) {
@@ -5669,6 +6533,14 @@ func (client IdentityClient) getWorkRequest(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(GetWorkRequestRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response GetWorkRequestResponse
 	var httpResponse *http.Response
@@ -5731,6 +6603,14 @@ func (client IdentityClient) importStandardTags(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ImportStandardTagsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ImportStandardTagsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5788,6 +6668,14 @@ func (client IdentityClient) listAllowedDomainLicenseTypes(ctx context.Context, 
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListAllowedDomainLicenseTypesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListAllowedDomainLicenseTypesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5844,6 +6732,14 @@ func (client IdentityClient) listApiKeys(ctx context.Context, request common.OCI
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListApiKeysRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListApiKeysResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5898,6 +6794,14 @@ func (client IdentityClient) listAuthTokens(ctx context.Context, request common.
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListAuthTokensRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListAuthTokensResponse
 	var httpResponse *http.Response
@@ -5956,6 +6860,14 @@ func (client IdentityClient) listAvailabilityDomains(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListAvailabilityDomainsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListAvailabilityDomainsResponse
 	var httpResponse *http.Response
@@ -6017,6 +6929,14 @@ func (client IdentityClient) listBulkActionResourceTypes(ctx context.Context, re
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListBulkActionResourceTypesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListBulkActionResourceTypesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6070,6 +6990,14 @@ func (client IdentityClient) listBulkEditTagsResourceTypes(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListBulkEditTagsResourceTypesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListBulkEditTagsResourceTypesResponse
 	var httpResponse *http.Response
@@ -6138,6 +7066,14 @@ func (client IdentityClient) listCompartments(ctx context.Context, request commo
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListCompartmentsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListCompartmentsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6191,6 +7127,14 @@ func (client IdentityClient) listCompartmentsServiceSetting(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListCompartmentsServiceSettingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListCompartmentsServiceSettingResponse
 	var httpResponse *http.Response
@@ -6247,6 +7191,14 @@ func (client IdentityClient) listCostTrackingTags(ctx context.Context, request c
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListCostTrackingTagsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListCostTrackingTagsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6302,6 +7254,14 @@ func (client IdentityClient) listCustomerSecretKeys(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListCustomerSecretKeysRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListCustomerSecretKeysResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6356,6 +7316,14 @@ func (client IdentityClient) listDbCredentials(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListDbCredentialsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListDbCredentialsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6409,6 +7377,14 @@ func (client IdentityClient) listDomains(ctx context.Context, request common.OCI
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListDomainsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListDomainsResponse
 	var httpResponse *http.Response
@@ -6466,6 +7442,14 @@ func (client IdentityClient) listDynamicGroups(ctx context.Context, request comm
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListDynamicGroupsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListDynamicGroupsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6521,6 +7505,14 @@ func (client IdentityClient) listFaultDomains(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListFaultDomainsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListFaultDomainsResponse
 	var httpResponse *http.Response
@@ -6578,6 +7570,14 @@ func (client IdentityClient) listGroups(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListGroupsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListGroupsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6593,7 +7593,7 @@ func (client IdentityClient) listGroups(ctx context.Context, request common.OCIR
 	return response, err
 }
 
-// ListIamWorkRequestErrors Gets error details for a specified IAM work request. The workRequestID is returned in the opc-workrequest-id header for any asynchronous operation in the Identity and Access Management service.
+// ListIamWorkRequestErrors Gets error details for a specified IAM work request. The workRequestID is returned in the opc-work-request-id header for any asynchronous operation in the Identity and Access Management service.
 // A default retry strategy applies to this operation ListIamWorkRequestErrors()
 func (client IdentityClient) ListIamWorkRequestErrors(ctx context.Context, request ListIamWorkRequestErrorsRequest) (response ListIamWorkRequestErrorsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -6632,6 +7632,14 @@ func (client IdentityClient) listIamWorkRequestErrors(ctx context.Context, reque
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListIamWorkRequestErrorsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListIamWorkRequestErrorsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6647,7 +7655,7 @@ func (client IdentityClient) listIamWorkRequestErrors(ctx context.Context, reque
 	return response, err
 }
 
-// ListIamWorkRequestLogs Gets logs for a specified IAM work request. The workRequestID is returned in the opc-workrequest-id header for any asynchronous operation in the Identity and Access Management service.
+// ListIamWorkRequestLogs Gets logs for a specified IAM work request. The workRequestID is returned in the opc-work-request-id header for any asynchronous operation in the Identity and Access Management service.
 // A default retry strategy applies to this operation ListIamWorkRequestLogs()
 func (client IdentityClient) ListIamWorkRequestLogs(ctx context.Context, request ListIamWorkRequestLogsRequest) (response ListIamWorkRequestLogsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -6686,6 +7694,14 @@ func (client IdentityClient) listIamWorkRequestLogs(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListIamWorkRequestLogsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListIamWorkRequestLogsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6701,7 +7717,7 @@ func (client IdentityClient) listIamWorkRequestLogs(ctx context.Context, request
 	return response, err
 }
 
-// ListIamWorkRequests Lists the IAM work requests in compartment. The workRequestID is returned in the opc-workrequest-id header for any asynchronous operation in the Identity and Access Management service.
+// ListIamWorkRequests Lists the IAM work requests in compartment. The workRequestID is returned in the opc-work-request-id header for any asynchronous operation in the Identity and Access Management service.
 // A default retry strategy applies to this operation ListIamWorkRequests()
 func (client IdentityClient) ListIamWorkRequests(ctx context.Context, request ListIamWorkRequestsRequest) (response ListIamWorkRequestsResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -6739,6 +7755,14 @@ func (client IdentityClient) listIamWorkRequests(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListIamWorkRequestsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListIamWorkRequestsResponse
 	var httpResponse *http.Response
@@ -6794,6 +7818,14 @@ func (client IdentityClient) listIdentityProviderGroups(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListIdentityProviderGroupsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListIdentityProviderGroupsResponse
 	var httpResponse *http.Response
@@ -6869,6 +7901,14 @@ func (client IdentityClient) listIdentityProviders(ctx context.Context, request 
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListIdentityProvidersRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListIdentityProvidersResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6923,6 +7963,14 @@ func (client IdentityClient) listIdpGroupMappings(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListIdpGroupMappingsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListIdpGroupMappingsResponse
 	var httpResponse *http.Response
@@ -6979,6 +8027,14 @@ func (client IdentityClient) listManagedCompartments(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListManagedCompartmentsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListManagedCompartmentsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7034,6 +8090,14 @@ func (client IdentityClient) listMfaTotpDevices(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListMfaTotpDevicesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListMfaTotpDevicesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7088,6 +8152,14 @@ func (client IdentityClient) listNetworkAccessPolicies(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListNetworkAccessPoliciesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListNetworkAccessPoliciesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7141,6 +8213,14 @@ func (client IdentityClient) listNetworkLocations(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListNetworkLocationsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListNetworkLocationsResponse
 	var httpResponse *http.Response
@@ -7198,6 +8278,14 @@ func (client IdentityClient) listNetworkSources(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListNetworkSourcesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListNetworkSourcesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7251,6 +8339,14 @@ func (client IdentityClient) listOAuthClientCredentials(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListOAuthClientCredentialsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListOAuthClientCredentialsResponse
 	var httpResponse *http.Response
@@ -7309,6 +8405,14 @@ func (client IdentityClient) listPolicies(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListPoliciesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListPoliciesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7363,6 +8467,14 @@ func (client IdentityClient) listRegionSubscriptions(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListRegionSubscriptionsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListRegionSubscriptionsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7404,8 +8516,17 @@ func (client IdentityClient) ListRegions(ctx context.Context) (response ListRegi
 
 // listRegions performs the request (retry policy is not enabled without a request object)
 func (client IdentityClient) listRegions(ctx context.Context) (common.OCIResponse, error) {
+
 	httpRequest := common.MakeDefaultHTTPRequest(http.MethodGet, "/regions")
 	var err error
+
+	host := client.Host
+
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListRegionsResponse
 	var httpResponse *http.Response
@@ -7462,6 +8583,14 @@ func (client IdentityClient) listSmtpCredentials(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListSmtpCredentialsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListSmtpCredentialsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7515,6 +8644,14 @@ func (client IdentityClient) listStandardTagNamespaces(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListStandardTagNamespacesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListStandardTagNamespacesResponse
 	var httpResponse *http.Response
@@ -7572,6 +8709,14 @@ func (client IdentityClient) listSwiftPasswords(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListSwiftPasswordsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListSwiftPasswordsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7626,6 +8771,14 @@ func (client IdentityClient) listTagDefaults(ctx context.Context, request common
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListTagDefaultsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListTagDefaultsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7679,6 +8832,14 @@ func (client IdentityClient) listTagNamespaces(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListTagNamespacesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListTagNamespacesResponse
 	var httpResponse *http.Response
@@ -7738,6 +8899,14 @@ func (client IdentityClient) listTagRules(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListTagRulesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListTagRulesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7791,6 +8960,14 @@ func (client IdentityClient) listTaggingWorkRequestErrors(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListTaggingWorkRequestErrorsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListTaggingWorkRequestErrorsResponse
 	var httpResponse *http.Response
@@ -7846,6 +9023,14 @@ func (client IdentityClient) listTaggingWorkRequestLogs(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListTaggingWorkRequestLogsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListTaggingWorkRequestLogsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7899,6 +9084,14 @@ func (client IdentityClient) listTaggingWorkRequests(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListTaggingWorkRequestsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListTaggingWorkRequestsResponse
 	var httpResponse *http.Response
@@ -7954,6 +9147,14 @@ func (client IdentityClient) listTags(ctx context.Context, request common.OCIReq
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListTagsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListTagsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8008,6 +9209,14 @@ func (client IdentityClient) listTenancies(ctx context.Context, request common.O
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListTenanciesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListTenanciesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8016,6 +9225,68 @@ func (client IdentityClient) listTenancies(ctx context.Context, request common.O
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/identity/20160918/Tenancy/ListTenancies"
 		err = common.PostProcessServiceError(err, "Identity", "ListTenancies", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ListTenancyCompartmentTree List compartment summary by tenant Id
+// A default retry strategy applies to this operation ListTenancyCompartmentTree()
+func (client IdentityClient) ListTenancyCompartmentTree(ctx context.Context, request ListTenancyCompartmentTreeRequest) (response ListTenancyCompartmentTreeResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listTenancyCompartmentTree, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListTenancyCompartmentTreeResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListTenancyCompartmentTreeResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListTenancyCompartmentTreeResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListTenancyCompartmentTreeResponse")
+	}
+	return
+}
+
+// listTenancyCompartmentTree implements the OCIOperation interface (enables retrying operations)
+func (client IdentityClient) listTenancyCompartmentTree(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/tenancies/{tenancyId}/compartmentTree", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	request.(ListTenancyCompartmentTreeRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response ListTenancyCompartmentTreeResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/identity/20160918/CompartmentSummary/ListTenancyCompartmentTree"
+		err = common.PostProcessServiceError(err, "Identity", "ListTenancyCompartmentTree", apiReferenceLink)
 		return response, err
 	}
 
@@ -8069,6 +9340,14 @@ func (client IdentityClient) listUserGroupMemberships(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListUserGroupMembershipsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListUserGroupMembershipsResponse
 	var httpResponse *http.Response
@@ -8126,6 +9405,14 @@ func (client IdentityClient) listUsers(ctx context.Context, request common.OCIRe
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ListUsersRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ListUsersResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8179,6 +9466,14 @@ func (client IdentityClient) listWorkRequests(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(ListWorkRequestsRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response ListWorkRequestsResponse
 	var httpResponse *http.Response
@@ -8246,6 +9541,14 @@ func (client IdentityClient) moveCompartment(ctx context.Context, request common
 		return nil, err
 	}
 
+	host := client.Host
+	request.(MoveCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response MoveCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8301,6 +9604,14 @@ func (client IdentityClient) recoverCompartment(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(RecoverCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response RecoverCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8309,6 +9620,74 @@ func (client IdentityClient) recoverCompartment(ctx context.Context, request com
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/identity/20160918/Compartment/RecoverCompartment"
 		err = common.PostProcessServiceError(err, "Identity", "RecoverCompartment", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// RemovePolicyLock Remove a resource lock to a policy
+// A default retry strategy applies to this operation RemovePolicyLock()
+func (client IdentityClient) RemovePolicyLock(ctx context.Context, request RemovePolicyLockRequest) (response RemovePolicyLockResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.removePolicyLock, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = RemovePolicyLockResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = RemovePolicyLockResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(RemovePolicyLockResponse); ok {
+		common.EcContext.UpdateEndOfWindow(time.Duration(240 * time.Second))
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into RemovePolicyLockResponse")
+	}
+	return
+}
+
+// removePolicyLock implements the OCIOperation interface (enables retrying operations)
+func (client IdentityClient) removePolicyLock(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/policies/{policyId}/actions/removeLock", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	host := client.Host
+	request.(RemovePolicyLockRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
+	var response RemovePolicyLockResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/identity/20160918/Policy/RemovePolicyLock"
+		err = common.PostProcessServiceError(err, "Identity", "RemovePolicyLock", apiReferenceLink)
 		return response, err
 	}
 
@@ -8360,6 +9739,14 @@ func (client IdentityClient) removeTagDefaultLock(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(RemoveTagDefaultLockRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response RemoveTagDefaultLockResponse
 	var httpResponse *http.Response
@@ -8421,6 +9808,14 @@ func (client IdentityClient) removeTagNamespaceLock(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(RemoveTagNamespaceLockRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response RemoveTagNamespaceLockResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8474,6 +9869,14 @@ func (client IdentityClient) removeUserFromGroup(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(RemoveUserFromGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response RemoveUserFromGroupResponse
 	var httpResponse *http.Response
@@ -8530,6 +9933,14 @@ func (client IdentityClient) resetIdpScimClient(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(ResetIdpScimClientRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response ResetIdpScimClientResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8584,6 +9995,14 @@ func (client IdentityClient) setGovernanceFromChild(ctx context.Context, request
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(SetGovernanceFromChildRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response SetGovernanceFromChildResponse
 	var httpResponse *http.Response
@@ -8640,6 +10059,14 @@ func (client IdentityClient) setGovernanceFromParent(ctx context.Context, reques
 		return nil, err
 	}
 
+	host := client.Host
+	request.(SetGovernanceFromParentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response SetGovernanceFromParentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8694,6 +10121,14 @@ func (client IdentityClient) unsetGovernanceFromChild(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UnsetGovernanceFromChildRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UnsetGovernanceFromChildResponse
 	var httpResponse *http.Response
@@ -8750,6 +10185,14 @@ func (client IdentityClient) unsetGovernanceFromParent(ctx context.Context, requ
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UnsetGovernanceFromParentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UnsetGovernanceFromParentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8804,6 +10247,14 @@ func (client IdentityClient) updateAuthToken(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateAuthTokenRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateAuthTokenResponse
 	var httpResponse *http.Response
@@ -8860,6 +10311,14 @@ func (client IdentityClient) updateAuthenticationPolicy(ctx context.Context, req
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateAuthenticationPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateAuthenticationPolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -8914,6 +10373,14 @@ func (client IdentityClient) updateCompartment(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateCompartmentRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateCompartmentResponse
 	var httpResponse *http.Response
@@ -8970,6 +10437,14 @@ func (client IdentityClient) updateCompartmentsServiceSetting(ctx context.Contex
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateCompartmentsServiceSettingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateCompartmentsServiceSettingResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9024,6 +10499,14 @@ func (client IdentityClient) updateCustomerSecretKey(ctx context.Context, reques
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateCustomerSecretKeyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateCustomerSecretKeyResponse
 	var httpResponse *http.Response
@@ -9082,6 +10565,14 @@ func (client IdentityClient) updateDomain(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateDomainRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateDomainResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9137,6 +10628,14 @@ func (client IdentityClient) updateDynamicGroup(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateDynamicGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateDynamicGroupResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9191,6 +10690,14 @@ func (client IdentityClient) updateGroup(ctx context.Context, request common.OCI
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateGroupRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateGroupResponse
 	var httpResponse *http.Response
@@ -9248,6 +10755,14 @@ func (client IdentityClient) updateIdentityProvider(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateIdentityProviderRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateIdentityProviderResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9304,6 +10819,14 @@ func (client IdentityClient) updateIdpGroupMapping(ctx context.Context, request 
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateIdpGroupMappingRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateIdpGroupMappingResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9358,6 +10881,14 @@ func (client IdentityClient) updateNetworkAccessPolicy(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateNetworkAccessPolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateNetworkAccessPolicyResponse
 	var httpResponse *http.Response
@@ -9414,6 +10945,14 @@ func (client IdentityClient) updateNetworkLocation(ctx context.Context, request 
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateNetworkLocationRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateNetworkLocationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9469,6 +11008,14 @@ func (client IdentityClient) updateNetworkSource(ctx context.Context, request co
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateNetworkSourceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateNetworkSourceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9523,6 +11070,14 @@ func (client IdentityClient) updateOAuthClientCredential(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateOAuthClientCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateOAuthClientCredentialResponse
 	var httpResponse *http.Response
@@ -9580,6 +11135,14 @@ func (client IdentityClient) updatePolicy(ctx context.Context, request common.OC
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdatePolicyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdatePolicyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9634,6 +11197,14 @@ func (client IdentityClient) updateSmtpCredential(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateSmtpCredentialRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateSmtpCredentialResponse
 	var httpResponse *http.Response
@@ -9690,6 +11261,14 @@ func (client IdentityClient) updateSwiftPassword(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateSwiftPasswordRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateSwiftPasswordResponse
 	var httpResponse *http.Response
@@ -9753,6 +11332,14 @@ func (client IdentityClient) updateTag(ctx context.Context, request common.OCIRe
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateTagRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateTagResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9811,6 +11398,14 @@ func (client IdentityClient) updateTagDefault(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateTagDefaultRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateTagDefaultResponse
 	var httpResponse *http.Response
@@ -9873,6 +11468,14 @@ func (client IdentityClient) updateTagNamespace(ctx context.Context, request com
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateTagNamespaceRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateTagNamespaceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9929,6 +11532,14 @@ func (client IdentityClient) updateTagRule(ctx context.Context, request common.O
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateTagRuleRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateTagRuleResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -9983,6 +11594,14 @@ func (client IdentityClient) updateUser(ctx context.Context, request common.OCIR
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateUserRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateUserResponse
 	var httpResponse *http.Response
@@ -10039,6 +11658,14 @@ func (client IdentityClient) updateUserCapabilities(ctx context.Context, request
 		return nil, err
 	}
 
+	host := client.Host
+	request.(UpdateUserCapabilitiesRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
+
 	var response UpdateUserCapabilitiesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -10093,6 +11720,14 @@ func (client IdentityClient) updateUserState(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UpdateUserStateRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UpdateUserStateResponse
 	var httpResponse *http.Response
@@ -10164,6 +11799,14 @@ func (client IdentityClient) uploadApiKey(ctx context.Context, request common.OC
 	if err != nil {
 		return nil, err
 	}
+
+	host := client.Host
+	request.(UploadApiKeyRequest).ReplaceMandatoryParamInPath(&client.BaseClient, client.requiredParamsInEndpoint)
+	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
+	common.SetMissingTemplateParams(&client.BaseClient)
+	defer func() {
+		client.Host = host
+	}()
 
 	var response UploadApiKeyResponse
 	var httpResponse *http.Response
