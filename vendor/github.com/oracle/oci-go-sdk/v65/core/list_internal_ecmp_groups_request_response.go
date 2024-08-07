@@ -45,11 +45,11 @@ type ListInternalEcmpGroupsRequest struct {
 	// is case sensitive.
 	SortOrder ListInternalEcmpGroupsSortOrderEnum `mandatory:"false" contributesTo:"query" name:"sortOrder" omitEmpty:"true"`
 
-	// A filter to return only resources that match the given Internal Ecmp Group lifecycle state.
+	// A filter to return only resources that match the given Internal ECMP Group lifecycle state.
 	// The state value is not case-sensitive.
 	LifecycleState InternalEcmpGroupLifecycleStateEnum `mandatory:"false" contributesTo:"query" name:"lifecycleState" omitEmpty:"true"`
 
-	// A filter to return only resources that match the given Internal Ecmp Group name.
+	// A filter to return only resources that match the given Internal ECMP Group name.
 	DisplayName *string `mandatory:"false" contributesTo:"query" name:"displayName"`
 
 	// Unique identifier for the request.
@@ -80,6 +80,21 @@ func (request ListInternalEcmpGroupsRequest) BinaryRequestBody() (*common.OCIRea
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request ListInternalEcmpGroupsRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["compartmentId"] != nil {
+		templateParam := mandatoryParamMap["compartmentId"]
+		for _, template := range templateParam {
+			replacementParam := *request.CompartmentId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

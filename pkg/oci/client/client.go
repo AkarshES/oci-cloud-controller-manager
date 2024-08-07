@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -39,6 +40,9 @@ import (
 // to respond before we timeout the request
 const defaultSynchronousAPIContextTimeout = 10 * time.Second
 const defaultSynchronousAPIPollContextTimeout = 10 * time.Minute
+
+const Ipv6Stack = "IPv6"
+const ClusterIpFamilyEnv = "CLUSTER_IP_FAMILY"
 
 // Interface of consumed OCI API functionality.
 type Interface interface {
@@ -204,6 +208,12 @@ func setupBaseClient(client *common.BaseClient, signer common.HTTPRequestSigner,
 			client.Host = endpointOverride
 		}
 	}
+	clusterIpFamily, ok := os.LookupEnv(ClusterIpFamilyEnv)
+	// currently as dual stack endpoints are going to be present in selected regions, only for IPv6 single stack cluster we will be using dual stack endpoints
+	if ok && strings.EqualFold(clusterIpFamily, Ipv6Stack) {
+		client.EnableDualStackEndpoints(true)
+	}
+
 }
 
 // New constructs an OCI API client.

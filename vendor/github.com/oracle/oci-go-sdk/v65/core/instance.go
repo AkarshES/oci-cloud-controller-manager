@@ -86,6 +86,13 @@ type Instance struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
+	// The lifecycle state of the `securityAttributes`
+	SecurityAttributesState InstanceSecurityAttributesStateEnum `mandatory:"false" json:"securityAttributesState,omitempty"`
+
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
@@ -143,6 +150,7 @@ type Instance struct {
 	// * `NATIVE` - VM instances launch with iSCSI boot and VFIO devices. The default value for platform images.
 	// * `EMULATED` - VM instances launch with emulated devices, such as the E1000 network driver and emulated SCSI disk controller.
 	// * `PARAVIRTUALIZED` - VM instances launch with paravirtualized devices using VirtIO drivers.
+	// * `VDPA` - VM instances launch with hardware-assisted paravirtualized networking type.
 	// * `CUSTOM` - VM instances launch with custom configuration settings specified in the `LaunchOptions` parameter.
 	LaunchMode InstanceLaunchModeEnum `mandatory:"false" json:"launchMode,omitempty"`
 
@@ -191,6 +199,9 @@ type Instance struct {
 
 	// The OCID of the Instance Configuration used to source launch details for this instance. Any other fields supplied in the instance launch request override the details stored in the Instance Configuration for this instance launch.
 	InstanceConfigurationId *string `mandatory:"false" json:"instanceConfigurationId"`
+
+	// List of licensing configurations associated with the instance.
+	LicensingConfigs []LicensingConfig `mandatory:"false" json:"licensingConfigs"`
 }
 
 func (m Instance) String() string {
@@ -206,6 +217,9 @@ func (m Instance) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetInstanceLifecycleStateEnumStringValues(), ",")))
 	}
 
+	if _, ok := GetMappingInstanceSecurityAttributesStateEnum(string(m.SecurityAttributesState)); !ok && m.SecurityAttributesState != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for SecurityAttributesState: %s. Supported values are: %s.", m.SecurityAttributesState, strings.Join(GetInstanceSecurityAttributesStateEnumStringValues(), ",")))
+	}
 	if _, ok := GetMappingInstanceLaunchModeEnum(string(m.LaunchMode)); !ok && m.LaunchMode != "" {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LaunchMode: %s. Supported values are: %s.", m.LaunchMode, strings.Join(GetInstanceLaunchModeEnumStringValues(), ",")))
 	}
@@ -225,6 +239,8 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 		ClusterPlacementGroupId    *string                                `json:"clusterPlacementGroupId"`
 		DedicatedVmHostId          *string                                `json:"dedicatedVmHostId"`
 		DefinedTags                map[string]map[string]interface{}      `json:"definedTags"`
+		SecurityAttributes         map[string]map[string]interface{}      `json:"securityAttributes"`
+		SecurityAttributesState    InstanceSecurityAttributesStateEnum    `json:"securityAttributesState"`
 		DisplayName                *string                                `json:"displayName"`
 		ExtendedMetadata           map[string]interface{}                 `json:"extendedMetadata"`
 		FaultDomain                *string                                `json:"faultDomain"`
@@ -247,6 +263,7 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 		PreferredMaintenanceAction InstancePreferredMaintenanceActionEnum `json:"preferredMaintenanceAction"`
 		PlatformConfig             platformconfig                         `json:"platformConfig"`
 		InstanceConfigurationId    *string                                `json:"instanceConfigurationId"`
+		LicensingConfigs           []LicensingConfig                      `json:"licensingConfigs"`
 		AvailabilityDomain         *string                                `json:"availabilityDomain"`
 		CompartmentId              *string                                `json:"compartmentId"`
 		Id                         *string                                `json:"id"`
@@ -268,6 +285,10 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 	m.DedicatedVmHostId = model.DedicatedVmHostId
 
 	m.DefinedTags = model.DefinedTags
+
+	m.SecurityAttributes = model.SecurityAttributes
+
+	m.SecurityAttributesState = model.SecurityAttributesState
 
 	m.DisplayName = model.DisplayName
 
@@ -329,6 +350,8 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 
 	m.InstanceConfigurationId = model.InstanceConfigurationId
 
+	m.LicensingConfigs = make([]LicensingConfig, len(model.LicensingConfigs))
+	copy(m.LicensingConfigs, model.LicensingConfigs)
 	m.AvailabilityDomain = model.AvailabilityDomain
 
 	m.CompartmentId = model.CompartmentId
@@ -346,6 +369,48 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 	return
 }
 
+// InstanceSecurityAttributesStateEnum Enum with underlying type: string
+type InstanceSecurityAttributesStateEnum string
+
+// Set of constants representing the allowable values for InstanceSecurityAttributesStateEnum
+const (
+	InstanceSecurityAttributesStateStable   InstanceSecurityAttributesStateEnum = "STABLE"
+	InstanceSecurityAttributesStateUpdating InstanceSecurityAttributesStateEnum = "UPDATING"
+)
+
+var mappingInstanceSecurityAttributesStateEnum = map[string]InstanceSecurityAttributesStateEnum{
+	"STABLE":   InstanceSecurityAttributesStateStable,
+	"UPDATING": InstanceSecurityAttributesStateUpdating,
+}
+
+var mappingInstanceSecurityAttributesStateEnumLowerCase = map[string]InstanceSecurityAttributesStateEnum{
+	"stable":   InstanceSecurityAttributesStateStable,
+	"updating": InstanceSecurityAttributesStateUpdating,
+}
+
+// GetInstanceSecurityAttributesStateEnumValues Enumerates the set of values for InstanceSecurityAttributesStateEnum
+func GetInstanceSecurityAttributesStateEnumValues() []InstanceSecurityAttributesStateEnum {
+	values := make([]InstanceSecurityAttributesStateEnum, 0)
+	for _, v := range mappingInstanceSecurityAttributesStateEnum {
+		values = append(values, v)
+	}
+	return values
+}
+
+// GetInstanceSecurityAttributesStateEnumStringValues Enumerates the set of values in String for InstanceSecurityAttributesStateEnum
+func GetInstanceSecurityAttributesStateEnumStringValues() []string {
+	return []string{
+		"STABLE",
+		"UPDATING",
+	}
+}
+
+// GetMappingInstanceSecurityAttributesStateEnum performs case Insensitive comparison on enum value and return the desired enum
+func GetMappingInstanceSecurityAttributesStateEnum(val string) (InstanceSecurityAttributesStateEnum, bool) {
+	enum, ok := mappingInstanceSecurityAttributesStateEnumLowerCase[strings.ToLower(val)]
+	return enum, ok
+}
+
 // InstanceLaunchModeEnum Enum with underlying type: string
 type InstanceLaunchModeEnum string
 
@@ -354,6 +419,7 @@ const (
 	InstanceLaunchModeNative          InstanceLaunchModeEnum = "NATIVE"
 	InstanceLaunchModeEmulated        InstanceLaunchModeEnum = "EMULATED"
 	InstanceLaunchModeParavirtualized InstanceLaunchModeEnum = "PARAVIRTUALIZED"
+	InstanceLaunchModeVdpa            InstanceLaunchModeEnum = "VDPA"
 	InstanceLaunchModeCustom          InstanceLaunchModeEnum = "CUSTOM"
 )
 
@@ -361,6 +427,7 @@ var mappingInstanceLaunchModeEnum = map[string]InstanceLaunchModeEnum{
 	"NATIVE":          InstanceLaunchModeNative,
 	"EMULATED":        InstanceLaunchModeEmulated,
 	"PARAVIRTUALIZED": InstanceLaunchModeParavirtualized,
+	"VDPA":            InstanceLaunchModeVdpa,
 	"CUSTOM":          InstanceLaunchModeCustom,
 }
 
@@ -368,6 +435,7 @@ var mappingInstanceLaunchModeEnumLowerCase = map[string]InstanceLaunchModeEnum{
 	"native":          InstanceLaunchModeNative,
 	"emulated":        InstanceLaunchModeEmulated,
 	"paravirtualized": InstanceLaunchModeParavirtualized,
+	"vdpa":            InstanceLaunchModeVdpa,
 	"custom":          InstanceLaunchModeCustom,
 }
 
@@ -386,6 +454,7 @@ func GetInstanceLaunchModeEnumStringValues() []string {
 		"NATIVE",
 		"EMULATED",
 		"PARAVIRTUALIZED",
+		"VDPA",
 		"CUSTOM",
 	}
 }

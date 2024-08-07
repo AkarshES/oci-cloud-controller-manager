@@ -14,7 +14,7 @@ import (
 // DeleteInternalPrivateIpRequest wrapper for the DeleteInternalPrivateIp operation
 type DeleteInternalPrivateIpRequest struct {
 
-	// The internal private IP's OCID.
+	// The internal private IP's OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 	InternalPrivateIpId *string `mandatory:"true" contributesTo:"path" name:"internalPrivateIpId"`
 
 	// Automatically unmap floating private IP from the current VNIC when deleting.
@@ -60,6 +60,21 @@ func (request DeleteInternalPrivateIpRequest) BinaryRequestBody() (*common.OCIRe
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request DeleteInternalPrivateIpRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["internalPrivateIpId"] != nil {
+		templateParam := mandatoryParamMap["internalPrivateIpId"]
+		for _, template := range templateParam {
+			replacementParam := *request.InternalPrivateIpId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

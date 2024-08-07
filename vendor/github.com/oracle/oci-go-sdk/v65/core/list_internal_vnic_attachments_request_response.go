@@ -20,10 +20,10 @@ type ListInternalVnicAttachmentsRequest struct {
 	// The substrate IP address
 	SubstrateIp *string `mandatory:"false" contributesTo:"query" name:"substrateIp"`
 
-	// A filter to return only resources that match the given instanceOcid
+	// A filter to return only resources that match the given `instanceOcid`
 	InstanceOcidOptional *string `mandatory:"false" contributesTo:"query" name:"instanceOcidOptional"`
 
-	// A filter to return only resources that match isPrimary on the VNIC associated to VnicAttachment on the instance.
+	// A filter to return only resources that match `isPrimary` on the VNIC associated to VnicAttachment on the instance.
 	IsPrimaryOptional *bool `mandatory:"false" contributesTo:"query" name:"isPrimaryOptional"`
 
 	// For list pagination. The maximum number of results per page, or items to return in a paginated
@@ -65,6 +65,21 @@ func (request ListInternalVnicAttachmentsRequest) BinaryRequestBody() (*common.O
 
 	return nil, false
 
+}
+
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request ListInternalVnicAttachmentsRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["compartmentId"] != nil {
+		templateParam := mandatoryParamMap["compartmentId"]
+		for _, template := range templateParam {
+			replacementParam := *request.CompartmentId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.

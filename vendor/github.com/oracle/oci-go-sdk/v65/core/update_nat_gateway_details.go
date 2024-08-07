@@ -38,6 +38,10 @@ type UpdateNatGatewayDetails struct {
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 
+	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
+	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
+
 	// Whether the NAT gateway blocks traffic through it. The default is `false`.
 	// Example: `true`
 	BlockTraffic *bool `mandatory:"false" json:"blockTraffic"`
@@ -47,6 +51,11 @@ type UpdateNatGatewayDetails struct {
 	// table. The Networking service does NOT automatically associate the attached VCN's default route
 	// table with the NAT gateway.
 	RouteTableId *string `mandatory:"false" json:"routeTableId"`
+
+	// Set to `FAILOVER_TO_INTERNET` (the default) to allow the replication of customer data from flowing
+	// over public Internet,set to `DO_NOT_FAILOVER_TO_INTERNET` to prevent replication of customer data from
+	// flowing over public Internet.
+	BackboneFailoverPolicy BackboneFailoverPolicyEnum `mandatory:"false" json:"backboneFailoverPolicy,omitempty"`
 }
 
 func (m UpdateNatGatewayDetails) String() string {
@@ -59,6 +68,9 @@ func (m UpdateNatGatewayDetails) String() string {
 func (m UpdateNatGatewayDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
+	if _, ok := GetMappingBackboneFailoverPolicyEnum(string(m.BackboneFailoverPolicy)); !ok && m.BackboneFailoverPolicy != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for BackboneFailoverPolicy: %s. Supported values are: %s.", m.BackboneFailoverPolicy, strings.Join(GetBackboneFailoverPolicyEnumStringValues(), ",")))
+	}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
 	}
