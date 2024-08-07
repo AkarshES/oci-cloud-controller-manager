@@ -62,10 +62,24 @@ locals {
           },
           // omk fss override for omkdevfleet tenancy in IAD
           {
-            regions = ["iad"]
+            regions = ["iad", "phx"]
             env     = "integ"
             value   = jsonencode(local.omk_ccm_mapping_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafyd4yolgubij6qz7kgxxl5ps2qhqkfoqrvxtjvdccy66ifxmglia"
+          },
+          // omk fss override for omkintegfleet tenancy in IAD
+          {
+            regions = ["iad", "phx"]
+            env     = "integ"
+            value   = jsonencode(local.omk_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaqeq267dfoqjqjvcfgazlo6tqv7nfnv2rv767dm5ecf2wqlbsh5sa"
+          },
+          // omk fss override for omkintegfleetinternal tenancy in IAD
+          {
+            regions = ["iad", "phx"]
+            env     = "integ"
+            value   = jsonencode(local.omk_ccm_mapping_override)
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaepbccznc477ibxxopf2o3ki4bvfn47ji2zqvdfluqtutcduggn4q"
           }
         ]
       },
