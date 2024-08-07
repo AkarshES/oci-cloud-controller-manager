@@ -255,11 +255,10 @@ secrets:
 	cat ~/.ssh/id_ed25519
 
 checkout-e2e-branch-build-service: secrets
-	yum install -y tree python-pip
+	#yum install -y tree python-pip
 	pwd
-	pwd ~/.ssh
-	mkdir -p /opt/tssagent/workspace/
-	cd /opt/tssagent/workspace/
+#	mkdir -p /opt/tssagent/workspace/
+#	cd /opt/tssagent/workspace/
 	git config --global user.email oke_K8s_providers_grp@oracle.com
 	git config --global user.name 'K8s Providers BS Bot'
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
