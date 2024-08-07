@@ -247,12 +247,19 @@ npn-generate:
 
 .PHONY: checkout-e2e-branch-build-service
 secrets:
-	mkdir -p ~/.ssh
-	touch ~/.ssh/id_ed25519
-	echo "$$BITBUCKET_KEY" > ~/.ssh/id_ed25519
-	ssh-keyscan -p 7999 -t ed25519 bitbucket.oci.oraclecorp.com >> ~/.ssh/known_hosts
-	chmod 600 ~/.ssh/*
-	cat ~/.ssh/id_ed25519
+	mkdir -p /root/.ssh
+	touch /root/.ssh/id_ed25519
+	echo 'Host bitbucket.oci.oraclecorp.com' >> /root/.ssh/config
+	echo '  HostName bitbucket.oci.oraclecorp.com' >> /root/.ssh/config
+	echo '  IdentityFile /root/.ssh/id_ed25519' >> /root/.ssh/config
+	echo '  IdentitiesOnly yes' >> /root/.ssh/config
+	echo '  AddKeysToAgent yes' >> /root/.ssh/config
+	echo '  Port 7999' >> /root/.ssh/config
+	echo '  StrictHostKeyChecking no' >> /root/.ssh/config
+	echo "$$BITBUCKET_KEY" > /root/.ssh/id_ed25519
+	ssh-keyscan -p 7999 -t ed25519 bitbucket.oci.oraclecorp.com >> /root/.ssh/known_hosts
+	chmod 600 /root/.ssh/*
+	cat /root/.ssh/id_ed25519
 
 checkout-e2e-branch-build-service: secrets
 	#yum install -y tree python-pip
