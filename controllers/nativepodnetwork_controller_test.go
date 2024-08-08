@@ -1104,6 +1104,10 @@ func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, comp
 	return nil, nil
 }
 
+func (c *MockComputeClient) WaitForUHPVolumeLoggedOut(ctx context.Context, attachmentID string) error {
+	return nil
+}
+
 func (MockOCIClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }
