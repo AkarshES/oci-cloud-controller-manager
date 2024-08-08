@@ -21,12 +21,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
 	clientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
-	storagelisters "github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumesnapshot/v1"
+	groupsnapshotlisters "github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumegroupsnapshot/v1alpha1"
+	snapshotlisters "github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumesnapshot/v1"
 	"github.com/spf13/cobra"
 
 	informers "github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions"
@@ -39,11 +40,12 @@ import (
 )
 
 var (
-	certFile                    string
-	keyFile                     string
-	kubeconfigFile              string
-	port                        int
-	preventVolumeModeConversion bool
+	certFile                         string
+	keyFile                          string
+	kubeconfigFile                   string
+	port                             int
+	preventVolumeModeConversion      bool
+	enableVolumeGroupSnapshotWebhook bool
 )
 
 // CmdWebhook is used by Cobra.
@@ -70,6 +72,8 @@ func init() {
 	CmdWebhook.Flags().StringVar(&kubeconfigFile, "kubeconfig", "", "kubeconfig file to use for volumesnapshotclasses")
 	CmdWebhook.Flags().BoolVar(&preventVolumeModeConversion, "prevent-volume-mode-conversion",
 		false, "Prevents an unauthorised user from modifying the volume mode when creating a PVC from an existing VolumeSnapshot.")
+	CmdWebhook.Flags().BoolVar(&enableVolumeGroupSnapshotWebhook, "enable-volume-group-snapshot-webhook",
+		false, "Enables webhook for VolumeGroupSnapshot, VolumeGroupSnapshotContent and VolumeGroupSnapshotClass.")
 }
 
 // admitv1beta1Func handles a v1beta1 admission
@@ -107,7 +111,7 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 		http.Error(w, msg, http.StatusBadRequest)
 	}
 
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		msg := fmt.Sprintf("Request could not be decoded: %v", err)
 		klog.Error(msg)
@@ -183,15 +187,29 @@ func serve(w http.ResponseWriter, r *http.Request, admit admitHandler) {
 	}
 }
 
-type serveWebhook struct {
-	lister storagelisters.VolumeSnapshotClassLister
+type serveSnapshotWebhook struct {
+	lister snapshotlisters.VolumeSnapshotClassLister
 }
 
-func (s serveWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s serveSnapshotWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	serve(w, r, newDelegateToV1AdmitHandler(NewSnapshotAdmitter(s.lister)))
 }
 
-func startServer(ctx context.Context, tlsConfig *tls.Config, cw *CertWatcher, lister storagelisters.VolumeSnapshotClassLister) error {
+type serveGroupSnapshotWebhook struct {
+	lister groupsnapshotlisters.VolumeGroupSnapshotClassLister
+}
+
+func (s serveGroupSnapshotWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	serve(w, r, newDelegateToV1AdmitHandler(NewGroupSnapshotAdmitter(s.lister)))
+}
+
+func startServer(
+	ctx context.Context,
+	tlsConfig *tls.Config,
+	cw *CertWatcher,
+	vscLister snapshotlisters.VolumeSnapshotClassLister,
+	vgscLister groupsnapshotlisters.VolumeGroupSnapshotClassLister,
+) error {
 	go func() {
 		klog.Info("Starting certificate watcher")
 		if err := cw.Start(ctx); err != nil {
@@ -199,13 +217,21 @@ func startServer(ctx context.Context, tlsConfig *tls.Config, cw *CertWatcher, li
 		}
 	}()
 	// Pipe through the informer at some point here.
-	s := &serveWebhook{
-		lister: lister,
+	snapshotWebhook := serveSnapshotWebhook{
+		lister: vscLister,
 	}
 
 	fmt.Println("Starting webhook server")
 	mux := http.NewServeMux()
-	mux.Handle("/volumesnapshot", s)
+	mux.Handle("/volumesnapshot", snapshotWebhook)
+
+	if enableVolumeGroupSnapshotWebhook {
+		groupSnapshotWebhook := serveGroupSnapshotWebhook{
+			lister: vgscLister,
+		}
+		mux.Handle("/volumegroupsnapshot", groupSnapshotWebhook)
+	}
+
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, req *http.Request) { w.Write([]byte("ok")) })
 	srv := &http.Server{
 		Handler:   mux,
@@ -247,14 +273,18 @@ func main(cmd *cobra.Command, args []string) {
 	}
 
 	factory := informers.NewSharedInformerFactory(snapClient, 0)
-	lister := factory.Snapshot().V1().VolumeSnapshotClasses().Lister()
+	snapshotLister := factory.Snapshot().V1().VolumeSnapshotClasses().Lister()
+	var groupSnapshotLister groupsnapshotlisters.VolumeGroupSnapshotClassLister
+	if enableVolumeGroupSnapshotWebhook {
+		groupSnapshotLister = factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotClasses().Lister()
+	}
 
 	// Start the informers
 	factory.Start(ctx.Done())
 	// wait for the caches to sync
 	factory.WaitForCacheSync(ctx.Done())
 
-	if err := startServer(ctx, tlsConfig, cw, lister); err != nil {
+	if err := startServer(ctx, tlsConfig, cw, snapshotLister, groupSnapshotLister); err != nil {
 		klog.Fatalf("server stopped: %v", err)
 	}
 }

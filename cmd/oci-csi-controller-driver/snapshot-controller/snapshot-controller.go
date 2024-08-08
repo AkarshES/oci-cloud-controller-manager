@@ -65,21 +65,29 @@ func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struc
 	metricsManager := metrics.NewMetricsManager()
 
 	var nodeInformer v1.NodeInformer
-
+	// TODO: Remove the following lines when the enableVolumeGroupSnapshots feature is enabled
+	bEnable := false
+	enableVolumeGroupSnapshots := &bEnable
 	ctrl := controller.NewCSISnapshotCommonController(
 		snapClient,
 		kubeClient,
 		factory.Snapshot().V1().VolumeSnapshots(),
 		factory.Snapshot().V1().VolumeSnapshotContents(),
 		factory.Snapshot().V1().VolumeSnapshotClasses(),
+		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshots(),
+		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotContents(),
+		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotClasses(),
 		coreFactory.Core().V1().PersistentVolumeClaims(),
 		nodeInformer,
 		metricsManager,
 		csioptions.Resync,
 		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
 		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
+		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
+		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
 		false,
 		false,
+		*enableVolumeGroupSnapshots,
 	)
 
 	run := func(context.Context) {

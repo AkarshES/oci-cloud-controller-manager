@@ -63,7 +63,7 @@ github.com/docker/distribution/reference
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
-# github.com/evanphx/json-patch v5.6.0+incompatible
+# github.com/evanphx/json-patch v5.7.0+incompatible
 ## explicit
 github.com/evanphx/json-patch
 # github.com/evanphx/json-patch/v5 v5.6.0
@@ -202,7 +202,7 @@ github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/kubernetes-csi/csi-lib-utils v0.14.0
+# github.com/kubernetes-csi/csi-lib-utils v0.14.1
 ## explicit; go 1.18
 github.com/kubernetes-csi/csi-lib-utils/accessmodes
 github.com/kubernetes-csi/csi-lib-utils/connection
@@ -210,38 +210,44 @@ github.com/kubernetes-csi/csi-lib-utils/leaderelection
 github.com/kubernetes-csi/csi-lib-utils/metrics
 github.com/kubernetes-csi/csi-lib-utils/protosanitizer
 github.com/kubernetes-csi/csi-lib-utils/rpc
-# github.com/kubernetes-csi/external-attacher v0.0.0-20230907161857-0ad858f55382
+# github.com/kubernetes-csi/external-attacher v0.0.0-20231226133336-f0b6d691b0ad
 ## explicit; go 1.20
 github.com/kubernetes-csi/external-attacher/pkg/attacher
 github.com/kubernetes-csi/external-attacher/pkg/controller
-# github.com/kubernetes-csi/external-provisioner v0.0.0-20230906013051-4b69bc58565d
+# github.com/kubernetes-csi/external-provisioner v0.0.0-20240320213157-06d4a2dd8fa5
 ## explicit; go 1.20
 github.com/kubernetes-csi/external-provisioner/pkg/capacity
 github.com/kubernetes-csi/external-provisioner/pkg/capacity/topology
 github.com/kubernetes-csi/external-provisioner/pkg/controller
 github.com/kubernetes-csi/external-provisioner/pkg/features
 github.com/kubernetes-csi/external-provisioner/pkg/owner
-# github.com/kubernetes-csi/external-resizer v0.0.0-20230911205811-42ecc22863e4
+# github.com/kubernetes-csi/external-resizer v1.9.3
 ## explicit; go 1.20
 github.com/kubernetes-csi/external-resizer/pkg/controller
 github.com/kubernetes-csi/external-resizer/pkg/csi
 github.com/kubernetes-csi/external-resizer/pkg/features
 github.com/kubernetes-csi/external-resizer/pkg/resizer
 github.com/kubernetes-csi/external-resizer/pkg/util
-# github.com/kubernetes-csi/external-snapshotter/client/v6 v6.2.0
-## explicit; go 1.19
+# github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
+## explicit; go 1.20
+github.com/kubernetes-csi/external-snapshotter/client/v6/apis/volumegroupsnapshot/v1alpha1
 github.com/kubernetes-csi/external-snapshotter/client/v6/apis/volumesnapshot/v1
 github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned
 github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/scheme
+github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/typed/volumegroupsnapshot/v1alpha1
 github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/typed/volumesnapshot/v1
 github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions
 github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/internalinterfaces
+github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumegroupsnapshot
+github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumegroupsnapshot/v1alpha1
 github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumesnapshot
 github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumesnapshot/v1
+github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumegroupsnapshot/v1alpha1
 github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumesnapshot/v1
-# github.com/kubernetes-csi/external-snapshotter/v6 v6.2.0
-## explicit; go 1.19
+# github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
+## explicit; go 1.20
 github.com/kubernetes-csi/external-snapshotter/v6/pkg/common-controller
+github.com/kubernetes-csi/external-snapshotter/v6/pkg/group_snapshotter
 github.com/kubernetes-csi/external-snapshotter/v6/pkg/metrics
 github.com/kubernetes-csi/external-snapshotter/v6/pkg/sidecar-controller
 github.com/kubernetes-csi/external-snapshotter/v6/pkg/snapshotter

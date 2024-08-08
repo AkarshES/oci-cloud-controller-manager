@@ -30,6 +30,7 @@ import (
 	clientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
 	snapshotscheme "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/scheme"
 	informers "github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions"
+	"github.com/kubernetes-csi/external-snapshotter/v6/pkg/group_snapshotter"
 	controller "github.com/kubernetes-csi/external-snapshotter/v6/pkg/sidecar-controller"
 	"github.com/kubernetes-csi/external-snapshotter/v6/pkg/snapshotter"
 	"google.golang.org/grpc"
@@ -48,12 +49,13 @@ var (
 	// the csiTimeout is kept as 1 minute
 	csiTimeout              = time.Minute
 	snapshotNamePrefix      = "snapshot"
+	groupSnapshotNamePrefix = "group_snapshot"
 	snapshotNameUUIDLength  = -1
+	groupSnapshotNameUUIDLength = -1
 	extraCreateMetadata     = false
 	// the retryIntervalStart is kept as 1 second
 	retryIntervalStart      = time.Second
 	retryIntervalMax        = 5 * time.Minute
-
 	kubeAPIQPS              = 5
 	kubeAPIBurst            = 10
 	version                 = "0.0.1"
@@ -111,6 +113,19 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 	}
 
 	snapShotter := snapshotter.NewSnapshotter(conn)
+	var groupSnapshotter group_snapshotter.GroupSnapshotter
+	// TODO: Remove the following line when the enableVolumeGroupSnapshots feature is enabled
+	volumeGroupSnapshotFeature := false
+	enableVolumeGroupSnapshots := &volumeGroupSnapshotFeature
+	if *enableVolumeGroupSnapshots {
+		supportsCreateVolumeGroupSnapshot, err := supportsGroupControllerCreateVolumeGroupSnapshot(ctx, conn)
+		if err != nil {
+			klog.Errorf("error determining if driver supports create/delete group snapshot operations: %v", err)
+		} else if !supportsCreateVolumeGroupSnapshot {
+			klog.Warningf("CSI driver %s does not support GroupControllerCreateVolumeGroupSnapshot when the --enable-volume-group-snapshots flag is true", driverName)
+		}
+		groupSnapshotter = group_snapshotter.NewGroupSnapshotter(conn)
+	}
 	ctrl := controller.NewCSISnapshotSideCarController(
 		snapClient,
 		kubeClient,
@@ -118,11 +133,18 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 		factory.Snapshot().V1().VolumeSnapshotContents(),
 		factory.Snapshot().V1().VolumeSnapshotClasses(),
 		snapShotter,
+		groupSnapshotter,
 		csiTimeout,
 		csioptions.Resync,
 		snapshotNamePrefix,
 		snapshotNameUUIDLength,
+		groupSnapshotNamePrefix,
+		groupSnapshotNameUUIDLength,
 		extraCreateMetadata,
+		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
+		*enableVolumeGroupSnapshots,
+		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotContents(),
+		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotClasses(),
 		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
 	)
 
@@ -165,6 +187,15 @@ func supportsControllerCreateDeleteSnapshot(ctx context.Context, conn *grpc.Clie
 		return false, err
 	}
 	return capabilities[csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT], nil
+}
+
+func supportsGroupControllerCreateVolumeGroupSnapshot(ctx context.Context, conn *grpc.ClientConn) (bool, error) {
+	capabilities, err := csirpc.GetGroupControllerCapabilities(ctx, conn)
+	if err != nil {
+		return false, err
+	}
+
+	return capabilities[csi.GroupControllerServiceCapability_RPC_CREATE_DELETE_GET_VOLUME_GROUP_SNAPSHOT], nil
 }
 
 func BuildConfig(csioptions csioptions.CSIOptions) *rest.Config {
