@@ -78,6 +78,9 @@ steps:
       export env_file=$(mktemp)
       unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
       env > $env_file
+      chmod 777 $env_file
+      touch .env_file
+      chmod 777 .env_file
       ./run_dind.sh run-ccm-e2e-tests-local
     failImmediatelyOnError: true
     timeoutInSeconds: 3600
