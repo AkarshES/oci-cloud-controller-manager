@@ -10,11 +10,13 @@ sudo chmod 777 "${env_file}"
 env > "${env_file}"
 env
 
-#sudo >.env_file
-#for var in $(compgen -v | grep -Ev '^(BASH)'); do
-#    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
-#    sudo echo "$var=${var_fixed}" >>.env_file
-#done
+sudo >.env_file
+for var in $(compgen -v | grep -Ev '^(BASH)'); do
+    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
+    sudo echo "$var=${var_fixed}" >>.env_file
+done
+
+cat .env_file
 
 export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
