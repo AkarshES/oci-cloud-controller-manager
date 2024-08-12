@@ -8,11 +8,11 @@ unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
 
 sudo env > "${env_file}"
 
-sudo >.env_file
-for var in $(compgen -v | grep -Ev '^(BASH)'); do
-    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
-    sudo echo "$var=${var_fixed}" >>.env_file
-done
+#sudo >.env_file
+#for var in $(compgen -v | grep -Ev '^(BASH)'); do
+#    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
+#    sudo echo "$var=${var_fixed}" >>.env_file
+#done
 
 export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
