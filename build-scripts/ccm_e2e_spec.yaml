@@ -30,81 +30,79 @@ env:
 
 steps:
   - type: shell
-    name: downloadE2eCode
+    name: Pre Test Cleanup
     command: |
-      cd ${OCI_ARTIFACTS_DIR}
-      echo "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
-      curl -O https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz
-    timeoutInSeconds: 3000
-  - type: shell
-    name: Check Basic details
-    command: |
-      echo "Running instance: `hostname -I`"
-      echo "Printing Disk usage: `df -h`"
-      echo "TMPDIR: ${TMPDIR}"
-      echo "DOCKER_CONFIG_DIR: ${DOCKER_CONFIG_DIR}"
-      yum -y install tree
-      tree -a -L 2
-      echo ${OCI_ARTIFACTS_DIR}
-      ls -lh ${OCI_ARTIFACTS_DIR}
-      ls -lh /oci-cloud-controller-manager-e2e/
-    failImmediatelyOnError: true
-    timeoutInSeconds: 300
+      docker rm -f ccm-e2e-test
+      rm -rf ${HOME_LOC}/ccm_e2e
+      mkdir -p ${HOME_LOC}/ccm_e2e || exit
+      echo "Cleaning up working directory"
+    failImmediatelyOnError: false
+    timeoutInSeconds: 600
 
+  - type: shell
+    name: Get CCM Repo
+    command: |
+      cd ccm_e2e
+      echo "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
+      curl -O "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
+      tar -xf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz
+    failImmediatelyOnError: true
+    timeoutInSeconds: 1200
+
+  - type: shell
+    name: Start Docker-in-Docker
+    command: |
+      mkdir -p ${TMPDIR} ${DOCKER_CONFIG_DIR}
+      cd ${TMPDIR} && pwd
+      cd ${DOCKER_CONFIG_DIR} && pwd
+      [[ $(docker ps -f "name=$DIND_NAME" --format '{{.Names}}') == $DIND_NAME ]] || docker --config $DOCKER_CONFIG_DIR run -t --privileged --net=host -v $DOCKER_CONFIG_DIR:/root/.docker -v $TMPDIR:/var/lib/docker --name $DIND_NAME -d iad.ocir.io/odx-oke/oke/dind:0.2.0
+      docker ps -a
+    failImmediatelyOnError: true
+    timeoutInSeconds: 600
+    onFailure:
+      - type: shell
+        command: |
+          docker rm -f ccm-e2e-test
+          sudo rm -rf ${HOME_LOC}/ccm_e2e
+        timeoutInSeconds: 400
+
+  - type: shell
+    name: Run test
+    command: |
+      echo "Running CCM E2E Test"
+      cd ${TMPDIR} && pwd
+      cd ${DOCKER_CONFIG_DIR} && pwd
+      cd /opt/tssagent/workspace/ccm_e2e/sparta/input/oci-cloud-controller-manager
+      export env_file=$(mktemp)
+      unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
+      env > $env_file
+      ./run_dind.sh run-ccm-e2e-tests-local
+    failImmediatelyOnError: true
+    timeoutInSeconds: 3600
+    onFailure:
+      - type: shell
+        command: |
+          docker rm -f ccm-e2e-test
+          sudo rm -rf ${HOME_LOC}/ccm_e2e
+        timeoutInSeconds: 400
 #  - type: shell
-#    name: Pre Test Cleanup
+#    name: downloadE2eCode
 #    command: |
-#      docker rm -f ccm-e2e-test
-#      rm -rf ${HOME_LOC}/ccm_e2e
-#      mkdir -p ${HOME_LOC}/ccm_e2e || exit
-#      echo "Cleaning up working directory"
-#    failImmediatelyOnError: false
-#    timeoutInSeconds: 600
-#
+#      cd ${OCI_ARTIFACTS_DIR}
+#    timeoutInSeconds: 3000
 #  - type: shell
-#    name: Get CCM Repo
+#    name: Check Basic details
 #    command: |
-#      cd ccm_e2e
-#      git clone ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git || exit
-#      cd oci-cloud-controller-manager/ || exit
-#      git checkout ${E2E_BRANCH} || exit
-#      git status
+#      echo "Running instance: `hostname -I`"
+#      echo "Printing Disk usage: `df -h`"
+#      echo "TMPDIR: ${TMPDIR}"
+#      echo "DOCKER_CONFIG_DIR: ${DOCKER_CONFIG_DIR}"
+##      Move yum installs to cloud-init.sh instead
+#      yum -y install tree
+#      tree -a -L 2
+#      echo ${OCI_ARTIFACTS_DIR}
+#      ls -lh ${OCI_ARTIFACTS_DIR}
+#      tree -a -L 2 sparta/
+#      cd sparta/input/oci-cloud-controller-manager/
 #    failImmediatelyOnError: true
-#    timeoutInSeconds: 1200
-#
-#  - type: shell
-#    name: Start Docker-in-Docker
-#    command: |
-#      mkdir -p ${TMPDIR} ${DOCKER_CONFIG_DIR}
-#      cd ${TMPDIR} && pwd
-#      cd ${DOCKER_CONFIG_DIR} && pwd
-#      [[ $(docker ps -f "name=$DIND_NAME" --format '{{.Names}}') == $DIND_NAME ]] || docker --config $DOCKER_CONFIG_DIR run -t --privileged --net=host -v $DOCKER_CONFIG_DIR:/root/.docker -v $TMPDIR:/var/lib/docker --name $DIND_NAME -d iad.ocir.io/odx-oke/oke/dind:0.2.0
-#      docker ps -a
-#    failImmediatelyOnError: true
-#    timeoutInSeconds: 600
-#    onFailure:
-#      - type: shell
-#        command: |
-#          docker rm -f ccm-e2e-test
-#          sudo rm -rf ${HOME_LOC}/ccm_e2e
-#        timeoutInSeconds: 400
-#
-#  - type: shell
-#    name: Run test
-#    command: |
-#      echo "Running CCM E2E Test"
-#      cd ${TMPDIR} && pwd
-#      cd ${DOCKER_CONFIG_DIR} && pwd
-#      cd /opt/tssagent/workspace/ccm_e2e/oci-cloud-controller-manager
-#      export env_file=$(mktemp)
-#      unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
-#      env > $env_file
-#      ./run_dind.sh run-ccm-e2e-tests-local
-#    failImmediatelyOnError: true
-#    timeoutInSeconds: 3600
-#    onFailure:
-#      - type: shell
-#        command: |
-#          docker rm -f ccm-e2e-test
-#          sudo rm -rf ${HOME_LOC}/ccm_e2e
-#        timeoutInSeconds: 400
+#    timeoutInSeconds: 300
