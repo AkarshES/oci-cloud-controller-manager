@@ -44,9 +44,9 @@ steps:
     name: Get CCM Repo
     command: |
       cd ccm_e2e
-      echo "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
-      sudo curl -O "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
-      sudo tar -xf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz
+      echo "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_SHORT_COMMIT_HASH_E2E}.tar.gz"
+      sudo curl -O "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_SHORT_COMMIT_HASH_E2E}.tar.gz"
+      sudo tar -xf oci-cloud-controller-manager-${BLD_SHORT_COMMIT_HASH_E2E}.tar.gz
       echo "Downloaded and extracted CCM E2E code from Artifactory"
     failImmediatelyOnError: true
     timeoutInSeconds: 1200
