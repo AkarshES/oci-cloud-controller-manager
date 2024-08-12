@@ -209,4 +209,4 @@ docker --config "$DOCKER_CONFIG_DIR" run \
 	-v "$(pwd)/config":/config \
 	-v "$(pwd)/secrets":/secrets \
 	"${E2E_TEST_BASE_IMAGE:-odo-docker-signed-local.pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/odx-oke/oke/k8-manager-base:ginkgo-1.0.9}" \
-	/bin/bash -c "yum install -yy openssl && go version && make \"$1\""
+	/bin/bash -c "go version && make \"$1\""
