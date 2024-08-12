@@ -176,4 +176,4 @@ docker --config "$DOCKER_CONFIG_DIR" run \
 	-v "$(pwd)/config":/config \
 	-v "$(pwd)/secrets":/secrets \
 	"${E2E_TEST_BASE_IMAGE:-odo-docker-signed-local.pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/odx-oke/oke/k8-manager-base:ginkgo-1.0.9}" \
-	/bin/bash -c "ls -ltr && yum-config-manager --add-repo=https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/io-ol7-latest-yum-local && yum install -yy openssl && make \"$1\""
+	/bin/bash -c "ls -ltr && make \"$1\""
