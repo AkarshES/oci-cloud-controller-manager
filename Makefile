@@ -271,4 +271,4 @@ checkout-e2e-branch-build-service: secrets
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
 	cp run_dind.sh oci-cloud-controller-manager/ && chmod +x oci-cloud-controller-manager/run_dind.sh
 	cd oci-cloud-controller-manager && ls -lh
-	cd oci-cloud-controller-manager && export BLD_SHORT_COMMIT_HASH_E2E=$(git rev-parse --short HEAD) && echo "BLD_SHORT_COMMIT_HASH_E2E=$$BLD_SHORT_COMMIT_HASH_E2E" > variables.env && rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-$$BLD_SHORT_COMMIT_HASH_E2E.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-$$BLD_SHORT_COMMIT_HASH_E2E.tar.gz $$base/
+	cd oci-cloud-controller-manager && rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
