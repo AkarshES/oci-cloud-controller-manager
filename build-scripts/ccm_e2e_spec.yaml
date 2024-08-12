@@ -80,7 +80,7 @@ steps:
       export env_file=$(mktemp)
       unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
       env > $env_file
-      sudo ./run_dind.sh run-ccm-e2e-tests-local
+      ./run_dind.sh run-ccm-e2e-tests-local
     failImmediatelyOnError: true
     timeoutInSeconds: 3600
 #    onFailure:
