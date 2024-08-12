@@ -269,6 +269,6 @@ checkout-e2e-branch-build-service: secrets
 	git config --global user.email oke_K8s_providers_grp@oracle.com
 	git config --global user.name 'K8s Providers BS Bot'
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
-	cp run_dind.sh oci-cloud-controller-manager/
+	cp run_dind.sh oci-cloud-controller-manager/ && chmod +x oci-cloud-controller-manager/run_dind.sh
 	cd oci-cloud-controller-manager && ls -lh
 	cd oci-cloud-controller-manager && rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
