@@ -33,6 +33,7 @@ steps:
     name: downloadE2eCode
     command: |
       cd ${OCI_ARTIFACTS_DIR}
+      echo "https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
       curl -O https://pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz
     timeoutInSeconds: 3000
   - type: shell
