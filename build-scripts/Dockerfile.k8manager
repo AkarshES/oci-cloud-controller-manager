@@ -1,0 +1,27 @@
+ARG GO_IMAGE="odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493:1.22.5-1"
+FROM $GO_IMAGE AS IMAGE1
+
+FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips AS BASE
+COPY --from=odo-docker-signed-local.artifactory.oci.oraclecorp.com/base-image-support/ol8:1.36 / /
+
+ARG KUBECTL="https://artifactory-builds.oci.oraclecorp.com/clusters-dev-generic-local/kube-binaries/v1.30.1-oke.0.3.0/492/kubectl"
+
+RUN microdnf install -y io-ol8-container-hardening git wget make gcc yum yum-utils python36
+
+COPY --from=IMAGE1 /usr/local/go /usr/local/go
+
+ENV GOROOT="/usr/local/go" \
+    GOPATH="/gopath" \
+    PATH="/usr/local/go/bin:${PATH}"
+
+RUN mkdir oci-cli-install && \
+    curl -L "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh" > oci-cli-install/install.sh && \
+    chmod u+x ./oci-cli-install/install.sh && \
+    ./oci-cli-install/install.sh --install-dir /usr/local/oci --accept-all-defaults
+
+RUN go version && go install github.com/onsi/ginkgo/ginkgo@v1.16.4
+
+RUN curl -v -LO ${KUBECTL} && ls -lrt && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+ENTRYPOINT [""]

@@ -52,6 +52,35 @@ steps:
     timeoutInSeconds: 1200
 
   - type: shell
+    name: Build K8-Manager-Base image
+    command: |
+      if [[ $(docker pull ${E2E_TEST_BASE_IMAGE} > /dev/null && echo 1 || echo 0) == 1 ]]; then \
+        echo "K8-Manager-Base image already exists. Pulling the image"; \
+      else \
+        cd /opt/tssagent/workspace/ccm_e2e/sparta/input/oci-cloud-controller-manager; \
+        git status; \
+        docker build --no-cache \
+              --pull \
+              --network host \
+              --build-arg http_proxy=${HTTP_PROXY} \
+              --build-arg https_proxy=${HTTPS_PROXY} \
+              --build-arg no_proxy=${NO_PROXY} \
+              --build-arg GO_IMAGE=${GO_IMAGE} \
+              --build-arg KUBECTL=${KUBECTL} \
+              --tag ${E2E_TEST_BASE_IMAGE} \
+              -f build-scripts/Dockerfile.k8manager .; \
+        docker ps -a; \
+      fi
+    failImmediatelyOnError: true
+    timeoutInSeconds: 3000
+    onFailure:
+      - type: shell
+        command: |
+          docker system prune --volumes --all -f
+          sudo rm -rf ${HOME_LOC}/ccm_e2e
+        timeoutInSeconds: 400
+
+  - type: shell
     name: Start Docker-in-Docker
     command: |
       mkdir -p ${TMPDIR} ${DOCKER_CONFIG_DIR}
