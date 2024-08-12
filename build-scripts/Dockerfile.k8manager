@@ -1,8 +1,8 @@
 ARG GO_IMAGE="odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493:1.22.5-1"
 FROM $GO_IMAGE AS IMAGE1
 
-FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips AS BASE
-COPY --from=odo-docker-signed-local.artifactory.oci.oraclecorp.com/base-image-support/ol8:1.36 / /
+FROM ocr-docker-remote.pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/os/oraclelinux:8-slim-fips AS BASE
+COPY --from=odo-docker-signed-local.pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/base-image-support/ol8:1.36 / /
 
 ARG KUBECTL="https://artifactory-builds.oci.oraclecorp.com/clusters-dev-generic-local/kube-binaries/v1.30.1-oke.0.3.0/492/kubectl"
 
