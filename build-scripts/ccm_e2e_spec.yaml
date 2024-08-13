@@ -78,6 +78,7 @@ steps:
       export env_file=$(mktemp)
       unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
       unset BB_KEY
+      unset TMPDIR
       sudo chmod 777 $env_file
       env > $env_file
       sudo touch .env_file
