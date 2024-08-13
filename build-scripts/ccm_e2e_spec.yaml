@@ -75,10 +75,10 @@ steps:
       cd ${TMPDIR} && pwd
       cd ${DOCKER_CONFIG_DIR} && pwd
       cd /opt/tssagent/workspace/ccm_e2e/sparta/input/oci-cloud-controller-manager
-      export env_file=$(mktemp)
-      unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
-      sudo chmod 777 $env_file
-      env > $env_file
+#      export env_file=$(mktemp)
+#      unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
+#      sudo chmod 777 $env_file
+#      env > $env_file
       sudo touch .env_file
       sudo chmod 777 .env_file
       ./run_dind.sh run-ccm-e2e-tests-local
