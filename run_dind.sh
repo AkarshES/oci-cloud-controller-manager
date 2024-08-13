@@ -2,9 +2,9 @@
 
 set -x -v
 
-env_file=$(mktemp)
+#env_file=$(mktemp)
 unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
-# env | grep -v XDG_SESSION_ID | grep -v TEAMCITY_BUILD_PROPERTIES_FILE | grep -v TMPDIR | grep -v JDK_18_x64 | grep -v TEAMCITY_CAPTURE_ENV | grep -v "^USER" | grep -v TEMP | grep -v JDK_18 | grep -v JRE_HOME | grep -v PATH | grep -v PWD | grep -v JAVA_HOME | grep -v LANG | grep -v SHLVL | grep -v HOME | grep -v JDK_HOME | grep -v XDG_RUNTIME_DIR > "$env_file"
+#env | grep -v XDG_SESSION_ID | grep -v TEAMCITY_BUILD_PROPERTIES_FILE | grep -v TMPDIR | grep -v JDK_18_x64 | grep -v TEAMCITY_CAPTURE_ENV | grep -v "^USER" | grep -v TEMP | grep -v JDK_18 | grep -v JRE_HOME | grep -v PATH | grep -v PWD | grep -v JAVA_HOME | grep -v LANG | grep -v SHLVL | grep -v HOME | grep -v JDK_HOME | grep -v XDG_RUNTIME_DIR > "$env_file"
 
 $(cat "${env_file}")
 
@@ -13,18 +13,19 @@ $(cat "${env_file}")
 #env
 #cat "${env_file}"
 
->.env_file
-for var in $(compgen -v | grep -Ev '^(BASH)'); do
-    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
-    echo "$var=${var_fixed}" >>.env_file
-done
+#>.env_file
+#for var in $(compgen -v | grep -Ev '^(BASH)'); do
+#    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
+#    echo "$var='${var_fixed}'" >>.env_file
+#done
 
-$(cat .env_file)
+#$(cat .env_file)
 
 export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
-docker --config "$DOCKER_CONFIG_DIR" run \
-	--volumes-from "${DIND_NAME}" \
+docker --config="$DOCKER_CONFIG_DIR" run \
+	--volumes-from="${DIND_NAME}" \
+	--env-file="${env_file}" \
 	-e LOCAL_RUN="${LOCAL_RUN:-0}" \
 	-e PATH="/usr/local/go/bin:/gopath/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/local/oci/bin" \
 	-e GOPATH="/gopath" \
@@ -77,7 +78,7 @@ docker --config "$DOCKER_CONFIG_DIR" run \
 	-e ENABLE_CREATE_CLUSTER="${ENABLE_CREATE_CLUSTER}" \
 	-e ENABLE_PARALLEL_RUN="${ENABLE_PARALLEL_RUN}" \
 	-e EUID="${EUID}" \
-	-e EXISTING_CLUSTER_OCID="${EXISTING_CLUSTER_OCID}" \
+	-e EXISTING_CLUSTER_OCID="ocid1.clusterinteg.oc1.phx.aaaaaaaamn3ndsj5roc6ogxjetk5awi5v54hvwzn2aa7fy3rxctiha4vucca" \
 	-e FILES="${FILES}" \
 	-e FOCUS="${FOCUS}" \
 	-e FOCUS_SKIP="${FOCUS_SKIP}" \
@@ -153,7 +154,7 @@ docker --config "$DOCKER_CONFIG_DIR" run \
 	-e SECONDS="${SECONDS}" \
 	-e SECRETS_CHECKOUT_PATH="${SECRETS_CHECKOUT_PATH}" \
 	-e SECRETS_LOCAL="${SECRETS_LOCAL}" \
-	-e SKIP_CLUSTER_DELETION="${SKIP_CLUSTER_DELETION}" \
+	-e SKIP_CLUSTER_DELETION="true" \
 	-e SKIP_PRE_BAKED_IMAGE="${SKIP_PRE_BAKED_IMAGE}" \
 	-e SOPS_OCI_KEY="${SOPS_OCI_KEY}" \
 	-e SSV2HELM_VERSION="${SSV2HELM_VERSION}" \
@@ -171,4 +172,4 @@ docker --config "$DOCKER_CONFIG_DIR" run \
 	-v "$(pwd)/config":/config \
 	-v "$(pwd)/secrets":/secrets \
 	"${E2E_TEST_BASE_IMAGE:-odo-docker-signed-local.pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/odx-oke/oke/k8-manager-base:ginkgo-1.0.9}" \
-	/bin/bash -c "ls -ltr && make \"$1\""
+	/bin/bash -c "ls -ltr && env && make \"$1\""
