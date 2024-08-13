@@ -10,14 +10,7 @@ locals {
     "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
     "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
     "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-    "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
-    "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-    "v1.25" : "v1.25-d0b59914251-38@sha256:ffa44cb1e6bc5793859a1ebf7762bcd1731ec0dea426034c44bc77ffb12ece48",
-    "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
     "v1.27" : "v1.27-278bfe54fe4-3357@sha256:f35960911d9f4958c145cd16458db3104fa211caae3871092a398694f1770032",
-    "v1.28" : "v1.28-4fd3baa095d-43@sha256:cc615b9c7384c904d3d65cf006631a41cd80ebc97768e861aff4980412d863cc",
-    "v1.29" : "v1.29-3e680bb14b5-29@sha256:3194a54dcee20bd6a27d9355eb31ad4f05b9ea5016dd4b571e7b3557c32d88a2",
-    "v1.30" : "v1.30-cdc99090ccd-12@sha256:de3bc0d46c26183d3136be792c9bdff2344971df858550ac24474da2a8587ffd"
   }
 
   omk_ccm_mapping_override = {
@@ -49,7 +42,7 @@ locals {
           {
             regions = ["bom", "iad", "yyz", "sin", "lhr", "fra"]
             env     = "prd"
-            value   = jsonencode(local.oss_ccm_mapping_override)
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.oss_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa2ewndnpzpf6x7rgwnjkxxrcrjyta52jnixz4cpfa2wjysu7z2xtq"
           },
           // Streaming prod tenancy bmc-streaming-live - OC1
@@ -57,7 +50,7 @@ locals {
           {
             regions = ["mrs", "bom", "yyz", "syd", "fra", "ord", "iad", "phx"]
             env     = "prd"
-            value   = jsonencode(local.oss_ccm_mapping_override)
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.oss_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajqjeaxdh4zukw7ugptutjucry4k2ilpaixh5uxoc6uzqutxvl3ba"
           },
           // omk fss override for omkdevfleet tenancy in IAD
@@ -368,7 +361,7 @@ locals {
           {
             regions = ["sgu"]
             env     = "prd"
-            value   = jsonencode(local.oss_ccm_mapping_override)
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.oss_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaattrvrnuijq5xuv6atnd3xstb5pcldipdqye4retd7bh2sxsoe2kq"
           },
         ]
