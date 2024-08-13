@@ -24,8 +24,6 @@ env:
     TMPDIR: /opt/tssagent/workspace/ccm_e2e/tempdir
     DOCKER_CONFIG_DIR: /opt/tssagent/workspace/ccm_e2e/work
     DIND_NAME: ccm-e2e-test
-  vaultVariables:
-    BB_KEY: "ocid1.vaultsecret.oc1.phx.amaaaaaaod2gdkyaggvhamrjlptevxon63y2dsl3rcbt446gxjzam72adgpa"
 
 steps:
   - type: shell
@@ -77,7 +75,6 @@ steps:
       cd /opt/tssagent/workspace/ccm_e2e/sparta/input/oci-cloud-controller-manager
       export env_file=$(mktemp)
       unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
-      unset BB_KEY
       unset TMPDIR
       sudo chmod 777 $env_file
       env > $env_file
