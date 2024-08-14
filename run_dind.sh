@@ -2,28 +2,11 @@
 
 set -x -v
 
-env_file=$(mktemp)
-unset OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM
-unset BB_KEY
-#unset PUB_SSHKEY
-#env | grep -v XDG_SESSION_ID | grep -v TEAMCITY_BUILD_PROPERTIES_FILE | grep -v TMPDIR | grep -v JDK_18_x64 | grep -v TEAMCITY_CAPTURE_ENV | grep -v "^USER" | grep -v TEMP | grep -v JDK_18 | grep -v JRE_HOME | grep -v PATH | grep -v PWD | grep -v JAVA_HOME | grep -v LANG | grep -v SHLVL | grep -v HOME | grep -v JDK_HOME | grep -v XDG_RUNTIME_DIR > "$env_file"
+# Remove usage of openssl since its not necessary.
+# TODO: make appropriate changes to "hack/run_e2e_test.sh" in the active release branches
+sed -i'.bak' -e "s/sed 's\/ \/\/g' | openssl enc -base64 -d -A/base64 -d/" hack/run_e2e_test.sh
 
-env > "${env_file}"
-cat "${env_file}"
-
-#touch "${env_file}"
-#env > "${env_file}"
-#env
-#cat "${env_file}"
-
->.env_file
-for var in $(compgen -v | grep -Ev '^(BASH)'); do
-    var_fixed=$(printf "%s" "${!var}" | tr -d '\n' )
-    echo "$var='${var_fixed}'" >>.env_file
-done
-
-$(cat .env_file)
-
+# Switch to the pipelines artifactory endpoint
 export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
 docker --config="$DOCKER_CONFIG_DIR" run \

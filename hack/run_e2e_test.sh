@@ -63,7 +63,7 @@ function createOCIConfig() {
     # Create OCI key (PEM) file.
     KEY_PEM_FILE=${OCI_CONFIG_DIR}/oci_api_key.pem
 
-    echo $OCI_KEY | base64 -d > $KEY_PEM_FILE || exit
+    echo $OCI_KEY | sed 's/ //g' | openssl enc -base64 -d -A > $KEY_PEM_FILE || exit
     echo "Created oci key file at $KEY_PEM_FILE"
     oci setup repair-file-permissions --file ${KEY_PEM_FILE}
 
@@ -136,7 +136,7 @@ function set_image_pull_repo_and_delete_namespace_flag () {
 
 function run_e2e_tests() {
     export OCI_KEY_FILE=$(mktemp /tmp/ocikey.XXXXXXXXXX) || { echo "Failed to create temp file"; exit 1; }
-    echo $OCI_KEY | base64 -d >> $OCI_KEY_FILE
+    echo $OCI_KEY | sed 's/ //g' | openssl enc -base64 -d -A >> $OCI_KEY_FILE
 
     # These environment variables are used by the oci-go-sdk lib
     # For more information, you can look at the file:

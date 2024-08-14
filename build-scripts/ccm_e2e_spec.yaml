@@ -89,24 +89,3 @@ steps:
           docker rm -f ccm-e2e-test
           sudo rm -rf ${HOME_LOC}/ccm_e2e
         timeoutInSeconds: 400
-#  - type: shell
-#    name: downloadE2eCode
-#    command: |
-#      cd ${OCI_ARTIFACTS_DIR}
-#    timeoutInSeconds: 3000
-#  - type: shell
-#    name: Check Basic details
-#    command: |
-#      echo "Running instance: `hostname -I`"
-#      echo "Printing Disk usage: `df -h`"
-#      echo "TMPDIR: ${TMPDIR}"
-#      echo "DOCKER_CONFIG_DIR: ${DOCKER_CONFIG_DIR}"
-##      Move yum installs to cloud-init.sh instead
-#      yum -y install tree
-#      tree -a -L 2
-#      echo ${OCI_ARTIFACTS_DIR}
-#      ls -lh ${OCI_ARTIFACTS_DIR}
-#      tree -a -L 2 sparta/
-#      cd sparta/input/oci-cloud-controller-manager/
-#    failImmediatelyOnError: true
-#    timeoutInSeconds: 300

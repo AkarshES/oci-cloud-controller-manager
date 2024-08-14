@@ -244,11 +244,11 @@ install-controller-runtime:
 npn-generate:
 	$(GOPATH)/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./api/..."
 
-
 .PHONY: checkout-e2e-branch-build-service
-secrets:
+configure-bitbucket-private-key-and-git:
 	mkdir -p /root/.ssh
 	touch /root/.ssh/id_ed25519
+	ssh-keyscan -p 7999 -t ed25519 bitbucket.oci.oraclecorp.com >> /root/.ssh/known_hosts
 	echo 'Host bitbucket.oci.oraclecorp.com' >> /root/.ssh/config
 	echo '  HostName bitbucket.oci.oraclecorp.com' >> /root/.ssh/config
 	echo '  IdentityFile /root/.ssh/id_ed25519' >> /root/.ssh/config
@@ -257,19 +257,12 @@ secrets:
 	echo '  Port 7999' >> /root/.ssh/config
 	echo '  StrictHostKeyChecking no' >> /root/.ssh/config
 	echo "$$BITBUCKET_KEY" > /root/.ssh/id_ed25519
-	ssh-keyscan -p 7999 -t ed25519 bitbucket.oci.oraclecorp.com >> /root/.ssh/known_hosts
 	chmod 600 /root/.ssh/*
-	cat /root/.ssh/id_ed25519
-
-checkout-e2e-branch-build-service: secrets
-	#yum install -y tree python-pip
-	pwd
-#	mkdir -p /opt/tssagent/workspace/
-#	cd /opt/tssagent/workspace/
 	git config --global user.email oke_K8s_providers_grp@oracle.com
 	git config --global user.name 'K8s Providers BS Bot'
+
+checkout-e2e-branch-build-service: configure-bitbucket-private-key-and-git
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
 	cp run_dind.sh oci-cloud-controller-manager/ && chmod +x oci-cloud-controller-manager/run_dind.sh
-	cp hack/run_e2e_test.sh oci-cloud-controller-manager/hack/
 	cd oci-cloud-controller-manager && ls -lh
 	cd oci-cloud-controller-manager && rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
