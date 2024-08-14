@@ -1,4 +1,5 @@
 #!/bin/bash
+# Note: Not using Docker in Docker anymore
 
 set -x -v
 
@@ -6,11 +7,14 @@ set -x -v
 # TODO: make appropriate changes to "hack/run_e2e_test.sh" in the active release branches
 sed -i'.bak' -e "s/sed 's\/ \/\/g' | openssl enc -base64 -d -A/base64 -d/" hack/run_e2e_test.sh
 
+# make environment variables with "nil" as value have empty values
+sed -i'.bak' -e "s/=nil/=/" "${env_file}"
+
 # Switch to the pipelines artifactory endpoint
 export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
+# Run make command within docker container to achieve independence from Runner Instance architecture
 docker --config="$DOCKER_CONFIG_DIR" run \
-	--volumes-from="${DIND_NAME}" \
 	--env-file="${env_file}" \
 	-e LOCAL_RUN="${LOCAL_RUN:-0}" \
 	-e PATH="/usr/local/go/bin:/gopath/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/local/oci/bin" \

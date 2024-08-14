@@ -50,27 +50,10 @@ steps:
     timeoutInSeconds: 1200
 
   - type: shell
-    name: Start Docker-in-Docker
-    command: |
-      mkdir -p ${TMPDIR} ${DOCKER_CONFIG_DIR}
-      cd ${TMPDIR} && pwd
-      cd ${DOCKER_CONFIG_DIR} && pwd
-      [[ $(docker ps -f "name=$DIND_NAME" --format '{{.Names}}') == $DIND_NAME ]] || docker --config $DOCKER_CONFIG_DIR run -t --privileged --net=host -v $DOCKER_CONFIG_DIR:/root/.docker -v $TMPDIR:/var/lib/docker --name $DIND_NAME -d iad.ocir.io/odx-oke/oke/dind:0.2.0
-      docker ps -a
-    failImmediatelyOnError: true
-    timeoutInSeconds: 600
-    onFailure:
-      - type: shell
-        command: |
-          docker rm -f ccm-e2e-test
-          sudo rm -rf ${HOME_LOC}/ccm_e2e
-        timeoutInSeconds: 400
-
-  - type: shell
     name: Run test
     command: |
       echo "Running CCM E2E Test"
-      cd ${TMPDIR} && pwd
+      mkdir -p ${TMPDIR} ${DOCKER_CONFIG_DIR}
       cd ${DOCKER_CONFIG_DIR} && pwd
       cd /opt/tssagent/workspace/ccm_e2e/sparta/input/oci-cloud-controller-manager
       export env_file=$(mktemp)
@@ -78,8 +61,6 @@ steps:
       unset TMPDIR
       sudo chmod 777 $env_file
       env > $env_file
-      sudo touch .env_file
-      sudo chmod 777 .env_file
       ./run_dind.sh run-ccm-e2e-tests-local
     failImmediatelyOnError: true
     timeoutInSeconds: 3600
