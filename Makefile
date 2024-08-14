@@ -264,5 +264,6 @@ configure-bitbucket-private-key-and-git:
 checkout-e2e-branch-build-service: configure-bitbucket-private-key-and-git
 	git clone --depth 1 --single-branch --branch $${E2E_BRANCH} ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git
 	cp run_dind.sh oci-cloud-controller-manager/ && chmod +x oci-cloud-controller-manager/run_dind.sh
+	cp build-scripts/create_oci_config.sh oci-cloud-controller-manager/ && chmod +x oci-cloud-controller-manager/create_oci_config.sh
 	cd oci-cloud-controller-manager && ls -lh
 	cd oci-cloud-controller-manager && rm -rf .git && export base=$(basename $$PWD) && echo $$base && cd .. && tar -zcf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base && mkdir -p $$base && cp oci-cloud-controller-manager-${BLD_VERSION}.tar.gz $$base/
