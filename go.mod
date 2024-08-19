@@ -65,7 +65,7 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
-	golang.org/x/net v0.21.0
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.18.0
 	google.golang.org/grpc v1.60.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
