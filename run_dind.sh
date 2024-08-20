@@ -11,7 +11,7 @@ sed -i'.bak' -e "s/sed 's\/ \/\/g' | openssl enc -base64 -d -A/base64 -d/" hack/
 sed -i'.bak' -e "s/=nil/=/" "${env_file}"
 
 # Switch to the pipelines artifactory endpoint
-export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
+#export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
 # Run make command within docker container to achieve independence from Runner Instance architecture
 docker --config="$DOCKER_CONFIG_DIR" run \
@@ -27,5 +27,5 @@ docker --config="$DOCKER_CONFIG_DIR" run \
 	-w /gopath/src/github.com/oracle/oci-cloud-controller-manager  \
 	-v "$(pwd)/config":/config \
 	-v "$(pwd)/secrets":/secrets \
-	"${E2E_TEST_BASE_IMAGE:-odo-docker-signed-local.pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com/odx-oke/oke/k8-manager-base:ginkgo-1.0.9}" \
+	"${E2E_TEST_BASE_IMAGE:-odo-docker-signed-local.artifactory.oci.oraclecorp.com/odx-oke/oke/k8-manager-base:ginkgo-1.0.9}" \
 	/bin/bash -c "ls -ltr && env && ./create_oci_config.sh && make \"$1\""
