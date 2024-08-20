@@ -43,7 +43,7 @@ steps:
     command: |
       cd ccm_e2e
       echo "https://artifactory.oci.oraclecorp.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
-      sudo curl -O "artifactory.oci.oraclecorp.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
+      sudo curl -O "https://artifactory.oci.oraclecorp.com/clusters-dev-generic-local/oci-cloud-controller-manager-e2e/${CCM_RELEASE_VERSION_E2E}/oci-cloud-controller-manager-${BLD_VERSION}.tar.gz"
       sudo tar -xf oci-cloud-controller-manager-${BLD_VERSION}.tar.gz
       echo "Downloaded and extracted CCM E2E code from Artifactory"
     failImmediatelyOnError: true
