@@ -17,6 +17,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"k8s.io/klog/v2"
 	"math/rand"
 	"net/http"
 	"os"
@@ -54,13 +55,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
 	csitranslationlib "k8s.io/csi-translation-lib"
-	"k8s.io/klog"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/csi/driver"
 	gatewayclientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gatewayInformers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
 	referenceGrantv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
-	"sigs.k8s.io/sig-storage-lib-external-provisioner/v9/controller"
+	"sigs.k8s.io/sig-storage-lib-external-provisioner/v10/controller"
 )
 
 var (
@@ -88,7 +88,7 @@ var (
 	nodeDeployment              *ctrl.NodeDeployment
 )
 
-//StartCSIProvisioner main function to start CSI Controller Provisioner
+// StartCSIProvisioner main function to start CSI Controller Provisioner
 func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSIDriver) {
 	var config *rest.Config
 	var err error
@@ -176,13 +176,13 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 	metricsManager := metrics.NewCSIMetricsManager("" /* driverName */)
 
 	klog.V(2).Infof("Creating grpcClient with address %s", csiAddress)
-	grpcClient, err := ctrl.Connect(csiAddress, metricsManager)
+	grpcClient, err := ctrl.Connect(ctx, csiAddress, metricsManager)
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	err = ctrl.Probe(grpcClient, csioptions.OperationTimeout)
+	err = ctrl.Probe(ctx, grpcClient, csioptions.OperationTimeout)
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
@@ -290,7 +290,7 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 			// Will be provided via default gatherer.
 			metrics.WithProcessStartTime(false),
 			metrics.WithMigration())
-		migratedGrpcClient, err := ctrl.Connect(endpoint, metricsManager)
+		migratedGrpcClient, err := ctrl.Connect(ctx, endpoint, metricsManager)
 		if err != nil {
 			klog.Error(err.Error())
 			os.Exit(1)
@@ -298,7 +298,7 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		grpcClient.Close()
 		grpcClient = migratedGrpcClient
 
-		err = ctrl.Probe(grpcClient, csioptions.OperationTimeout)
+		err = ctrl.Probe(ctx, grpcClient, csioptions.OperationTimeout)
 		if err != nil {
 			klog.Error(err.Error())
 			os.Exit(1)
@@ -465,6 +465,7 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 	}
 
 	provisionController := newProvisionController(
+		ctx,
 		csioptions,
 		clientset,
 		provisionerName,
@@ -559,10 +560,11 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 
 }
 
-func newProvisionController(csioptions csioptions.CSIOptions, clientset *kubernetes.Clientset, provisionerName string, csiProvisioner controller.Provisioner, provisionerOptions ...func(*controller.ProvisionController) error) *controller.ProvisionController {
+func newProvisionController(ctx context.Context, csioptions csioptions.CSIOptions, clientset *kubernetes.Clientset, provisionerName string, csiProvisioner controller.Provisioner, provisionerOptions ...func(*controller.ProvisionController) error) *controller.ProvisionController {
 	csioptions.RuntimeSchemeMutex.Lock()
 	defer csioptions.RuntimeSchemeMutex.Unlock()
 	provisionController := controller.NewProvisionController(
+		klog.FromContext(ctx),
 		clientset,
 		provisionerName,
 		csiProvisioner,

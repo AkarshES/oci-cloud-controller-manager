@@ -58,7 +58,7 @@ type leaderElection interface {
 	WithNamespace(namespace string)
 }
 
-//StartCSIAttacher main function to start CSI attacher
+// StartCSIAttacher main function to start CSI attacher
 func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 
 	if csioptions.ShowVersion {
@@ -90,22 +90,23 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 
 	metricsManager := metrics.NewCSIMetricsManager("" /* driverName */)
 
+	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	defer cancel()
+
 	// Connect to CSI.
-	csiConn, err := connection.Connect(csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
+	csiConn, err := connection.Connect(ctx, csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	err = rpc.ProbeForever(csiConn, csioptions.Timeout)
+	err = rpc.ProbeForever(ctx, csiConn, csioptions.Timeout)
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
 
 	// Find driver name.
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
-	defer cancel()
 	csiAttacher, err := rpc.GetDriverName(ctx, csiConn)
 	if err != nil {
 		klog.Error(err.Error())
@@ -169,6 +170,7 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	}
 
 	ctrl := controller.NewCSIAttachController(
+		klog.FromContext(ctx),
 		clientset,
 		csiAttacher,
 		handler,
@@ -181,9 +183,9 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	)
 
 	run := func(ctx context.Context) {
-		stopCh := ctx.Done()
-		factory.Start(stopCh)
-		ctrl.Run(int(csioptions.WorkerThreads), stopCh)
+		//stopCh := ctx.Done()
+		//factory.Start(stopCh)
+		ctrl.Run(ctx, int(csioptions.WorkerThreads))
 	}
 
 	if !csioptions.EnableLeaderElection {

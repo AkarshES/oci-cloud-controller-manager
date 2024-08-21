@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493:1.22.2-1-linux-arm64 as builder
+FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493:1.22.6-1 as builder
 
 RUN microdnf install yum yum-utils
 
