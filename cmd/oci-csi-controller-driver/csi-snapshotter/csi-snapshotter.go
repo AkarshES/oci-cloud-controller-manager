@@ -47,17 +47,17 @@ import (
 
 var (
 	// the csiTimeout is kept as 1 minute
-	csiTimeout              = time.Minute
-	snapshotNamePrefix      = "snapshot"
-	snapshotNameUUIDLength  = -1
-	extraCreateMetadata     = false
+	csiTimeout             = time.Minute
+	snapshotNamePrefix     = "snapshot"
+	snapshotNameUUIDLength = -1
+	extraCreateMetadata    = false
 	// the retryIntervalStart is kept as 1 second
-	retryIntervalStart      = time.Second
-	retryIntervalMax        = 5 * time.Minute
+	retryIntervalStart = time.Second
+	retryIntervalMax   = 5 * time.Minute
 
-	kubeAPIQPS              = 5
-	kubeAPIBurst            = 10
-	version                 = "0.0.1"
+	kubeAPIQPS   = 5
+	kubeAPIBurst = 10
+	version      = "0.0.1"
 )
 
 func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{}) {
@@ -80,19 +80,19 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 	}
 
 	metricsManager := metrics.NewCSIMetricsManager("" /* driverName */)
-
-	conn, err := connection.Connect(csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
+	ctx := context.Background()
+	conn, err := connection.Connect(ctx, csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
 
 	// Pass a context with a timeout
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	tctx, cancel := context.WithTimeout(ctx, csiTimeout)
 	defer cancel()
 
 	// Find driver name
-	driverName, err := csirpc.GetDriverName(ctx, conn)
+	driverName, err := csirpc.GetDriverName(tctx, conn)
 	if err != nil {
 		klog.Errorf("error getting CSI driver name: %v", err)
 		os.Exit(1)
@@ -100,7 +100,9 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 	klog.V(2).Infof("CSI driver name: %q", driverName)
 
 	// Find out if the driver supports create/delete snapshot.
-	supportsCreateSnapshot, err := supportsControllerCreateDeleteSnapshot(ctx, conn)
+	tctx, cancel = context.WithTimeout(ctx, csiTimeout)
+	defer cancel()
+	supportsCreateSnapshot, err := supportsControllerCreateDeleteSnapshot(tctx, conn)
 	if err != nil {
 		klog.Errorf("error determining if driver supports create/delete snapshot operations: %v", err)
 		os.Exit(1)
@@ -117,7 +119,9 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 	volumeGroupSnapshotFeature := false
 	enableVolumeGroupSnapshots := &volumeGroupSnapshotFeature
 	if *enableVolumeGroupSnapshots {
-		supportsCreateVolumeGroupSnapshot, err := supportsGroupControllerCreateVolumeGroupSnapshot(ctx, conn)
+		tctx, cancel = context.WithTimeout(ctx, csiTimeout)
+		defer cancel()
+		supportsCreateVolumeGroupSnapshot, err := supportsGroupControllerCreateVolumeGroupSnapshot(tctx, conn)
 		if err != nil {
 			klog.Errorf("error determining if driver supports create/delete group snapshot operations: %v", err)
 		} else if !supportsCreateVolumeGroupSnapshot {
@@ -129,7 +133,6 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 			os.Exit(1)
 		}
 	}
-
 
 	ctrl := controller.NewCSISnapshotSideCarController(
 		snapClient,
@@ -193,7 +196,6 @@ func supportsControllerCreateDeleteSnapshot(ctx context.Context, conn *grpc.Clie
 	}
 	return capabilities[csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT], nil
 }
-
 
 func supportsGroupControllerCreateVolumeGroupSnapshot(ctx context.Context, conn *grpc.ClientConn) (bool, error) {
 	capabilities, err := csirpc.GetGroupControllerCapabilities(ctx, conn)

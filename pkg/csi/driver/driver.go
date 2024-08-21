@@ -68,6 +68,7 @@ type Driver struct {
 	ready                  bool
 	logger                 *zap.SugaredLogger
 	enableControllerServer bool
+	csi.UnimplementedIdentityServer
 }
 
 // ControllerDriver implements CSI Controller interfaces
@@ -79,6 +80,7 @@ type ControllerDriver struct {
 	util            *csi_util.Util
 	metricPusher    *metrics.MetricPusher
 	clusterIpFamily string
+	csi.UnimplementedControllerServer
 }
 
 // BlockVolumeControllerDriver extends ControllerDriver
@@ -99,6 +101,7 @@ type NodeDriver struct {
 	util         *csi_util.Util
 	volumeLocks  *csi_util.VolumeLocks
 	nodeIpFamily *csi_util.NodeIpFamily
+	csi.UnimplementedNodeServer
 }
 
 // BlockVolumeNodeDriver extends NodeDriver
