@@ -58,7 +58,7 @@ type leaderElection interface {
 	WithNamespace(namespace string)
 }
 
-//StartCSIAttacher main function to start CSI attacher
+// StartCSIAttacher main function to start CSI attacher
 func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 
 	if csioptions.ShowVersion {
@@ -90,27 +90,30 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 
 	metricsManager := metrics.NewCSIMetricsManager("" /* driverName */)
 
+	ctx := context.Background()
+
 	// Connect to CSI.
-	csiConn, err := connection.Connect(csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
+	csiConn, err := connection.Connect(ctx, csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	err = rpc.ProbeForever(csiConn, csioptions.Timeout)
+	err = rpc.ProbeForever(ctx, csiConn, csioptions.Timeout)
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
 
 	// Find driver name.
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	cancelationCtx, cancel := context.WithTimeout(context.Background(), csiTimeout)
 	defer cancel()
-	csiAttacher, err := rpc.GetDriverName(ctx, csiConn)
+	csiAttacher, err := rpc.GetDriverName(cancelationCtx, csiConn)
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
+	logger := klog.LoggerWithValues(klog.Background(), "driver", csiAttacher)
 	klog.V(2).Infof("CSI driver name: %q", csiAttacher)
 
 	mux := http.NewServeMux()
@@ -128,7 +131,9 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 		}()
 	}
 
-	supportsService, err := supportsPluginControllerService(ctx, csiConn)
+	cancelationCtx, cancel = context.WithTimeout(context.Background(), csiTimeout)
+	defer cancel()
+	supportsService, err := supportsPluginControllerService(cancelationCtx, csiConn)
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
@@ -138,7 +143,7 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 		klog.V(2).Infof("CSI driver does not support Plugin Controller Service, using trivial handler")
 	} else {
 		// Find out if the driver supports attach/detach.
-		supportsAttach, supportsReadOnly, err := supportsControllerPublish(ctx, csiConn)
+		supportsAttach, supportsReadOnly, err := supportsControllerPublish(cancelationCtx, csiConn)
 		if err != nil {
 			klog.Error(err.Error())
 			os.Exit(1)
@@ -159,7 +164,7 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 		}
 	}
 
-	slvpn, err := supportsListVolumesPublishedNodes(ctx, csiConn)
+	slvpn, err := supportsListVolumesPublishedNodes(cancelationCtx, csiConn)
 	if err != nil {
 		klog.Errorf("Failed to check if driver supports ListVolumesPublishedNodes, assuming it does not: %v", err)
 	}
@@ -169,6 +174,7 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	}
 
 	ctrl := controller.NewCSIAttachController(
+		logger,
 		clientset,
 		csiAttacher,
 		handler,
@@ -183,7 +189,7 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	run := func(ctx context.Context) {
 		stopCh := ctx.Done()
 		factory.Start(stopCh)
-		ctrl.Run(int(csioptions.WorkerThreads), stopCh)
+		ctrl.Run(ctx, int(csioptions.WorkerThreads))
 	}
 
 	if !csioptions.EnableLeaderElection {
