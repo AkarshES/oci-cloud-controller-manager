@@ -77,7 +77,7 @@ func (e registrationServer) NotifyRegistrationStatus(ctx context.Context, status
 	return &registerapi.RegistrationStatusResponse{}, nil
 }
 
-//RunNodeRegistrar is the main method to start run node register
+// RunNodeRegistrar is the main method to start run node register
 func RunNodeRegistrar(driverType, csiAddress, registrationPath string, connectionTimeout time.Duration) {
 	if registrationPath == "" {
 		klog.Errorf("Kubelet Registration Path required for driver: %s", driverType)
@@ -99,15 +99,16 @@ func RunNodeRegistrar(driverType, csiAddress, registrationPath string, connectio
 
 func RunCSINodeRegistrar(driverType, csiAddress, registrationPath string, metricsManager metrics.CSIMetricsManager) {
 	klog.V(1).Infof("Attempting to open a gRPC connection with: %q", csiAddress)
-	csiConn, err := connection.Connect(csiAddress, metricsManager)
+	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	defer cancel()
+
+	csiConn, err := connection.Connect(ctx, csiAddress, metricsManager)
 	if err != nil {
 		klog.Errorf("error connecting to CSI %s driver: %v", driverType, err)
 		os.Exit(1)
 	}
 
 	klog.V(1).Infof("Calling CSI %s driver to discover driver name", driverType)
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
-	defer cancel()
 
 	csiDriverName, err := csirpc.GetDriverName(ctx, csiConn)
 	if err != nil {

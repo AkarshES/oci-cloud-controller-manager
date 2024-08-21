@@ -47,17 +47,17 @@ import (
 
 var (
 	// the csiTimeout is kept as 1 minute
-	csiTimeout              = time.Minute
-	snapshotNamePrefix      = "snapshot"
-	snapshotNameUUIDLength  = -1
-	extraCreateMetadata     = false
+	csiTimeout             = time.Minute
+	snapshotNamePrefix     = "snapshot"
+	snapshotNameUUIDLength = -1
+	extraCreateMetadata    = false
 	// the retryIntervalStart is kept as 1 second
-	retryIntervalStart      = time.Second
-	retryIntervalMax        = 5 * time.Minute
+	retryIntervalStart = time.Second
+	retryIntervalMax   = 5 * time.Minute
 
-	kubeAPIQPS              = 5
-	kubeAPIBurst            = 10
-	version                 = "0.0.1"
+	kubeAPIQPS   = 5
+	kubeAPIBurst = 10
+	version      = "0.0.1"
 )
 
 func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{}) {
@@ -81,15 +81,15 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 
 	metricsManager := metrics.NewCSIMetricsManager("" /* driverName */)
 
-	conn, err := connection.Connect(csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
+	// Pass a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	defer cancel()
+
+	conn, err := connection.Connect(ctx, csioptions.CsiAddress, metricsManager, connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
 	if err != nil {
 		klog.Error(err.Error())
 		os.Exit(1)
 	}
-
-	// Pass a context with a timeout
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
-	defer cancel()
 
 	// Find driver name
 	driverName, err := csirpc.GetDriverName(ctx, conn)
@@ -129,7 +129,6 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 			os.Exit(1)
 		}
 	}
-
 
 	ctrl := controller.NewCSISnapshotSideCarController(
 		snapClient,
@@ -193,7 +192,6 @@ func supportsControllerCreateDeleteSnapshot(ctx context.Context, conn *grpc.Clie
 	}
 	return capabilities[csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT], nil
 }
-
 
 func supportsGroupControllerCreateVolumeGroupSnapshot(ctx context.Context, conn *grpc.ClientConn) (bool, error) {
 	capabilities, err := csirpc.GetGroupControllerCapabilities(ctx, conn)
