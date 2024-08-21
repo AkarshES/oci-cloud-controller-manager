@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
-	storagev1alpha1listers "k8s.io/client-go/listers/storage/v1alpha1"
+	storagev1beta1listers "k8s.io/client-go/listers/storage/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -56,7 +56,7 @@ type modifyController struct {
 	pvListerSynced  cache.InformerSynced
 	pvcLister       corelisters.PersistentVolumeClaimLister
 	pvcListerSynced cache.InformerSynced
-	vacLister       storagev1alpha1listers.VolumeAttributesClassLister
+	vacLister       storagev1beta1listers.VolumeAttributesClassLister
 	vacListerSynced cache.InformerSynced
 	// the key of the map is {PVC_NAMESPACE}/{PVC_NAME}
 	uncertainPVCs map[string]v1.PersistentVolumeClaim
@@ -72,7 +72,7 @@ func NewModifyController(
 	pvcRateLimiter workqueue.RateLimiter) ModifyController {
 	pvInformer := informerFactory.Core().V1().PersistentVolumes()
 	pvcInformer := informerFactory.Core().V1().PersistentVolumeClaims()
-	vacInformer := informerFactory.Storage().V1alpha1().VolumeAttributesClasses()
+	vacInformer := informerFactory.Storage().V1beta1().VolumeAttributesClasses()
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events(v1.NamespaceAll)})
@@ -95,7 +95,6 @@ func NewModifyController(
 		claimQueue:      claimQueue,
 		eventRecorder:   eventRecorder,
 	}
-
 	// Add a resync period as the PVC's request modify can be modified again when we handling
 	// a previous modify request of the same PVC.
 	pvcInformer.Informer().AddEventHandlerWithResyncPeriod(cache.ResourceEventHandlerFuncs{
@@ -156,7 +155,7 @@ func (ctrl *modifyController) updatePVC(oldObj, newObj interface{}) {
 	// 3. PVC is in Bound state
 	oldVacName := oldPVC.Spec.VolumeAttributesClassName
 	newVacName := newPVC.Spec.VolumeAttributesClassName
-	if newVacName != nil && *newVacName != "" && (*newVacName != *oldVacName || oldVacName == nil) && oldPVC.Status.Phase == v1.ClaimBound {
+	if newVacName != nil && *newVacName != "" && (oldVacName == nil || *newVacName != *oldVacName) && oldPVC.Status.Phase == v1.ClaimBound {
 		_, err := ctrl.pvLister.Get(oldPVC.Spec.VolumeName)
 		if err != nil {
 			klog.Errorf("Get PV %q of pvc %q in PVInformer cache failed: %v", oldPVC.Spec.VolumeName, klog.KObj(oldPVC), err)
@@ -196,6 +195,23 @@ func isFirstTimeModifyVolumeWithPVC(pvc *v1.PersistentVolumeClaim, pv *v1.Persis
 	return false
 }
 
+func (ctrl *modifyController) init(ctx context.Context) bool {
+	informersSyncd := []cache.InformerSynced{ctrl.pvListerSynced, ctrl.pvcListerSynced}
+	informersSyncd = append(informersSyncd, ctrl.vacListerSynced)
+
+	if !cache.WaitForCacheSync(ctx.Done(), informersSyncd...) {
+		klog.ErrorS(nil, "Cannot sync pod, pv, pvc or vac caches")
+		return false
+	}
+
+	// Cache all the InProgress/Infeasible PVCs as Uncertain for ModifyVolume
+	err := ctrl.initUncertainPVCs()
+	if err != nil {
+		klog.ErrorS(err, "Failed to initialize uncertain pvcs")
+	}
+	return true
+}
+
 // Run starts the controller.
 func (ctrl *modifyController) Run(
 	workers int, ctx context.Context) {
@@ -204,21 +220,11 @@ func (ctrl *modifyController) Run(
 	klog.InfoS("Starting external resizer for modify volume", "controller", ctrl.name)
 	defer klog.InfoS("Shutting down external resizer", "controller", ctrl.name)
 
-	stopCh := ctx.Done()
-	informersSyncd := []cache.InformerSynced{ctrl.pvListerSynced, ctrl.pvcListerSynced}
-	informersSyncd = append(informersSyncd, ctrl.vacListerSynced)
-
-	if !cache.WaitForCacheSync(stopCh, informersSyncd...) {
-		klog.ErrorS(nil, "Cannot sync pod, pv, pvc or vac caches")
+	if !ctrl.init(ctx) {
 		return
 	}
 
-	// Cache all the InProgress/Infeasible PVCs as Uncertain for ModifyVolume
-	err := ctrl.initUncertainPVCs()
-	if err != nil {
-		klog.ErrorS(err, "Failed to initialize uncertain pvcs")
-	}
-
+	stopCh := ctx.Done()
 	for i := 0; i < workers; i++ {
 		go wait.Until(ctrl.sync, 0, stopCh)
 	}
@@ -270,8 +276,9 @@ func (ctrl *modifyController) syncPVC(key string) error {
 	// Only trigger modify volume if the following conditions are met
 	// 1. Non empty vac name
 	// 2. PVC is in Bound state
+	// 3. PV CSI driver name matches local driver
 	vacName := pvc.Spec.VolumeAttributesClassName
-	if vacName != nil && *vacName != "" && pvc.Status.Phase == v1.ClaimBound {
+	if vacName != nil && *vacName != "" && pvc.Status.Phase == v1.ClaimBound && pv.Spec.CSI.Driver == ctrl.name {
 		_, _, err, _ := ctrl.modify(pvc, pv)
 		if err != nil {
 			return err

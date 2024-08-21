@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
-	storagev1alpha1 "k8s.io/api/storage/v1alpha1"
+	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 )
@@ -42,6 +42,8 @@ func (ctrl *modifyController) modify(pvc *v1.PersistentVolumeClaim, pv *v1.Persi
 			targetVacName = pvc.Status.ModifyVolumeStatus.TargetVolumeAttributesClassName
 		}
 		if *curVacName == targetVacName {
+			// if somehow both curVacName and targetVacName is same, what does this mean??
+			// I am not sure about this.
 			return ctrl.validateVACAndModifyVolumeWithTarget(pvc, pv)
 		} else {
 			// Check if the PVC is in uncertain State
@@ -100,7 +102,7 @@ func (ctrl *modifyController) validateVACAndModifyVolumeWithTarget(
 func (ctrl *modifyController) controllerModifyVolumeWithTarget(
 	pvc *v1.PersistentVolumeClaim,
 	pv *v1.PersistentVolume,
-	vacObj *storagev1alpha1.VolumeAttributesClass,
+	vacObj *storagev1beta1.VolumeAttributesClass,
 	pvcSpecVacName *string) (*v1.PersistentVolumeClaim, *v1.PersistentVolume, error, bool) {
 	var err error
 	pvc, pv, err = ctrl.callModifyVolumeOnPlugin(pvc, pv, vacObj)
@@ -145,7 +147,7 @@ func (ctrl *modifyController) controllerModifyVolumeWithTarget(
 func (ctrl *modifyController) callModifyVolumeOnPlugin(
 	pvc *v1.PersistentVolumeClaim,
 	pv *v1.PersistentVolume,
-	vac *storagev1alpha1.VolumeAttributesClass) (*v1.PersistentVolumeClaim, *v1.PersistentVolume, error) {
+	vac *storagev1beta1.VolumeAttributesClass) (*v1.PersistentVolumeClaim, *v1.PersistentVolume, error) {
 	err := ctrl.modifier.Modify(pv, vac.Parameters)
 
 	if err != nil {
