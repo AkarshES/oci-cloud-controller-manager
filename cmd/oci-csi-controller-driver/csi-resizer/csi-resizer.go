@@ -34,14 +34,13 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
 )
 
 var (
@@ -98,7 +97,8 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 
 	metricsManager := metrics.NewCSIMetricsManager("" /* driverName */)
 
-	csiClient, err := csi.New(csioptions.CsiAddress, csioptions.Timeout, metricsManager)
+	ctx := context.Background()
+	csiClient, err := csi.New(ctx, csioptions.CsiAddress, csioptions.Timeout, metricsManager)
 	if err != nil {
 		klog.ErrorS(err, "Failed to create CSI client")
 		klog.FlushAndExit(klog.ExitFlushTimeout, 1)
@@ -141,14 +141,15 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 			err := http.ListenAndServe(addr, mux)
 			if err != nil {
 				klog.ErrorS(err, "Failed to start HTTP server", "address", addr, "metricsPath", csioptions.MetricsPath)
-				klog.FlushAndExit(klog.ExitFlushTimeout, 1)			}
+				klog.FlushAndExit(klog.ExitFlushTimeout, 1)
+			}
 		}()
 	}
 
 	resizerName := csiResizer.Name()
 	rc := controller.NewResizeController(resizerName, csiResizer, kubeClient, csioptions.Resync, informerFactory,
 		workqueue.NewItemExponentialFailureRateLimiter(csioptions.RetryIntervalStart, csioptions.RetryIntervalMax),
-		*handleVolumeInUseError)
+		*handleVolumeInUseError, csioptions.RetryIntervalMax)
 	modifierName := csiModifier.Name()
 	var mc modifycontroller.ModifyController
 	// Add modify controller only if the feature gate is enabled
@@ -159,7 +160,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 
 	run := func(ctx context.Context) {
 		informerFactory.Start(wait.NeverStop)
- 		go rc.Run(int(csioptions.WorkerThreads), ctx)
+		go rc.Run(int(csioptions.WorkerThreads), ctx)
 		if utilfeature.DefaultFeatureGate.Enabled(features.VolumeAttributesClass) {
 			go mc.Run(int(csioptions.WorkerThreads), ctx)
 		}

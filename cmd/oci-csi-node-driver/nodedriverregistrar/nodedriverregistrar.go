@@ -22,7 +22,7 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/connection"
 	"github.com/kubernetes-csi/csi-lib-utils/metrics"
 	csirpc "github.com/kubernetes-csi/csi-lib-utils/rpc"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	registerapi "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
 )
 
@@ -32,7 +32,7 @@ const (
 	annotationKey = "csi.volume.kubernetes.io/nodeid"
 
 	// Default timeout of short CSI calls like GetPluginInfo
-	csiTimeout = time.Second
+	csiTimeout = 30 * time.Second
 
 	// Verify (and update, if needed) the node ID at this freqeuency.
 	sleepDuration = 2 * time.Minute
@@ -77,7 +77,7 @@ func (e registrationServer) NotifyRegistrationStatus(ctx context.Context, status
 	return &registerapi.RegistrationStatusResponse{}, nil
 }
 
-//RunNodeRegistrar is the main method to start run node register
+// RunNodeRegistrar is the main method to start run node register
 func RunNodeRegistrar(driverType, csiAddress, registrationPath string, connectionTimeout time.Duration) {
 	if registrationPath == "" {
 		klog.Errorf("Kubelet Registration Path required for driver: %s", driverType)
@@ -99,17 +99,19 @@ func RunNodeRegistrar(driverType, csiAddress, registrationPath string, connectio
 
 func RunCSINodeRegistrar(driverType, csiAddress, registrationPath string, metricsManager metrics.CSIMetricsManager) {
 	klog.V(1).Infof("Attempting to open a gRPC connection with: %q", csiAddress)
-	csiConn, err := connection.Connect(csiAddress, metricsManager)
+
+	ctx := context.Background()
+	csiConn, err := connection.Connect(ctx, csiAddress, metricsManager)
 	if err != nil {
 		klog.Errorf("error connecting to CSI %s driver: %v", driverType, err)
 		os.Exit(1)
 	}
 
 	klog.V(1).Infof("Calling CSI %s driver to discover driver name", driverType)
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	tctx, cancel := context.WithTimeout(ctx, csiTimeout)
 	defer cancel()
 
-	csiDriverName, err := csirpc.GetDriverName(ctx, csiConn)
+	csiDriverName, err := csirpc.GetDriverName(tctx, csiConn)
 	if err != nil {
 		klog.Errorf("error retreiving CSI %s driver name: %v", driverType, err)
 		os.Exit(1)
