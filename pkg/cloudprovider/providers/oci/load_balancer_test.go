@@ -1487,6 +1487,7 @@ func Test_addLoadBalancerOkeSystemTags(t *testing.T) {
 				DefinedTags: make(map[string]map[string]interface{}),
 			},
 			spec: &LBSpec{
+				Type:       LB,
 				SystemTags: map[string]map[string]interface{}{"orcl-containerengine": {"Cluster": "val"}},
 				service:    &v1.Service{},
 			},
