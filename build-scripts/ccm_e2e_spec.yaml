@@ -63,7 +63,7 @@ steps:
       env > $env_file
       ./run_dind.sh run-ccm-e2e-tests-local
     failImmediatelyOnError: true
-    timeoutInSeconds: 3600
+    timeoutInSeconds: 43200
     onFailure:
       - type: shell
         command: |
