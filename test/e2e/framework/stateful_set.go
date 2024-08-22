@@ -182,6 +182,12 @@ func (j *PVCTestJig) ValidateExistingResources() {
 	Expect(err).NotTo(HaveOccurred())
 	Logf("Found %d statefulsets...", statefulSets.Size())
 
+	if len(statefulSets.Items) != ExpectedStatefulSets {
+		Logf("Number of statefulsets found: %d", len(statefulSets.Items))
+		Logf("Expected number of statefulsets: %d", ExpectedStatefulSets)
+		Failf("Number of statefulsets in the upgrade testing compartment don't match the expected number of statefulsets.")
+	}
+
 	for _, sts := range statefulSets.Items {
 		Logf("Statefulset: %s", sts.Name)
 		Logf("Spec.Replicas = %d, ReadyReplicas = %d", *sts.Spec.Replicas, sts.Status.Replicas)
