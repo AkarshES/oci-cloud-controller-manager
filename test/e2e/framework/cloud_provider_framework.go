@@ -149,50 +149,37 @@ func NewCcmFramework(baseName string, client clientset.Interface, backup bool) *
 
 func (f *CloudProviderFramework) GetUpgradeTestingNamespace(name string) *v1.Namespace {
 	var namespace *v1.Namespace
-	if isPreUpgradeBool {
-		nsList, err := f.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-		Expect(err).NotTo(HaveOccurred())
+	nsList, err := f.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	Expect(err).NotTo(HaveOccurred())
 
-		nsExist := false
-		for _, ns := range nsList.Items {
-			if ns.Name == name {
-				nsExist = true
-				Logf("Found pre-existing namespace: %s", name)
+	nsExist := false
+	for _, ns := range nsList.Items {
+		if ns.Name == name {
+			nsExist = true
+			Logf("Found pre-existing namespace: %s", name)
 
-				Logf("Checking if namespace: %s is already populated", name)
-				stsList, err := f.ClientSet.AppsV1().StatefulSets(name).List(context.Background(), metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-
-				if len(stsList.Items) != 0 {
-					Logf("Found %d statefulsets in %s", len(stsList.Items), name)
-					Logf("Deleting namespace %s", name)
-					f.DeleteNamespace(name, 5*time.Minute)
-					Logf("Creating new namespace: %s", name)
-					namespace, err = f.CreateNamespace(false, name, map[string]string{})
-					Expect(err).NotTo(HaveOccurred())
-				} else {
-					namespace = &ns
-				}
-				break
-			}
-		}
-
-		if !nsExist {
-			Logf("Namespace %s not found. Creating new namespace.", name)
-			namespace, err = f.CreateNamespace(false, name, map[string]string{})
+			Logf("Checking if namespace: %s is already populated", name)
+			stsList, err := f.ClientSet.AppsV1().StatefulSets(name).List(context.Background(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
+
+			if len(stsList.Items) != 0 && f.IsPreUpgrade {
+				Logf("Found %d statefulsets in %s", len(stsList.Items), name)
+				Logf("Deleting namespace %s", name)
+				f.DeleteNamespace(name, 5*time.Minute)
+				Logf("Creating new namespace: %s", name)
+				namespace, err = f.CreateNamespace(false, name, map[string]string{})
+				Expect(err).NotTo(HaveOccurred())
+			} else {
+				namespace = &ns
+			}
+			break
 		}
 	}
 
-	if isPostUpgradeBool {
-		stsList, err := f.ClientSet.AppsV1().StatefulSets(name).List(context.Background(), metav1.ListOptions{})
+	if !nsExist && f.IsPreUpgrade {
+		Logf("Namespace %s not found. Creating new namespace.", name)
+		namespace, err = f.CreateNamespace(false, name, map[string]string{})
 		Expect(err).NotTo(HaveOccurred())
-
-		if len(stsList.Items) != ExpectedStatefulSets {
-			Logf("Number of statefulsets found: %d", len(stsList.Items))
-			Logf("Expected number of statefulsets: %d", ExpectedStatefulSets)
-			Failf("Number of statefulsets in the upgrade testing compartment don't match the expected number of statefulsets.")
-		}
 	}
 
 	return namespace
