@@ -7,8 +7,13 @@ set -x -v
 # TODO: make appropriate changes to "hack/run_e2e_test.sh" in the active release branches
 sed -i'.bak' -e "s/sed 's\/ \/\/g' | openssl enc -base64 -d -A/base64 -d/" hack/run_e2e_test.sh
 
-# make environment variables with "nil" as value have empty values
+# Convert environment variables with "nil" as value to empty values
 sed -i'.bak' -e "s/=nil/=/" "${env_file}"
+
+# Pipelines does not allow parameters starting with "OCI_*"
+# Convert our non credential E2E parameters which coincidentally start with "OCI_"
+# from "OOCI_" (hack to use Pipeline parameters) to "OCI_" so that E2E shell script does not need to be updated.
+sed -i'.bak' -e "s/^OOCI_/OCI_/" "${env_file}"
 
 # Switch to the pipelines artifactory endpoint
 #export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
