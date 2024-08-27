@@ -20,6 +20,7 @@ replace (
 	k8s.io/component-helpers => k8s.io/component-helpers v0.31.0
 	k8s.io/controller-manager => k8s.io/controller-manager v0.31.0
 	k8s.io/cri-api => k8s.io/cri-api v0.31.0
+	k8s.io/cri-client => k8s.io/cri-client v0.31.0
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.31.0
 	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.31.0
 	k8s.io/endpointslice => k8s.io/kubernetes/staging/src/k8s.io/endpointslice v0.0.0-20230810203337-add7e14df11e
@@ -52,7 +53,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/kubernetes-csi/csi-lib-utils v0.19.0
 	github.com/kubernetes-csi/external-attacher v0.0.0-20240822090526-ac93ce17a8a6 //v4.7.0
-	github.com/kubernetes-csi/external-provisioner/v5 v5.1.0
+	github.com/kubernetes-csi/external-provisioner v0.0.0-20240806141850-dd31ba49bbdb // v5.0.2
 	github.com/kubernetes-csi/external-resizer v1.12.0
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
 	github.com/onsi/ginkgo v1.16.5
@@ -204,7 +205,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	k8s.io/cri-client v0.31.0 // indirect
 	k8s.io/kms v0.31.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240812233141-91dab695df6f // indirect
 	k8s.io/kube-scheduler v0.0.0 // indirect

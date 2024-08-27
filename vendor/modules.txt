@@ -235,13 +235,13 @@ github.com/kubernetes-csi/csi-lib-utils/rpc
 ## explicit; go 1.22.5
 github.com/kubernetes-csi/external-attacher/pkg/attacher
 github.com/kubernetes-csi/external-attacher/pkg/controller
-# github.com/kubernetes-csi/external-provisioner/v5 v5.1.0
-## explicit; go 1.22.5
-github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity
-github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity/topology
-github.com/kubernetes-csi/external-provisioner/v5/pkg/controller
-github.com/kubernetes-csi/external-provisioner/v5/pkg/features
-github.com/kubernetes-csi/external-provisioner/v5/pkg/owner
+# github.com/kubernetes-csi/external-provisioner v0.0.0-20240806141850-dd31ba49bbdb
+## explicit; go 1.22.3
+github.com/kubernetes-csi/external-provisioner/pkg/capacity
+github.com/kubernetes-csi/external-provisioner/pkg/capacity/topology
+github.com/kubernetes-csi/external-provisioner/pkg/controller
+github.com/kubernetes-csi/external-provisioner/pkg/features
+github.com/kubernetes-csi/external-provisioner/pkg/owner
 # github.com/kubernetes-csi/external-resizer v1.12.0
 ## explicit; go 1.22.5
 github.com/kubernetes-csi/external-resizer/pkg/controller
@@ -1514,8 +1514,6 @@ k8s.io/controller-manager/pkg/informerfactory
 k8s.io/controller-manager/pkg/leadermigration
 k8s.io/controller-manager/pkg/leadermigration/config
 k8s.io/controller-manager/pkg/leadermigration/options
-# k8s.io/cri-client v0.31.0
-## explicit; go 1.22.0
 # k8s.io/csi-translation-lib v0.31.0 => k8s.io/csi-translation-lib v0.31.0
 ## explicit; go 1.22.0
 k8s.io/csi-translation-lib
@@ -1781,6 +1779,7 @@ sigs.k8s.io/yaml/goyaml.v2
 # k8s.io/component-helpers => k8s.io/component-helpers v0.31.0
 # k8s.io/controller-manager => k8s.io/controller-manager v0.31.0
 # k8s.io/cri-api => k8s.io/cri-api v0.31.0
+# k8s.io/cri-client => k8s.io/cri-client v0.31.0
 # k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.31.0
 # k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.31.0
 # k8s.io/endpointslice => k8s.io/kubernetes/staging/src/k8s.io/endpointslice v0.0.0-20230810203337-add7e14df11e
