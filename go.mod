@@ -7,8 +7,6 @@ toolchain go1.22.6
 replace (
 	github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
 	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.71.0-p
-	//github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.16.0
-	//google.golang.org/grpc => google.golang.org/grpc v1.60.1
 	k8s.io/api => k8s.io/api v0.31.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.0
 	k8s.io/apimachinery => k8s.io/apimachinery v0.31.0
@@ -75,7 +73,6 @@ require (
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.31.0
 	k8s.io/apiserver v0.31.0
-	//k8s.io/client-go v1.5.2
 	k8s.io/cloud-provider v0.31.0
 	k8s.io/component-base v0.31.0
 	k8s.io/component-helpers v0.31.0
@@ -207,6 +204,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	k8s.io/cri-client v0.31.0 // indirect
 	k8s.io/kms v0.31.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240812233141-91dab695df6f // indirect
 	k8s.io/kube-scheduler v0.0.0 // indirect

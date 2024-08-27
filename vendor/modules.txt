@@ -1514,6 +1514,8 @@ k8s.io/controller-manager/pkg/informerfactory
 k8s.io/controller-manager/pkg/leadermigration
 k8s.io/controller-manager/pkg/leadermigration/config
 k8s.io/controller-manager/pkg/leadermigration/options
+# k8s.io/cri-client v0.31.0
+## explicit; go 1.22.0
 # k8s.io/csi-translation-lib v0.31.0 => k8s.io/csi-translation-lib v0.31.0
 ## explicit; go 1.22.0
 k8s.io/csi-translation-lib
