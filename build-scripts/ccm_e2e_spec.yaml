@@ -24,8 +24,7 @@ steps:
   - type: shell
     name: Pre Test Cleanup
     command: |
-      docker volume prune -f
-      echo "Printing Disk usage after pruning docker volumes: `df -h`"
+      docker system prune --volumes --all -f
       sudo rm -rf ${HOME_LOC}/ccm_e2e-${HOME_LOC}
       mkdir -p ${HOME_LOC}/ccm_e2e || exit
       echo "Cleaning up working directory"
