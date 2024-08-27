@@ -15,8 +15,8 @@ sed -i'.bak' -e "s/=nil/=/" "${env_file}"
 # from "OOCI_" (hack to use Pipeline parameters) to "OCI_" so that E2E shell script does not need to be updated.
 sed -i'.bak' -e "s/^OOCI_/OCI_/" "${env_file}"
 
-# Switch to the pipelines artifactory endpoint
-#export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
+# Check disk usage
+sudo df -h
 
 # Run make command within docker container to achieve independence from Runner Instance architecture
 docker --config="$DOCKER_CONFIG_DIR" run \
