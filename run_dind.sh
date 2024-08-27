@@ -15,9 +15,6 @@ sed -i'.bak' -e "s/=nil/=/" "${env_file}"
 # from "OOCI_" (hack to use Pipeline parameters) to "OCI_" so that E2E shell script does not need to be updated.
 sed -i'.bak' -e "s/^OOCI_/OCI_/" "${env_file}"
 
-# Check disk usage
-sudo df -h
-
 # Run make command within docker container to achieve independence from Runner Instance architecture
 docker --config="$DOCKER_CONFIG_DIR" run \
 	--env-file="${env_file}" \
