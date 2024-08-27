@@ -18,14 +18,6 @@ sed -i'.bak' -e "s/^OOCI_/OCI_/" "${env_file}"
 # Switch to the pipelines artifactory endpoint
 #export E2E_TEST_BASE_IMAGE=${E2E_TEST_BASE_IMAGE//artifactory.oci.oraclecorp.com/pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com}
 
-REMOTE_HOST=pipelines.artifactory.us-phoenix-1.oci.oracleiaas.com
-status=$(curl --head -k --connect-timeout 5 "https://${REMOTE_HOST}/api/system/ping" -s -o /dev/null -w "%{http_code}")
-
-if [ "$status" != "200" ]; then
-  REMOTE_HOST=artifactory.oci.oraclecorp.com
-fi
-sudo yum-config-manager --add-repo=https://${REMOTE_HOST}/io-ol7-latest-yum-local
-
 # Run make command within docker container to achieve independence from Runner Instance architecture
 docker --config="$DOCKER_CONFIG_DIR" run \
 	--env-file="${env_file}" \

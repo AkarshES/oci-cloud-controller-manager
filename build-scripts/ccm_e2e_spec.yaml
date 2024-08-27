@@ -18,8 +18,7 @@ steps:
     command: |
       echo "Running instance: `hostname -I`"
       echo "Printing Disk usage: `df -h`"
-      docker rm -f ccm-e2e-test
-      sudo rm -rf ${HOME_LOC}/ccm_e2e
+      sudo rm -rf ${HOME_LOC}/ccm_e2e-${HOME_LOC}
       mkdir -p ${HOME_LOC}/ccm_e2e || exit
       echo "Cleaning up working directory"
     failImmediatelyOnError: false
