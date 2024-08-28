@@ -32,7 +32,7 @@ const (
 	annotationKey = "csi.volume.kubernetes.io/nodeid"
 
 	// Default timeout of short CSI calls like GetPluginInfo
-	csiTimeout = time.Second
+	csiTimeout = 30 * time.Second
 
 	// Verify (and update, if needed) the node ID at this freqeuency.
 	sleepDuration = 2 * time.Minute
@@ -99,14 +99,14 @@ func RunNodeRegistrar(driverType, csiAddress, registrationPath string, connectio
 
 func RunCSINodeRegistrar(driverType, csiAddress, registrationPath string, metricsManager metrics.CSIMetricsManager) {
 	klog.V(1).Infof("Attempting to open a gRPC connection with: %q", csiAddress)
-	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
-	defer cancel()
 
-	csiConn, err := connection.Connect(ctx, csiAddress, metricsManager)
+	csiConn, err := connection.Connect(context.Background(), csiAddress, metricsManager)
 	if err != nil {
 		klog.Errorf("error connecting to CSI %s driver: %v", driverType, err)
 		os.Exit(1)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), csiTimeout)
+	defer cancel()
 
 	klog.V(1).Infof("Calling CSI %s driver to discover driver name", driverType)
 
