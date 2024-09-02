@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	mountPath                  = "mount"
 	FipsEnabled                = "1"
 	fssMountSemaphoreTimeout   = time.Second * 30
 	fssUnmountSemaphoreTimeout = time.Second * 30
@@ -77,7 +76,7 @@ func (d FSSNodeDriver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVo
 		return nil, status.Errorf(codes.InvalidArgument, "EncryptInTransit must be a boolean value")
 	}
 
-	mounter := mount.New(mountPath)
+	mounter := mount.New("")
 
 	if encryptInTransit {
 		isPackageInstalled, err := csi_util.IsInTransitEncryptionPackageInstalled()
@@ -209,7 +208,7 @@ func (d FSSNodeDriver) NodePublishVolume(ctx context.Context, req *csi.NodePubli
 
 	var fsType = ""
 
-	mounter := mount.New(mountPath)
+	mounter := mount.New("")
 
 	targetPath := req.GetTargetPath()
 	readOnly := req.GetReadonly()
@@ -288,7 +287,7 @@ func (d FSSNodeDriver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnp
 
 	logger := d.logger.With("volumeID", req.VolumeId, "targetPath", req.TargetPath)
 
-	mounter := mount.New(mountPath)
+	mounter := mount.New("")
 	targetPath := req.GetTargetPath()
 
 	// Use mount.IsNotMountPoint because mounter.IsLikelyNotMountPoint can't detect bind mounts
@@ -388,7 +387,7 @@ func (d FSSNodeDriver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnsta
 }
 
 func (d FSSNodeDriver) unmountAndCleanup(logger *zap.SugaredLogger, targetPath string, exportPath string, mountTargetIP string) error {
-	mounter := mount.New(mountPath)
+	mounter := mount.New("")
 	// Use mount.IsNotMountPoint because mounter.IsLikelyNotMountPoint can't detect bind mounts
 	isNotMountPoint, err := mount.IsNotMountPoint(mounter, targetPath)
 	if err != nil {
