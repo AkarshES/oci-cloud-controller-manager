@@ -1330,7 +1330,7 @@ var _ = Describe("LB Properties", func() {
 		}
 	})
 
-	Context("[cloudprovider][ccm][lb]", func() {
+	Context("[cloudprovider][ccm][lb][properties]", func() {
 
 		healthCheckTestArray := []struct {
 			lbType              string
@@ -1398,7 +1398,12 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
-					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					if test.lbType == "lb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					}
+					if test.lbType == "nlb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
+					}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1436,6 +1441,12 @@ var _ = Describe("LB Properties", func() {
 				By("changing TCP service health check config")
 				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
 					s.ObjectMeta.Annotations = test.UpdatedAnnotations
+					if test.lbType == "lb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					}
+					if test.lbType == "nlb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
+					}
 				})
 
 				By("waiting upto 5m0s to verify health check config after modification to initial")
@@ -1445,6 +1456,12 @@ var _ = Describe("LB Properties", func() {
 				By("changing TCP service health check config - remove annotations")
 				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
 					s.ObjectMeta.Annotations = test.RemovedAnnotations
+					if test.lbType == "lb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					}
+					if test.lbType == "nlb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
+					}
 				})
 
 				By("waiting upto 5m0s to verify health check config should fall back to default after removing annotations")
@@ -1699,8 +1716,8 @@ var _ = Describe("LB Properties", func() {
 			{
 				"nlb",
 				map[string]string{
-					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
-					cloudprovider.ServiceAnnotationLoadBalancerType:     "nlb",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal: "true",
+					cloudprovider.ServiceAnnotationLoadBalancerType:            "nlb",
 				},
 				cloudprovider.ServiceAnnotationNetworkLoadBalancerNetworkSecurityGroups,
 			},
@@ -1751,7 +1768,6 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.Annotations
-					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -1794,6 +1810,12 @@ var _ = Describe("LB Properties", func() {
 					test.Annotations[test.nsgAnnotation] = nsgIds
 					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
 						s.ObjectMeta.Annotations = test.Annotations
+						if test.lbtype == "lb" {
+							s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+						}
+						if test.lbtype == "nlb" {
+							s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
+						}
 					})
 					err = f.WaitForLoadBalancerNSGChange(loadBalancer, t.resultantNsgIds, test.lbtype)
 					sharedfw.ExpectNoError(err)
@@ -1869,7 +1891,12 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
-					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					if test.lbType == "lb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+					}
+					if test.lbType == "nlb" {
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal] = "true"
+					}
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -2012,6 +2039,135 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports[0].NodePort = 0
 					s.Spec.Ports[1].NodePort = 0
 				})
+				// Wait for the load balancer to be destroyed asynchronously
+				tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+			}
+		})
+		proxyProtocolTestArray := []struct {
+			lbType              string
+			CreationAnnotations map[string]string
+			UpdatedAnnotations  map[string]string
+			RemovedAnnotations  map[string]string
+			CreateInterval      int
+			UpdateInterval      int
+		}{
+			{
+				"lb",
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:                       "true",
+					cloudprovider.ServiceAnnotationLoadBalancerConnectionProxyProtocolVersion: "2",
+				},
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:                       "true",
+					cloudprovider.ServiceAnnotationLoadBalancerConnectionProxyProtocolVersion: "1",
+				},
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				},
+				10000,
+				15000,
+			},
+			{
+				"nlb",
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:                 "nlb",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal:      "true",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerIsPpv2Enabled: "true",
+				},
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:                 "nlb",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal:      "true",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerIsPpv2Enabled: "false",
+				},
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:            "nlb",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal: "true",
+				},
+				10000,
+				15000,
+			},
+		}
+		It("should be possible to create Service type:LoadBalancer and mutate the Proxy Protocol Version on its Listeners", func() {
+			for _, test := range proxyProtocolTestArray {
+				By("Running test for: " + test.lbType)
+				serviceName := "e2e-" + test.lbType + "-proxy-protocol-v2"
+				ns := f.Namespace.Name
+
+				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+				loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+				if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+					loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+				}
+
+				requestedIP := ""
+
+				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+					s.Spec.Type = v1.ServiceTypeLoadBalancer
+					s.Spec.LoadBalancerIP = requestedIP
+					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
+						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+					s.ObjectMeta.Annotations = test.CreationAnnotations
+				})
+
+				svcPort := int(tcpService.Spec.Ports[0].Port)
+
+				By("creating a pod to be part of the TCP service " + serviceName)
+				jig.RunOrFail(ns, nil)
+
+				By("waiting for the TCP service to have a load balancer")
+				// Wait for the load balancer to be created asynchronously
+				tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+				jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+				tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+				sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+				By("waiting upto 5m0s to verify proxy protocol version 2 is set on the listeners")
+				lbName := cloudprovider.GetLoadBalancerName(tcpService)
+				sharedfw.Logf("LB Name is %s", lbName)
+				ctx := context.TODO()
+				compartmentId := ""
+				if setupF.Compartment1 != "" {
+					compartmentId = setupF.Compartment1
+				} else if f.CloudProviderConfig.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.CompartmentID
+				} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+				} else {
+					sharedfw.Failf("Compartment Id undefined.")
+				}
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				sharedfw.ExpectNoError(err)
+				err = f.VerifyProxyProtocolV2(*loadBalancer.Id, test.lbType, true)
+				sharedfw.ExpectNoError(err)
+
+				By("changing all listeners' proxy protocol version")
+				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+					s.ObjectMeta.Annotations = test.UpdatedAnnotations
+				})
+
+				By("waiting upto 5m0s to verify all listener proxy protocol version after modification to initial")
+				err = f.VerifyProxyProtocolV2(*loadBalancer.Id, test.lbType, false)
+				sharedfw.ExpectNoError(err)
+
+				By("changing all listeners' proxy protocol version - remove annotations")
+				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+					s.ObjectMeta.Annotations = test.RemovedAnnotations
+				})
+
+				By("waiting upto 5m0s to verify all listener proxy protocol version remains as is after removing annotations")
+				err = f.VerifyProxyProtocolV2(*loadBalancer.Id, test.lbType, false)
+				sharedfw.ExpectNoError(err)
+
+				By("changing TCP service to type=ClusterIP")
+				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+					s.Spec.Type = v1.ServiceTypeClusterIP
+					s.Spec.Ports[0].NodePort = 0
+					s.Spec.Ports[1].NodePort = 0
+				})
+
 				// Wait for the load balancer to be destroyed asynchronously
 				tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
 				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)

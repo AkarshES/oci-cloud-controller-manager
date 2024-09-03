@@ -70,6 +70,7 @@ type GenericListener struct {
 	RoutingPolicyName       *string
 	RuleSetNames            []string
 	IpVersion               *GenericIpVersion
+	IsPpv2Enabled           *bool
 }
 
 type GenericConnectionConfiguration struct {
