@@ -323,6 +323,7 @@ func (c *networkLoadbalancer) CreateListener(ctx context.Context, lbID string, n
 		DefaultBackendSetName: details.DefaultBackendSetName,
 		Port:                  details.Port,
 		Protocol:              networkloadbalancer.ListenerProtocolsEnum(*details.Protocol),
+		IsPpv2Enabled:         details.IsPpv2Enabled,
 	}
 
 	if details.IpVersion != nil {
@@ -357,6 +358,7 @@ func (c *networkLoadbalancer) UpdateListener(ctx context.Context, lbID string, n
 		DefaultBackendSetName: details.DefaultBackendSetName,
 		Port:                  details.Port,
 		Protocol:              networkloadbalancer.ListenerProtocolsEnum(*details.Protocol),
+		IsPpv2Enabled:         details.IsPpv2Enabled,
 	}
 
 	if details.IpVersion != nil {
@@ -601,6 +603,7 @@ func (c *networkLoadbalancer) listenersToGenericListenerDetails(details map[stri
 			Port:                  v.Port,
 			Protocol:              &protocol,
 			IpVersion:             &ipVersion,
+			IsPpv2Enabled:         v.IsPpv2Enabled,
 		}
 	}
 	return genericListenerDetails
@@ -691,6 +694,7 @@ func (c *networkLoadbalancer) genericListenerDetailsToListenerDetails(details ma
 			DefaultBackendSetName: v.DefaultBackendSetName,
 			Port:                  v.Port,
 			Protocol:              networkloadbalancer.ListenerProtocolsEnum(*v.Protocol),
+			IsPpv2Enabled:         v.IsPpv2Enabled,
 		}
 		if v.IpVersion != nil {
 			switch *v.IpVersion {
