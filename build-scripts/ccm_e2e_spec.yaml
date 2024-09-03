@@ -25,7 +25,7 @@ steps:
     name: Pre Test Cleanup
     command: |
       docker container prune -f
-      sudo rm -rf ${HOME_LOC}/ccm_e2e-${HOME_LOC}
+      sudo rm -rf ${HOME_LOC}/ccm_e2e
       mkdir -p ${HOME_LOC}/ccm_e2e || exit
       echo "Cleaning up working directory"
     failImmediatelyOnError: false
