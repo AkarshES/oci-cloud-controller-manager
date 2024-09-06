@@ -60,6 +60,5 @@ steps:
     onFailure:
       - type: shell
         command: |
-          docker rm -f ccm-e2e-test
           sudo rm -rf ${HOME_LOC}/ccm_e2e
         timeoutInSeconds: 400
