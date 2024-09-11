@@ -749,6 +749,9 @@ func (c *networkLoadbalancer) genericBackendDetailsToBackendDetails(details []Ge
 			Port:      backends.Port,
 			Weight:    backends.Weight,
 			TargetId:  backends.TargetId,
+			IsDrain:   backends.Drain,
+			IsBackup:  backends.Offline,
+			IsOffline: backends.Offline,
 		})
 	}
 	return backendDetails
