@@ -12,15 +12,15 @@ import (
 
 var ErrJobFailed = fmt.Errorf("Job failed")
 
-//Creates a new job which will run a pod with the centos container running the given script
-func (j *ServiceTestJig) CreateJobRunningScript(ns string, script string, backOffLimit int32, name string){
+// Creates a new job which will run a pod with the centos container running the given script
+func (j *ServiceTestJig) CreateJobRunningScript(ns string, script string, backOffLimit int32, name string) {
 	job, err := j.Client.BatchV1().Jobs(ns).Create(context.Background(), &v1.Job{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "Job",
+			Kind:       "Job",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
 			Namespace: ns,
 		},
 		Spec: v1.JobSpec{
@@ -28,8 +28,8 @@ func (j *ServiceTestJig) CreateJobRunningScript(ns string, script string, backOf
 				Spec: v12.PodSpec{
 					Containers: []v12.Container{
 						{
-							Name: name,
-							Image: centos,
+							Name:    name,
+							Image:   centos,
 							Command: []string{"/bin/sh"},
 							Args:    []string{"-c", script},
 						},
@@ -39,8 +39,8 @@ func (j *ServiceTestJig) CreateJobRunningScript(ns string, script string, backOf
 			},
 			BackoffLimit: &backOffLimit,
 		},
-	},metav1.CreateOptions{})
-	if err!= nil{
+	}, metav1.CreateOptions{})
+	if err != nil {
 		Failf("Error creating job: %v", err)
 	}
 	err = j.waitTimeoutForJobCompletedInNamespace(job.Name, ns, JobCompletionTimeout)
@@ -55,11 +55,11 @@ func (j *ServiceTestJig) waitTimeoutForJobCompletedInNamespace(jobName, namespac
 
 func (j *ServiceTestJig) jobCompleted(jobName, namespace string) wait.ConditionFunc {
 	return func() (bool, error) {
-		job, err := j.Client.BatchV1().Jobs(namespace).Get(context.Background(),jobName,metav1.GetOptions{})
+		job, err := j.Client.BatchV1().Jobs(namespace).Get(context.Background(), jobName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
-		if job.Status.Succeeded == 1{
+		if job.Status.Succeeded == 1 {
 			return true, nil
 		}
 		if job.Status.Failed == 1 {

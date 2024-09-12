@@ -1,0 +1,249 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: nodeoperationrequests.oci.oraclecloud.com
+spec:
+  group: oci.oraclecloud.com
+  names:
+    kind: NodeOperationRequest
+    listKind: NodeOperationRequestList
+    plural: nodeoperationrequests
+    shortNames:
+    - nor
+    - nors
+    singular: nodeoperationrequest
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - description: node names requested to be operated
+      jsonPath: .spec.nodeNames
+      name: NodeNames
+      type: string
+    - description: node label selector requested to be operated
+      jsonPath: .spec.nodeLabelSelector
+      name: NodeLabelSelector
+      type: string
+    - description: details of cycling action
+      jsonPath: .spec.cyclingActionDetails
+      name: CyclingActionDetails
+      type: string
+    - description: maximum number of unavailable nodes in the scope of nodes operation
+      jsonPath: .spec.maxUnavailable
+      name: MaxUnavailable
+      type: integer
+    - description: node eviction settings
+      jsonPath: .spec.nodeEvictionSettings
+      name: NodeEvictionSettings
+      type: string
+    - description: whether to pause node operation
+      jsonPath: .spec.isPaused
+      name: IsPaused
+      type: boolean
+    - description: overall status of nodes operation
+      jsonPath: .status.nodeOperationRequestState
+      name: NodeOperationRequestState
+      type: string
+    - description: nodes in the scope of operation
+      jsonPath: .status.nodeCandidates
+      name: NodeCandidates
+      type: integer
+    - description: number of nodes finish operation successfully
+      jsonPath: .status.numberSucceededNodes
+      name: NumberSucceededNodes
+      type: integer
+    - description: number of nodes failed to finish operation
+      jsonPath: .status.numberFailedNodes
+      name: NumberFailedNodes
+      type: integer
+    - description: number of nodes are in progress with operation
+      jsonPath: .status.numberInProgressNodes
+      name: numberInProgressNodes
+      type: integer
+    - description: number of nodes are pending with operation
+      jsonPath: .status.numberPendingNodes
+      name: numberPendingNodes
+      type: integer
+    - description: nodes are pending with operation
+      jsonPath: .status.pendingNodes
+      name: PendingNodes
+      type: string
+    - description: nodes are failed to finish operation
+      jsonPath: .status.failedNodes
+      name: FailedNodes
+      type: string
+    - description: nodes are canceled with operation
+      jsonPath: .status.canceledNodes
+      name: CanceledNodes
+      type: string
+    - description: nodes finish operation successfully
+      jsonPath: .status.SucceededNodes
+      name: SucceededNodes
+      type: string
+    - description: observed generation of custom resource
+      jsonPath: .status.observedGeneration
+      name: ObservedGeneration
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: CreationTimestamp
+      type: date
+    - jsonPath: .metadata.deletionTimestamp
+      name: DeletionTimestamp
+      type: date
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: NodeOperationRequest is the schema for collecting node operation
+          request and reporting operation progress
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NodeOperationRequestSpec defines the desired state of NodeOperationRequest
+            properties:
+              action:
+                enum:
+                - cycling
+                - reboot
+                type: string
+              creationSource:
+                default: external
+                enum:
+                - internal
+                - external
+                type: string
+              cyclingActionDetails:
+                properties:
+                  bootVolumeSizeInGBs:
+                    type: integer
+                  cycleMode:
+                    default: bootVolumeReplace
+                    enum:
+                    - bootVolumeReplace
+                    type: string
+                  imageId:
+                    type: string
+                  isCycleInSyncNode:
+                    type: boolean
+                  kubernetesVersion:
+                    type: string
+                  nodeMetaData:
+                    items:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    type: array
+                  sshPublicKey:
+                    type: string
+                type: object
+              isPaused:
+                type: boolean
+              maxUnavailable:
+                anyOf:
+                - type: integer
+                - type: string
+                x-kubernetes-int-or-string: true
+              nodeEvictionSettings:
+                properties:
+                  evictionGracePeriod:
+                    minimum: 0
+                    type: integer
+                  isForceActionAfterGraceDuration:
+                    type: boolean
+                type: object
+              nodeLabelSelector:
+                additionalProperties:
+                  type: string
+                type: object
+              nodeNames:
+                items:
+                  type: string
+                type: array
+            type: object
+          status:
+            description: NodeOperationRequestStatus defines the observed state of
+              NodeOperationRequest
+            properties:
+              canceledNodes:
+                items:
+                  type: string
+                type: array
+              failedNodes:
+                items:
+                  properties:
+                    nodeName:
+                      type: string
+                    workRequestId:
+                      type: string
+                  type: object
+                type: array
+              hashes:
+                items:
+                  type: string
+                type: array
+              nodeCandidates:
+                items:
+                  type: string
+                type: array
+              nodeOperationRequestState:
+                default: New
+                enum:
+                - New
+                - InProgress
+                - Successful
+                - Failed
+                - Canceled
+                - Paused
+                type: string
+              numberFailedNodes:
+                type: integer
+              numberInProgressNodes:
+                type: integer
+              numberPendingNodes:
+                type: integer
+              numberSucceededNodes:
+                type: integer
+              observedGeneration:
+                type: integer
+              pausedTime:
+                format: date-time
+                type: string
+              pendingNodes:
+                items:
+                  type: string
+                type: array
+              succeededNodes:
+                items:
+                  properties:
+                    nodeName:
+                      type: string
+                    workRequestId:
+                      type: string
+                  type: object
+                type: array
+              terminalTime:
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

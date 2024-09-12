@@ -33,7 +33,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
 )
 
-//Run main function to start CSI Controller
+// Run main function to start CSI Controller
 func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 	log := logging.Logger()
 	logger := log.Sugar()

@@ -1,0 +1,14 @@
+apiVersion: oci.oraclecloud.com/v1beta1
+kind: NodeOperationRule
+metadata:
+  name: reboot
+spec:
+  actions:
+    - reboot
+  maxParallelism: 2
+  nodeEvictionSettings:
+    evictionGracePeriod: 10
+    isForceActionAfterGraceDuration: true
+  nodeSelector:
+    matchTriggerLabel:
+      oke.oraclecloud.com/node_operation: reboot
