@@ -2,14 +2,19 @@ package client
 
 import (
 	"context"
-	"github.com/pkg/errors"
-
+	"fmt"
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
+	"github.com/pkg/errors"
 )
 
 type ContainerEngineInterface interface {
 	GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodePoolId string) (*containerengine.VirtualNode, error)
+	RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error)
+	ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error)
+	GetWorkRequest(ctx context.Context, workRequestId string) (*containerengine.WorkRequest, error)
+	DeleteWorkRequest(ctx context.Context, workRequestId string) (string, error)
 }
 
 func (c *client) GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodePoolId string) (*containerengine.VirtualNode, error) {
@@ -35,4 +40,120 @@ func (c *client) GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodeP
 func IsVirtualNodeInTerminalState(virtualNode *containerengine.VirtualNode) bool {
 	return virtualNode.LifecycleState == containerengine.VirtualNodeLifecycleStateDeleted ||
 		virtualNode.LifecycleState == containerengine.VirtualNodeLifecycleStateFailed
+}
+
+// RebootClusterNode initiates a reboot operation for a specified node within a cluster.
+// It takes the node ID, cluster ID, and a NodeOperationRequest object as input.
+// The function returns the work request ID associated with the reboot operation.
+//
+// Parameters:
+// - ctx: A context.Context object for managing cancellations and timeouts.
+// - nodeId: A string representing the unique identifier of the node to be rebooted.
+// - clusterId: A string representing the unique identifier of the cluster where the node resides.
+// - nor: An instance of norv1beta1.NodeOperationRequest containing additional details for the reboot operation.
+//
+// Returns:
+// - A string representing the work request ID associated with the reboot operation.
+// - An error indicating any issues encountered during the reboot operation; otherwise, returns nil.
+func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
+	evictionGracePeriod := generateEvictionGracePeriod(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
+	rebootClusterNodeDetails := &containerengine.RebootClusterNodeDetails{
+		NodeEvictionSettings: &containerengine.NodeEvictionSettings{
+			EvictionGraceDuration:           &evictionGracePeriod,
+			IsForceActionAfterGraceDuration: &nor.Spec.NodeEvictionSettings.IsForceActionAfterGraceDuration,
+		},
+	}
+	resp, err := c.containerEngine.RebootClusterNode(ctx, containerengine.RebootClusterNodeRequest{
+		NodeId:                   common.String(nodeId),
+		ClusterId:                common.String(clusterId),
+		RebootClusterNodeDetails: *rebootClusterNodeDetails,
+		RequestMetadata:          c.requestMetadata,
+	})
+	incRequestCounter(err, createVerb, rebootNodeWorkRequestResource)
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return *resp.OpcWorkRequestId, nil
+}
+
+// ReplaceBootVolumeClusterNode initiates a cycling operation for a specified node within a cluster.
+// It takes the node ID, cluster ID, and a NodeOperationRequest object as input.
+// The function returns the work request ID associated with the cycling operation.
+//
+// Parameters:
+// - ctx: A context.Context object for managing cancellations and timeouts.
+// - nodeId: A string representing the unique identifier of the node to be cycled.
+// - clusterId: A string representing the unique identifier of the cluster where the node resides.
+// - nor: An instance of norv1beta1.NodeOperationRequest containing additional details for the cycling operation.
+//
+// Returns:
+// - A string representing the work request ID associated with the cycling operation.
+// - An error indicating any issues encountered during the cycling operation; otherwise, returns nil.
+func (c *client) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
+
+	evictionGracePeriod := generateEvictionGracePeriod(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
+
+	replaceBootVolumeClusterNodeDetails := &containerengine.ReplaceBootVolumeClusterNodeDetails{
+		NodeEvictionSettings: &containerengine.NodeEvictionSettings{
+			EvictionGraceDuration:           &evictionGracePeriod,
+			IsForceActionAfterGraceDuration: &nor.Spec.NodeEvictionSettings.IsForceActionAfterGraceDuration,
+		},
+	}
+	resp, err := c.containerEngine.ReplaceBootVolumeClusterNode(ctx, containerengine.ReplaceBootVolumeClusterNodeRequest{
+		NodeId:                              common.String(nodeId),
+		ClusterId:                           common.String(clusterId),
+		ReplaceBootVolumeClusterNodeDetails: *replaceBootVolumeClusterNodeDetails,
+		RequestMetadata:                     c.requestMetadata,
+	})
+	incRequestCounter(err, createVerb, replaceBootVolumeWorkRequestResource)
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return *resp.OpcWorkRequestId, nil
+}
+
+// FIXME: to take about eviction setting is null
+func generateEvictionGracePeriod(minutes int) string {
+	duration := fmt.Sprintf("PT%dM", minutes)
+	return duration
+}
+
+func (c *client) GetWorkRequest(ctx context.Context, workRequestId string) (*containerengine.WorkRequest, error) {
+	if !c.rateLimiter.Reader.TryAccept() {
+		return nil, RateLimitError(false, "GetWorkRequest")
+	}
+
+	resp, err := c.containerEngine.GetWorkRequest(ctx, containerengine.GetWorkRequestRequest{
+		WorkRequestId:   common.String(workRequestId),
+		RequestMetadata: c.requestMetadata,
+	})
+
+	incRequestCounter(err, getVerb, nodeOperationWorkRequestResource)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return &resp.WorkRequest, nil
+}
+
+func (c *client) DeleteWorkRequest(ctx context.Context, workRequestId string) (string, error) {
+	if !c.rateLimiter.Writer.TryAccept() {
+		return "", RateLimitError(true, "DeleteWorkRequest")
+	}
+	resp, err := c.containerEngine.DeleteWorkRequest(ctx, containerengine.DeleteWorkRequestRequest{
+		WorkRequestId:   common.String(workRequestId),
+		RequestMetadata: c.requestMetadata,
+	})
+	incRequestCounter(err, deleteVerb, nodeOperationWorkRequestResource)
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return *resp.OpcRequestId, nil
+
 }

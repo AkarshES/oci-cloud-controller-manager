@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-//NodeCSIOptions contains details about the flag
+// NodeCSIOptions contains details about the flag
 type NodeCSIOptions struct {
 	Endpoint   string // Used for Block Volume CSI driver
 	NodeID     string

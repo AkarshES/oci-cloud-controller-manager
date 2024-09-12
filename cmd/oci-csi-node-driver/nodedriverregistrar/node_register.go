@@ -25,7 +25,7 @@ import (
 	"runtime"
 )
 
-//nodeRegister is the main function to start node register
+// nodeRegister is the main function to start node register
 func nodeRegister(csiDriverName string, kubeletRegistrationPath string) {
 	// When kubeletRegistrationPath is specified then driver-registrar ONLY acts
 	// as gRPC server which replies to registration requests initiated by kubelet's
