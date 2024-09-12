@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	CRDCheckInterval        = 30 * time.Second
+	CRDCheckInterval = 30 * time.Second
 )
 
 func Start(csioptions csioptions.CSIOptions, logger *zap.SugaredLogger) {
@@ -33,7 +33,7 @@ func Start(csioptions csioptions.CSIOptions, logger *zap.SugaredLogger) {
 	logger.Infof("Starting ticker to check for CRDs")
 
 	for range time.NewTicker(CRDCheckInterval).C {
-		if CheckCRDExists(crdClient){
+		if CheckCRDExists(crdClient) {
 			if !goRoutinesEnabled {
 				logger.Info("CRDs found! Enabling go routines")
 				stopCh = make(chan struct{})

@@ -15,6 +15,9 @@
 package oci
 
 import (
+	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -286,6 +289,71 @@ func TestVirtualNodeExists(t *testing.T) {
 			}
 			if got != tc.exists {
 				t.Errorf("expected: %+v got %+v", tc.exists, got)
+			}
+		})
+	}
+}
+
+func TestGetIntegerFromEnv(t *testing.T) {
+	testCases := []struct {
+		name         string
+		featureName  string
+		defaultValue int
+		mockValue    string
+		expected     int
+	}{
+		{
+			name:         "bvr rate limit is set",
+			featureName:  "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM",
+			defaultValue: 10,
+			mockValue:    "8",
+			expected:     8,
+		},
+		{
+			name:         "reboot rate limit is set",
+			featureName:  "NOR_CONTROLLER_REBOOT_RATE_LIMIT_RPM",
+			defaultValue: 10,
+			mockValue:    "6",
+			expected:     6,
+		},
+		{
+			name:         "feature name does not exist",
+			featureName:  "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM",
+			defaultValue: 10,
+			expected:     10,
+		},
+		{
+			name:         "value is invalid - value is empty",
+			featureName:  "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM",
+			defaultValue: 10,
+			mockValue:    "",
+			expected:     10,
+		},
+		{
+			name:         "value is invalid - value is not integer",
+			featureName:  "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM",
+			defaultValue: 10,
+			mockValue:    "1.1",
+			expected:     10,
+		},
+	}
+
+	t.Parallel()
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+
+			if testCase.name != "feature name does not exist" {
+				os.Setenv(testCase.featureName, testCase.mockValue)
+			} else {
+				os.Clearenv()
+			}
+
+			actual := GetIntegerFromEnv(logging.Logger().Sugar(), testCase.featureName, testCase.defaultValue)
+			if !reflect.DeepEqual(testCase.expected, actual) {
+				t.Errorf("expected: %+v, but actual GetIntegerFromEnv => %+v", testCase.expected, actual)
+				t.FailNow()
+			} else {
+				t.Logf("expected: %+v, and actual GetIntegerFromEnv => %+v", testCase.expected, actual)
 			}
 		})
 	}

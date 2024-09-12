@@ -37,9 +37,9 @@ import (
 
 var (
 	// the retryIntervalStart is kept as 1 second
-	retryIntervalStart      = time.Second
-	retryIntervalMax        = 5 * time.Minute
-	version                 = "0.0.1"
+	retryIntervalStart = time.Second
+	retryIntervalMax   = 5 * time.Minute
+	version            = "0.0.1"
 )
 
 func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struct{}) {

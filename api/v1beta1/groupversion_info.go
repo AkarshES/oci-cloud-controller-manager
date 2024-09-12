@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1beta1 contains API Schema definitions for the npn v1beta1 API group
-//+kubebuilder:object:generate=true
-//+groupName=oci.oraclecloud.com
+// +kubebuilder:object:generate=true
+// +groupName=oci.oraclecloud.com
 package v1beta1
 
 import (
