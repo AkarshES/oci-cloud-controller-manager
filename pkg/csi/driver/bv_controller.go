@@ -1052,7 +1052,7 @@ func (d *BlockVolumeControllerDriver) CreateSnapshot(ctx context.Context, req *c
 		return nil, fmt.Errorf("duplicate snapshot %q exists", req.Name)
 	}
 
-	volumeAvailableTimeoutCtx, cancel := context.WithTimeout(ctx, 45 * time.Second)
+	volumeAvailableTimeoutCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 
 	if len(snapshots) > 0 {

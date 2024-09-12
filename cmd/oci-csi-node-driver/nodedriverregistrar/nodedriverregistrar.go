@@ -77,7 +77,7 @@ func (e registrationServer) NotifyRegistrationStatus(ctx context.Context, status
 	return &registerapi.RegistrationStatusResponse{}, nil
 }
 
-//RunNodeRegistrar is the main method to start run node register
+// RunNodeRegistrar is the main method to start run node register
 func RunNodeRegistrar(driverType, csiAddress, registrationPath string, connectionTimeout time.Duration) {
 	if registrationPath == "" {
 		klog.Errorf("Kubelet Registration Path required for driver: %s", driverType)

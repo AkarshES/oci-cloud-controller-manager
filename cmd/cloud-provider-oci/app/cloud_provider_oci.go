@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"golang.org/x/time/rate"
 	"net/http"
 	"os"
 	"os/signal"
@@ -49,7 +50,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	npnv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
+	v1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	csicontroller "github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csi-controller"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 	"github.com/oracle/oci-cloud-controller-manager/controllers"
@@ -74,14 +76,20 @@ var (
 var csioption = csioptions.CSIOptions{}
 
 var (
-	scheme         = runtime.NewScheme()
-	npnSetupLog    = ctrl.Log.WithName("npn-controller-setup")
-	configFilePath = "/etc/oci/config.yaml"
+	scheme                    = runtime.NewScheme()
+	controllerManagerSetupLog = ctrl.Log.WithName("node-crd-controller-setup")
+	configFilePath            = "/etc/oci/config.yaml"
 )
 
 const (
 	defaultFssAddress  = "/var/run/shared-tmpfs/csi-fss.sock"
 	defaultFssEndpoint = "unix:///var/run/shared-tmpfs/csi-fss.sock"
+)
+
+// constant values for bvr and reboot APIs rate limiter used by node operation rule controller
+const (
+	norDefaultRateLimit     = 10
+	norMaxBurstTokens   int = 10
 )
 
 // NewCloudProviderOCICommand creates a *cobra.Command object with default parameters
@@ -282,23 +290,19 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 	}
 
 	enableNPN := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NPN_CONTROLLER", false)
+	logger = logger.With(zap.String("component", "node-cr-manager"))
+	ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+	enableNOR := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NOR_CONTROLLER", false)
+	norControllerBvrLimit := oci.GetIntegerFromEnv(logger, "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM", 10)
+	norControllerRebootLimit := oci.GetIntegerFromEnv(logger, "NOR_CONTROLLER_REBOOT_RATE_LIMIT_RPM", 10)
 
-	if enableNPN || enableNPNController {
+	//instantiate manager and hook up controller with manager
+	if shouldStartControllerManager(enableNOR, enableNPN, enableNPNController) {
 		wg.Add(1)
-		logger = logger.With(zap.String("component", "npn-controller"))
-		ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
-		logger.Info("NPN controller is enabled.")
+		logger.Info("CRD is enabled. Instantiating manager.")
 		go func() {
 			defer wg.Done()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-			utilruntime.Must(npnv1beta1.AddToScheme(scheme))
-
-			configPath, ok := os.LookupEnv("CONFIG_YAML_FILENAME")
-			if !ok {
-				configPath = configFilePath
-			}
-			cfg := providercfg.GetConfig(logger, configPath)
-			ociClient := getOCIClient(logger, cfg)
 
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 				Scheme: scheme,
@@ -311,9 +315,27 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 				LeaderElectionNamespace: "kube-system",
 			})
 			if err != nil {
-				npnSetupLog.Error(err, "unable to start manager")
+				controllerManagerSetupLog.Error(err, "unable to start manager")
 				os.Exit(1)
 			}
+
+			if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+				controllerManagerSetupLog.Error(err, "unable to set up health check")
+				os.Exit(1)
+			}
+
+			if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+				controllerManagerSetupLog.Error(err, "unable to set up ready check")
+				os.Exit(1)
+			}
+
+			configPath, ok := os.LookupEnv("CONFIG_YAML_FILENAME")
+
+			if !ok {
+				configPath = configFilePath
+			}
+			cfg := providercfg.GetConfig(logger, configPath)
+			ociClient := getOCIClient(logger, cfg)
 
 			metricPusher, err := metrics.NewMetricPusher(logger)
 			if err != nil {
@@ -321,33 +343,66 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 				// disable metrics
 				metricPusher = nil
 			}
-
-			if err = (&controllers.NativePodNetworkReconciler{
-				Client:       mgr.GetClient(),
-				Scheme:       mgr.GetScheme(),
-				MetricPusher: metricPusher,
-				OCIClient:    ociClient,
-			}).SetupWithManager(mgr); err != nil {
-				npnSetupLog.Error(err, "unable to create controller", "controller", "NativePodNetwork")
-				os.Exit(1)
+			//setup NPN Controller with manager if NPN Enabled
+			if enableNPN || enableNPNController {
+				logger = logger.With(zap.String("component", "npn-controller"))
+				utilruntime.Must(v1beta1.AddToScheme(scheme))
+				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+				logger.Info("NPN controller is enabled.")
+				if err = (&controllers.NativePodNetworkReconciler{
+					Client:       mgr.GetClient(),
+					Scheme:       mgr.GetScheme(),
+					MetricPusher: metricPusher,
+					OCIClient:    ociClient,
+				}).SetupWithManager(mgr); err != nil {
+					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "NativePodNetwork")
+					os.Exit(1)
+				}
 			}
 
-			if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-				npnSetupLog.Error(err, "unable to set up health check")
-				os.Exit(1)
-			}
-			if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-				npnSetupLog.Error(err, "unable to set up ready check")
-				os.Exit(1)
+			//setup NOR Controller with manager if NOR Enabled
+			if enableNOR {
+				logger := logger.With(zap.String("component", "nor-controller"))
+				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+				utilruntime.Must(norv1beta1.AddToScheme(scheme))
+				logger.Info("NOR controller is enabled.")
+
+				master := options.Master
+				kubeConfigPath := options.Generic.ClientConnection.Kubeconfig
+				logger.Info("master is ", master, "kubeconfig is", kubeConfigPath)
+
+				kubeClient := config.Client
+
+				norControllerBvrLimiter := generateRateLimiter(norControllerBvrLimit)
+				norControllerRebootLimiter := generateRateLimiter(norControllerRebootLimit)
+
+				if err = (&controllers.NodeOperationRuleReconciler{
+					Client:            mgr.GetClient(),
+					Scheme:            mgr.GetScheme(),
+					OCIClient:         ociClient,
+					KubeClient:        kubeClient,
+					Config:            cfg,
+					MetricPusher:      metricPusher,
+					BvrRateLimiter:    norControllerBvrLimiter,
+					RebootRateLimiter: norControllerRebootLimiter,
+				}).SetupWithManager(mgr); err != nil {
+					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "nor-controller")
+					os.Exit(1)
+				}
 			}
 
-			npnSetupLog.Info("starting manager")
+			//Now that all the controllers are hooked up, start the manager
+			logger = logger.With(zap.String("component", "node-cr-manager"))
+			ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+			controllerManagerSetupLog.Info("starting manager")
 			if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-				npnSetupLog.Error(err, "problem running manager")
+				controllerManagerSetupLog.Error(err, "problem running manager")
 				// TODO: Handle the case of NPN controller not running more gracefully
 				os.Exit(1)
 			}
 		}()
+	} else {
+		logger.Info("crd manager not instantiated as no customer resource enabled.")
 	}
 
 	// wait for all the go routines to finish.
@@ -403,4 +458,26 @@ func getInitFuncConstructors(logger *zap.SugaredLogger) map[string]cloudControll
 	}
 
 	return initConstructors
+}
+
+func shouldStartControllerManager(crdEnabled ...bool) bool {
+	for _, v := range crdEnabled {
+		if v == true {
+			return true
+		}
+	}
+	return false
+}
+
+func getRateLimitValue(rateLimitFromLimits int) int {
+	if rateLimitFromLimits <= 0 {
+		return norDefaultRateLimit
+	} else {
+		return rateLimitFromLimits
+	}
+}
+
+func generateRateLimiter(rateLimitFromLimits int) *rate.Limiter {
+	rateLimit := getRateLimitValue(rateLimitFromLimits)
+	return rate.NewLimiter(rate.Every(time.Minute/time.Duration(rateLimit)), norMaxBurstTokens)
 }

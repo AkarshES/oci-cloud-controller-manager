@@ -3,12 +3,12 @@
 name=io-ol8-latest-yum-aarch64-local
 baseurl=https://artifactory-builds.oci.oraclecorp.com/io-ol8-latest-yum-aarch64-local/
 enabled=1
-gpgcheck=1
+gpgcheck=0
 # replaces opc-local, opc-misc, etc.
 [ol8-yum]
 name=ol8-yum
 baseurl=https://artifactory.oci.oraclecorp.com/ol8-yum/
 enabled=1
 gpgcheck=0
-repo_gpgcheck=1
+repo_gpgcheck=0
 gpgkey=https://artifactory.oci.oraclecorp.com/ol8-yum/repodata/repomd.xml.key

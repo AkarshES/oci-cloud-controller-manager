@@ -34,14 +34,13 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
 )
 
 var (
@@ -141,7 +140,8 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 			err := http.ListenAndServe(addr, mux)
 			if err != nil {
 				klog.ErrorS(err, "Failed to start HTTP server", "address", addr, "metricsPath", csioptions.MetricsPath)
-				klog.FlushAndExit(klog.ExitFlushTimeout, 1)			}
+				klog.FlushAndExit(klog.ExitFlushTimeout, 1)
+			}
 		}()
 	}
 
@@ -159,7 +159,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 
 	run := func(ctx context.Context) {
 		informerFactory.Start(wait.NeverStop)
- 		go rc.Run(int(csioptions.WorkerThreads), ctx)
+		go rc.Run(int(csioptions.WorkerThreads), ctx)
 		if utilfeature.DefaultFeatureGate.Enabled(features.VolumeAttributesClass) {
 			go mc.Run(int(csioptions.WorkerThreads), ctx)
 		}

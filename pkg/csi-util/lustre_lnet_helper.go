@@ -131,7 +131,7 @@ func (ls *LnetService) SetupLnet(logger *zap.SugaredLogger, lustreSubnetCIDR str
 		return fmt.Errorf("Failed to configure lnet kernel service with error : %v", err)
 	}
 
-	//get existing lnet configuration
+ 	//get existing lnet configuration
 	var netInfo NetInfo
 	netInfo, err = ls.Configurator.GetLnetInfoByLnetLabel(lnetLabel)
 	if err != nil {

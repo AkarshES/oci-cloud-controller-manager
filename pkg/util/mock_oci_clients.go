@@ -67,7 +67,7 @@ func (c MockOCIFileStorageClient) ListExports(ctx context.Context, request files
 			return response, ctx.Err()
 		default:
 			return filestorage.ListExportsResponse{
-				Items: []filestorage.ExportSummary{},
+				Items:       []filestorage.ExportSummary{},
 				OpcNextPage: common.String("a"),
 			}, nil
 		}
@@ -104,7 +104,7 @@ func (c MockOCIComputeClient) GetVolumeAttachment(ctx context.Context, request c
 		default:
 			return core.GetVolumeAttachmentResponse{
 				VolumeAttachment: core.IScsiVolumeAttachment{
-					Id: request.VolumeAttachmentId,
+					Id:             request.VolumeAttachmentId,
 					LifecycleState: core.VolumeAttachmentLifecycleStateAttaching,
 				},
 			}, nil

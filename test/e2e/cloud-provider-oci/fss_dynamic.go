@@ -92,13 +92,16 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			writePod, readPod := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
 			//adding pod deletion check as resources are being created by using workload identity resource principal
-			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod); if err != nil {
+			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 		})
@@ -113,13 +116,16 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			writePod, readPod := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
-			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod); if err != nil {
+			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Basic Create PVC and POD for CSI-FSS with new mount-target creation")
@@ -131,13 +137,16 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName2)
 			pvc2 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName2, v1.ClaimPending, nil)
 			writePod2, readPod2 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc2.Name, false, []string{})
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod2); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod2)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod2); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod2)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc2.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc2.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Create PVC and POD for CSI-FSS with exportPath and with new mount-target creation")
@@ -146,17 +155,20 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			scParameters3 := map[string]string{"availabilityDomain": setupF.AdLabel, "mountTargetSubnetOcid": setupF.MntTargetSubnetOcid, "exportOptions": defaultExportOptionsJsonString}
 			scParameters3["exportPath"] = "/csi-fss-e2e-export-path-export-options-mt-create-in-compartment"
 			scParameters3["exportOptions"] = defaultExportOptionsJsonString
-			scName3 := f.CreateStorageClassOrFail(f.Namespace.Name + "-3", framework.FssProvisionerType, scParameters3, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			scName3 := f.CreateStorageClassOrFail(f.Namespace.Name+"-3", framework.FssProvisionerType, scParameters3, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			f.StorageClasses = append(f.StorageClasses, scName3)
 			pvc3 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName3, v1.ClaimPending, nil)
 			writePod3, readPod3 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc3.Name, false, []string{})
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod3); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod3)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod3); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod3)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc3.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc3.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Create PVC and POD for CSI-FSS with exportPath and exportOptions and with new mount-target creation")
@@ -164,17 +176,20 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			By("Running test: Create PVC and POD for CSI-FSS with kmsKey and with new mount-target creation")
 			scParameters4 := map[string]string{"availabilityDomain": setupF.AdLabel, "mountTargetSubnetOcid": setupF.MntTargetSubnetOcid, "exportOptions": defaultExportOptionsJsonString}
 			scParameters4["kmsKey"] = setupF.CMEKKMSKey
-			scName4 := f.CreateStorageClassOrFail(f.Namespace.Name + "-4", framework.FssProvisionerType, scParameters4, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			scName4 := f.CreateStorageClassOrFail(f.Namespace.Name+"-4", framework.FssProvisionerType, scParameters4, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			f.StorageClasses = append(f.StorageClasses, scName4)
 			pvc4 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName4, v1.ClaimPending, nil)
 			writePod4, readPod4 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc4.Name, false, []string{})
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod4); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod4)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod4); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod4)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc4.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc4.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Create PVC and POD for CSI-FSS with kmsKey and with new mount-target creation")
@@ -189,15 +204,15 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 				f.StorageClasses = append(f.StorageClasses, scName5)
 				pvc5 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName5, v1.ClaimPending, nil)
 				writePod5, readPod5 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc5.Name, false, []string{})
-				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod5);
+				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod5)
 				if err != nil {
 					framework.Failf("Error deleting pod: %v", err)
 				}
-				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod5);
+				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod5)
 				if err != nil {
 					framework.Failf("Error deleting pod: %v", err)
 				}
-				err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc5.Name);
+				err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc5.Name)
 				if err != nil {
 					framework.Failf("Error deleting PVC: %v", err)
 				}
@@ -281,13 +296,16 @@ var _ = Describe("Dynamic FSS test in different compartment", func() {
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			writePod, readPod := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
 			//adding pod deletion check as resources are being created by using workload identity resource principal
-			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod); if err != nil {
+			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 		})
@@ -302,13 +320,16 @@ var _ = Describe("Dynamic FSS test in different compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			writePod, readPod := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
-			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod); if err != nil {
+			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Basic Create PVC and POD for CSI-FSS with file-system compartment set and with new mount-target creation")
@@ -316,17 +337,20 @@ var _ = Describe("Dynamic FSS test in different compartment", func() {
 			By("Running test: Create PVC and POD for CSI-FSS with exportPath and with file-system compartment set and with new mount-target creation")
 			scParameters2 := map[string]string{"availabilityDomain": setupF.AdLabel, "mountTargetSubnetOcid": setupF.MntTargetSubnetOcid, "compartmentOcid": setupF.MntTargetCompartmentOcid, "exportOptions": defaultExportOptionsJsonString}
 			scParameters2["exportPath"] = "/csi-fss-e2e-export-path-mt-create-diff-compartment"
-			scName2 := f.CreateStorageClassOrFail(f.Namespace.Name + "-2", framework.FssProvisionerType, scParameters2, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			scName2 := f.CreateStorageClassOrFail(f.Namespace.Name+"-2", framework.FssProvisionerType, scParameters2, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			f.StorageClasses = append(f.StorageClasses, scName2)
 			pvc2 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName2, v1.ClaimPending, nil)
 			writePod2, readPod2 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc2.Name, false, []string{})
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod2); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod2)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod2); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod2)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc2.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc2.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Create PVC and POD for CSI-FSS with exportPath and with file-system compartment set and with new mount-target creation")
@@ -334,17 +358,20 @@ var _ = Describe("Dynamic FSS test in different compartment", func() {
 			By("Running test: Create PVC and POD for CSI-FSS with exportPath and exportOptions and with file-system compartment set and with new mount-target creation")
 			scParameters3 := map[string]string{"availabilityDomain": setupF.AdLabel, "mountTargetSubnetOcid": setupF.MntTargetSubnetOcid, "compartmentOcid": setupF.MntTargetCompartmentOcid, "exportOptions": defaultExportOptionsJsonString}
 			scParameters3["exportPath"] = "/csi-fss-e2e-export-path-export-options-mt-create-diff-compartment"
-			scName3 := f.CreateStorageClassOrFail(f.Namespace.Name + "-3", framework.FssProvisionerType, scParameters3, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			scName3 := f.CreateStorageClassOrFail(f.Namespace.Name+"-3", framework.FssProvisionerType, scParameters3, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			f.StorageClasses = append(f.StorageClasses, scName3)
 			pvc3 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName3, v1.ClaimPending, nil)
 			writePod3, readPod3 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc3.Name, false, []string{})
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod3); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod3)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod3); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod3)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc3.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc3.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Create PVC and POD for CSI-FSS with exportPath and exportOptions and with file-system compartment set and with new mount-target creation")
@@ -352,17 +379,20 @@ var _ = Describe("Dynamic FSS test in different compartment", func() {
 			By("Running test: Create PVC and POD for CSI-FSS with kmsKey and with file-system compartment set and with new mount-target creation")
 			scParameters4 := map[string]string{"availabilityDomain": setupF.AdLabel, "mountTargetSubnetOcid": setupF.MntTargetSubnetOcid, "compartmentOcid": setupF.MntTargetCompartmentOcid, "exportOptions": defaultExportOptionsJsonString}
 			scParameters4["kmsKey"] = setupF.CMEKKMSKey
-			scName4 := f.CreateStorageClassOrFail(f.Namespace.Name + "-4", framework.FssProvisionerType, scParameters4, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+			scName4 := f.CreateStorageClassOrFail(f.Namespace.Name+"-4", framework.FssProvisionerType, scParameters4, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			f.StorageClasses = append(f.StorageClasses, scName4)
 			pvc4 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName4, v1.ClaimPending, nil)
 			writePod4, readPod4 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc4.Name, false, []string{})
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod4); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod4)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod4); if err != nil {
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod4)
+			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
-			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc4.Name); if err != nil {
+			err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc4.Name)
+			if err != nil {
 				framework.Failf("Error deleting PVC: %v", err)
 			}
 			By("Completed test: Create PVC and POD for CSI-FSS with kmsKey and with file-system compartment set and with new mount-target creation")
@@ -377,15 +407,15 @@ var _ = Describe("Dynamic FSS test in different compartment", func() {
 				f.StorageClasses = append(f.StorageClasses, scName5)
 				pvc5 := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName5, v1.ClaimPending, nil)
 				writePod5, readPod5 := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc5.Name, false, []string{})
-				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod5);
+				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod5)
 				if err != nil {
 					framework.Failf("Error deleting pod: %v", err)
 				}
-				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod5);
+				err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, readPod5)
 				if err != nil {
 					framework.Failf("Error deleting pod: %v", err)
 				}
-				err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc5.Name);
+				err = pvcJig.DeleteAndAwaitPVC(f.Namespace.Name, pvc5.Name)
 				if err != nil {
 					framework.Failf("Error deleting PVC: %v", err)
 				}

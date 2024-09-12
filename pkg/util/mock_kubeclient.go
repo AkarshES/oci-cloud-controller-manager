@@ -61,7 +61,7 @@ import (
 	v117 "k8s.io/client-go/kubernetes/typed/storage/v1"
 	"k8s.io/client-go/kubernetes/typed/storage/v1alpha1"
 	v1beta117 "k8s.io/client-go/kubernetes/typed/storage/v1beta1"
-	alpha1 `k8s.io/client-go/kubernetes/typed/storagemigration/v1alpha1`
+	alpha1 "k8s.io/client-go/kubernetes/typed/storagemigration/v1alpha1"
 	"k8s.io/client-go/rest"
 )
 
