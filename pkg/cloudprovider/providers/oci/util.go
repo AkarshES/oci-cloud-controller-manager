@@ -203,6 +203,21 @@ func GetIsFeatureEnabledFromEnv(logger *zap.SugaredLogger, featureName string, d
 	return enableFeature
 }
 
+func GetIntegerFromEnv(logger *zap.SugaredLogger, featureName string, defaultValue int) int {
+	valueVar, ok := os.LookupEnv(featureName)
+	if ok {
+		var err error
+		value, err := strconv.ParseInt(valueVar, 10, 64)
+		if err != nil {
+			logger.With(zap.Error(err)).Errorf("failed to parse %s envvar, defaulting to %t", featureName, defaultValue)
+			return defaultValue
+		} else {
+			return int(value)
+		}
+	}
+	return defaultValue
+}
+
 // getResourceTrackingSystemTagsFromConfig reads resource tracking tags from config
 // which are specified under common tags
 func getResourceTrackingSystemTagsFromConfig(logger *zap.SugaredLogger, initialTags *config.InitialTags) (resourceTrackingTags map[string]map[string]interface{}) {

@@ -2552,3 +2552,7 @@ sigs.k8s.io/yaml v1.3.0/go.mod h1:GeOyir5tyXNByN85N/dRIT9es5UQNerPYEKK56eTBm8=
 sigs.k8s.io/yaml v1.4.0 h1:Mk1wCc2gy/F0THH0TAp1QYyJNzRm2KCLy3o5ASXVI5E=
 sigs.k8s.io/yaml v1.4.0/go.mod h1:Ejl7/uTz7PSA4eKMyQCUTnhZYNmLIl+5c2lQPGR2BPY=
 sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0/go.mod h1:hI742Nqp5OhwiqlzhgfbWU4mW4yO10fP+LoT9WOswdU=
+
+bitbucket.oci.oraclecorp.com/faas/ocimtls v1.2.0/go.mod h1:uIRAMkVfNv4425VQIBIFruCryoRGNjeqZscoLCT0wPU=
+bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.78.1-p h1:K9Ljx9eTNvao5bDkyNS/xaqWYvVlWMfK3UdNN3tWTmo=
+bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.78.1-p/go.mod h1:IBEV9l1qBzUpo7zgGaRUhbB05BVfcDGYRFBCPlTcPp0=

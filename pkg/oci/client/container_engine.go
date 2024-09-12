@@ -2,17 +2,19 @@ package client
 
 import (
 	"context"
+	"fmt"
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
 	"github.com/pkg/errors"
-	"strconv"
 )
 
 type ContainerEngineInterface interface {
 	GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodePoolId string) (*containerengine.VirtualNode, error)
-	RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error)
-	ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error)
+	RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error)
+	ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error)
+	GetWorkRequest(ctx context.Context, workRequestId string) (*containerengine.WorkRequest, error)
+	DeleteWorkRequest(ctx context.Context, workRequestId string) (string, error)
 }
 
 func (c *client) GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodePoolId string) (*containerengine.VirtualNode, error) {
@@ -53,8 +55,8 @@ func IsVirtualNodeInTerminalState(virtualNode *containerengine.VirtualNode) bool
 // Returns:
 // - A string representing the work request ID associated with the reboot operation.
 // - An error indicating any issues encountered during the reboot operation; otherwise, returns nil.
-func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
-	evictionGracePeriod := strconv.Itoa(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
+func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
+	evictionGracePeriod := generateEvictionGracePeriod(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
 	rebootClusterNodeDetails := &containerengine.RebootClusterNodeDetails{
 		NodeEvictionSettings: &containerengine.NodeEvictionSettings{
 			EvictionGraceDuration:           &evictionGracePeriod,
@@ -73,7 +75,7 @@ func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId
 		return "", errors.WithStack(err)
 	}
 
-	return *resp.OpcRequestId, nil
+	return *resp.OpcWorkRequestId, nil
 }
 
 // ReplaceBootVolumeClusterNode initiates a cycling operation for a specified node within a cluster.
@@ -89,27 +91,69 @@ func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId
 // Returns:
 // - A string representing the work request ID associated with the cycling operation.
 // - An error indicating any issues encountered during the cycling operation; otherwise, returns nil.
-func (c *client) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+func (c *client) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
 
-	evictionGracePeriod := strconv.Itoa(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
+	evictionGracePeriod := generateEvictionGracePeriod(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
+
 	replaceBootVolumeClusterNodeDetails := &containerengine.ReplaceBootVolumeClusterNodeDetails{
 		NodeEvictionSettings: &containerengine.NodeEvictionSettings{
 			EvictionGraceDuration:           &evictionGracePeriod,
 			IsForceActionAfterGraceDuration: &nor.Spec.NodeEvictionSettings.IsForceActionAfterGraceDuration,
 		},
 	}
-
 	resp, err := c.containerEngine.ReplaceBootVolumeClusterNode(ctx, containerengine.ReplaceBootVolumeClusterNodeRequest{
 		NodeId:                              common.String(nodeId),
 		ClusterId:                           common.String(clusterId),
 		ReplaceBootVolumeClusterNodeDetails: *replaceBootVolumeClusterNodeDetails,
 		RequestMetadata:                     c.requestMetadata,
 	})
-	incRequestCounter(err, createVerb, cycleNodeWorkRequestResource)
+	incRequestCounter(err, createVerb, replaceBootVolumeWorkRequestResource)
 
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
+	return *resp.OpcWorkRequestId, nil
+}
+
+// FIXME: to take about eviction setting is null
+func generateEvictionGracePeriod(minutes int) string {
+	duration := fmt.Sprintf("PT%dM", minutes)
+	return duration
+}
+
+func (c *client) GetWorkRequest(ctx context.Context, workRequestId string) (*containerengine.WorkRequest, error) {
+	if !c.rateLimiter.Reader.TryAccept() {
+		return nil, RateLimitError(false, "GetWorkRequest")
+	}
+
+	resp, err := c.containerEngine.GetWorkRequest(ctx, containerengine.GetWorkRequestRequest{
+		WorkRequestId:   common.String(workRequestId),
+		RequestMetadata: c.requestMetadata,
+	})
+
+	incRequestCounter(err, getVerb, nodeOperationWorkRequestResource)
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return &resp.WorkRequest, nil
+}
+
+func (c *client) DeleteWorkRequest(ctx context.Context, workRequestId string) (string, error) {
+	if !c.rateLimiter.Writer.TryAccept() {
+		return "", RateLimitError(true, "DeleteWorkRequest")
+	}
+	resp, err := c.containerEngine.DeleteWorkRequest(ctx, containerengine.DeleteWorkRequestRequest{
+		WorkRequestId:   common.String(workRequestId),
+		RequestMetadata: c.requestMetadata,
+	})
+	incRequestCounter(err, deleteVerb, nodeOperationWorkRequestResource)
+
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
 	return *resp.OpcRequestId, nil
+
 }

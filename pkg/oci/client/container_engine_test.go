@@ -19,8 +19,8 @@ var (
 
 // TestRebootClusterNode verifies the correctness of the RebootClusterNode function.
 func TestRebootClusterNode(t *testing.T) {
-	nor := norv1beta1.NodeOperationRequest{
-		Spec: norv1beta1.NodeOperationRequestSpec{
+	nor := norv1beta1.NodeOperationRule{
+		Spec: norv1beta1.NodeOperationRuleSpec{
 			NodeEvictionSettings: norv1beta1.NodeEvictionSettings{},
 		},
 	}
@@ -43,8 +43,8 @@ func TestRebootClusterNode(t *testing.T) {
 
 // TestRebootClusterNodeFailure simulates a scenario where the reboot of a node fails due to an error.
 func TestRebootClusterNodeFailure(t *testing.T) {
-	nor := norv1beta1.NodeOperationRequest{
-		Spec: norv1beta1.NodeOperationRequestSpec{
+	nor := norv1beta1.NodeOperationRule{
+		Spec: norv1beta1.NodeOperationRuleSpec{
 			NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
 				EvictionGracePeriod: 60,
 			},
@@ -68,18 +68,11 @@ func TestRebootClusterNodeFailure(t *testing.T) {
 
 // TestReplaceBootVolumeClusterNode verifies the correctness of the RebootClusterNode function.
 func TestReplaceBootVolumeClusterNode(t *testing.T) {
-	nor := norv1beta1.NodeOperationRequest{
-		Spec: norv1beta1.NodeOperationRequestSpec{
+	nor := norv1beta1.NodeOperationRule{
+		Spec: norv1beta1.NodeOperationRuleSpec{
 			NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
 				EvictionGracePeriod:             60,
 				IsForceActionAfterGraceDuration: true,
-			},
-			CyclingActionDetails: norv1beta1.CyclingActionDetails{
-				KubernetesVersion: "v1.30.0",
-				NodeMetaData:      map[string]string{"key": "value"},
-				SshPublicKey:      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD...",
-				CycleMode:         "bootVolumeReplace",
-				IsCycleInSyncNode: true,
 			},
 		},
 	}
@@ -102,17 +95,11 @@ func TestReplaceBootVolumeClusterNode(t *testing.T) {
 
 // TestReplaceBootVolumeClusterNodeFailure simulates a scenario where the cycling of a node fails due to an error.
 func TestReplaceBootVolumeClusterNodeFailure(t *testing.T) {
-	nor := norv1beta1.NodeOperationRequest{
-		Spec: norv1beta1.NodeOperationRequestSpec{
+	nor := norv1beta1.NodeOperationRule{
+		Spec: norv1beta1.NodeOperationRuleSpec{
 			NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
-				EvictionGracePeriod: 60,
-			},
-			CyclingActionDetails: norv1beta1.CyclingActionDetails{
-				KubernetesVersion: "v1.30.0",
-				NodeMetaData:      map[string]string{"key": "value"},
-				SshPublicKey:      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD...",
-				CycleMode:         "bootVolumeReplace",
-				IsCycleInSyncNode: true,
+				EvictionGracePeriod:             60,
+				IsForceActionAfterGraceDuration: true,
 			},
 		},
 	}
@@ -137,19 +124,19 @@ type mockContainerEngineClient struct {
 	ReplaceBootVolumeClusterNodeFunc func(ctx context.Context, req containerengine.ReplaceBootVolumeClusterNodeRequest) (containerengine.ReplaceBootVolumeClusterNodeResponse, error)
 }
 
-func (m *mockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+func (m *mockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
 	req := defaultRebootClusterNodeRequest(nodeId, clusterId, nor)
 	response, err := m.RebootClusterNodeFunc(ctx, req)
 	return *response.OpcWorkRequestId, err
 }
 
-func (m *mockContainerEngineClient) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+func (m *mockContainerEngineClient) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
 	req := defaultReplaceBootVolumeClusterNodeRequest(nodeId, clusterId, nor)
 	response, err := m.ReplaceBootVolumeClusterNodeFunc(ctx, req)
 	return *response.OpcWorkRequestId, err
 }
 
-func defaultRebootClusterNodeRequest(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) containerengine.RebootClusterNodeRequest {
+func defaultRebootClusterNodeRequest(nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) containerengine.RebootClusterNodeRequest {
 	req := containerengine.RebootClusterNodeRequest{
 		NodeId:                   common.String(nodeId),
 		ClusterId:                common.String(clusterId),
@@ -158,7 +145,7 @@ func defaultRebootClusterNodeRequest(nodeId string, clusterId string, nor norv1b
 	return req
 }
 
-func defaultReplaceBootVolumeClusterNodeRequest(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) containerengine.ReplaceBootVolumeClusterNodeRequest {
+func defaultReplaceBootVolumeClusterNodeRequest(nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) containerengine.ReplaceBootVolumeClusterNodeRequest {
 	req := containerengine.ReplaceBootVolumeClusterNodeRequest{
 		NodeId:                              common.String(nodeId),
 		ClusterId:                           common.String(clusterId),

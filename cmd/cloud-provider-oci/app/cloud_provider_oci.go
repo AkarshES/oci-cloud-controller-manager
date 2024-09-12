@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"golang.org/x/time/rate"
 	"net/http"
 	"os"
 	"os/signal"
@@ -83,6 +84,12 @@ var (
 const (
 	defaultFssAddress  = "/var/run/shared-tmpfs/csi-fss.sock"
 	defaultFssEndpoint = "unix:///var/run/shared-tmpfs/csi-fss.sock"
+)
+
+// constant values for bvr and reboot APIs rate limiter used by node operation rule controller
+const (
+	defaultRateLimit     = 10
+	maxBurstTokens   int = 10
 )
 
 // NewCloudProviderOCICommand creates a *cobra.Command object with default parameters
@@ -286,14 +293,17 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 	logger = logger.With(zap.String("component", "node-cr-manager"))
 	ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
 	enableNOR := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NOR_CONTROLLER", false)
+	norControllerBvrLimit := oci.GetIntegerFromEnv(logger, "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM", 10)
+	norControllerRebootLimit := oci.GetIntegerFromEnv(logger, "NOR_CONTROLLER_REBOOT_RATE_LIMIT_RPM", 10)
 
 	//instantiate manager and hook up controller with manager
 	if shouldStartControllerManager(enableNOR, enableNPN, enableNPNController) {
 		wg.Add(1)
-		logger.Info("CRD is enabled.Instantiating manger.")
+		logger.Info("CRD is enabled. Instantiating manager.")
 		go func() {
 			defer wg.Done()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 				Scheme: scheme,
 				Metrics: metricsserver.Options{
@@ -308,20 +318,25 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 				controllerManagerSetupLog.Error(err, "unable to start manager")
 				os.Exit(1)
 			}
+
 			if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 				controllerManagerSetupLog.Error(err, "unable to set up health check")
 				os.Exit(1)
 			}
+
 			if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 				controllerManagerSetupLog.Error(err, "unable to set up ready check")
 				os.Exit(1)
 			}
+
 			configPath, ok := os.LookupEnv("CONFIG_YAML_FILENAME")
+
 			if !ok {
 				configPath = configFilePath
 			}
 			cfg := providercfg.GetConfig(logger, configPath)
 			ociClient := getOCIClient(logger, cfg)
+
 			metricPusher, err := metrics.NewMetricPusher(logger)
 			if err != nil {
 				logger.With("error", err).Error("metrics collection could not be enabled")
@@ -351,12 +366,27 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
 				utilruntime.Must(norv1beta1.AddToScheme(scheme))
 				logger.Info("NOR controller is enabled.")
-				if err = (&controllers.NodeOperationRequestReconciler{
-					Client:    mgr.GetClient(),
-					Scheme:    mgr.GetScheme(),
-					OCIClient: ociClient,
+
+				master := options.Master
+				kubeConfigPath := options.Generic.ClientConnection.Kubeconfig
+				logger.Info("master is ", master, "kubeconfig is", kubeConfigPath)
+
+				kubeClient := config.Client
+
+				norControllerBvrLimiter := generateRateLimiter(norControllerBvrLimit)
+				norControllerRebootLimiter := generateRateLimiter(norControllerRebootLimit)
+
+				if err = (&controllers.NodeOperationRuleReconciler{
+					Client:            mgr.GetClient(),
+					Scheme:            mgr.GetScheme(),
+					OCIClient:         ociClient,
+					KubeClient:        kubeClient,
+					Config:            cfg,
+					MetricPusher:      metricPusher,
+					BvrRateLimiter:    norControllerBvrLimiter,
+					RebootRateLimiter: norControllerRebootLimiter,
 				}).SetupWithManager(mgr); err != nil {
-					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "NodeOperationRequest")
+					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "nor-controller")
 					os.Exit(1)
 				}
 			}
@@ -437,4 +467,17 @@ func shouldStartControllerManager(crdEnabled ...bool) bool {
 		}
 	}
 	return false
+}
+
+func getRateLimitValue(rateLimitFromLimits int) int {
+	if rateLimitFromLimits <= 0 {
+		return defaultRateLimit
+	} else {
+		return rateLimitFromLimits
+	}
+}
+
+func generateRateLimiter(rateLimitFromLimits int) *rate.Limiter {
+	rateLimit := getRateLimitValue(rateLimitFromLimits)
+	return rate.NewLimiter(rate.Every(time.Minute/time.Duration(rateLimit)), maxBurstTokens)
 }

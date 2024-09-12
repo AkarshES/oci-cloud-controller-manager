@@ -189,6 +189,8 @@ type containerEngineClient interface {
 	GetVirtualNode(ctx context.Context, request containerengine.GetVirtualNodeRequest) (response containerengine.GetVirtualNodeResponse, err error)
 	RebootClusterNode(ctx context.Context, request containerengine.RebootClusterNodeRequest) (response containerengine.RebootClusterNodeResponse, err error)
 	ReplaceBootVolumeClusterNode(ctx context.Context, request containerengine.ReplaceBootVolumeClusterNodeRequest) (response containerengine.ReplaceBootVolumeClusterNodeResponse, err error)
+	GetWorkRequest(ctx context.Context, request containerengine.GetWorkRequestRequest) (response containerengine.GetWorkRequestResponse, err error)
+	DeleteWorkRequest(ctx context.Context, request containerengine.DeleteWorkRequestRequest) (response containerengine.DeleteWorkRequestResponse, err error)
 }
 
 type compartmentClient interface {
