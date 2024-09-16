@@ -13,3 +13,6 @@ spec:
     driver: lustre.csi.oraclecloud.com
     volumeHandle: "10.0.2.6@tcp1:10.0.2.7@tcp1:/testfs"
     fsType: lustre
+    volumeAttributes:
+      setupLnet: "true"
+      lustreSubnetCidr: 10.0.8.0/24
