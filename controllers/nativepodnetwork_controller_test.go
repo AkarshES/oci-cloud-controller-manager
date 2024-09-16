@@ -529,7 +529,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					}},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 1, V6: 0},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 0}}},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 1, V6: 0}}},
 			err:                   nil,
 		},
 		{
@@ -546,8 +546,10 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 0},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 14, V6: 0}}},
-			err:                   nil,
+			expected: []VnicIPAllocations{
+				{"one", IpAddressCountByVersion{V4: 13, V6: 0}},
+			},
+			err: nil,
 		},
 		{
 			name:        "one vnic without space for required IPs",
@@ -588,13 +590,13 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 18},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 14, V6: 14}}},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 13, V6: 13}}},
 			err:                   nil,
 		},
 		{
 			name:        "two vnic for required IPv4 and IPv6",
 			ipFamilies:  []string{IPv4, IPv6},
-			maxPodCount: 31,
+			maxPodCount: 62,
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{
@@ -625,8 +627,8 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					},
 				},
 			},
-			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 18},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 2}}, {"two", IpAddressCountByVersion{V4: 13, V6: 13}}},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 48, V6: 48},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 1, V6: 1}}, {"two", IpAddressCountByVersion{V4: 13, V6: 13}}},
 			err:                   nil,
 		},
 		{
@@ -646,6 +648,66 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 32, V6: 32}}, {"two", IpAddressCountByVersion{V4: 4, V6: 4}}},
 			err:                   nil,
+		},
+		{
+			name:        "one vnic",
+			ipFamilies:  []string{IPv4},
+			maxPodCount: 31,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 32, V6: 0}}},
+			err:                   nil,
+		},
+		{
+			name:        "two vnic for required IPv4 and IPv6",
+			ipFamilies:  []string{IPv4, IPv6},
+			maxPodCount: 64,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+				"two": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+				"three": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"one", IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"two", IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"three", IpAddressCountByVersion{V4: 3, V6: 3}},
+			},
+			err: nil,
+		},
+		{
+			name:        "single vnic for required IPv4 and IPv6",
+			ipFamilies:  []string{IPv4, IPv6},
+			maxPodCount: 32,
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"one": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+				"two": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"one", IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"two", IpAddressCountByVersion{V4: 2, V6: 2}},
+			},
+			err: nil,
 		},
 	}
 	for _, tc := range testCases {
@@ -671,8 +733,9 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			}
 
 			t.Logf("expected ip allocation:\n%+v\n got ip allocation:\n%+v", tc.expected, allocation)
-			if gotSumV4 != expectedSumV4 && gotSumV6 != expectedSumV6 {
+			if gotSumV4 != expectedSumV4 || gotSumV6 != expectedSumV6 {
 				t.Errorf("expected ip allocation:\n%+v\nbut got:\n%+v", tc.expected, allocation)
+				t.FailNow()
 			}
 		})
 	}
