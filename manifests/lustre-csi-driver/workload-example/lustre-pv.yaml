@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lustre-pv
+spec:
+  capacity:
+    storage: 771Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  csi:
+    driver: lustre.csi.oraclecloud.com
+    volumeHandle: "10.0.2.6@tcp1:10.0.2.7@tcp1:/testfs"
+    fsType: lustre

@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: lustre-csi-oci-node
+  namespace: kube-system
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: lustre-csi-oci-node
+  template:
+    metadata:
+      labels:
+        app: lustre-csi-oci-node
+        role: csi-oci
+    spec:
+      containers:
+        - args:
+            - --v=2
+            - --nodeid=$(KUBE_NODE_NAME)
+            - --only-lustre-csi-driver-enabled=true
+            - --lustre-endpoint=unix:///lustre/csi.sock
+            - --lustre-csi-address=/lustre/csi.sock
+            - --lustre-kubelet-registration-path=/var/lib/kubelet/plugins/lustre.csi.oraclecloud.com/csi.sock
+          command:
+            - /usr/local/bin/oci-csi-node-driver
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: PATH
+              value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/host/usr/bin:/host/sbin
+          image: aga.ocir.io/axoxdievda5j/oke-public-cloud-provider-oci:v1.27-1d7358366b9-11@sha256:335a5aa181a9c7ced85fd5a08a8e0b7a228298ea3b5c472c364e97cc3e2a54a7
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - rm -rf /registration/lustre.csi.oraclecloud.com /registration/lustre.csi.oraclecloud.com-reg.sock
+          name: lustre-csi-node-driver
+          resources:
+            limits:
+              cpu: 500m
+              memory: 300Mi
+            requests:
+              cpu: 30m
+              memory: 70Mi
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/kubelet
+              mountPropagation: Bidirectional
+              name: pods-mount-dir
+            - mountPath: /dev
+              name: device-dir
+            - mountPath: /registration
+              name: registration-dir
+            - mountPath: /host
+              mountPropagation: HostToContainer
+              name: host-root
+            - mountPath: /host/var/lib/kubelet
+              mountPropagation: Bidirectional
+              name: encrypt-pods-mount-dir
+            - mountPath: /lustre
+              name: lustre-plugin-dir
+            - mountPath: /sbin/umount
+              name: lustre-driver-mounts
+              subPath: umount
+            - mountPath: /sbin/mount
+              name: lustre-driver-mounts
+              subPath: mount
+      dnsPolicy: ClusterFirst
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: csi-oci-node-sa
+      serviceAccountName: csi-oci-node-sa
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - operator: Exists
+      volumes:
+        - hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: DirectoryOrCreate
+          name: registration-dir
+        - hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+          name: pods-mount-dir
+        - hostPath:
+            path: /dev
+            type: ""
+          name: device-dir
+        - hostPath:
+            path: /
+            type: Directory
+          name: host-root
+        - hostPath:
+            path: /var/lib/kubelet/plugins/lustre.csi.oraclecloud.com
+            type: DirectoryOrCreate
+          name: lustre-plugin-dir
+        - hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+          name: encrypt-pods-mount-dir
+        - configMap:
+            defaultMode: 493
+            name: oci-fss-csi
+          name: lustre-driver-mounts
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate

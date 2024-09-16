@@ -1,0 +1,21 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: lustre-app
+spec:
+  containers:
+    - args:
+        - -c
+        - while true; do echo $(date -u) >> /lustre/data/out.txt; sleep 60; done
+      command:
+        - /bin/sh
+      image: busybox:latest
+      imagePullPolicy: Always
+      name: lustre-app
+      volumeMounts:
+        - name: lustre-volume
+          mountPath: /lustre/data
+  volumes:
+    - name: lustre-volume
+      persistentVolumeClaim:
+        claimName: lustre-pvc
