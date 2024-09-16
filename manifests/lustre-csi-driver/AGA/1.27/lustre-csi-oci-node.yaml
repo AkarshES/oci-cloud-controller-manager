@@ -65,7 +65,7 @@ spec:
               cpu: 500m
               memory: 300Mi
             requests:
-              cpu: 30m
+              cpu: 31m
               memory: 70Mi
           securityContext:
             privileged: true
