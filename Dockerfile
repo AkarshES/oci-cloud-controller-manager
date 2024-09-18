@@ -37,3 +37,5 @@ RUN chmod 755 /sbin/encrypt-mount
 RUN chmod 755 /sbin/encrypt-umount
 RUN chmod 755 /sbin/rpm-host
 RUN chmod 755 /sbin/chroot-bash
+
+COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/* /usr/local/bin/
