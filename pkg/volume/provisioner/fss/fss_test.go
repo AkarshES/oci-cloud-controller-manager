@@ -412,6 +412,10 @@ func (p *MockProvisionerClient) FSS(ociClientConfig *client.OCIClientConfig) cli
 	return &MockFileStorageClient{}
 }
 
+func (p *MockProvisionerClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {
+	return &MockProvisionerClient{}
+}
+
 // Context mocks client Context implementation
 func (p *MockProvisionerClient) Context() context.Context {
 	return context.Background()
