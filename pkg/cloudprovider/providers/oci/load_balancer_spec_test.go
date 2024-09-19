@@ -4701,9 +4701,10 @@ func TestNewLBSpecSuccess(t *testing.T) {
 		},
 	}
 
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range testCases {
@@ -4717,7 +4718,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6025,9 +6026,10 @@ func TestNewLBSpecForTags(t *testing.T) {
 			featureEnabled: false,
 		},
 	}
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range tests {
@@ -6042,7 +6044,7 @@ func TestNewLBSpecForTags(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6208,9 +6210,10 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 		},
 	}
 
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range testCases {
@@ -6224,7 +6227,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6720,9 +6723,10 @@ func TestNewLBSpecFailure(t *testing.T) {
 		},
 	}
 
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range testCases {
@@ -6734,7 +6738,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
 			tc.service.Spec.IPFamilies = []v1.IPFamily{v1.IPFamily(IPv4)}
 			if err == nil {
 				slManagerFactory := func(mode string) securityListManager {
@@ -10311,13 +10315,13 @@ func Test_getOciLoadBalancerSubnets(t *testing.T) {
 			subnets: []string{"regional-subnet"},
 		},
 	}
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range testCases {
-		logger := zap.L()
 		t.Run(name, func(t *testing.T) {
 			cp.config = &providercfg.Config{
 				LoadBalancer: &providercfg.LoadBalancerConfig{
@@ -10325,7 +10329,7 @@ func Test_getOciLoadBalancerSubnets(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getOciLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getOciLoadBalancerSubnets(context.Background(), tc.service)
 			if !reflect.DeepEqual(subnets, tc.subnets) {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.subnets, subnets)
 			}
@@ -10429,13 +10433,13 @@ func Test_getNetworkLoadbalancerSubnets(t *testing.T) {
 			subnets: []string{"one"},
 		},
 	}
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range testCases {
-		logger := zap.L()
 		t.Run(name, func(t *testing.T) {
 			cp.config = &providercfg.Config{
 				LoadBalancer: &providercfg.LoadBalancerConfig{
@@ -10443,7 +10447,7 @@ func Test_getNetworkLoadbalancerSubnets(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getNetworkLoadbalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getNetworkLoadbalancerSubnets(context.Background(), tc.service)
 			if !reflect.DeepEqual(subnets, tc.subnets) {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.subnets, subnets)
 			}
