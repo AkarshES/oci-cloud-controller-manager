@@ -271,6 +271,10 @@ func (p *MockProvisionerClient) ContainerEngine() client.ContainerEngineInterfac
 	return &MockContainerEngineClient{}
 }
 
+func (p *MockProvisionerClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {
+	return &MockProvisionerClient{}
+}
+
 func (c *MockBlockStorageClient) AwaitVolumeAvailableORTimeout(ctx context.Context, id string) (*core.Volume, error) {
 	volume := volumes[id]
 	if volume == nil {

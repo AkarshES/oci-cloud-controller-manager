@@ -886,6 +886,10 @@ func (MockOCIClient) ContainerEngine() client.ContainerEngineInterface {
 	return &MockContainerEngineClient{}
 }
 
+func (MockOCIClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {
+	return MockOCIClient{}
+}
+
 // MockComputeClient mocks Compute client implementation
 type MockComputeClient struct{}
 

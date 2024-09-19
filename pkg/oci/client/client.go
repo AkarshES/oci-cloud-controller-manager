@@ -55,6 +55,7 @@ type Interface interface {
 	FSS(*OCIClientConfig) FileStorageInterface
 	Identity(*OCIClientConfig) IdentityInterface
 	ContainerEngine() ContainerEngineInterface
+	NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *OCIClientConfig) Interface
 }
 
 type OCIClientConfig struct {
@@ -635,4 +636,56 @@ func getConfigurationProvider(logger *zap.SugaredLogger, tokenRequest *authv1.To
 		}
 	}
 	return configProvider, nil
+}
+
+func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *OCIClientConfig) Interface {
+
+	var network core.VirtualNetworkClient
+
+	/* In case Workload/Nested RP support is required for remaining clients
+	var compute core.ComputeClient
+	var identityClient identity.IdentityClient
+	*/
+
+	if ociClientConfig.SaToken == nil {
+		return c
+	}
+	configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+	signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
+	interceptor := func(r *http.Request) error {
+		r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
+		return nil
+	}
+
+	network, err = core.NewVirtualNetworkClientWithConfigurationProvider(configProvider)
+	if err != nil {
+		c.logger.Errorf("Failed to create Network workload identity client %v", err)
+		return nil
+	}
+	setupBaseClient(logger, &network.BaseClient, signer, interceptor, "")
+	err = configureCustomTransport(c.logger, &network.BaseClient)
+	if err != nil {
+		c.logger.Error("Failed configure custom transport for Network Client %v", err)
+		return nil
+	}
+
+	loadbalancer := c.LoadBalancer(logger, lbType, ociClientConfig.TenancyId, ociClientConfig.SaToken)
+	networkloadbalancer := loadbalancer
+
+	return &client{
+		compute:             c.compute,
+		network:             network,
+		identity:            c.identity,
+		loadbalancer:        loadbalancer,
+		networkloadbalancer: networkloadbalancer,
+		bs:                  c.bs,
+		filestorage:         c.filestorage,
+		containerEngine:     c.containerEngine,
+
+		rateLimiter:     c.rateLimiter,
+		requestMetadata: c.requestMetadata,
+
+		subnetCache: cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+		logger:      logger,
+	}
 }
