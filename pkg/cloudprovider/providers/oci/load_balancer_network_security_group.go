@@ -208,11 +208,11 @@ func makeNsgSecurityRule(direction core.SecurityRuleDirectionEnum, source string
 }
 
 // getNsg implements the client method to get nsg
-func (s *CloudProvider) getNsg(ctx context.Context, id string) (*core.NetworkSecurityGroup, error) {
+func (clb *CloudLoadBalancerProvider) getNsg(ctx context.Context, id string) (*core.NetworkSecurityGroup, error) {
 	if id == "" {
 		return nil, errors.New("invalid; empty nsg id provided") // should never happen
 	}
-	response, _, err := s.client.Networking(nil).GetNetworkSecurityGroup(ctx, id)
+	response, _, err := clb.client.Networking(nil).GetNetworkSecurityGroup(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get nsg with id %s", id)
 	}
@@ -220,12 +220,12 @@ func (s *CloudProvider) getNsg(ctx context.Context, id string) (*core.NetworkSec
 }
 
 // listNsgRules implements the client method to list nsg rules based on direction
-func (s *CloudProvider) listNsgRules(ctx context.Context, id string, direction core.ListNetworkSecurityGroupSecurityRulesDirectionEnum) ([]core.SecurityRule, error) {
+func (clb *CloudLoadBalancerProvider) listNsgRules(ctx context.Context, id string, direction core.ListNetworkSecurityGroupSecurityRulesDirectionEnum) ([]core.SecurityRule, error) {
 	if id == "" {
 		return nil, errors.New("invalid; empty nsg id provided") // should never happen
 	}
 
-	response, err := s.client.Networking(nil).ListNetworkSecurityGroupSecurityRules(ctx, id, direction)
+	response, err := clb.client.Networking(nil).ListNetworkSecurityGroupSecurityRules(ctx, id, direction)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to list Security Rules for nsg: %s", id)
 	}
@@ -233,34 +233,34 @@ func (s *CloudProvider) listNsgRules(ctx context.Context, id string, direction c
 }
 
 // addNetworkSecurityGroupSecurityRules implements the client method to add nsg rules given the NSG id and security rules
-func (s *CloudProvider) addNetworkSecurityGroupSecurityRules(ctx context.Context, nsgId *string, rules []core.SecurityRule) (*core.AddNetworkSecurityGroupSecurityRulesResponse, error) {
+func (clb *CloudLoadBalancerProvider) addNetworkSecurityGroupSecurityRules(ctx context.Context, nsgId *string, rules []core.SecurityRule) (*core.AddNetworkSecurityGroupSecurityRulesResponse, error) {
 	rulesInBatches := splitRulesIntoBatches(rules)
 	var response *core.AddNetworkSecurityGroupSecurityRulesResponse
 	var err error
 	for i, _ := range rulesInBatches {
-		response, err = s.client.Networking(nil).AddNetworkSecurityGroupSecurityRules(ctx,
+		response, err = clb.client.Networking(nil).AddNetworkSecurityGroupSecurityRules(ctx,
 			*nsgId,
 			core.AddNetworkSecurityGroupSecurityRulesDetails{SecurityRules: securityRuleToAddSecurityRuleDetails(rulesInBatches[i])})
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to add security rules for nsg: %s", *nsgId)
 		}
-		s.logger.Infof("AddNetworkSecurityGroupSecurityRules OpcRequestId %s", pointer.StringDeref(response.OpcRequestId, ""))
+		clb.logger.Infof("AddNetworkSecurityGroupSecurityRules OpcRequestId %s", pointer.StringDeref(response.OpcRequestId, ""))
 	}
 	return response, nil
 }
 
 // removeNetworkSecurityGroupSecurityRules implements the client method to remove nsg rules given the NSG id and security rule ids
-func (s *CloudProvider) removeNetworkSecurityGroupSecurityRules(ctx context.Context, nsgId *string, ids []string) (*core.RemoveNetworkSecurityGroupSecurityRulesResponse, error) {
+func (clb *CloudLoadBalancerProvider) removeNetworkSecurityGroupSecurityRules(ctx context.Context, nsgId *string, ids []string) (*core.RemoveNetworkSecurityGroupSecurityRulesResponse, error) {
 	rulesInBatches := splitRuleIdsIntoBatches(ids)
 	var response *core.RemoveNetworkSecurityGroupSecurityRulesResponse
 	var err error
 	for i, _ := range rulesInBatches {
-		response, err = s.client.Networking(nil).RemoveNetworkSecurityGroupSecurityRules(ctx, *nsgId,
+		response, err = clb.client.Networking(nil).RemoveNetworkSecurityGroupSecurityRules(ctx, *nsgId,
 			core.RemoveNetworkSecurityGroupSecurityRulesDetails{SecurityRuleIds: rulesInBatches[i]})
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to remove security rules for nsg: %s", *nsgId)
 		}
-		s.logger.Infof("RemoveNetworkSecurityGroupSecurityRules OpcRequestId %s", pointer.StringDeref(response.OpcRequestId, ""))
+		clb.logger.Infof("RemoveNetworkSecurityGroupSecurityRules OpcRequestId %s", pointer.StringDeref(response.OpcRequestId, ""))
 	}
 	return response, nil
 }
@@ -308,20 +308,20 @@ func splitRuleIdsIntoBatches(rules []string) [][]string {
 	return securityRulesInBatches
 }
 
-func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice securityRuleComponents) error {
+func (clb *CloudLoadBalancerProvider) reconcileSecurityGroup(ctx context.Context, lbservice securityRuleComponents) error {
 	if len(lbservice.backendNsgOcids) > 0 {
 		updateRulesMutex.Lock()
 		defer updateRulesMutex.Unlock()
 	}
 
-	frontendNsg, err := s.getNsg(ctx, lbservice.frontendNsgOcid)
+	frontendNsg, err := clb.getNsg(ctx, lbservice.frontendNsgOcid)
 	if err != nil {
 		return err
 	}
-	logger := s.logger.With("frontendNsgId", *frontendNsg.Id)
+	logger := clb.logger.With("frontendNsgId", *frontendNsg.Id)
 
 	// Frontend NSG Ingress rules
-	existingLbIngressSecurityRules, err := s.listNsgRules(ctx, *frontendNsg.Id, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
+	existingLbIngressSecurityRules, err := clb.listNsgRules(ctx, *frontendNsg.Id, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice se
 	addLbIngressRules, removeLbIngressRules, err := reconcileSecurityRules(logger, generatedLbIngressRules, filterSecurityRulesForService(existingLbIngressSecurityRules, lbservice.serviceUid))
 
 	// Frontend NSG Egress rules
-	existingLbEgressSecurityRules, err := s.listNsgRules(ctx, *frontendNsg.Id, core.ListNetworkSecurityGroupSecurityRulesDirectionEgress)
+	existingLbEgressSecurityRules, err := clb.listNsgRules(ctx, *frontendNsg.Id, core.ListNetworkSecurityGroupSecurityRulesDirectionEgress)
 	if err != nil {
 		return err
 	}
@@ -340,7 +340,7 @@ func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice se
 	addLbRules := append(addLbIngressRules, addLbEgressRules...)
 	if len(addLbRules) > 0 {
 		logger.Infof("adding frontend nsg rules to nsg %s", *frontendNsg.Id)
-		_, err = s.addNetworkSecurityGroupSecurityRules(ctx, frontendNsg.Id, addLbRules)
+		_, err = clb.addNetworkSecurityGroupSecurityRules(ctx, frontendNsg.Id, addLbRules)
 		if err != nil {
 			return err
 		}
@@ -349,20 +349,20 @@ func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice se
 	removeLbRules := append(removeLbIngressRules, removeLbEgressRules...)
 	if len(removeLbRules) > 0 {
 		logger.Infof("removing frontend nsg rules for nsg %s", *frontendNsg.Id)
-		_, err = s.removeNetworkSecurityGroupSecurityRules(ctx, frontendNsg.Id, removeLbRules)
+		_, err = clb.removeNetworkSecurityGroupSecurityRules(ctx, frontendNsg.Id, removeLbRules)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, nsg := range lbservice.backendNsgOcids {
-		_, err := s.getNsg(ctx, nsg)
+		_, err := clb.getNsg(ctx, nsg)
 		if err != nil {
 			return err
 		}
 
-		logger := s.logger.With("backendNsgId", nsg)
-		existingBackendIngressSecurityRules, err := s.listNsgRules(ctx, nsg, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
+		logger := clb.logger.With("backendNsgId", nsg)
+		existingBackendIngressSecurityRules, err := clb.listNsgRules(ctx, nsg, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
 		if err != nil {
 			return err
 		}
@@ -373,7 +373,7 @@ func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice se
 
 		if len(addBackendIngressRules) > 0 {
 			logger.Infof("adding backend nsg rules to nsg %s", nsg)
-			_, err = s.addNetworkSecurityGroupSecurityRules(ctx, &nsg, addBackendIngressRules)
+			_, err = clb.addNetworkSecurityGroupSecurityRules(ctx, &nsg, addBackendIngressRules)
 			if err != nil {
 				return err
 			}
@@ -381,7 +381,7 @@ func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice se
 
 		if len(removeBackendIngressRules) > 0 {
 			logger.Infof("removing backend nsg rules from nsg %s", nsg)
-			_, err = s.removeNetworkSecurityGroupSecurityRules(ctx, &nsg, removeBackendIngressRules)
+			_, err = clb.removeNetworkSecurityGroupSecurityRules(ctx, &nsg, removeBackendIngressRules)
 			if err != nil {
 				return err
 			}
@@ -390,16 +390,16 @@ func (s *CloudProvider) reconcileSecurityGroup(ctx context.Context, lbservice se
 	return nil
 }
 
-func (s *CloudProvider) removeBackendSecurityGroupRules(ctx context.Context, lbservice securityRuleComponents) error {
+func (clb *CloudLoadBalancerProvider) removeBackendSecurityGroupRules(ctx context.Context, lbservice securityRuleComponents) error {
 
 	for _, backendNsg := range lbservice.backendNsgOcids {
-		nsg, err := s.getNsg(ctx, backendNsg)
+		nsg, err := clb.getNsg(ctx, backendNsg)
 		if err != nil {
 			return err
 		}
 
-		logger := s.logger.With("backendNsgId", *nsg.Id)
-		existingBackendIngressSecurityRules, err := s.listNsgRules(ctx, *nsg.Id, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
+		logger := clb.logger.With("backendNsgId", *nsg.Id)
+		existingBackendIngressSecurityRules, err := clb.listNsgRules(ctx, *nsg.Id, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
 		if err != nil {
 			return err
 		}
@@ -411,7 +411,7 @@ func (s *CloudProvider) removeBackendSecurityGroupRules(ctx context.Context, lbs
 
 		if len(deleteNsgIngressBackendRules) > 0 {
 			logger.Infof("remove backend nsg rules for service cleanup %s", *nsg.Id)
-			_, err = s.removeNetworkSecurityGroupSecurityRules(ctx, nsg.Id, deleteNsgIngressBackendRules)
+			_, err = clb.removeNetworkSecurityGroupSecurityRules(ctx, nsg.Id, deleteNsgIngressBackendRules)
 			if err != nil {
 				return err
 			}

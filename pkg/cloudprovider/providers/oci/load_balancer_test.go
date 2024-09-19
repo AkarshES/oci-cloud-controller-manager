@@ -540,13 +540,13 @@ func TestGetLoadBalancerSubnets(t *testing.T) {
 			expected: []string{"annotation-one"},
 		},
 	}
-	cp := &CloudProvider{
+	cp := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
 	}
 
 	for name, tc := range testCases {
-		logger := zap.L()
 		t.Run(name, func(t *testing.T) {
 
 			cp.config = &providercfg.Config{
@@ -555,7 +555,7 @@ func TestGetLoadBalancerSubnets(t *testing.T) {
 					Subnet2: tc.defaultSubnetTwo,
 				},
 			}
-			subnets, err := cp.getLoadBalancerSubnets(context.Background(), logger.Sugar(), tc.service)
+			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
 			if err != nil {
 				t.Error(err)
 			}
@@ -1433,12 +1433,16 @@ func Test_getNodesAndPodsByIPs(t *testing.T) {
 		PodLister:  &mockPodLister{},
 	}
 
+	clb := &CloudLoadBalancerProvider{
+		client: MockOCIClient{},
+	}
+
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["virtualPod1"], metav1.CreateOptions{})
 	_, _ = cp.kubeclient.CoreV1().Pods("").Create(context.TODO(), podList["virtualPod2"], metav1.CreateOptions{})
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			nodes, pods, err := cp.getNodesAndPodsByIPs(context.TODO(), tc.backendIPs, tc.service)
+			nodes, pods, err := clb.getNodesAndPodsByIPs(context.TODO(), cp, tc.backendIPs, tc.service)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("getNodesAndPodsByIPs() error = %v, wantErr %v", err, tc.wantErr)
 				return
@@ -1937,17 +1941,13 @@ func Test_getLbEndpointVersion(t *testing.T) {
 			wantErr:           nil,
 		},
 	}
-	cp := &CloudProvider{
-		client:     MockOCIClient{},
-		config:     &providercfg.Config{CompartmentID: "testCompartment"},
-		NodeLister: &mockNodeLister{},
-		kubeclient: testclient.NewSimpleClientset(),
-		logger:     zap.L().Sugar(),
-		PodLister:  &mockPodLister{},
+	clb := &CloudLoadBalancerProvider{
+		client: MockOCIClient{},
+		logger: zap.L().Sugar(),
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			lbEndpointVersion, err := cp.getLbEndpointIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.subnets)
+			lbEndpointVersion, err := clb.getLbEndpointIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.subnets)
 			if lbEndpointVersion != tt.lbEndpointVersion {
 				t.Errorf("Expected lbEndpointVersion = %s, but got %s", tt.lbEndpointVersion, lbEndpointVersion)
 			}
@@ -2066,17 +2066,13 @@ func Test_getLbListenerBackendSetIpVersion(t *testing.T) {
 			wantErr:                      nil,
 		},
 	}
-	cp := &CloudProvider{
-		client:     MockOCIClient{},
-		config:     &providercfg.Config{CompartmentID: "testCompartment"},
-		NodeLister: &mockNodeLister{},
-		kubeclient: testclient.NewSimpleClientset(),
-		logger:     zap.L().Sugar(),
-		PodLister:  &mockPodLister{},
+	clb := &CloudLoadBalancerProvider{
+		client: MockOCIClient{},
+		logger: zap.L().Sugar(),
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := cp.getLbListenerBackendSetIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.nodeSubnets)
+			result, err := clb.getLbListenerBackendSetIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.nodeSubnets)
 			if !reflect.DeepEqual(result, tt.listenerBackendSetIpVersions) {
 				t.Errorf("Expected listenerBackendSetIpVersions\n%+v\nbut got\n%+v", tt.listenerBackendSetIpVersions, result)
 			}
@@ -2488,17 +2484,13 @@ func Test_getOciIpVersions(t *testing.T) {
 			wantErr: nil,
 		},
 	}
-	cp := &CloudProvider{
-		client:     MockOCIClient{},
-		config:     &providercfg.Config{CompartmentID: "testCompartment"},
-		NodeLister: &mockNodeLister{},
-		kubeclient: testclient.NewSimpleClientset(),
-		logger:     zap.L().Sugar(),
-		PodLister:  &mockPodLister{},
+	clb := &CloudLoadBalancerProvider{
+		client: MockOCIClient{},
+		logger: zap.L().Sugar(),
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := cp.getOciIpVersions(tt.lbSubnets, tt.nodeSubnets, tt.service)
+			result, err := clb.getOciIpVersions(tt.lbSubnets, tt.nodeSubnets, tt.service)
 			if !reflect.DeepEqual(result, tt.result) {
 				t.Errorf("Expected IpVersions\n%+v\nbut got\n%+v", tt.result, result)
 			}

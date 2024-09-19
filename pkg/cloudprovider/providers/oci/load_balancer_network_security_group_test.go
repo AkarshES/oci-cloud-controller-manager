@@ -1277,7 +1277,7 @@ func TestFilterRules(t *testing.T) {
 }
 
 func TestGetNsgHelper(t *testing.T) {
-	cp := CloudProvider{
+	clb := CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 	}
 	ctx := context.Background()
@@ -1305,7 +1305,7 @@ func TestGetNsgHelper(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			nsg, err := cp.getNsg(ctx, tc.id)
+			nsg, err := clb.getNsg(ctx, tc.id)
 			if !reflect.DeepEqual(nsg, tc.nsg) {
 				t.Errorf("expected nsg\n%+v\nbut got\n%+v", tc.nsg, nsg)
 			}
@@ -1319,7 +1319,7 @@ func TestGetNsgHelper(t *testing.T) {
 }
 
 func TestListNsgRulesHelper(t *testing.T) {
-	cp := CloudProvider{
+	clb := CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 	}
 	ctx := context.Background()
@@ -1365,7 +1365,7 @@ func TestListNsgRulesHelper(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			securityRuleList, err := cp.listNsgRules(ctx, tc.id, tc.direction)
+			securityRuleList, err := clb.listNsgRules(ctx, tc.id, tc.direction)
 			if !reflect.DeepEqual(securityRuleList, tc.securityRules) {
 				t.Errorf("expected rules\n%+v\nbut got\n%+v", tc.securityRules, securityRuleList)
 			}
@@ -1379,7 +1379,7 @@ func TestListNsgRulesHelper(t *testing.T) {
 }
 
 func TestAddNsgRulesHelper(t *testing.T) {
-	cp := CloudProvider{
+	clb := CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		logger: zap.S(),
 	}
@@ -1415,7 +1415,7 @@ func TestAddNsgRulesHelper(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			response, err := cp.addNetworkSecurityGroupSecurityRules(ctx, tc.id, tc.securityRules)
+			response, err := clb.addNetworkSecurityGroupSecurityRules(ctx, tc.id, tc.securityRules)
 			if !reflect.DeepEqual(response, tc.response) {
 				t.Errorf("expected response\n%+v\nbut got\n%+v", tc.response, response)
 			}
@@ -1429,7 +1429,7 @@ func TestAddNsgRulesHelper(t *testing.T) {
 }
 
 func TestRemoveNsgRulesHelper(t *testing.T) {
-	cp := CloudProvider{
+	clb := CloudLoadBalancerProvider{
 		client: MockOCIClient{},
 		logger: zap.S(),
 	}
@@ -1454,7 +1454,7 @@ func TestRemoveNsgRulesHelper(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			response, err := cp.removeNetworkSecurityGroupSecurityRules(ctx, tc.id, tc.ruleIds)
+			response, err := clb.removeNetworkSecurityGroupSecurityRules(ctx, tc.id, tc.ruleIds)
 			if !reflect.DeepEqual(response, tc.response) {
 				t.Errorf("expected response\n%+v\nbut got\n%+v", tc.response, response)
 			}
