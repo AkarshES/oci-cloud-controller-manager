@@ -138,16 +138,17 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 	if lbClient == nil {
 		return CloudLoadBalancerProvider{}, errors.New(fmt.Sprintf("Error creating Workload Identity based %s Client. Perhaps you are using an OKE BASIC_CLUSTER?", lbType))
 	}
+	ociClientConfig := &client.OCIClientConfig{
+		SaToken:   serviceAccountToken,
+		TenancyId: cp.config.Auth.TenancyID,
+	}
 	return CloudLoadBalancerProvider{
-		client:       cp.client,
+		client:       cp.client.NewWorkloadIdentityClient(logger, lbType, ociClientConfig),
 		lbClient:     lbClient,
 		logger:       logger,
 		metricPusher: cp.metricPusher,
 		config:       cp.config,
-		ociConfig: &client.OCIClientConfig{
-			SaToken:   serviceAccountToken,
-			TenancyId: cp.config.Auth.TenancyID,
-		},
+		ociConfig:    ociClientConfig,
 	}, nil
 }
 
