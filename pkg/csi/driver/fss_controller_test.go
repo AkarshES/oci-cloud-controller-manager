@@ -427,6 +427,10 @@ func (m MockFSSProvisionerClient) Identity(ociClientConfig *client.OCIClientConf
 	return &MockIdentityClient{}
 }
 
+func (m MockFSSProvisionerClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {
+	return &MockFSSProvisionerClient{}
+}
+
 func NewFSSClientProvisioner(pcData client.Interface, storage *MockFileStorageClient) client.Interface {
 	return &MockFSSProvisionerClient{Storage: storage}
 }

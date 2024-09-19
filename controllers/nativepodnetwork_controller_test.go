@@ -1016,6 +1016,10 @@ func (c MockOCIClient) ContainerEngine() client.ContainerEngineInterface {
 	return nil
 }
 
+func (MockOCIClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {
+	return MockOCIClient{}
+}
+
 // MockVirtualNetworkClient mocks VirtualNetwork client implementation
 type MockVirtualNetworkClient struct {
 }
