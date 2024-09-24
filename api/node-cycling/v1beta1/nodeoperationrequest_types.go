@@ -48,6 +48,7 @@ import (
 // +kubebuilder:printcolumn:name="DeletionTimestamp",type=date,JSONPath=.metadata.deletionTimestamp,priority=0
 
 // NodeOperationRequest is the schema for collecting node operation request and reporting operation progress
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type NodeOperationRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -61,24 +62,24 @@ type NodeOperationRequestSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	nodeNames         []string          `json:"nodeNames,omitempty"`
-	nodeLabelSelector map[string]string `json:"nodeLabelSelector,omitempty"`
+	NodeNames         []string          `json:"nodeNames,omitempty"`
+	NodeLabelSelector map[string]string `json:"nodeLabelSelector,omitempty"`
 	// +kubebuilder:validation:Enum=cycling;reboot
-	action Action `json:"action"`
+	Action Action `json:"action"`
 
-	cyclingActionDetails CyclingActionDetails `json:"cyclingActionDetails"`
+	CyclingActionDetails CyclingActionDetails `json:"cyclingActionDetails"`
 	// +kubebuilder:validation:XIntOrString
-	maxUnavailable       intstr.IntOrString   `json:"maxUnavailable"`
-	nodeEvictionSettings NodeEvictionSettings `json:"nodeEvictionSettings"`
-	isPaused             bool                 `json:"isPaused"`
+	MaxUnavailable       intstr.IntOrString   `json:"maxUnavailable"`
+	NodeEvictionSettings NodeEvictionSettings `json:"nodeEvictionSettings"`
+	IsPaused             bool                 `json:"isPaused"`
 	// +kubebuilder:validation:Enum=internal;external
 	// +kubebuilder:default=external
-	creationSource CreationSource `json:"creationSource"`
+	CreationSource CreationSource `json:"creationSource"`
 }
 
 type NodeOperationResult struct {
-	nodeName      string `json:"nodeName"`
-	workRequestId string `json:"workRequestId"`
+	NodeName      string `json:"nodeName"`
+	WorkRequestId string `json:"workRequestId"`
 }
 
 type NodeOperationRequestState string
@@ -99,47 +100,47 @@ type NodeOperationRequestStatus struct {
 
 	// +kubebuilder:validation:Enum=New;InProgress;Successful;Failed;Canceled;Paused
 	// +kubebuilder:default=New
-	nodeOperationRequestState NodeOperationRequestState `json:"nodeOperationRequestState"`
+	NodeOperationRequestState NodeOperationRequestState `json:"nodeOperationRequestState"`
 
-	nodeCandidates        []string `json:"nodeCandidates"`
-	numberSucceededNodes  int      `json:"numberSucceededNodes"`
-	numberFailedNodes     int      `json:"numberFailedNodes"`
-	numberInProgressNodes int      `json:"numberInProgressNodes"`
-	numberPendingNodes    int      `json:"numberPendingNodes"`
+	NodeCandidates        []string `json:"nodeCandidates"`
+	NumberSucceededNodes  int      `json:"numberSucceededNodes"`
+	NumberFailedNodes     int      `json:"numberFailedNodes"`
+	NumberInProgressNodes int      `json:"numberInProgressNodes"`
+	NumberPendingNodes    int      `json:"numberPendingNodes"`
 
-	pendingNodes   []string              `json:"pendingNodes"`
-	failedNodes    []NodeOperationResult `json:"failedNodes"`
-	canceledNodes  []string              `json:"canceledNodes"`
-	succeededNodes []NodeOperationResult `json:"succeededNodes"`
+	PendingNodes   []string              `json:"pendingNodes"`
+	FailedNodes    []NodeOperationResult `json:"failedNodes"`
+	CanceledNodes  []string              `json:"canceledNodes"`
+	SucceededNodes []NodeOperationResult `json:"succeededNodes"`
 
-	terminalTime       metav1.Time `json:"terminalTime"`
-	pausedTime         metav1.Time `json:"pausedTime"`
-	observedGeneration int         `json:"observedGeneration"`
-	hashes             []string    `json:"hashes"`
+	TerminalTime       metav1.Time `json:"terminalTime"`
+	PausedTime         metav1.Time `json:"pausedTime"`
+	ObservedGeneration int         `json:"observedGeneration"`
+	Hashes             []string    `json:"hashes"`
 }
 
 type CycleMode string
 
 const (
-	bootVolumeReplaceMode CycleMode = "bootVolumeReplace"
+	BootVolumeReplaceMode CycleMode = "bootVolumeReplace"
 )
 
 type CyclingActionDetails struct {
-	kubernetesVersion   string              `json:"kubernetesVersion"`
-	nodeMetaData        []map[string]string `json:"nodeMetaData"`
-	imageId             string              `json:"imageId"`
-	bootVolumeSizeInGBs int                 `json:"bootVolumeSizeInGBs"`
-	sshPublicKey        string              `json:"sshPublicKey"`
-	isCycleInSyncNode   bool                `json:"isCycleInSyncNode"`
+	KubernetesVersion   string              `json:"kubernetesVersion"`
+	NodeMetaData        []map[string]string `json:"nodeMetaData"`
+	ImageId             string              `json:"imageId"`
+	BootVolumeSizeInGBs int                 `json:"bootVolumeSizeInGBs"`
+	SshPublicKey        string              `json:"sshPublicKey"`
+	IsCycleInSyncNode   bool                `json:"isCycleInSyncNode"`
 	// +kubebuilder:validation:Enum=bootVolumeReplace
 	// +kubebuilder:default=bootVolumeReplace
-	cycleMode CycleMode `json:"cycleMode"`
+	CycleMode CycleMode `json:"cycleMode"`
 }
 
 type NodeEvictionSettings struct {
 	// +kubebuilder:validation:Minimum=0
-	evictionGracePeriod             int  `json:"evictionGracePeriod"`
-	isForceActionAfterGraceDuration bool `json:"isForceActionAfterGraceDuration"`
+	EvictionGracePeriod             int  `json:"evictionGracePeriod"`
+	IsForceActionAfterGraceDuration bool `json:"isForceActionAfterGraceDuration"`
 }
 
 type CreationSource string
