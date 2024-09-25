@@ -349,12 +349,11 @@ github.com/opencontainers/go-digest
 ## explicit; go 1.19
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/pkg/pwalkdir
-# github.com/oracle/oci-go-sdk/v65 v65.2.0 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p
+# github.com/oracle/oci-go-sdk/v65 v65.78.1-p => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.78.1-p
 ## explicit; go 1.13
 github.com/oracle/oci-go-sdk/v65/common
 github.com/oracle/oci-go-sdk/v65/common/auth
 github.com/oracle/oci-go-sdk/v65/common/utils
-github.com/oracle/oci-go-sdk/v65/compartments
 github.com/oracle/oci-go-sdk/v65/containerengine
 github.com/oracle/oci-go-sdk/v65/core
 github.com/oracle/oci-go-sdk/v65/filestorage
@@ -1707,7 +1706,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
 # github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
-# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p
+# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.78.1-p
 # github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.16.0
 # google.golang.org/grpc => google.golang.org/grpc v1.60.1
 # k8s.io/api => k8s.io/api v0.30.1
@@ -1743,6 +1742,6 @@ sigs.k8s.io/yaml/goyaml.v2
 # oracle.com/oci/httpsigner => bitbucket.oci.oraclecorp.com/goiam/httpsigner v0.0.0-20190320175442-e8cb27ebf440
 # oracle.com/oci/ociauthz => bitbucket.oci.oraclecorp.com/goiam/ociauthz v0.0.0-20200515161105-5b1e37d2dc95
 # oracle.com/oci/ocihttpiam => bitbucket.oci.oraclecorp.com/goiam/ocihttpiam v0.0.0-20201112171351-7818abc80432
-# oracle.com/oci/ocimtls => bitbucket.oci.oraclecorp.com/faas/ocimtls.git v1.2.0
+# oracle.com/oci/ocimtls => bitbucket.oci.oraclecorp.com/faas/ocimtls v1.2.0
 # oracle.com/oci/tagging => bitbucket.oci.oraclecorp.com/GOPLEX/tagging v0.0.0-20190321202046-20a2e48911da
 # oracle.com/oke/oci-go-common => bitbucket.oci.oraclecorp.com/oke/oci-go-common v1.0.4-0.20200706161333-eb59f40527dd

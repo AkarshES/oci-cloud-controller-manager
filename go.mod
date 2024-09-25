@@ -6,7 +6,7 @@ toolchain go1.22.2
 
 replace (
 	github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
-	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p
+	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.78.1-p
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.16.0
 	google.golang.org/grpc => google.golang.org/grpc v1.60.1
 	k8s.io/api => k8s.io/api v0.30.1
@@ -42,7 +42,7 @@ replace (
 	oracle.com/oci/httpsigner => bitbucket.oci.oraclecorp.com/goiam/httpsigner v0.0.0-20190320175442-e8cb27ebf440
 	oracle.com/oci/ociauthz => bitbucket.oci.oraclecorp.com/goiam/ociauthz v0.0.0-20200515161105-5b1e37d2dc95
 	oracle.com/oci/ocihttpiam => bitbucket.oci.oraclecorp.com/goiam/ocihttpiam v0.0.0-20201112171351-7818abc80432
-	oracle.com/oci/ocimtls => bitbucket.oci.oraclecorp.com/faas/ocimtls.git v1.2.0
+	oracle.com/oci/ocimtls => bitbucket.oci.oraclecorp.com/faas/ocimtls v1.2.0
 	oracle.com/oci/tagging => bitbucket.oci.oraclecorp.com/GOPLEX/tagging v0.0.0-20190321202046-20a2e48911da
 	oracle.com/oke/oci-go-common => bitbucket.oci.oraclecorp.com/oke/oci-go-common v1.0.4-0.20200706161333-eb59f40527dd
 )
@@ -59,7 +59,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
-	github.com/oracle/oci-go-sdk/v65 v65.2.0
+	github.com/oracle/oci-go-sdk/v65 v65.78.1-p
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/spf13/cobra v1.8.0
@@ -95,6 +95,7 @@ require (
 	bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19
 	github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
 	golang.org/x/sync v0.7.0
+	golang.org/x/time v0.5.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apiextensions-apiserver v0.30.1
@@ -190,7 +191,6 @@ require (
 	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/term v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
