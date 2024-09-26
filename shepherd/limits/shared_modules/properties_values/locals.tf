@@ -13,6 +13,18 @@ locals {
     "v1.27" : "v1.27-278bfe54fe4-3357@sha256:f35960911d9f4958c145cd16458db3104fa211caae3871092a398694f1770032",
   }
 
+  yubi_ccm_mapping_override = {
+    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+    "v1.30" : "v1.30-9996b0758fd-4095@sha256:9b9e7a0e3fd8f124065bc41c998da5187bc35ef3e14de7aafee7bce18d79573d",
+  }
+
   omk_ccm_mapping_override = {
     "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
     "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -73,6 +85,13 @@ locals {
             env     = "integ"
             value   = jsonencode(local.omk_ccm_mapping_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaepbccznc477ibxxopf2o3ki4bvfn47ji2zqvdfluqtutcduggn4q"
+          },
+          // YUBI GRPC override https://jira.oci.oraclecorp.com/browse/OKE-33286
+          {
+            regions = ["bom", "hyd"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.yubi_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxcauqzilnjm4aaabx35cjcfjvzvef5yuh3e77xmja2ehnoxtdc7a"
           }
         ]
       },
@@ -363,7 +382,7 @@ locals {
             env     = "prd"
             value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.oss_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaattrvrnuijq5xuv6atnd3xstb5pcldipdqye4retd7bh2sxsoe2kq"
-          },
+          }
         ]
       },
     }
