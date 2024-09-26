@@ -49,18 +49,13 @@ import (
 )
 
 const (
-	CREATE_PRIVATE_IP   = "CREATE_PRIVATE_IP"
-	CREATE_IPV6         = "CREATE_IPV6"
-	ATTACH_VNIC         = "ATTACH_VNIC"
-	INITIALIZE_NPN_NODE = "INITIALIZE_NPN_NODE"
-	// maxSecondaryIpsPerVNIC
-	// max allocatable IPs per vnic is 32 where one IP will be used as host address
-	// NPN requires one additional IP (from secondary vnic) as host address, it is used to talk with primary VNIC address for the host namespace interface.
+	CREATE_PRIVATE_IP      = "CREATE_PRIVATE_IP"
+	CREATE_IPV6            = "CREATE_IPV6"
+	ATTACH_VNIC            = "ATTACH_VNIC"
+	INITIALIZE_NPN_NODE    = "INITIALIZE_NPN_NODE"
 	maxSecondaryIpsPerVNIC = 32
-	// maxPodIpsPerVNIC maximum number of pod-ips created per vnic
-	maxPodIpsPerVNIC = 31
-	IPv4             = "IPv4"
-	IPv6             = "IPv6"
+	IPv4                   = "IPv4"
+	IPv6                   = "IPv6"
 	// GetNodeTimeout is the timeout for the node object to be created in Kubernetes
 	GetNodeTimeout                             = 20 * time.Minute
 	ensureVnicAttachedAndAvailablePollDuration = 2 * time.Minute
@@ -319,7 +314,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	log.WithValues("instanceId", *npn.Spec.Id).Info(FetchingInstance)
-	requiredSecondaryVNICs := int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxPodIpsPerVNIC))
+	requiredSecondaryVNICs := int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxSecondaryIpsPerVNIC))
 	instance, err := r.OCIClient.Compute().GetInstance(ctx, *npn.Spec.Id)
 	if err != nil || instance.Id == nil {
 		failReason, failMessage = "GetInstanceFailed", "failed to get OCI compute instance"
@@ -797,26 +792,17 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 	}
 
 	// Required Host Addresses is supposed to be one host address per vnic
-	requiredHostAddressesIPv4 := 0
-	requiredHostAddressesIPv6 := 0
-	for _, vnic := range existingIpsByVnic {
-		if len(vnic.V4) == 0 {
-			requiredHostAddressesIPv4++
-		}
-		if len(vnic.V6) == 0 {
-			requiredHostAddressesIPv6++
-		}
-	}
+	requiredHostAddresses := len(existingIpsByVnic)
 
 	requiredSecondaryIPv4 := 0
 	requiredSecondaryIPv6 := 0
 	var requireIPv6, requireIPv4 bool
 	if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
-		requiredSecondaryIPv4 = maxPodCount - allocatedSecondaryIps.V4 + requiredHostAddressesIPv4
+		requiredSecondaryIPv4 = maxPodCount - allocatedSecondaryIps.V4 + requiredHostAddresses
 		requireIPv4 = true
 	}
 	if contains(ipFamilies, IPv6) {
-		requiredSecondaryIPv6 = maxPodCount - allocatedSecondaryIps.V6 + requiredHostAddressesIPv6
+		requiredSecondaryIPv6 = maxPodCount - allocatedSecondaryIps.V6 + requiredHostAddresses
 		requireIPv6 = true
 	}
 	additionalIpsByVnic := make([]VnicIPAllocations, 0)
