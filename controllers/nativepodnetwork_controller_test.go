@@ -529,7 +529,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					}},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 1, V6: 0},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 1, V6: 0}}},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 0}}},
 			err:                   nil,
 		},
 		{
@@ -547,7 +547,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 0},
 			expected: []VnicIPAllocations{
-				{"one", IpAddressCountByVersion{V4: 13, V6: 0}},
+				{"one", IpAddressCountByVersion{V4: 14, V6: 0}},
 			},
 			err: nil,
 		},
@@ -590,7 +590,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 18},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 13, V6: 13}}},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 14, V6: 14}}},
 			err:                   nil,
 		},
 		{
@@ -628,7 +628,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 48, V6: 48},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 1, V6: 1}}, {"two", IpAddressCountByVersion{V4: 13, V6: 13}}},
+			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 2}}, {"two", IpAddressCountByVersion{V4: 14, V6: 14}}},
 			err:                   nil,
 		},
 		{

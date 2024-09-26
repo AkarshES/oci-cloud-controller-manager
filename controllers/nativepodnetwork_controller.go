@@ -797,26 +797,17 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 	}
 
 	// Required Host Addresses is supposed to be one host address per vnic
-	requiredHostAddressesIPv4 := 0
-	requiredHostAddressesIPv6 := 0
-	for _, vnic := range existingIpsByVnic {
-		if len(vnic.V4) == 0 {
-			requiredHostAddressesIPv4++
-		}
-		if len(vnic.V6) == 0 {
-			requiredHostAddressesIPv6++
-		}
-	}
+	requiredHostAddresses := len(existingIpsByVnic)
 
 	requiredSecondaryIPv4 := 0
 	requiredSecondaryIPv6 := 0
 	var requireIPv6, requireIPv4 bool
 	if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
-		requiredSecondaryIPv4 = maxPodCount - allocatedSecondaryIps.V4 + requiredHostAddressesIPv4
+		requiredSecondaryIPv4 = maxPodCount - allocatedSecondaryIps.V4 + requiredHostAddresses
 		requireIPv4 = true
 	}
 	if contains(ipFamilies, IPv6) {
-		requiredSecondaryIPv6 = maxPodCount - allocatedSecondaryIps.V6 + requiredHostAddressesIPv6
+		requiredSecondaryIPv6 = maxPodCount - allocatedSecondaryIps.V6 + requiredHostAddresses
 		requireIPv6 = true
 	}
 	additionalIpsByVnic := make([]VnicIPAllocations, 0)
