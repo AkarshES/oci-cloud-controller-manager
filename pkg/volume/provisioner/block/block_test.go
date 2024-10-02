@@ -17,6 +17,7 @@ package block
 import (
 	"context"
 	"fmt"
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"testing"
 	"time"
 
@@ -522,6 +523,13 @@ type MockContainerEngineClient struct{}
 
 func (m MockContainerEngineClient) GetVirtualNode(ctx context.Context, vnId, vnpId string) (*containerengine.VirtualNode, error) {
 	return nil, nil
+}
+
+func (m MockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	return "", nil
+}
+func (m MockContainerEngineClient) CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	return "", nil
 }
 
 func (p *MockProvisionerClient) ContainerEngine() client.ContainerEngineInterface {

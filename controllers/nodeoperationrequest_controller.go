@@ -20,21 +20,30 @@ import (
 	"context"
 	"errors"
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
+	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
+	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
-	errNodeCandidatesEmpty    = errors.New("node candidates are empty")
-	errNodeCandidatesConflict = errors.New("node candidates are conflicted")
+	errNodeCandidatesEmpty     = errors.New("node candidates are empty")
+	errNodeCandidatesConflict  = errors.New("node candidates are conflicted")
+	errFailedToFetchNode       = errors.New("fail to get the node")
+	errProviderIdMissingOnNode = errors.New("missing provider id for node")
 )
 
 // NodeOperationRequestReconciler reconciles a NodeOperationRequest object
 type NodeOperationRequestReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme     *runtime.Scheme
+	kubeClient kubernetes.Interface
+	OCIClient  ociclient.Interface
+	config     *providercfg.Config
 }
 
 // +kubebuilder:rbac:groups=oci.oraclecloud.com,resources=nodeoperationrequests,verbs=get;list;watch;create;update;patch;delete
@@ -70,13 +79,38 @@ func (r *NodeOperationRequestReconciler) Reconcile(ctx context.Context, req ctrl
 	return ctrl.Result{}, nil
 }
 
-func invokeNodeCycling(nor norv1beta1.NodeOperationRequest) (string, error) {
-
-	return "", nil
+// cyclingNode initiates a cycling operation for a specified node within a cluster.
+// It takes the node ID, cluster ID, and a NodeOperationRequest object as input.
+// The function returns the work request ID associated with the cycling operation.
+//
+// Parameters:
+// - nodeId: A string representing the unique identifier of the node to be cycled.
+// - clusterId: A string representing the unique identifier of the cluster where the node resides.
+// - nor: An instance of norv1beta1.NodeOperationRequest containing additional details for the cycling operation.
+//
+// Returns:
+// - A string representing the work request ID associated with the cycling operation.
+// - An error indicating any issues encountered during the cycling operation; otherwise, returns nil.
+func (r *NodeOperationRequestReconciler) cyclingNode(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	workRequestId, err := r.OCIClient.ContainerEngine().CycleClusterNode(context.Background(), nodeId, clusterId, nor)
+	return workRequestId, err
 }
 
-func invokeNodeReboot(nor norv1beta1.NodeOperationRequest) (string, error) {
-	return "", nil
+// rebootNode initiates a reboot operation for a specified node within a cluster.
+// It takes the node ID, cluster ID, and a NodeOperationRequest object as input.
+// The function returns the work request ID associated with the reboot operation.
+//
+// Parameters:
+// - nodeId: A string representing the unique identifier of the node to be rebooted.
+// - clusterId: A string representing the unique identifier of the cluster where the node resides.
+// - nor: An instance of norv1beta1.NodeOperationRequest containing additional details for the reboot operation.
+//
+// Returns:
+// - A string representing the work request ID associated with the reboot operation.
+// - An error indicating any issues encountered during the reboot operation; otherwise, returns nil.
+func (r *NodeOperationRequestReconciler) rebootNode(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	workRequestId, err := r.OCIClient.ContainerEngine().RebootClusterNode(context.Background(), nodeId, clusterId, nor)
+	return workRequestId, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -84,4 +118,26 @@ func (r *NodeOperationRequestReconciler) SetupWithManager(mgr ctrl.Manager) erro
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&norv1beta1.NodeOperationRequest{}).
 		Complete(r)
+}
+
+// LookupNodeProviderID retrieves the provider ID of a specified node using the Kubernetes API.
+// It takes the node name
+// The function returns the provider ID of the node and an error if any issues occur during the retrieval process.
+//
+// Parameters:
+// - kubeClient: An instance of kubernetes.Interface representing the Kubernetes client.
+// - nodeName: A string representing the name of the node whose provider ID is to be retrieved.
+//
+// Returns:
+// - A string representing the provider ID of the node.
+// - An error indicating any issues encountered during the retrieval process; otherwise, returns nil.
+func LookupNodeProviderID(kubeClient kubernetes.Interface, nodeName string) (string, error) {
+	node, err := kubeClient.CoreV1().Nodes().Get(context.Background(), nodeName, metav1.GetOptions{})
+	if err != nil {
+		return "", errFailedToFetchNode
+	}
+	if node.Spec.ProviderID == "" {
+		return "", errProviderIdMissingOnNode
+	}
+	return node.Spec.ProviderID, nil
 }

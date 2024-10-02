@@ -93,6 +93,7 @@ require (
 
 require (
 	bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19
+	github.com/go-logr/logr v1.4.1
 	github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
 	golang.org/x/sync v0.7.0
 	golang.org/x/time v0.5.0
@@ -122,7 +123,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.20.1 // indirect
 	github.com/go-openapi/jsonreference v0.20.3 // indirect

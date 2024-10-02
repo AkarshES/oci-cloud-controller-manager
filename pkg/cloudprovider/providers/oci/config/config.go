@@ -161,6 +161,9 @@ type Config struct {
 	// UseServicePrincipals when set to true, clients will use an instance principal to fetch the s2s token
 	// from identity.
 	UseServicePrincipals bool `yaml:"UseServicePrincipals"`
+
+	// ClusterID is the OCID of the cluster resource.
+	ClusterID string `yaml:"clusterId"`
 }
 
 // Complete the load balancer config applying defaults / overrides.

@@ -17,6 +17,7 @@ package oci
 import (
 	"context"
 	"errors"
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"net/http"
 	"reflect"
 	"testing"
@@ -1461,6 +1462,13 @@ func (m MockContainerEngineClient) GetVirtualNode(ctx context.Context, vnId, vnp
 		VirtualNodePoolId:  &vnpId,
 		AvailabilityDomain: common.String("PHX-AD-1"),
 	}, nil
+}
+
+func (m MockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	return "", nil
+}
+func (m MockContainerEngineClient) CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	return "", nil
 }
 
 func TestExtractNodeAddresses(t *testing.T) {

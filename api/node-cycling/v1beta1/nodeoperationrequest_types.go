@@ -126,12 +126,12 @@ const (
 )
 
 type CyclingActionDetails struct {
-	KubernetesVersion   string              `json:"kubernetesVersion"`
-	NodeMetaData        []map[string]string `json:"nodeMetaData"`
-	ImageId             string              `json:"imageId"`
-	BootVolumeSizeInGBs int                 `json:"bootVolumeSizeInGBs"`
-	SshPublicKey        string              `json:"sshPublicKey"`
-	IsCycleInSyncNode   bool                `json:"isCycleInSyncNode"`
+	KubernetesVersion   string            `json:"kubernetesVersion"`
+	NodeMetaData        map[string]string `json:"nodeMetaData"`
+	ImageId             string            `json:"imageId"`
+	BootVolumeSizeInGBs int               `json:"bootVolumeSizeInGBs"`
+	SshPublicKey        string            `json:"sshPublicKey"`
+	IsCycleInSyncNode   bool              `json:"isCycleInSyncNode"`
 	// +kubebuilder:validation:Enum=bootVolumeReplace
 	// +kubebuilder:default=bootVolumeReplace
 	CycleMode CycleMode `json:"cycleMode"`

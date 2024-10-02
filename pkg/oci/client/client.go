@@ -187,6 +187,8 @@ type identityClient interface {
 
 type containerEngineClient interface {
 	GetVirtualNode(ctx context.Context, request containerengine.GetVirtualNodeRequest) (response containerengine.GetVirtualNodeResponse, err error)
+	RebootClusterNode(ctx context.Context, request containerengine.RebootClusterNodeRequest) (response containerengine.RebootClusterNodeResponse, err error)
+	CycleClusterNode(ctx context.Context, request containerengine.CycleClusterNodeRequest) (response containerengine.CycleClusterNodeResponse, err error)
 }
 
 type compartmentClient interface {
