@@ -23,6 +23,7 @@ import (
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
+	"github.com/oracle/oci-go-sdk/v65/compartments"
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/oracle/oci-go-sdk/v65/filestorage"
@@ -56,10 +57,11 @@ type Interface interface {
 }
 
 type OCIClientConfig struct {
-	SaToken *authv1.TokenRequest
+	SaToken      *authv1.TokenRequest
 	ParentRptURL string
-	TenancyId string
+	TenancyId    string
 }
+
 // RateLimiter reader and writer.
 type RateLimiter struct {
 	Reader flowcontrol.RateLimiter
@@ -187,6 +189,10 @@ type containerEngineClient interface {
 	GetVirtualNode(ctx context.Context, request containerengine.GetVirtualNodeRequest) (response containerengine.GetVirtualNodeResponse, err error)
 }
 
+type compartmentClient interface {
+	ListAvailabilityDomains(ctx context.Context, request compartments.ListAvailabilityDomainsRequest) (compartments.ListAvailabilityDomainsResponse, error)
+}
+
 type client struct {
 	compute             computeClient
 	network             virtualNetworkClient
@@ -196,6 +202,7 @@ type client struct {
 	bs                  blockstorageClient
 	identity            identityClient
 	containerEngine     containerEngineClient
+	compartment 		compartmentClient
 
 	requestMetadata common.RequestMetadata
 	rateLimiter     RateLimiter
@@ -290,6 +297,18 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "configuring identity service client custom transport")
 	}
 
+	compartment, err := compartments.NewCompartmentsClientWithConfigurationProvider(cp)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewCompartmentsClientWithConfigurationProvider")
+	}
+
+	setupBaseClient(&compartment.BaseClient, signer, interceptor, "")
+
+	err = configureCustomTransport(logger, &compartment.BaseClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "configuring compartment service client custom transport")
+	}
+
 	bs, err := core.NewBlockstorageClientWithConfigurationProvider(cp)
 	if err != nil {
 		return nil, errors.Wrap(err, "NewBlockstorageClientWithConfigurationProvider")
@@ -350,6 +369,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		bs:                  &bs,
 		filestorage:         &fss,
 		containerEngine:     &containerEngine,
+		compartment:     	 &compartment,
 
 		rateLimiter:     *opRateLimiter,
 		requestMetadata: requestMetadata,
@@ -436,7 +456,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTe
 }
 
 func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterface {
-	if ociClientConfig == nil{
+	if ociClientConfig == nil {
 		return c
 	}
 	if ociClientConfig.SaToken != nil {
@@ -456,7 +476,7 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 
 		err = configureCustomTransport(c.logger, &network.BaseClient)
 		if err != nil {
-			 c.logger.Error("Failed configure custom transport for Network Client %v", err)
+			c.logger.Error("Failed configure custom transport for Network Client %v", err)
 			return nil
 		}
 
@@ -498,16 +518,30 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 
 		err = configureCustomTransport(c.logger, &identity.BaseClient)
 		if err != nil {
-			 c.logger.Error("Failed configure custom transport for Identity Client %v", err)
+			c.logger.Error("Failed configure custom transport for Identity Client %v", err)
+			return nil
+		}
+
+		compartment, err := compartments.NewCompartmentsClientWithConfigurationProvider(configProvider)
+		if err != nil {
+			c.logger.Errorf("Failed to create Compartments workload identity client  %v", err)
+			return nil
+		}
+		setupBaseClient(&compartment.BaseClient, signer, interceptor, "")
+
+		err = configureCustomTransport(c.logger, &compartment.BaseClient)
+		if err != nil {
+			c.logger.Error("Failed configure custom transport for Compartments Client %v", err)
 			return nil
 		}
 
 		return &client{
-			identity:        &identity,
-			requestMetadata: c.requestMetadata,
-			rateLimiter:     c.rateLimiter,
-			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-			logger:          c.logger,
+			compartment: 	     &compartment,
+			identity:            &identity,
+			requestMetadata:     c.requestMetadata,
+			rateLimiter:         c.rateLimiter,
+			subnetCache:         cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:              c.logger,
 		}
 	}
 	return c

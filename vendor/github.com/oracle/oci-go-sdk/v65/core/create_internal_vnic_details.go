@@ -73,7 +73,9 @@ type CreateInternalVnicDetails struct {
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
 
-	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Security attributes (https://docs.cloud.oracle.com/iaas/Content/zero-trust-packet-routing/zpr-artifacts.htm#security-attributes) are labels
+	// for a resource that can be referenced in a Zero Trust Packet Routing (https://docs.cloud.oracle.com/iaas/Content/zero-trust-packet-routing/overview.htm)
+	// (ZPR) policy to control access to ZPR-supported resources.
 	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
 	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
 
@@ -112,6 +114,9 @@ type CreateInternalVnicDetails struct {
 
 	// Indicates if Elastic Datapath is enabled for the VNIC.
 	IsEdpEnabled *bool `mandatory:"false" json:"isEdpEnabled"`
+
+	// Turn on/off symmetric hashing in VNIC for the private IP's nextHop. The default is 'false'.
+	SymmetricHashingEnabled *bool `mandatory:"false" json:"symmetricHashingEnabled"`
 
 	// Indicates if MAC learning is enabled for the VNIC. The default is `false`.
 	// When this flag is enabled, then VCN CP does not allocate MAC address,

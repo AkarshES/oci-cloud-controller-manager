@@ -22,7 +22,7 @@ import (
 )
 
 // InternalVnic This is a VNIC type only used in operations with overlay customers and RCE.
-// It defines additonal properties: isManaged, resourceType, resourceId, isBMVnic, isGarpEnabled, isEdpEnabled, and isServiceVnic
+// It defines additonal properties: isManaged, resourceType, resourceId, isBMVnic, isGarpEnabled, isEdpEnabled, symmetricHashingEnabled, and isServiceVnic
 type InternalVnic struct {
 
 	// The VNIC's availability domain.
@@ -71,6 +71,9 @@ type InternalVnic struct {
 	// Indicates if Elastic Datapath is enabled for the VNIC.
 	IsEdpEnabled *bool `mandatory:"false" json:"isEdpEnabled"`
 
+	// Turn on/off symmetric hashing in VNIC for the private IP's nextHop. The default is 'false'.
+	SymmetricHashingEnabled *bool `mandatory:"false" json:"symmetricHashingEnabled"`
+
 	// The VNIC's physical availability domain.
 	// Example: `PHX-AD-1`
 	InternalAvailabilityDomain *string `mandatory:"false" json:"internalAvailabilityDomain"`
@@ -84,7 +87,9 @@ type InternalVnic struct {
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
 
-	// Security Attributes for this resource. This is unique to ZPR, and helps identify which resources are allowed to be accessed by what permission controls.
+	// Security attributes (https://docs.cloud.oracle.com/iaas/Content/zero-trust-packet-routing/zpr-artifacts.htm#security-attributes) are labels
+	// for a resource that can be referenced in a Zero Trust Packet Routing (https://docs.cloud.oracle.com/iaas/Content/zero-trust-packet-routing/overview.htm)
+	// (ZPR) policy to control access to ZPR-supported resources.
 	// Example: `{"Oracle-DataSecurity-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit"}}}`
 	SecurityAttributes map[string]map[string]interface{} `mandatory:"false" json:"securityAttributes"`
 

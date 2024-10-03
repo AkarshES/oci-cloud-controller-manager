@@ -16,6 +16,7 @@ package client
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"go.uber.org/zap"
@@ -105,4 +106,12 @@ func NewRateLimiter(logger *zap.SugaredLogger, config *providercfg.RateLimiterCo
 		config.RateLimitBucketWrite)
 
 	return rateLimiter
+}
+
+func IsIpv6SingleStackCluster() bool {
+	clusterIpFamily, ok := os.LookupEnv(ClusterIpFamilyEnv)
+	if ok && strings.EqualFold(clusterIpFamily, Ipv6Stack) {
+		return true
+	}
+	return false
 }
