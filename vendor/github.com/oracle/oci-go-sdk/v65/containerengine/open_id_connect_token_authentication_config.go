@@ -2,11 +2,11 @@
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
-// Container Engine for Kubernetes API
+// Kubernetes Engine API
 //
-// API for the Container Engine for Kubernetes service. Use this API to build, deploy,
+// API for the Kubernetes Engine service (also known as the Container Engine for Kubernetes service). Use this API to build, deploy,
 // and manage cloud-native applications. For more information, see
-// Overview of Container Engine for Kubernetes (https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
+// Overview of Kubernetes Engine (https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
 //
 
 package containerengine
@@ -21,16 +21,16 @@ import (
 // For more information, see Configuring the API Server (https://kubernetes.io/docs/reference/access-authn-authz/authentication/#using-flags).
 type OpenIdConnectTokenAuthenticationConfig struct {
 
+	// Whether the cluster has OIDC Auth Config enabled. Defaults to false.
+	IsOpenIdConnectAuthEnabled *bool `mandatory:"true" json:"isOpenIdConnectAuthEnabled"`
+
 	// URL of the provider that allows the API server to discover public signing keys.
 	// Only URLs that use the https:// scheme are accepted. This is typically the provider's discovery URL,
 	// changed to have an empty path.
-	IssuerUrl *string `mandatory:"true" json:"issuerUrl"`
+	IssuerUrl *string `mandatory:"false" json:"issuerUrl"`
 
 	// A client id that all tokens must be issued for.
-	ClientId *string `mandatory:"true" json:"clientId"`
-
-	// Whether the cluster has OIDC Auth Config enabled. Defaults to false.
-	IsOpenIdConnectAuthEnabled *bool `mandatory:"true" json:"isOpenIdConnectAuthEnabled"`
+	ClientId *string `mandatory:"false" json:"clientId"`
 
 	// JWT claim to use as the user name. By default sub, which is expected to be a unique identifier of the end
 	// user. Admins can choose other claims, such as email or name, depending on their provider. However, claims
