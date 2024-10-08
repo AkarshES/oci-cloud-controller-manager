@@ -315,6 +315,8 @@ func (cp *CloudProvider) InstanceExistsByProviderID(ctx context.Context, provide
 
 	instance, err := cp.client.Compute().GetInstance(ctx, resourceID)
 	if client.IsNotFound(err) {
+		nodes, _ := cp.NodeLister.List(labels.Everything())
+		cp.logger.With("providerID", providerID, "nodes", len(nodes)).Info("get instance 404")
 		return false, nil
 	}
 	if err != nil {
