@@ -49,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	v1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	csicontroller "github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csi-controller"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
@@ -69,7 +70,6 @@ var (
 	enableNPNController                                                                       bool
 	enableOCIServiceController                                                                bool
 	resourcePrincipalInitialTimeout                                                           time.Duration
-	enableNORController                                                                       bool
 )
 
 var csioption = csioptions.CSIOptions{}
@@ -174,9 +174,6 @@ manager and oci volume provisioner. It embeds the cloud specific control loops s
 
 	npnFlagSet := namedFlagSets.FlagSet("NPN Controller")
 	npnFlagSet.BoolVar(&enableNPNController, "enable-npn-controller", false, "Whether to enable Native Pod Network controller")
-
-	norFlagSet := namedFlagSets.FlagSet("NOR Controller")
-	norFlagSet.BoolVar(&enableNORController, "enable-nor-controller", false, "Whether to enable Node Operation Request controller")
 
 	ociSvcCtrlFlagSet := namedFlagSets.FlagSet("OCI Service Controller")
 	ociSvcCtrlFlagSet.BoolVar(&enableOCIServiceController, "enable-oci-service-controller", false, "Whether to enable OCI service controller instead of Kubernetes Cloud Provider service controller")
@@ -288,14 +285,15 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 	enableNPN := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NPN_CONTROLLER", false)
 	logger = logger.With(zap.String("component", "node-cr-manager"))
 	ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+	enableNOR := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NOR_CONTROLLER", false)
+
 	//instantiate manager and hook up controller with manager
-	if shouldStartControllerManager(enableNORController, enableNPN, enableNPNController) {
+	if shouldStartControllerManager(enableNOR, enableNPN, enableNPNController) {
 		wg.Add(1)
 		logger.Info("CRD is enabled.Instantiating manger.")
 		go func() {
 			defer wg.Done()
 			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-			utilruntime.Must(v1beta1.AddToScheme(scheme))
 			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 				Scheme: scheme,
 				Metrics: metricsserver.Options{
@@ -318,23 +316,24 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 				controllerManagerSetupLog.Error(err, "unable to set up ready check")
 				os.Exit(1)
 			}
+			configPath, ok := os.LookupEnv("CONFIG_YAML_FILENAME")
+			if !ok {
+				configPath = configFilePath
+			}
+			cfg := providercfg.GetConfig(logger, configPath)
+			ociClient := getOCIClient(logger, cfg)
+			metricPusher, err := metrics.NewMetricPusher(logger)
+			if err != nil {
+				logger.With("error", err).Error("metrics collection could not be enabled")
+				// disable metrics
+				metricPusher = nil
+			}
 			//setup NPN Controller with manager if NPN Enabled
 			if enableNPN || enableNPNController {
 				logger = logger.With(zap.String("component", "npn-controller"))
+				utilruntime.Must(v1beta1.AddToScheme(scheme))
 				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
 				logger.Info("NPN controller is enabled.")
-				configPath, ok := os.LookupEnv("CONFIG_YAML_FILENAME")
-				if !ok {
-					configPath = configFilePath
-				}
-				cfg := providercfg.GetConfig(logger, configPath)
-				ociClient := getOCIClient(logger, cfg)
-				metricPusher, err := metrics.NewMetricPusher(logger)
-				if err != nil {
-					logger.With("error", err).Error("metrics collection could not be enabled")
-					// disable metrics
-					metricPusher = nil
-				}
 				if err = (&controllers.NativePodNetworkReconciler{
 					Client:       mgr.GetClient(),
 					Scheme:       mgr.GetScheme(),
@@ -347,7 +346,19 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 			}
 
 			//setup NOR Controller with manager if NOR Enabled
-			if enableNORController {
+			if enableNOR {
+				logger := logger.With(zap.String("component", "nor-controller"))
+				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+				utilruntime.Must(norv1beta1.AddToScheme(scheme))
+				logger.Info("NOR controller is enabled.")
+				if err = (&controllers.NodeOperationRequestReconciler{
+					Client:    mgr.GetClient(),
+					Scheme:    mgr.GetScheme(),
+					OCIClient: ociClient,
+				}).SetupWithManager(mgr); err != nil {
+					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "NodeOperationRequest")
+					os.Exit(1)
+				}
 			}
 
 			//Now that all the controllers are hooked up, start the manager

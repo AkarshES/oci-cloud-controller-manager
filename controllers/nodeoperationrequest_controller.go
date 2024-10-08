@@ -22,13 +22,17 @@ import (
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 )
 
@@ -51,6 +55,7 @@ type NodeOperationRequestReconciler struct {
 	kubeClient kubernetes.Interface
 	OCIClient  ociclient.Interface
 	config     *providercfg.Config
+	Recorder   record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=oci.oraclecloud.com,resources=nodeoperationrequests,verbs=get;list;watch;create;update;patch;delete
@@ -69,6 +74,7 @@ type NodeOperationRequestReconciler struct {
 func (r *NodeOperationRequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	log := log.FromContext(ctx)
+	log.Info("NOR reconciliation in progress")
 	var nor norv1beta1.NodeOperationRequest
 	if err := r.Get(ctx, req.NamespacedName, &nor); err != nil {
 		log.Error(err, "unable to fetch NodeOperationRequest")
@@ -137,8 +143,13 @@ func (r *NodeOperationRequestReconciler) rebootNode(nodeId string, clusterId str
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodeOperationRequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	log := zap.L().Sugar()
+	log.Info("Setting up NOR controller with manager")
+	r.Recorder = mgr.GetEventRecorderFor("NodeOperationRequest")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&norv1beta1.NodeOperationRequest{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 20, CacheSyncTimeout: time.Hour}).
 		Complete(r)
 }
 
