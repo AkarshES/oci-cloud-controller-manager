@@ -55,7 +55,7 @@ steps:
       sudo chmod 777 $env_file
       env > $env_file
       ./run_dind.sh run-ccm-e2e-tests-local
-    failImmediatelyOnError: true
+    failImmediatelyOnError: false
     timeoutInSeconds: 18000
     onFailure:
       - type: shell
