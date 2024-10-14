@@ -202,7 +202,7 @@ type client struct {
 	bs                  blockstorageClient
 	identity            identityClient
 	containerEngine     containerEngineClient
-	compartment 		compartmentClient
+	compartment         compartmentClient
 
 	requestMetadata common.RequestMetadata
 	rateLimiter     RateLimiter
@@ -211,7 +211,7 @@ type client struct {
 	logger      *zap.SugaredLogger
 }
 
-func setupBaseClient(client *common.BaseClient, signer common.HTTPRequestSigner, interceptor common.RequestInterceptor, endpointOverrideEnvVar string) {
+func setupBaseClient(log *zap.SugaredLogger, client *common.BaseClient, signer common.HTTPRequestSigner, interceptor common.RequestInterceptor, endpointOverrideEnvVar string) {
 	client.Signer = signer
 	client.Interceptor = interceptor
 	if endpointOverrideEnvVar != "" {
@@ -224,8 +224,24 @@ func setupBaseClient(client *common.BaseClient, signer common.HTTPRequestSigner,
 	// currently as dual stack endpoints are going to be present in selected regions, only for IPv6 single stack cluster we will be using dual stack endpoints
 	if ok && strings.EqualFold(clusterIpFamily, Ipv6Stack) {
 		client.EnableDualStackEndpoints(true)
-	}
 
+		region, ok := os.LookupEnv("OCI_RESOURCE_PRINCIPAL_REGION")
+		if !ok {
+			log.Errorf("unable to get OCI_RESOURCE_PRINCIPAL_REGION env var for region")
+		}
+
+		authEndpoint, ok := os.LookupEnv("OCI_SDK_AUTH_CLIENT_REGION_URL")
+		if !ok {
+			authDualStackEndpoint := common.StringToRegion(region).EndpointForTemplate("", "ds.auth.{region}.oci.{secondLevelDomain}")
+			if err := os.Setenv("OCI_SDK_AUTH_CLIENT_REGION_URL", authDualStackEndpoint); err != nil {
+				log.Errorf("unable to set OCI_SDK_AUTH_CLIENT_REGION_URL env var for oci auth dual stack endpoint")
+			} else {
+				log.Infof("OCI_SDK_AUTH_CLIENT_REGION_URL env var set to: %s", authDualStackEndpoint)
+			}
+		} else {
+			log.Infof("OCI_SDK_AUTH_CLIENT_REGION_URL env var set to: %s", authEndpoint)
+		}
+	}
 }
 
 // New constructs an OCI API client.
@@ -242,7 +258,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewComputeClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&compute.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &compute.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &compute.BaseClient)
 	if err != nil {
@@ -254,7 +270,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewVirtualNetworkClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&network.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &network.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &network.BaseClient)
 	if err != nil {
@@ -266,7 +282,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewLoadBalancerClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&lb.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &lb.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &lb.BaseClient)
 	if err != nil {
@@ -278,7 +294,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewNetworkLoadBalancerClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&nlb.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &nlb.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &nlb.BaseClient)
 	if err != nil {
@@ -290,7 +306,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewIdentityClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&identity.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &identity.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &identity.BaseClient)
 	if err != nil {
@@ -302,7 +318,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewCompartmentsClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&compartment.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &compartment.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &compartment.BaseClient)
 	if err != nil {
@@ -314,7 +330,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewBlockstorageClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&bs.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &bs.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &bs.BaseClient)
 	if err != nil {
@@ -326,7 +342,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewFileStorageClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&fss.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &fss.BaseClient, signer, interceptor, "")
 
 	err = configureCustomTransport(logger, &fss.BaseClient)
 	if err != nil {
@@ -338,7 +354,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewContainerEngineClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(&containerEngine.BaseClient, signer, interceptor, "CE_ENDPOINT_OVERRIDE")
+	setupBaseClient(logger, &containerEngine.BaseClient, signer, interceptor, "CE_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &containerEngine.BaseClient)
 	if err != nil {
@@ -369,7 +385,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		bs:                  &bs,
 		filestorage:         &fss,
 		containerEngine:     &containerEngine,
-		compartment:     	 &compartment,
+		compartment:         &compartment,
 
 		rateLimiter:     *opRateLimiter,
 		requestMetadata: requestMetadata,
@@ -417,7 +433,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTe
 			logger.Error("Failed to get new LB client with oke workload identity configuration provider! Error:" + err.Error())
 			return nil
 		}
-		setupBaseClient(&lb.BaseClient, signer, interceptor, "")
+		setupBaseClient(logger, &lb.BaseClient, signer, interceptor, "")
 
 		err = configureCustomTransport(logger, &lb.BaseClient)
 		if err != nil {
@@ -437,7 +453,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTe
 			logger.Error("Failed to get new NLB client with oke workload identity configuration provider! Error:" + err.Error())
 			return nil
 		}
-		setupBaseClient(&nlb.BaseClient, signer, interceptor, "")
+		setupBaseClient(logger, &nlb.BaseClient, signer, interceptor, "")
 
 		err = configureCustomTransport(logger, &nlb.BaseClient)
 		if err != nil {
@@ -472,7 +488,7 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 			return nil
 		}
-		setupBaseClient(&network.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &network.BaseClient, signer, interceptor, "")
 
 		err = configureCustomTransport(c.logger, &network.BaseClient)
 		if err != nil {
@@ -514,7 +530,7 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 			return nil
 		}
-		setupBaseClient(&identity.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &identity.BaseClient, signer, interceptor, "")
 
 		err = configureCustomTransport(c.logger, &identity.BaseClient)
 		if err != nil {
@@ -527,7 +543,7 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 			c.logger.Errorf("Failed to create Compartments workload identity client  %v", err)
 			return nil
 		}
-		setupBaseClient(&compartment.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &compartment.BaseClient, signer, interceptor, "")
 
 		err = configureCustomTransport(c.logger, &compartment.BaseClient)
 		if err != nil {
@@ -536,12 +552,12 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 		}
 
 		return &client{
-			compartment: 	     &compartment,
-			identity:            &identity,
-			requestMetadata:     c.requestMetadata,
-			rateLimiter:         c.rateLimiter,
-			subnetCache:         cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-			logger:              c.logger,
+			compartment:     &compartment,
+			identity:        &identity,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
 		}
 	}
 	return c
@@ -570,7 +586,7 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 			return nil
 		}
-		setupBaseClient(&fc.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &fc.BaseClient, signer, interceptor, "")
 
 		err = configureCustomTransport(c.logger, &fc.BaseClient)
 		if err != nil {
