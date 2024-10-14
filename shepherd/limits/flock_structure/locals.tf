@@ -894,6 +894,7 @@ locals {
     "prd.oc1.eu-frankfurt-1.cell1" = {
       predecessor           = "prd.oc1.eu-frankfurt-1.cell0"
       oke_secrets_namespace = "oke-prime-prod-cell1"
+    }
     "prd.oc1.us-phoenix-1.cell2" = {
       predecessor           = "prd.oc1.us-phoenix-1.cell1"
       oke_secrets_namespace = "oke-prime-prod-cell2"
