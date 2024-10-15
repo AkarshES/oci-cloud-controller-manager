@@ -22,12 +22,14 @@ import (
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"golang.org/x/time/rate"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 )
 
 var (
@@ -35,6 +37,11 @@ var (
 	errNodeCandidatesConflict  = errors.New("node candidates are conflicted")
 	errFailedToFetchNode       = errors.New("fail to get the node")
 	errProviderIdMissingOnNode = errors.New("missing provider id for node")
+)
+
+const (
+	maxRequestsPerAction = 10
+	maxBurstTokens       = 1
 )
 
 // NodeOperationRequestReconciler reconciles a NodeOperationRequest object
@@ -92,7 +99,15 @@ func (r *NodeOperationRequestReconciler) Reconcile(ctx context.Context, req ctrl
 // - A string representing the work request ID associated with the cycling operation.
 // - An error indicating any issues encountered during the cycling operation; otherwise, returns nil.
 func (r *NodeOperationRequestReconciler) cyclingNode(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
-	workRequestId, err := r.OCIClient.ContainerEngine().CycleClusterNode(context.Background(), nodeId, clusterId, nor)
+	rateLimiter := rate.NewLimiter(rate.Every(time.Minute/maxRequestsPerAction), maxBurstTokens)
+	var workRequestId string
+	var err error
+	if rateLimiter.Allow() {
+		workRequestId, err = r.OCIClient.ContainerEngine().CycleClusterNode(context.Background(), nodeId, clusterId, nor)
+	} else {
+		return "", errors.New("rate limited for operation" + string(norv1beta1.CyclingAction) + "on cluster" + clusterId)
+	}
+
 	return workRequestId, err
 }
 
@@ -109,7 +124,14 @@ func (r *NodeOperationRequestReconciler) cyclingNode(nodeId string, clusterId st
 // - A string representing the work request ID associated with the reboot operation.
 // - An error indicating any issues encountered during the reboot operation; otherwise, returns nil.
 func (r *NodeOperationRequestReconciler) rebootNode(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
-	workRequestId, err := r.OCIClient.ContainerEngine().RebootClusterNode(context.Background(), nodeId, clusterId, nor)
+	rateLimiter := rate.NewLimiter(rate.Every(time.Minute/maxRequestsPerAction), maxBurstTokens)
+	var workRequestId string
+	var err error
+	if rateLimiter.Allow() {
+		workRequestId, err = r.OCIClient.ContainerEngine().RebootClusterNode(context.Background(), nodeId, clusterId, nor)
+	} else {
+		return "", errors.New("rate limited for operation" + string(norv1beta1.RebootAction) + "on cluster" + clusterId)
+	}
 	return workRequestId, err
 }
 

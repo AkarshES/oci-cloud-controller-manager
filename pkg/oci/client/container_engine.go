@@ -54,12 +54,6 @@ func IsVirtualNodeInTerminalState(virtualNode *containerengine.VirtualNode) bool
 // - A string representing the work request ID associated with the reboot operation.
 // - An error indicating any issues encountered during the reboot operation; otherwise, returns nil.
 func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
-	//TODO: We need to implement custom rate limiter for Reboot Node
-	// https://jira.oci.oraclecorp.com/browse/OKE-33129
-	if !c.rateLimiter.Reader.TryAccept() {
-		return "", RateLimitError(false, "RebootNode")
-	}
-
 	evictionGracePeriod := strconv.Itoa(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
 	rebootClusterNodeDetails := &containerengine.RebootClusterNodeDetails{
 		NodeEvictionSettings: &containerengine.NodeEvictionSettings{
@@ -96,11 +90,6 @@ func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId
 // - A string representing the work request ID associated with the cycling operation.
 // - An error indicating any issues encountered during the cycling operation; otherwise, returns nil.
 func (c *client) CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
-	//TODO: We need to implement custom rate limiter for Cycling Node
-	// https://jira.oci.oraclecorp.com/browse/OKE-33129
-	if !c.rateLimiter.Reader.TryAccept() {
-		return "", RateLimitError(false, "CyclingNode")
-	}
 
 	evictionGracePeriod := strconv.Itoa(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
 	cycleClusterNodeDetails := &containerengine.CycleClusterNodeDetails{
