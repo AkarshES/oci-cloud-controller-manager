@@ -334,6 +334,8 @@ locals {
             "v1.21" : "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
             "v1.22" : "oke-1.22-9893434-269@sha256:4d9775fe579b47b3e53c6a361c27114d55b97775d6040206f1b48d7f002684e6",
             "v1.23" : "oke-1.23-526d1e6-171@sha256:b738bf71baccc009e8eda5d818942a7d4c1be6d6dd63abe79c731aa2cafb036f",
+            "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
+            "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
           }
         ))
       }
@@ -350,6 +352,8 @@ locals {
             "v1.21" : "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
             "v1.22" : "oke-1.22-9f30fe0-220@sha256:fdbb7926235ecaa790b4d775ca7befe57f0fd8cd559afd6ead9a6ff765de8312",
             "v1.23" : "oke-1.23-b8a8dee-140@sha256:922eb0404d72f9abc63218ac4275b5676519af7698d770362a8eb9e4f3ba65a8",
+            "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
+            "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
           }
         ))
       }
@@ -364,6 +368,8 @@ locals {
             "v1.21" : "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
             "v1.22" : "oke-1.22-9893434-269@sha256:4d9775fe579b47b3e53c6a361c27114d55b97775d6040206f1b48d7f002684e6",
             "v1.23" : "oke-1.23-526d1e6-171@sha256:b738bf71baccc009e8eda5d818942a7d4c1be6d6dd63abe79c731aa2cafb036f",
+            "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
+            "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
           }
         ))
       }
