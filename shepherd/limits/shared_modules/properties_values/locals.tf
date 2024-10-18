@@ -25,50 +25,10 @@ locals {
     "v1.30" : "v1.30-9996b0758fd-4095@sha256:9b9e7a0e3fd8f124065bc41c998da5187bc35ef3e14de7aafee7bce18d79573d",
   }
 
-  omk_ccm_mapping_override = {
-    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-    "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
-    "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-    "v1.25" : "v1.25-d0b59914251-38@sha256:ffa44cb1e6bc5793859a1ebf7762bcd1731ec0dea426034c44bc77ffb12ece48",
-    "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
-    "v1.27" : "v1.27-bee79702e78-3786@sha256:6e5f3af78ec3143db5e9989b4b1245e84ac133a50caa455fa68b64769d699aa7",
-    "v1.28" : "v1.28-af877866952-3787@sha256:7afe0309b85d3efe232afd34da164fe9cd48cd8a1becdade37687843c5dd751d",
-    "v1.29" : "v1.29-cc407e27df8-3788@sha256:0ad603eb4e297210ebae06c069aa675600885ba0864eeb917df5d235078727c6",
-    "v1.30" : "v1.30-a171403002c-3785@sha256:753f0788fcb86c7e4efd850272e967a8444a0cd871224a229990ead59e192993"
-  }
-
   tenancy_property_overrides = {
     "oc1" = {
       "ccm-image-version-mapping" = {
         overrides = [
-          // omk fss override for omkdevfleet tenancy in IAD
-          {
-            regions = ["iad", "phx"]
-            env     = "integ"
-            value   = jsonencode(local.omk_ccm_mapping_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafyd4yolgubij6qz7kgxxl5ps2qhqkfoqrvxtjvdccy66ifxmglia"
-          },
-          // omk fss override for omkintegfleet tenancy in IAD
-          {
-            regions = ["iad", "phx"]
-            env     = "integ"
-            value   = jsonencode(local.omk_ccm_mapping_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaqeq267dfoqjqjvcfgazlo6tqv7nfnv2rv767dm5ecf2wqlbsh5sa"
-          },
-          // omk fss override for omkintegfleetinternal tenancy in IAD
-          {
-            regions = ["iad", "phx"]
-            env     = "integ"
-            value   = jsonencode(local.omk_ccm_mapping_override)
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaepbccznc477ibxxopf2o3ki4bvfn47ji2zqvdfluqtutcduggn4q"
-          },
           // YUBI GRPC override https://jira.oci.oraclecorp.com/browse/OKE-33286
           {
             regions = ["bom", "hyd"]
