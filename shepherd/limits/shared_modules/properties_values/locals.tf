@@ -1,5 +1,18 @@
 locals {
 
+  snapshot_ccm_mapping_override = {
+    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+    "v1.29" : "v1.29-73e1f9a04e3-1@sha256:c810e1bde28c139e37d37bcd557f8380ce9be8a87128056f52b1ccd0497dae26",
+    "v1.30" : "v1.30-442aa494121-2@sha256:d0f3085669ec99f264bb9d0b6de3b4fcd660c37fd72b95d33d256ac2b8c59801",
+  }
+
   yubi_ccm_mapping_override = {
     "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
     "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -62,6 +75,13 @@ locals {
             env     = "prd"
             value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.yubi_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxcauqzilnjm4aaabx35cjcfjvzvef5yuh3e77xmja2ehnoxtdc7a"
+          },
+          // CSI Snapshot bug override https://jira.oci.oraclecorp.com/browse/OKE-33598
+          {
+            regions = ["bom", "dxb", "sin", "syd"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.snapshot_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa4xrze3jd2teupzdxtkisswu7oicgjjbvwbic4tmoc2unyocy76wq"
           }
         ]
       },
