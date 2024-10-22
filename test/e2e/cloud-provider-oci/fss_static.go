@@ -38,7 +38,7 @@ var _ = Describe("Basic Static FSS test", func() {
 
 var _ = Describe("FSS Static in-transit encryption test", func() {
 	f := framework.NewDefaultFramework("fss-basic")
-	Context("[cloudprovider][storage][csi][fss][static]", func() {
+	Context("[cloudprovider][storage][csi][fss][static][encryption]", func() {
 		It("Create PVC and POD for FSS in-transit encryption", func() {
 			checkNodeAvailability(f)
 			TestEncryptionType(f, []string{})
