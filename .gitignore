@@ -59,3 +59,11 @@ output_ocibuild_dockerize_ccm_arm/
 
 # ignore Dockerfile under vendor
 vendor/**/Dockerfile
+
+# release tooling files
+
+release-tooling/releases/cpo-release/*
+release-tooling/.log
+
+# pyenv file
+.python-version

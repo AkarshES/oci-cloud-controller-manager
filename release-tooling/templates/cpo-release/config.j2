@@ -1,0 +1,144 @@
+{% set property = 'ccm-image-version-mapping, csi-image-version-mapping' %}
+{% set k8s_versions = '1.28, 1.29, 1.30, 1.31' %}
+{% set l1_peer_reviewer = '[~yashas.g.g@oracle.com]' %}
+{% set l1_manager_reviewer = '[~rohit.chaware@oracle.com]' %}
+{% set l2_peer_reviewer = '[~jayasheelan.kumar@oracle.com]' %}
+{% set l2_manager_reviewer = '[~sachin.goel@oracle.com]' %}
+{% set changelog = '[CPO Release 1.4.0 changelog|https://confluence.oci.oraclecorp.com/display/OKE/OKE+CPO+release+-+Version+%3A+v1.4.0]' %}
+{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1235/overview]' %}
+{% set e2e_ticket = '[E2E results|https://jira.oci.oraclecorp.com/browse/OKE-33116]' %}
+{% set app_release_name = 'Cicada' %}
+{% set app_flock_config = '[3ff489ef-4e77-4e29-8899-c1c0c6cd1fd9|https://devops.oci.oraclecorp.com/t/CKW5i5]' %}
+{% set infra_release_name = 'Tadpole' %}
+{% set infra_flock_config = '[b0a31d7f-dfe9-415b-94d0-a2d1e99aa301|https://devops.oci.oraclecorp.com/t/CKW5i5]' %}
+{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/9aEbLz' %}
+{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/9aEbLz' %}
+{% set infra_rollback_release_name = 'BetaNocturnal' %}
+{% set infra_rollback_test_link = 'https://devops.oci.oraclecorp.com/t/9aEbLz' %}
+{% set infra_rollback_config = '32a10798-1242-4a4c-8565-f3f354cd9fb1' %}
+{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/t/2a0dHb' %}
+{% set infra_rollback_commit = 'fe62f4da25e' %}
+{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/fe62f4da25ee3d450369f442a32223a3c52bbb8d' %}
+
+{% macro images_list() %}
+    "oke-public-cloud-provider-oci": "v1.28-fb062bba0df-69",
+    "oke-public-cloud-provider-oci-arm": "v1.28-fb062bba0df-69",
+    "oke-public-cloud-provider-oci": "v1.28-fb062bba0df-69",
+    "oke-public-cloud-provider-oci": "v1.29-593b5de8c7b-66",
+    "oke-public-cloud-provider-oci-arm": "v1.29-593b5de8c7b-66",
+    "oke-public-cloud-provider-oci": "v1.29-593b5de8c7b-66",
+    "oke-public-cloud-provider-oci": "v1.30-e29f5456e73-58",
+    "oke-public-cloud-provider-oci-arm": "v1.30-e29f5456e73-58",
+    "oke-public-cloud-provider-oci": "v1.30-e29f5456e73-58",
+{%- endmacro %}
+
+{% macro mapping_changes() %}
+    "v1.27" : "v1.27-bff7091ad1d-51@sha256:10555f13db26cbcb35dcd684be88db9897e01ad25bdcd7d65e9cb4bd1c5f386f",
+    "v1.28" : "v1.28-eeb0f8e9df3-57@sha256:ad75627507f482ea8103ba093d336d212babbfcd0fd4934a9f71dcef8cb51c57",
+    "v1.29" : "v1.29-0a03da73b3b-50@sha256:bbdda0aec63d765a2149f15213c20e59df4521c21cb8cba0e100e459c77c2703",
+    "v1.30" : "v1.30-244b8933d7e-43@sha256:6ceb992cb228849f63ea903915bbc18bba379686b146ff967dbc92e2c52a96d0"
+{%- endmacro %}
+
+{% macro rollback_mapping() %}
+    "1.27" : "v1.27-aa6a9328864-47@sha256:81767ff751e6c532af3af01abea3f1881befcce2a3c1f49ef867f5a44d1c6a06"",
+    "v1.28" : "v1.28-a57505e55b4-52@sha256:2f1aa2dfc755efbe6bd4a4c87a43b1b3750ac9ed404f511b5e531987684f35ab",
+    "v1.29" : "v1.29-a98a9008bb3-45@sha256:9176a8681ba67b10b4713af349edd965da03d9b95ad851dd227f372c34681eaf",
+    "v1.30" : "v1.30-8d91e760223-29@sha256:8baeddc866d35d3933295a06a0708e3b413821df206af7b98b849b2ef27e183a"
+{%- endmacro %}
+
+{% set change_locations = [
+ "OC1-af-johannesburg-1",
+ "OC1-ap-chuncheon-1",
+ "OC1-ap-hyderabad-1",
+ "OC1-ap-melbourne-1",
+ "OC1-ap-mumbai-1",
+ "OC1-ap-osaka-1",
+ "OC1-ap-seoul-1",
+ "OC1-ap-singapore-1",
+ "OC1-ap-singapore-2",
+ "OC1-ap-sydney-1",
+ "OC1-ap-tokyo-1",
+ "OC1-ca-montreal-1",
+ "OC1-ca-toronto-1",
+ "OC1-eu-amsterdam-1",
+ "OC1-eu-frankfurt-1",
+ "OC1-eu-madrid-1",
+ "OC1-eu-marseille-1",
+ "OC1-eu-milan-1",
+ "OC1-eu-paris-1",
+ "OC1-eu-stockholm-1",
+ "OC1-eu-zurich-1",
+ "OC1-il-jerusalem-1",
+ "OC1-me-abudhabi-1",
+ "OC1-me-dubai-1",
+ "OC1-me-jeddah-1",
+ "OC1-me-riyadh-1",
+ "OC1-mx-monterrey-1",
+ "OC1-mx-queretaro-1",
+ "OC1-sa-bogota-1",
+ "OC1-sa-santiago-1",
+ "OC1-sa-saopaulo-1",
+ "OC1-sa-valparaiso-1",
+ "OC1-sa-vinhedo-1",
+ "OC1-uk-cardiff-1",
+ "OC1-uk-london-1",
+ "OC1-us-ashburn-1",
+ "OC1-us-chicago-1",
+ "OC1-us-phoenix-1",
+ "OC1-us-saltlake-2",
+ "OC1-us-sanjose-1",
+ "OC10-ap-dcc-canberra-1",
+ "OC11-us-gov-fortworth-3",
+ "OC11-us-gov-phoenix-3",
+ "OC11-us-gov-sterling-3",
+ "OC12-us-gov-ashburn-2",
+ "OC12-us-gov-phoenix-2",
+ "OC12-us-gov-saltlake-1",
+ "OC12-us-gov-saltlakecity-1",
+ "OC14-eu-dcc-dublin-1",
+ "OC14-eu-dcc-dublin-2",
+ "OC14-eu-dcc-milan-1",
+ "OC14-eu-dcc-milan-2",
+ "OC14-eu-dcc-rating-1",
+ "OC14-eu-dcc-rating-2",
+ "OC15-ap-dcc-gazipur-1",
+ "OC16-us-westjordan-1",
+ "OC17-us-dcc-phoenix-1",
+ "OC17-us-dcc-phoenix-2",
+ "OC17-us-dcc-phoenix-4",
+ "OC19-eu-frankfurt-2",
+ "OC19-eu-madrid-2",
+ "OC2-us-langley-1",
+ "OC2-us-luke-1",
+ "OC20-eu-jovanovac-1",
+ "OC21-me-dcc-doha-1",
+ "OC22-eu-dcc-rome-1",
+ "OC23-us-somerset-1",
+ "OC23-us-thames-1",
+ "OC24-eu-crissier-1",
+ "OC24-eu-dcc-zurich-1",
+ "OC25-ap-dcc-osaka-1",
+ "OC25-ap-dcc-tokyo-1",
+ "OC26-me-abudhabi-3",
+ "OC26-me-alain-1",
+ "OC27-us-dcc-swjordan-1",
+ "OC28-us-dcc-swjordan-2",
+ "OC29-me-abudhabi-2",
+ "OC29-me-abudhabi-4",
+ "OC3-us-gov-ashburn-1",
+ "OC3-us-gov-chicago-1",
+ "OC3-us-gov-phoenix-1",
+ "OC31-ap-hobsonville-1",
+ "OC35-ap-chuncheon-2",
+ "OC35-ap-seoul-2",
+ "OC35-ap-suwon-1",
+ "OC4-uk-gov-cardiff-1",
+ "OC4-uk-gov-london-1",
+ "OC5-us-tacoma-1",
+ "OC6-us-gov-fortworth-1",
+ "OC6-us-gov-sterling-2",
+ "OC7-us-gov-sterling-1",
+ "OC8-ap-chiyoda-1",
+ "OC8-ap-ibaraki-1",
+ "OC9-me-dcc-muscat-1"
+] %}
