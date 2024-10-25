@@ -44,13 +44,13 @@ resource "telemetry_alarm" "csi_block_volume_attaching_timeout" {
   project = var.project
   fleet = var.fleet
   display_name = "${var.fleet}-csi-block-volume-attaching-timeout in ${var.region}"
-  query = "(OKE.CPO.PV_ATTACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
+  query = "OKE.CPO.PV_ATTACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>2).grouping().count().filter(x=>x>7)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvAttachingTimeout"
+  dedupe_key = "BvMultipleAttachDetachTimeout"
   pending_duration = "PT5M"
   body = <<EOT
-OKE.CPO.PV_ATTACH - More than 10 persistent volumes are timing out on attach
+OKE.CPO.PV_ATTACH - More than 7 persistent volumes are timing out on attach consistently
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 82)}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/oke-csi-block-volumes-stuck-detaching].
 For service logs, see [lumberjack link|${local.attach_lumberjack_uri}] (switch to correct region)
@@ -70,13 +70,13 @@ resource "telemetry_alarm" "csi_block_volume_detaching_timeout" {
   project = var.project
   fleet = var.fleet
   display_name = "${var.fleet}-csi-block-volume-detaching-timeout in ${var.region}"
-  query = "(OKE.CPO.PV_DETACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count()).grouping().count().filter(x=>x>10)"
+  query = "OKE.CPO.PV_DETACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>2).grouping().count().filter(x=>x>7)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvDetachingTimeout"
+  dedupe_key = "BvMultipleAttachDetachTimeout"
   pending_duration = "PT5M"
   body = <<EOT
-OKE.CPO.PV_ATTACH - More than 10 persistent volumes are timing out on detach
+OKE.CPO.PV_ATTACH - More than 7 persistent volumes are timing out on detach
 See [OCI Grafana Dashboard.|${format(local.grafana_template, 83)}]
 For Runbook instructions, please see [this runbook here|${var.runbook_base}/oke-csi-block-volumes-stuck-detaching].
 For service logs, see [lumberjack link|${local.detach_lumberjack_uri}] (switch to correct region)
@@ -99,7 +99,7 @@ resource "telemetry_alarm" "csi_block_volume_stuck_detaching" {
   query = "OKE.CPO.PV_DETACH[2h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>25)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvDetachingStuck"
+  dedupe_key = "BvSingleAttachDetachStuck"
   pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_DETACH - Block volumes are stuck detaching for 2 hrs
@@ -125,7 +125,7 @@ resource "telemetry_alarm" "csi_block_volume_stuck_attaching" {
   query = "OKE.CPO.PV_ATTACH[2h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>25)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvAttachingStuck"
+  dedupe_key = "BvSingleAttachDetachStuck"
   pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - Block volumes are stuck attaching for 2 hrs
