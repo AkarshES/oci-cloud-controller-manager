@@ -21,22 +21,21 @@ import (
 	"strings"
 )
 
-// ChangeQosTemplateCompartmentDetails This structure is used when moving the QoS template to another compartment.
-type ChangeQosTemplateCompartmentDetails struct {
+// GetNetworkSecurityGroupsDetails Details needed to fetch network security groups.
+type GetNetworkSecurityGroupsDetails struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the
-	// QoS template.
-	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+	// List of network security groups.
+	NsgIds []string `mandatory:"true" json:"nsgIds"`
 }
 
-func (m ChangeQosTemplateCompartmentDetails) String() string {
+func (m GetNetworkSecurityGroupsDetails) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ChangeQosTemplateCompartmentDetails) ValidateEnumValue() (bool, error) {
+func (m GetNetworkSecurityGroupsDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

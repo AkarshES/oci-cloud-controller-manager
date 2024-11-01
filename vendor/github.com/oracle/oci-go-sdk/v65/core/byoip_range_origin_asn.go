@@ -21,22 +21,27 @@ import (
 	"strings"
 )
 
-// ChangeQosTemplateCompartmentDetails This structure is used when moving the QoS template to another compartment.
-type ChangeQosTemplateCompartmentDetails struct {
+// ByoipRangeOriginAsn Information on 'Byoip range' origin asn.
+type ByoipRangeOriginAsn struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the
-	// QoS template.
-	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+	// The Autonomous System Number (ASN) you are importing to the Oracle cloud.
+	Asn *int64 `mandatory:"true" json:"asn"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the `Byoasn` resource.
+	ByoasnId *string `mandatory:"false" json:"byoasnId"`
+
+	// The as path prepend length.
+	AsPathPrependLength *int `mandatory:"false" json:"asPathPrependLength"`
 }
 
-func (m ChangeQosTemplateCompartmentDetails) String() string {
+func (m ByoipRangeOriginAsn) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ChangeQosTemplateCompartmentDetails) ValidateEnumValue() (bool, error) {
+func (m ByoipRangeOriginAsn) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

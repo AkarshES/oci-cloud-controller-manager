@@ -2,7 +2,7 @@
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
-package filestorage
+package core
 
 import (
 	"fmt"
@@ -11,27 +11,32 @@ import (
 	"strings"
 )
 
-// GetShareSetRequest wrapper for the GetShareSet operation
-type GetShareSetRequest struct {
+// SetOriginAsnToOracleRequest wrapper for the SetOriginAsnToOracle operation
+type SetOriginAsnToOracleRequest struct {
 
-	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the share set.
-	ShareSetId *string `mandatory:"true" contributesTo:"path" name:"shareSetId"`
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the `ByoipRange` resource containing the BYOIP CIDR block.
+	ByoipRangeId *string `mandatory:"true" contributesTo:"path" name:"byoipRangeId"`
 
 	// Unique identifier for the request.
 	// If you need to contact Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
+
+	// For optimistic concurrency control. In the PUT or DELETE call for a resource, set the `if-match`
+	// parameter to the value of the etag from a previous GET or POST response for that resource. The resource
+	// will be updated or deleted only if the etag you provide matches the resource's current etag value.
+	IfMatch *string `mandatory:"false" contributesTo:"header" name:"if-match"`
 
 	// Metadata about the request. This information will not be transmitted to the service, but
 	// represents information that the SDK will consume to drive retry behavior.
 	RequestMetadata common.RequestMetadata
 }
 
-func (request GetShareSetRequest) String() string {
+func (request SetOriginAsnToOracleRequest) String() string {
 	return common.PointerString(request)
 }
 
 // HTTPRequest implements the OCIRequest interface
-func (request GetShareSetRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
+func (request SetOriginAsnToOracleRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
 
 	_, err := request.ValidateEnumValue()
 	if err != nil {
@@ -41,7 +46,7 @@ func (request GetShareSetRequest) HTTPRequest(method, path string, binaryRequest
 }
 
 // BinaryRequestBody implements the OCIRequest interface
-func (request GetShareSetRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
+func (request SetOriginAsnToOracleRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
 
 	return nil, false
 
@@ -49,11 +54,11 @@ func (request GetShareSetRequest) BinaryRequestBody() (*common.OCIReadSeekCloser
 
 // ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
 // Not all services are supporting this feature and this method will be a no-op for those services.
-func (request GetShareSetRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
-	if mandatoryParamMap["shareSetId"] != nil {
-		templateParam := mandatoryParamMap["shareSetId"]
+func (request SetOriginAsnToOracleRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["byoipRangeId"] != nil {
+		templateParam := mandatoryParamMap["byoipRangeId"]
 		for _, template := range templateParam {
-			replacementParam := *request.ShareSetId
+			replacementParam := *request.ByoipRangeId
 			if template.EndsWithDot {
 				replacementParam = replacementParam + "."
 			}
@@ -63,14 +68,14 @@ func (request GetShareSetRequest) ReplaceMandatoryParamInPath(client *common.Bas
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
-func (request GetShareSetRequest) RetryPolicy() *common.RetryPolicy {
+func (request SetOriginAsnToOracleRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (request GetShareSetRequest) ValidateEnumValue() (bool, error) {
+func (request SetOriginAsnToOracleRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
@@ -78,29 +83,22 @@ func (request GetShareSetRequest) ValidateEnumValue() (bool, error) {
 	return false, nil
 }
 
-// GetShareSetResponse wrapper for the GetShareSet operation
-type GetShareSetResponse struct {
+// SetOriginAsnToOracleResponse wrapper for the SetOriginAsnToOracle operation
+type SetOriginAsnToOracleResponse struct {
 
 	// The underlying http response
 	RawResponse *http.Response
 
-	// The ShareSet instance
-	ShareSet `presentIn:"body"`
-
-	// For optimistic concurrency control. See `if-match`.
-	Etag *string `presentIn:"header" name:"etag"`
-
-	// Unique Oracle-assigned identifier for the request. If
-	// you need to contact Oracle about a particular request,
-	// please provide the request ID.
+	// Unique Oracle-assigned identifier for the request. If you need to contact
+	// Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `presentIn:"header" name:"opc-request-id"`
 }
 
-func (response GetShareSetResponse) String() string {
+func (response SetOriginAsnToOracleResponse) String() string {
 	return common.PointerString(response)
 }
 
 // HTTPResponse implements the OCIResponse interface
-func (response GetShareSetResponse) HTTPResponse() *http.Response {
+func (response SetOriginAsnToOracleResponse) HTTPResponse() *http.Response {
 	return response.RawResponse
 }

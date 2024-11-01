@@ -21,22 +21,38 @@ import (
 	"strings"
 )
 
-// ChangeQosTemplateCompartmentDetails This structure is used when moving the QoS template to another compartment.
-type ChangeQosTemplateCompartmentDetails struct {
+// CreateByoasnDetails The information used to create a `Byoasn` resource.
+type CreateByoasnDetails struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the
-	// QoS template.
+	// The Autonomous System Number (ASN) you are importing to the Oracle cloud.
+	Asn *int64 `mandatory:"true" json:"asn"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment containing the BYOASN Resource.
 	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+
+	// A user-friendly name. Does not have to be unique, and it's changeable.
+	// Avoid entering confidential information.
+	DisplayName *string `mandatory:"true" json:"displayName"`
+
+	// Defined tags for this resource. Each key is predefined and scoped to a
+	// namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
+	// Example: `{"Operations": {"CostCenter": "42"}}`
+	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
+
+	// Free-form tags for this resource. Each tag is a simple key-value pair with no
+	// predefined name, type, or namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
+	// Example: `{"Department": "Finance"}`
+	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 }
 
-func (m ChangeQosTemplateCompartmentDetails) String() string {
+func (m CreateByoasnDetails) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ChangeQosTemplateCompartmentDetails) ValidateEnumValue() (bool, error) {
+func (m CreateByoasnDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

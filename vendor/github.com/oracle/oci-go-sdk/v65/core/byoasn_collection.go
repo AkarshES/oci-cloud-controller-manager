@@ -21,22 +21,24 @@ import (
 	"strings"
 )
 
-// ChangeQosTemplateCompartmentDetails This structure is used when moving the QoS template to another compartment.
-type ChangeQosTemplateCompartmentDetails struct {
+// ByoasnCollection The results returned by a `ListByoasn` operation.
+type ByoasnCollection struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the
-	// QoS template.
-	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+	// A list of `Byoasn` resource summaries.
+	Items []ByoasnSummary `mandatory:"true" json:"items"`
+
+	// The Autonomous System Number (ASN) for OCI in realm.
+	OracleAsn *int64 `mandatory:"false" json:"oracleAsn"`
 }
 
-func (m ChangeQosTemplateCompartmentDetails) String() string {
+func (m ByoasnCollection) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ChangeQosTemplateCompartmentDetails) ValidateEnumValue() (bool, error) {
+func (m ByoasnCollection) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

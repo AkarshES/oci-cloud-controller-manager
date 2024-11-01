@@ -21,22 +21,32 @@ import (
 	"strings"
 )
 
-// ChangeQosTemplateCompartmentDetails This structure is used when moving the QoS template to another compartment.
-type ChangeQosTemplateCompartmentDetails struct {
+// ByoasnByoipRange Information on 'Byoip range' that has`byoasn` as origin.
+type ByoasnByoipRange struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the
-	// QoS template.
-	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the `ByoipRange` resource to which the CIDR block belongs.
+	ByoipRangeId *string `mandatory:"true" json:"byoipRangeId"`
+
+	// The BYOIP CIDR block range or subrange allocated to an IP pool. This could be all or part of a BYOIP CIDR block.
+	CidrBlock *string `mandatory:"false" json:"cidrBlock"`
+
+	// The IPv6 prefix being imported to the Oracle cloud. This prefix must be /48 or larger, and can  be subdivided into sub-ranges used
+	// across multiple VCNs. A BYOIPv6 prefix can be assigned across multiple VCNs, and each VCN must be /64 or larger. You may specify
+	// a ULA or private IPv6 prefix of /64 or larger to use in the VCN. IPv6-enabled subnets will remain a fixed /64 in size.
+	Ipv6CidrBlock *string `mandatory:"false" json:"ipv6CidrBlock"`
+
+	// The as path prepend length.
+	AsPathPrependLength *int `mandatory:"false" json:"asPathPrependLength"`
 }
 
-func (m ChangeQosTemplateCompartmentDetails) String() string {
+func (m ByoasnByoipRange) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ChangeQosTemplateCompartmentDetails) ValidateEnumValue() (bool, error) {
+func (m ByoasnByoipRange) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

@@ -21,22 +21,21 @@ import (
 	"strings"
 )
 
-// ChangeQosTemplateCompartmentDetails This structure is used when moving the QoS template to another compartment.
-type ChangeQosTemplateCompartmentDetails struct {
+// UpdateInternalDnsResolverConfigDetails Details to update an internal dns resolver config.
+type UpdateInternalDnsResolverConfigDetails struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the
-	// QoS template.
-	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+	// The EcmpGroup's OCID Oracle ID (OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm)) associated to the given DnsResolver.
+	EcmpGroupId *string `mandatory:"false" json:"ecmpGroupId"`
 }
 
-func (m ChangeQosTemplateCompartmentDetails) String() string {
+func (m UpdateInternalDnsResolverConfigDetails) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ChangeQosTemplateCompartmentDetails) ValidateEnumValue() (bool, error) {
+func (m UpdateInternalDnsResolverConfigDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

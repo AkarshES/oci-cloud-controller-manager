@@ -2,7 +2,7 @@
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
-package filestorage
+package core
 
 import (
 	"fmt"
@@ -11,18 +11,11 @@ import (
 	"strings"
 )
 
-// DeleteShareRequest wrapper for the DeleteShare operation
-type DeleteShareRequest struct {
+// GetByoasnRequest wrapper for the GetByoasn operation
+type GetByoasnRequest struct {
 
-	// The OCID (https://docs.cloud.oracle.com/Content/General/Concepts/identifiers.htm) of the share.
-	ShareId *string `mandatory:"true" contributesTo:"path" name:"shareId"`
-
-	// For optimistic concurrency control. In the PUT or DELETE call
-	// for a resource, set the `if-match` parameter to the value of the
-	// etag from a previous GET or POST response for that resource.
-	// The resource will be updated or deleted only if the etag you
-	// provide matches the resource's current etag value.
-	IfMatch *string `mandatory:"false" contributesTo:"header" name:"if-match"`
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the `Byoasn` resource containing the Byoasn resource.
+	ByoasnId *string `mandatory:"true" contributesTo:"path" name:"byoasnId"`
 
 	// Unique identifier for the request.
 	// If you need to contact Oracle about a particular request, please provide the request ID.
@@ -33,12 +26,12 @@ type DeleteShareRequest struct {
 	RequestMetadata common.RequestMetadata
 }
 
-func (request DeleteShareRequest) String() string {
+func (request GetByoasnRequest) String() string {
 	return common.PointerString(request)
 }
 
 // HTTPRequest implements the OCIRequest interface
-func (request DeleteShareRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
+func (request GetByoasnRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
 
 	_, err := request.ValidateEnumValue()
 	if err != nil {
@@ -48,7 +41,7 @@ func (request DeleteShareRequest) HTTPRequest(method, path string, binaryRequest
 }
 
 // BinaryRequestBody implements the OCIRequest interface
-func (request DeleteShareRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
+func (request GetByoasnRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
 
 	return nil, false
 
@@ -56,11 +49,11 @@ func (request DeleteShareRequest) BinaryRequestBody() (*common.OCIReadSeekCloser
 
 // ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
 // Not all services are supporting this feature and this method will be a no-op for those services.
-func (request DeleteShareRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
-	if mandatoryParamMap["shareId"] != nil {
-		templateParam := mandatoryParamMap["shareId"]
+func (request GetByoasnRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["byoasnId"] != nil {
+		templateParam := mandatoryParamMap["byoasnId"]
 		for _, template := range templateParam {
-			replacementParam := *request.ShareId
+			replacementParam := *request.ByoasnId
 			if template.EndsWithDot {
 				replacementParam = replacementParam + "."
 			}
@@ -70,14 +63,14 @@ func (request DeleteShareRequest) ReplaceMandatoryParamInPath(client *common.Bas
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
-func (request DeleteShareRequest) RetryPolicy() *common.RetryPolicy {
+func (request GetByoasnRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (request DeleteShareRequest) ValidateEnumValue() (bool, error) {
+func (request GetByoasnRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
@@ -85,23 +78,28 @@ func (request DeleteShareRequest) ValidateEnumValue() (bool, error) {
 	return false, nil
 }
 
-// DeleteShareResponse wrapper for the DeleteShare operation
-type DeleteShareResponse struct {
+// GetByoasnResponse wrapper for the GetByoasn operation
+type GetByoasnResponse struct {
 
 	// The underlying http response
 	RawResponse *http.Response
 
-	// Unique Oracle-assigned identifier for the request. If
-	// you need to contact Oracle about a particular request,
-	// please provide the request ID.
+	// The Byoasn instance
+	Byoasn `presentIn:"body"`
+
+	// For optimistic concurrency control. See `if-match`.
+	Etag *string `presentIn:"header" name:"etag"`
+
+	// Unique Oracle-assigned identifier for the request. If you need to contact
+	// Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `presentIn:"header" name:"opc-request-id"`
 }
 
-func (response DeleteShareResponse) String() string {
+func (response GetByoasnResponse) String() string {
 	return common.PointerString(response)
 }
 
 // HTTPResponse implements the OCIResponse interface
-func (response DeleteShareResponse) HTTPResponse() *http.Response {
+func (response GetByoasnResponse) HTTPResponse() *http.Response {
 	return response.RawResponse
 }

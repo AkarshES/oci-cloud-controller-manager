@@ -21,36 +21,56 @@ import (
 	"strings"
 )
 
-// UpdateQosTemplateDetails Updates the specified `QosTemplate`'s display name, `definedTags`, `freeformTags`,  or `qosMappings`. Avoid entering confidential information. Note that the `qosMappings` object you provide replaces the entire existing set of `qosMappings`.
-type UpdateQosTemplateDetails struct {
+// ByoasnSummary Information about a `Byoasn` resource.
+type ByoasnSummary struct {
 
-	// List of `QosMappings` which consist of DSCP values and a respective `ClassOfService` or QoS queue. Example: `{43 - PREMIUM}`
-	QosMappings []QosMappings `mandatory:"false" json:"qosMappings"`
+	// The Autonomous System Number (ASN) you are importing to the Oracle cloud.
+	Asn *int64 `mandatory:"true" json:"asn"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment containing the `Byoasn` resource.
+	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the `Byoasn` resource.
+	Id *string `mandatory:"true" json:"id"`
+
+	// The `Byoasn` resource's current state.
+	LifecycleState ByoasnLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
+
+	// A user-friendly name. Does not have to be unique, and it's changeable.
+	// Avoid entering confidential information.
+	DisplayName *string `mandatory:"false" json:"displayName"`
 
 	// Defined tags for this resource. Each key is predefined and scoped to a
 	// namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
-	// A user-friendly name. Does not have to be unique, and it's changeable.
-	// Avoid entering confidential information.
-	DisplayName *string `mandatory:"false" json:"displayName"`
-
 	// Free-form tags for this resource. Each tag is a simple key-value pair with no
 	// predefined name, type, or namespace. For more information, see Resource Tags (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Department": "Finance"}`
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
+
+	// System tags for this resource. Each key is predefined and scoped to a namespace.
+	// Example: `{"foo-namespace": {"bar-key": "value"}}`
+	SystemTags map[string]map[string]interface{} `mandatory:"false" json:"systemTags"`
+
+	// The date and time the `Byoasn` resource was created, in the format defined by RFC3339 (https://tools.ietf.org/html/rfc3339).
+	// Example: `2016-08-25T21:10:29.600Z`
+	TimeCreated *common.SDKTime `mandatory:"false" json:"timeCreated"`
 }
 
-func (m UpdateQosTemplateDetails) String() string {
+func (m ByoasnSummary) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m UpdateQosTemplateDetails) ValidateEnumValue() (bool, error) {
+func (m ByoasnSummary) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
+	if _, ok := GetMappingByoasnLifecycleStateEnum(string(m.LifecycleState)); !ok && m.LifecycleState != "" {
+		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetByoasnLifecycleStateEnumStringValues(), ",")))
+	}
 
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))

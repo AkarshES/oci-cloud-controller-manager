@@ -11,11 +11,14 @@ import (
 	"strings"
 )
 
-// GetZprNetworkSecurityGroupsRequest wrapper for the GetZprNetworkSecurityGroups operation
-type GetZprNetworkSecurityGroupsRequest struct {
+// UpdateInternalDnsResolverConfigRequest wrapper for the UpdateInternalDnsResolverConfig operation
+type UpdateInternalDnsResolverConfigRequest struct {
 
-	// Details for fetching network security groups related to zpr.
-	ZprNetworkSecurityGroupsDetails GetZprNetworkSecurityGroupsDetails `contributesTo:"body"`
+	// The DNS resolver's OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm)
+	InternalDnsResolverId *string `mandatory:"true" contributesTo:"path" name:"internalDnsResolverId"`
+
+	// Requesting to update an internal dns resolver config.
+	UpdateInternalDnsResolverConfigDetails `contributesTo:"body"`
 
 	// A token that uniquely identifies a request so it can be retried in case of a timeout or
 	// server error without risk of executing that same action again. Retry tokens expire after 24
@@ -28,17 +31,22 @@ type GetZprNetworkSecurityGroupsRequest struct {
 	// If you need to contact Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
 
+	// For optimistic concurrency control. In the PUT or DELETE call for a resource, set the `if-match`
+	// parameter to the value of the etag from a previous GET or POST response for that resource. The resource
+	// will be updated or deleted only if the etag you provide matches the resource's current etag value.
+	IfMatch *string `mandatory:"false" contributesTo:"header" name:"if-match"`
+
 	// Metadata about the request. This information will not be transmitted to the service, but
 	// represents information that the SDK will consume to drive retry behavior.
 	RequestMetadata common.RequestMetadata
 }
 
-func (request GetZprNetworkSecurityGroupsRequest) String() string {
+func (request UpdateInternalDnsResolverConfigRequest) String() string {
 	return common.PointerString(request)
 }
 
 // HTTPRequest implements the OCIRequest interface
-func (request GetZprNetworkSecurityGroupsRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
+func (request UpdateInternalDnsResolverConfigRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
 
 	_, err := request.ValidateEnumValue()
 	if err != nil {
@@ -48,7 +56,7 @@ func (request GetZprNetworkSecurityGroupsRequest) HTTPRequest(method, path strin
 }
 
 // BinaryRequestBody implements the OCIRequest interface
-func (request GetZprNetworkSecurityGroupsRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
+func (request UpdateInternalDnsResolverConfigRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
 
 	return nil, false
 
@@ -56,18 +64,28 @@ func (request GetZprNetworkSecurityGroupsRequest) BinaryRequestBody() (*common.O
 
 // ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
 // Not all services are supporting this feature and this method will be a no-op for those services.
-func (request GetZprNetworkSecurityGroupsRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+func (request UpdateInternalDnsResolverConfigRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["internalDnsResolverId"] != nil {
+		templateParam := mandatoryParamMap["internalDnsResolverId"]
+		for _, template := range templateParam {
+			replacementParam := *request.InternalDnsResolverId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
-func (request GetZprNetworkSecurityGroupsRequest) RetryPolicy() *common.RetryPolicy {
+func (request UpdateInternalDnsResolverConfigRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (request GetZprNetworkSecurityGroupsRequest) ValidateEnumValue() (bool, error) {
+func (request UpdateInternalDnsResolverConfigRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
@@ -75,25 +93,28 @@ func (request GetZprNetworkSecurityGroupsRequest) ValidateEnumValue() (bool, err
 	return false, nil
 }
 
-// GetZprNetworkSecurityGroupsResponse wrapper for the GetZprNetworkSecurityGroups operation
-type GetZprNetworkSecurityGroupsResponse struct {
+// UpdateInternalDnsResolverConfigResponse wrapper for the UpdateInternalDnsResolverConfig operation
+type UpdateInternalDnsResolverConfigResponse struct {
 
 	// The underlying http response
 	RawResponse *http.Response
 
-	// The NetworkSecurityGroupDetails instance
-	NetworkSecurityGroupDetails `presentIn:"body"`
+	// The InternalDnsResolverConfig instance
+	InternalDnsResolverConfig `presentIn:"body"`
+
+	// For optimistic concurrency control. See `if-match`.
+	Etag *string `presentIn:"header" name:"etag"`
 
 	// Unique Oracle-assigned identifier for the request. If you need to contact
 	// Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `presentIn:"header" name:"opc-request-id"`
 }
 
-func (response GetZprNetworkSecurityGroupsResponse) String() string {
+func (response UpdateInternalDnsResolverConfigResponse) String() string {
 	return common.PointerString(response)
 }
 
 // HTTPResponse implements the OCIResponse interface
-func (response GetZprNetworkSecurityGroupsResponse) HTTPResponse() *http.Response {
+func (response UpdateInternalDnsResolverConfigResponse) HTTPResponse() *http.Response {
 	return response.RawResponse
 }

@@ -2,7 +2,7 @@
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
-package filestorage
+package core
 
 import (
 	"fmt"
@@ -11,17 +11,17 @@ import (
 	"strings"
 )
 
-// CreateShareRequest wrapper for the CreateShare operation
-type CreateShareRequest struct {
+// GetNetworkSecurityGroupsRequest wrapper for the GetNetworkSecurityGroups operation
+type GetNetworkSecurityGroupsRequest struct {
 
-	// Details for creating a new share.
-	CreateShareDetails `contributesTo:"body"`
+	// Details for fetching network security groups.
+	NetworkSecurityGroupsDetails GetNetworkSecurityGroupsDetails `contributesTo:"body"`
 
 	// A token that uniquely identifies a request so it can be retried in case of a timeout or
 	// server error without risk of executing that same action again. Retry tokens expire after 24
-	// hours, but can be invalidated before then due to conflicting operations. For example, if a resource
+	// hours, but can be invalidated before then due to conflicting operations (for example, if a resource
 	// has been deleted and purged from the system, then a retry of the original creation request
-	// might be rejected.
+	// may be rejected).
 	OpcRetryToken *string `mandatory:"false" contributesTo:"header" name:"opc-retry-token"`
 
 	// Unique identifier for the request.
@@ -33,12 +33,12 @@ type CreateShareRequest struct {
 	RequestMetadata common.RequestMetadata
 }
 
-func (request CreateShareRequest) String() string {
+func (request GetNetworkSecurityGroupsRequest) String() string {
 	return common.PointerString(request)
 }
 
 // HTTPRequest implements the OCIRequest interface
-func (request CreateShareRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
+func (request GetNetworkSecurityGroupsRequest) HTTPRequest(method, path string, binaryRequestBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (http.Request, error) {
 
 	_, err := request.ValidateEnumValue()
 	if err != nil {
@@ -48,7 +48,7 @@ func (request CreateShareRequest) HTTPRequest(method, path string, binaryRequest
 }
 
 // BinaryRequestBody implements the OCIRequest interface
-func (request CreateShareRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
+func (request GetNetworkSecurityGroupsRequest) BinaryRequestBody() (*common.OCIReadSeekCloser, bool) {
 
 	return nil, false
 
@@ -56,18 +56,18 @@ func (request CreateShareRequest) BinaryRequestBody() (*common.OCIReadSeekCloser
 
 // ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
 // Not all services are supporting this feature and this method will be a no-op for those services.
-func (request CreateShareRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+func (request GetNetworkSecurityGroupsRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
-func (request CreateShareRequest) RetryPolicy() *common.RetryPolicy {
+func (request GetNetworkSecurityGroupsRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (request CreateShareRequest) ValidateEnumValue() (bool, error) {
+func (request GetNetworkSecurityGroupsRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
 		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
@@ -75,29 +75,25 @@ func (request CreateShareRequest) ValidateEnumValue() (bool, error) {
 	return false, nil
 }
 
-// CreateShareResponse wrapper for the CreateShare operation
-type CreateShareResponse struct {
+// GetNetworkSecurityGroupsResponse wrapper for the GetNetworkSecurityGroups operation
+type GetNetworkSecurityGroupsResponse struct {
 
 	// The underlying http response
 	RawResponse *http.Response
 
-	// The Share instance
-	Share `presentIn:"body"`
+	// The NetworkSecurityGroupDetails instance
+	NetworkSecurityGroupDetails `presentIn:"body"`
 
-	// For optimistic concurrency control. See `if-match`.
-	Etag *string `presentIn:"header" name:"etag"`
-
-	// Unique Oracle-assigned identifier for the request. If
-	// you need to contact Oracle about a particular request,
-	// please provide the request ID.
+	// Unique Oracle-assigned identifier for the request. If you need to contact
+	// Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `presentIn:"header" name:"opc-request-id"`
 }
 
-func (response CreateShareResponse) String() string {
+func (response GetNetworkSecurityGroupsResponse) String() string {
 	return common.PointerString(response)
 }
 
 // HTTPResponse implements the OCIResponse interface
-func (response CreateShareResponse) HTTPResponse() *http.Response {
+func (response GetNetworkSecurityGroupsResponse) HTTPResponse() *http.Response {
 	return response.RawResponse
 }

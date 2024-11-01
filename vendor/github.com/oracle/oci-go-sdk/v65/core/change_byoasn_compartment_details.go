@@ -21,21 +21,21 @@ import (
 	"strings"
 )
 
-// ZprNetworkSecurityGroupDetails List of zpr network security groups.
-type ZprNetworkSecurityGroupDetails struct {
+// ChangeByoasnCompartmentDetails The configuration details for the move operation.
+type ChangeByoasnCompartmentDetails struct {
 
-	// ZPR Network Security Groups for the VCN.
-	ZprNetworkSecurityGroups []NetworkSecurityGroup `mandatory:"true" json:"zprNetworkSecurityGroups"`
+	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the destination compartment for the BYOASN resource move.
+	CompartmentId *string `mandatory:"true" json:"compartmentId"`
 }
 
-func (m ZprNetworkSecurityGroupDetails) String() string {
+func (m ChangeByoasnCompartmentDetails) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m ZprNetworkSecurityGroupDetails) ValidateEnumValue() (bool, error) {
+func (m ChangeByoasnCompartmentDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
