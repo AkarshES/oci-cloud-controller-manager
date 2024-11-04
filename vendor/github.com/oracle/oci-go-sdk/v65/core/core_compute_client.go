@@ -71,7 +71,11 @@ func newComputeClientFromBaseClient(baseClient common.BaseClient, configProvider
 
 // SetRegion overrides the region of this client.
 func (client *ComputeClient) SetRegion(region string) {
-	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://{dualStack?ds.:}iaas.{region}.{dualStack?oci.:}{secondLevelDomain}", "iaas")
+	if region == "us-seattle-1" || region == "sea" || region == "r1" {
+		client.Host = "https://iaas.r1.oracleiaas.com"
+	} else {
+		client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://{dualStack?ds.:}iaas.{region}.{dualStack?oci.:}{secondLevelDomain}", "iaas")
+	}
 }
 
 // SetConfigurationProvider sets the configuration provider including the region, returns an error if is not valid
