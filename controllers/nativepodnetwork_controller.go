@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -363,7 +364,6 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		r.handleError(ctx, req, errPrimaryVnicNotFound, "GetPrimaryVNIC")
 		return ctrl.Result{}, errPrimaryVnicNotFound
 	}
-	nodeName := primaryVnic.PrivateIp
 	log.WithValues("existingSecondaryVNICs", existingSecondaryVNICs).
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(FetchedExistingSecondaryVNICsForInstance)
@@ -428,6 +428,8 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		r.handleError(ctx, req, err, "GetNPN_IPFamilies")
 		return ctrl.Result{}, err
 	}
+
+	nodeName := getNodeNameFromPrimaryVnic(primaryVnic, ipFamilies)
 
 	log.Info(FetchingPrivateIPsForSecondaryVNICs)
 	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, ipFamilies)
@@ -563,7 +565,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	log.Info("Getting v1 Node object to set ownerref on NPN CR")
 	// Set OwnerRef on the CR and mark CR status as SUCCESS
-	nodeObject, err := r.getNodeObjectInCluster(ctx, req.NamespacedName, *nodeName)
+	nodeObject, err := r.getNodeObjectInCluster(ctx, req.NamespacedName, nodeName)
 	if err != nil {
 		failReason = "GetV1NodeFailed"
 		r.handleError(ctx, req, err, "GetV1Node")
@@ -1098,4 +1100,19 @@ func (r *NativePodNetworkReconciler) validateVnicAttachmentsAreInAttachedState(c
 		}
 	}
 	return true, nil
+}
+
+func getNodeNameFromPrimaryVnic(ip *core.Vnic, ipFamilies []string) string {
+	if contains(ipFamilies, IPv6) {
+		if ip.PrivateIp != nil && *ip.PrivateIp != "" {
+			return *ip.PrivateIp
+		}
+		if len(ip.Ipv6Addresses) > 0 {
+			return strings.ReplaceAll(ip.Ipv6Addresses[0], ":", "-")
+		}
+	}
+	if ip.PrivateIp != nil {
+		return *ip.PrivateIp
+	}
+	return ""
 }
