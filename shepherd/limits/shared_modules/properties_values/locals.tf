@@ -73,13 +73,6 @@ locals {
             env     = "prd"
             value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatxzd3axgkv7gybg2dtii3ecaetdg42wwx3x723bi6j55dgi3a7uq"
-          },
-          // OC16-SGU okacanaryla
-          {
-            regions = ["sgu"]
-            env     = "prd"
-            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
-            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaanou7p4mkn5ptoicf5s5cfi2i5rff3qeeqpchwfxdxe7nvqbfokca"
           }
         ]
       },
@@ -357,6 +350,20 @@ locals {
             env          = "prd"
             value        = "true"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaaft2mucrx352mvjgie7ez7lobrnvn56hv5lkxm7kbv6m6wrwo22q"
+          }
+        ]
+      }
+    }
+    "oc16" = {
+      "ccm-image-version-mapping" = {
+        overrides = [
+          // OC16 - SGU - Single Stack IPv6 Hotfixes override https://jira.oci.oraclecorp.com/browse/OKE-34003, https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2837086
+          // okacanaryla
+          {
+            regions = ["sgu"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaanou7p4mkn5ptoicf5s5cfi2i5rff3qeeqpchwfxdxe7nvqbfokca"
           }
         ]
       }
