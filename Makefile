@@ -249,3 +249,4 @@ rpm-test:
 	ls -lart
 	pwd
 	echo "Test"
+	find . -print | grep -v "vendor"
