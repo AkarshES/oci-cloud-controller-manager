@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -439,8 +440,8 @@ func TestFSSControllerDriver_CreateVolume(t *testing.T) {
 		util       *csi_util.Util
 	}
 	type args struct {
-		ctx context.Context
-		req *csi.CreateVolumeRequest
+		ctx       context.Context
+		req       *csi.CreateVolumeRequest
 		tenancyId string
 	}
 	tests := []struct {
@@ -755,8 +756,8 @@ func TestFSSControllerDriver_DeleteVolume(t *testing.T) {
 		util       *csi_util.Util
 	}
 	type args struct {
-		ctx context.Context
-		req *csi.DeleteVolumeRequest
+		ctx       context.Context
+		req       *csi.DeleteVolumeRequest
 		tenancyId string
 	}
 	tests := []struct {
@@ -820,8 +821,8 @@ func TestFSSControllerDriver_DeleteVolume(t *testing.T) {
 			name:   "Error while creating fss client",
 			fields: fields{},
 			args: args{
-				ctx: context.Background(),
-				req: &csi.DeleteVolumeRequest{VolumeId: "oc1.filesystem.xxxx:10.0.10.207:/export-path", Secrets: map[string]string{"serviceAccount": "", "serviceAccountNamespace": "", "parentRptURL": "testurl"}},
+				ctx:       context.Background(),
+				req:       &csi.DeleteVolumeRequest{VolumeId: "oc1.filesystem.xxxx:10.0.10.207:/export-path", Secrets: map[string]string{"serviceAccount": "", "serviceAccountNamespace": "", "parentRptURL": "testurl"}},
 				tenancyId: "test2-tenancy",
 			},
 			want:    nil,
@@ -857,6 +858,7 @@ func TestExtractStorageClassParameters(t *testing.T) {
 		expectedStorageClassParameters *StorageClassParameters
 		wantErr                        bool
 		wantErrMessage                 string
+		clusterIPFamily                string
 	}{
 		"Extract storage class parameters with mountTargetOcid": {
 			parameters: map[string]string{
@@ -874,8 +876,9 @@ func TestExtractStorageClassParameters(t *testing.T) {
 				encryptInTransit:      "false",
 				scTags:                &config.TagConfig{},
 			},
-			wantErr:        false,
-			wantErrMessage: "",
+			clusterIPFamily: "IPv4",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 		"Extract storage class parameters with mountTargetSubnetOcid": {
 			parameters: map[string]string{
@@ -893,8 +896,9 @@ func TestExtractStorageClassParameters(t *testing.T) {
 				encryptInTransit:      "false",
 				scTags:                &config.TagConfig{},
 			},
-			wantErr:        false,
-			wantErrMessage: "",
+			clusterIPFamily: "IPv4",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 		"Extract storage class parameters with export-path": {
 			parameters: map[string]string{
@@ -913,8 +917,9 @@ func TestExtractStorageClassParameters(t *testing.T) {
 				encryptInTransit:      "false",
 				scTags:                &config.TagConfig{},
 			},
-			wantErr:        false,
-			wantErrMessage: "",
+			clusterIPFamily: "IPv4",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 		"Extract storage class parameters with kmskey": {
 			parameters: map[string]string{
@@ -933,8 +938,9 @@ func TestExtractStorageClassParameters(t *testing.T) {
 				encryptInTransit:      "false",
 				scTags:                &config.TagConfig{},
 			},
-			wantErr:        false,
-			wantErrMessage: "",
+			clusterIPFamily: "IPv4",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 		"Extract storage class parameters with in-transit encryption": {
 			parameters: map[string]string{
@@ -953,8 +959,9 @@ func TestExtractStorageClassParameters(t *testing.T) {
 				encryptInTransit:      "true",
 				scTags:                &config.TagConfig{},
 			},
-			wantErr:        false,
-			wantErrMessage: "",
+			clusterIPFamily: "IPv4",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 		"Extract storage class parameters with different compartment": {
 			parameters: map[string]string{
@@ -973,29 +980,66 @@ func TestExtractStorageClassParameters(t *testing.T) {
 				encryptInTransit:      "false",
 				scTags:                &config.TagConfig{},
 			},
-			wantErr:        false,
-			wantErrMessage: "",
+			clusterIPFamily: "IPv4",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 		"Error when availabilityDomain is not passed": {
 			parameters: map[string]string{
 				"mountTargetOcid": "oc1.mounttarget.xxxx",
 			},
 			expectedStorageClassParameters: &StorageClassParameters{},
+			clusterIPFamily:                "IPv4",
 			wantErr:                        true,
 			wantErrMessage:                 "AvailabilityDomain not provided in storage class",
 		},
+
 		"Error when mountTargetOcid and mountTargetSubnetOcid is not passed": {
 			parameters: map[string]string{
 				"availabilityDomain": "AD1",
 			},
 			expectedStorageClassParameters: &StorageClassParameters{},
+			clusterIPFamily:                "IPv4",
 			wantErr:                        true,
 			wantErrMessage:                 "Neither Mount Target Ocid nor Mount Target Subnet Ocid provided in storage class",
+		},
+		"Error when full ad name not provided in storage class parameters for IPv6 single stack cluster": {
+			parameters: map[string]string{
+				"availabilityDomain": "AD1",
+				"mountTargetOcid":    "oc1.mounttarget.xxxx",
+				"compartmentOcid":    "oc1.compartment.yyyy",
+			},
+			expectedStorageClassParameters: &StorageClassParameters{},
+			clusterIPFamily:                "IPv6",
+			wantErr:                        true,
+			wantErrMessage:                 "Full AvailabilityDomain with prefix not provided in storage class for IPv6 single stack cluster.",
+		},
+		"Extract Storage class parameters when full ad name is provided in storage class parameters for IPv6 single stack cluster": {
+			parameters: map[string]string{
+				"availabilityDomain": "jksl:PHX-AD-2",
+				"mountTargetOcid":    "oc1.mounttarget.xxxx",
+				"compartmentOcid":    "oc1.compartment.yyyy",
+			},
+			expectedStorageClassParameters: &StorageClassParameters{
+				availabilityDomain:    "jksl:PHX-AD-2",
+				compartmentOcid:       "oc1.compartment.yyyy",
+				kmsKey:                "",
+				exportPath:            "/ut-volume",
+				exportOptions:         []filestorage.ClientOptions{},
+				mountTargetOcid:       "oc1.mounttarget.xxxx",
+				mountTargetSubnetOcid: "",
+				encryptInTransit:      "false",
+				scTags:                &config.TagConfig{},
+			},
+			clusterIPFamily: "IPv6",
+			wantErr:         false,
+			wantErrMessage:  "",
 		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			os.Setenv("CLUSTER_IP_FAMILY", tt.clusterIPFamily)
 			d := &FSSControllerDriver{ControllerDriver: ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
