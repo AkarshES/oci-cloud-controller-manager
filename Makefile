@@ -243,3 +243,9 @@ install-controller-runtime:
 .PHONY: npn-generate
 npn-generate:
 	$(GOPATH)/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./api/..."
+
+.PHONY: rpm-test
+rpm-test:
+	ls -lart
+	pwd
+	echo "Test"
