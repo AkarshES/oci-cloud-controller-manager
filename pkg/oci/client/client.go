@@ -258,7 +258,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewComputeClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &compute.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &compute.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &compute.BaseClient)
 	if err != nil {
@@ -270,7 +270,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewVirtualNetworkClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &network.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &network.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &network.BaseClient)
 	if err != nil {
@@ -282,7 +282,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewLoadBalancerClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &lb.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &lb.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &lb.BaseClient)
 	if err != nil {
@@ -294,7 +294,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewNetworkLoadBalancerClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &nlb.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &nlb.BaseClient, signer, interceptor, "NLB_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &nlb.BaseClient)
 	if err != nil {
@@ -306,7 +306,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewIdentityClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &identity.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &identity.BaseClient, signer, interceptor, "ID_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &identity.BaseClient)
 	if err != nil {
@@ -318,7 +318,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewCompartmentsClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &compartment.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &compartment.BaseClient, signer, interceptor, "COMPARTMENT_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &compartment.BaseClient)
 	if err != nil {
@@ -330,7 +330,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewBlockstorageClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &bs.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &bs.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &bs.BaseClient)
 	if err != nil {
@@ -342,7 +342,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		return nil, errors.Wrap(err, "NewFileStorageClientWithConfigurationProvider")
 	}
 
-	setupBaseClient(logger, &fss.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &fss.BaseClient, signer, interceptor, "FSS_ENDPOINT_OVERRIDE")
 
 	err = configureCustomTransport(logger, &fss.BaseClient)
 	if err != nil {
