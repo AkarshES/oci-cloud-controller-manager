@@ -17,6 +17,7 @@ package oci
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -49,6 +50,7 @@ const (
 
 	FaultDomainLabel        = "oci.oraclecloud.com/fault-domain"
 	CompartmentIDAnnotation = "oci.oraclecloud.com/compartment-id"
+	AvailabilityDomainLabel = "csi-ipv6-full-ad-name"
 	timeout                 = 10 * time.Second
 )
 
@@ -186,7 +188,7 @@ func (nic *NodeInfoController) processItem(key string) error {
 	} else {
 		// if node has required labels already, don't process again
 		if validateNodeHasRequiredLabels(cacheNode) {
-			logger.With("nodeName", cacheNode.Name).Debugf("The node has the fault domain label and compartmentID annotation already, will not process")
+			logger.With("nodeName", cacheNode.Name).Debugf("The node has the fault domain label, availability domain label and compartmentID annotation already, will not process")
 			return nil
 		}
 		instance, err := getInstanceByNode(cacheNode, nic, logger)
@@ -221,10 +223,14 @@ func getNodePatchBytes(cacheNode *v1.Node, instance *core.Instance, logger *zap.
 		return nil
 	}
 	_, isFaultDomainLabelPresent := cacheNode.ObjectMeta.Labels[FaultDomainLabel]
+	_, isAvailabilityDomainLabelPresent := cacheNode.ObjectMeta.Labels[AvailabilityDomainLabel]
 	_, isCompartmentIDAnnotationPresent := cacheNode.ObjectMeta.Annotations[CompartmentIDAnnotation]
 
+	//labels only allow ., -, _ special characters
+	availabilityDomainLabelValue := strings.ReplaceAll(*instance.AvailabilityDomain, ":", ".")
+
 	var nodePatchBytes []byte
-	if isFaultDomainLabelPresent {
+	if isFaultDomainLabelPresent && (!client.IsIpv6SingleStackCluster() || isAvailabilityDomainLabelPresent) {
 		//In this case CompartmentIDAnnotation not present but FaultDomainLabel present
 		logger.Infof("Adding node annotation from cloud provider: %s=%s", CompartmentIDAnnotation, *instance.CompartmentId)
 		nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"annotations\": {\"%s\":\"%s\"}}}",
@@ -232,13 +238,27 @@ func getNodePatchBytes(cacheNode *v1.Node, instance *core.Instance, logger *zap.
 	} else if isCompartmentIDAnnotationPresent {
 		//In this case FaultDomainLabel not present but CompartmentIDAnnotation present
 		logger.Infof("Adding node label from cloud provider: %s=%s", FaultDomainLabel, *instance.FaultDomain)
-		nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"}}}", FaultDomainLabel, *instance.FaultDomain))
+		if client.IsIpv6SingleStackCluster()  {
+			logger.Infof("Adding node label from cloud provider: %s=%s", AvailabilityDomainLabel, availabilityDomainLabelValue)
+			nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\",\"%s\":\"%s\"}}}", FaultDomainLabel, *instance.FaultDomain,
+				AvailabilityDomainLabel, availabilityDomainLabelValue))
+		} else {
+			nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"}}}", FaultDomainLabel, *instance.FaultDomain))
+		}
+
 	} else {
 		//In this case none of FaultDomainLabel or CompartmentIDAnnotation present
 		logger.Infof("Adding node label from cloud provider: %s=%s", FaultDomainLabel, *instance.FaultDomain)
 		logger.Infof("Adding node annotation from cloud provider: %s=%s", CompartmentIDAnnotation, *instance.CompartmentId)
-		nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"},\"annotations\": {\"%s\":\"%s\"}}}",
-			FaultDomainLabel, *instance.FaultDomain, CompartmentIDAnnotation, *instance.CompartmentId))
+
+		if client.IsIpv6SingleStackCluster()  {
+			logger.Infof("Adding node label from cloud provider: %s=%s", AvailabilityDomainLabel, availabilityDomainLabelValue)
+			nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\",\"%s\":\"%s\"},\"annotations\": {\"%s\":\"%s\"}}}",
+				FaultDomainLabel, *instance.FaultDomain, AvailabilityDomainLabel, availabilityDomainLabelValue, CompartmentIDAnnotation, *instance.CompartmentId))
+		} else {
+			nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"},\"annotations\": {\"%s\":\"%s\"}}}",
+				FaultDomainLabel, *instance.FaultDomain, CompartmentIDAnnotation, *instance.CompartmentId))
+		}
 	}
 	return nodePatchBytes
 }
@@ -304,8 +324,9 @@ func getVirtualNode(cacheNode *v1.Node, nic *NodeInfoController, logger *zap.Sug
 
 func validateNodeHasRequiredLabels(node *v1.Node) bool {
 	_, isFaultDomainLabelPresent := node.ObjectMeta.Labels[FaultDomainLabel]
+	_, isAvilabilityDomainNameLabelPresent := node.ObjectMeta.Labels[AvailabilityDomainLabel]
 	_, isCompartmentIDAnnotationPresent := node.ObjectMeta.Annotations[CompartmentIDAnnotation]
-	if isFaultDomainLabelPresent && isCompartmentIDAnnotationPresent {
+	if isFaultDomainLabelPresent && isCompartmentIDAnnotationPresent && (!client.IsIpv6SingleStackCluster() || isAvilabilityDomainNameLabelPresent) {
 		return true
 	}
 	return false
