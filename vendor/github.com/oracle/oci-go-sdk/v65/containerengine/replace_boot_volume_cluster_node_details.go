@@ -17,34 +17,19 @@ import (
 	"strings"
 )
 
-// NodePoolCyclingDetails Node Pool Cycling Details
-type NodePoolCyclingDetails struct {
-
-	// Maximum active nodes that would be terminated from nodepool during the cycling nodepool process.
-	// OKE supports both integer and percentage input.
-	// Defaults to 0, Ranges from 0 to Nodepool size or 0% to 100%
-	MaximumUnavailable *string `mandatory:"false" json:"maximumUnavailable"`
-
-	// Maximum additional new compute instances that would be temporarily created and added to nodepool during the cycling nodepool process.
-	// OKE supports both integer and percentage input.
-	// Defaults to 1, Ranges from 0 to Nodepool size or 0% to 100%
-	MaximumSurge *string `mandatory:"false" json:"maximumSurge"`
-
-	// If cycling operation should be performed on the nodes in the node pool.
-	IsNodeCyclingEnabled *bool `mandatory:"false" json:"isNodeCyclingEnabled"`
-
-	// An ordered list of cycle modes that should be performed on the OKE nodes.
-	CycleModes []CycleModeEnum `mandatory:"false" json:"cycleModes"`
+// ReplaceBootVolumeClusterNodeDetails The properties that define a node boot volume replacement action.
+type ReplaceBootVolumeClusterNodeDetails struct {
+	NodeEvictionSettings *NodeEvictionSettings `mandatory:"false" json:"nodeEvictionSettings"`
 }
 
-func (m NodePoolCyclingDetails) String() string {
+func (m ReplaceBootVolumeClusterNodeDetails) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m NodePoolCyclingDetails) ValidateEnumValue() (bool, error) {
+func (m ReplaceBootVolumeClusterNodeDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
