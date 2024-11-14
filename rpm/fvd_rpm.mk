@@ -42,3 +42,6 @@ $(PKG_TARGET): $(PKG_SOURCE) $(PKG_SPEC)
 clean:
 	rm -r rpmbuild
 
+include-test:
+	echo "Uneet Patel FVD"
+

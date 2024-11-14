@@ -15,6 +15,10 @@
 # temp directory for which we pull repos to.
 export TMP_DEP_DIR		:= ${PWD}/temp_repos
 
+CWD := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+include rpm/fvd_rpm.mk
+
 # ioke/screts repository settings (clone-secrets))
 SECRETS_REPO	:= ssh://git@bitbucket.oci.oraclecorp.com:7999/okei/secrets.git
 
