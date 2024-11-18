@@ -271,7 +271,7 @@ func (m MockContainerEngineClient) GetVirtualNode(ctx context.Context, vnId, vnp
 func (m MockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
 	return "", nil
 }
-func (m MockContainerEngineClient) CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+func (m MockContainerEngineClient) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
 	return "", nil
 }
 

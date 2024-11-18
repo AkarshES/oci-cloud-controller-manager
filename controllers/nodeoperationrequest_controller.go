@@ -109,7 +109,7 @@ func (r *NodeOperationRequestReconciler) cyclingNode(nodeId string, clusterId st
 	var workRequestId string
 	var err error
 	if rateLimiter.Allow() {
-		workRequestId, err = r.OCIClient.ContainerEngine().CycleClusterNode(context.Background(), nodeId, clusterId, nor)
+		workRequestId, err = r.OCIClient.ContainerEngine().ReplaceBootVolumeClusterNode(context.Background(), nodeId, clusterId, nor)
 	} else {
 		return "", errors.New("rate limited for operation" + string(norv1beta1.CyclingAction) + "on cluster" + clusterId)
 	}

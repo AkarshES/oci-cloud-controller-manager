@@ -12,7 +12,7 @@ import (
 type ContainerEngineInterface interface {
 	GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodePoolId string) (*containerengine.VirtualNode, error)
 	RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error)
-	CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error)
+	ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error)
 }
 
 func (c *client) GetVirtualNode(ctx context.Context, virtualNodeId, virtualNodePoolId string) (*containerengine.VirtualNode, error) {
@@ -76,7 +76,7 @@ func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId
 	return *resp.OpcRequestId, nil
 }
 
-// CycleClusterNode initiates a cycling operation for a specified node within a cluster.
+// ReplaceBootVolumeClusterNode initiates a cycling operation for a specified node within a cluster.
 // It takes the node ID, cluster ID, and a NodeOperationRequest object as input.
 // The function returns the work request ID associated with the cycling operation.
 //
@@ -89,26 +89,21 @@ func (c *client) RebootClusterNode(ctx context.Context, nodeId string, clusterId
 // Returns:
 // - A string representing the work request ID associated with the cycling operation.
 // - An error indicating any issues encountered during the cycling operation; otherwise, returns nil.
-func (c *client) CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+func (c *client) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
 
 	evictionGracePeriod := strconv.Itoa(nor.Spec.NodeEvictionSettings.EvictionGracePeriod)
-	cycleClusterNodeDetails := &containerengine.CycleClusterNodeDetails{
-		KubernetesVersion: &nor.Spec.CyclingActionDetails.KubernetesVersion,
-		NodeMetadata:      nor.Spec.CyclingActionDetails.NodeMetaData,
+	replaceBootVolumeClusterNodeDetails := &containerengine.ReplaceBootVolumeClusterNodeDetails{
 		NodeEvictionSettings: &containerengine.NodeEvictionSettings{
 			EvictionGraceDuration:           &evictionGracePeriod,
 			IsForceActionAfterGraceDuration: &nor.Spec.NodeEvictionSettings.IsForceActionAfterGraceDuration,
 		},
-		SshPublicKey:      &nor.Spec.CyclingActionDetails.SshPublicKey,
-		CycleMode:         containerengine.CycleClusterNodeDetailsCycleModeEnum(nor.Spec.CyclingActionDetails.CycleMode),
-		IsCycleInSyncNode: &nor.Spec.CyclingActionDetails.IsCycleInSyncNode,
 	}
 
-	resp, err := c.containerEngine.CycleClusterNode(ctx, containerengine.CycleClusterNodeRequest{
-		NodeId:                  common.String(nodeId),
-		ClusterId:               common.String(clusterId),
-		CycleClusterNodeDetails: *cycleClusterNodeDetails,
-		RequestMetadata:         c.requestMetadata,
+	resp, err := c.containerEngine.ReplaceBootVolumeClusterNode(ctx, containerengine.ReplaceBootVolumeClusterNodeRequest{
+		NodeId:                              common.String(nodeId),
+		ClusterId:                           common.String(clusterId),
+		ReplaceBootVolumeClusterNodeDetails: *replaceBootVolumeClusterNodeDetails,
+		RequestMetadata:                     c.requestMetadata,
 	})
 	incRequestCounter(err, createVerb, cycleNodeWorkRequestResource)
 

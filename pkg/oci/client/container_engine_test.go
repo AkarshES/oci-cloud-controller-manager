@@ -66,12 +66,13 @@ func TestRebootClusterNodeFailure(t *testing.T) {
 	assert.Equal(t, "", workRequestId)
 }
 
-// TestCycleClusterNode verifies the correctness of the RebootClusterNode function.
-func TestCycleClusterNode(t *testing.T) {
+// TestReplaceBootVolumeClusterNode verifies the correctness of the RebootClusterNode function.
+func TestReplaceBootVolumeClusterNode(t *testing.T) {
 	nor := norv1beta1.NodeOperationRequest{
 		Spec: norv1beta1.NodeOperationRequestSpec{
 			NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
-				EvictionGracePeriod: 60,
+				EvictionGracePeriod:             60,
+				IsForceActionAfterGraceDuration: true,
 			},
 			CyclingActionDetails: norv1beta1.CyclingActionDetails{
 				KubernetesVersion: "v1.30.0",
@@ -85,22 +86,22 @@ func TestCycleClusterNode(t *testing.T) {
 
 	// Create a mock container engine client.
 	mockContainerEngine := &mockContainerEngineClient{
-		CycleClusterNodeFunc: func(ctx context.Context, req containerengine.CycleClusterNodeRequest) (containerengine.CycleClusterNodeResponse, error) {
+		ReplaceBootVolumeClusterNodeFunc: func(ctx context.Context, req containerengine.ReplaceBootVolumeClusterNodeRequest) (containerengine.ReplaceBootVolumeClusterNodeResponse, error) {
 			// Simulate a successful response.
-			return containerengine.CycleClusterNodeResponse{
+			return containerengine.ReplaceBootVolumeClusterNodeResponse{
 				OpcRequestId:     common.String("success-request-id"),
 				OpcWorkRequestId: common.String("success-work-request-id"),
 			}, nil
 		},
 	}
 
-	workRequestId, err := mockContainerEngine.CycleClusterNode(context.Background(), nodeId, clusterId, nor)
+	workRequestId, err := mockContainerEngine.ReplaceBootVolumeClusterNode(context.Background(), nodeId, clusterId, nor)
 	assert.NoError(t, err)
 	assert.Equal(t, "success-work-request-id", workRequestId)
 }
 
-// TestCycleClusterNodeFailure simulates a scenario where the cycling of a node fails due to an error.
-func TestCycleClusterNodeFailure(t *testing.T) {
+// TestReplaceBootVolumeClusterNodeFailure simulates a scenario where the cycling of a node fails due to an error.
+func TestReplaceBootVolumeClusterNodeFailure(t *testing.T) {
 	nor := norv1beta1.NodeOperationRequest{
 		Spec: norv1beta1.NodeOperationRequestSpec{
 			NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
@@ -117,23 +118,23 @@ func TestCycleClusterNodeFailure(t *testing.T) {
 	}
 
 	mockContainerEngine := &mockContainerEngineClient{
-		CycleClusterNodeFunc: func(ctx context.Context, req containerengine.CycleClusterNodeRequest) (containerengine.CycleClusterNodeResponse, error) {
+		ReplaceBootVolumeClusterNodeFunc: func(ctx context.Context, req containerengine.ReplaceBootVolumeClusterNodeRequest) (containerengine.ReplaceBootVolumeClusterNodeResponse, error) {
 			// Simulate a failure response.
-			return containerengine.CycleClusterNodeResponse{
+			return containerengine.ReplaceBootVolumeClusterNodeResponse{
 				OpcRequestId:     common.String(""),
 				OpcWorkRequestId: common.String(""),
 			}, apiError
 		},
 	}
 
-	workRequestId, err := mockContainerEngine.CycleClusterNode(context.Background(), nodeId, clusterId, nor)
+	workRequestId, err := mockContainerEngine.ReplaceBootVolumeClusterNode(context.Background(), nodeId, clusterId, nor)
 	assert.Error(t, err)
 	assert.Equal(t, "", workRequestId)
 }
 
 type mockContainerEngineClient struct {
-	RebootClusterNodeFunc func(ctx context.Context, req containerengine.RebootClusterNodeRequest) (containerengine.RebootClusterNodeResponse, error)
-	CycleClusterNodeFunc  func(ctx context.Context, req containerengine.CycleClusterNodeRequest) (containerengine.CycleClusterNodeResponse, error)
+	RebootClusterNodeFunc            func(ctx context.Context, req containerengine.RebootClusterNodeRequest) (containerengine.RebootClusterNodeResponse, error)
+	ReplaceBootVolumeClusterNodeFunc func(ctx context.Context, req containerengine.ReplaceBootVolumeClusterNodeRequest) (containerengine.ReplaceBootVolumeClusterNodeResponse, error)
 }
 
 func (m *mockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
@@ -142,9 +143,9 @@ func (m *mockContainerEngineClient) RebootClusterNode(ctx context.Context, nodeI
 	return *response.OpcWorkRequestId, err
 }
 
-func (m *mockContainerEngineClient) CycleClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
-	req := defaultCycleClusterNodeRequest(nodeId, clusterId, nor)
-	response, err := m.CycleClusterNodeFunc(ctx, req)
+func (m *mockContainerEngineClient) ReplaceBootVolumeClusterNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) (string, error) {
+	req := defaultReplaceBootVolumeClusterNodeRequest(nodeId, clusterId, nor)
+	response, err := m.ReplaceBootVolumeClusterNodeFunc(ctx, req)
 	return *response.OpcWorkRequestId, err
 }
 
@@ -157,11 +158,11 @@ func defaultRebootClusterNodeRequest(nodeId string, clusterId string, nor norv1b
 	return req
 }
 
-func defaultCycleClusterNodeRequest(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) containerengine.CycleClusterNodeRequest {
-	req := containerengine.CycleClusterNodeRequest{
-		NodeId:                  common.String(nodeId),
-		ClusterId:               common.String(clusterId),
-		CycleClusterNodeDetails: *(*containerengine.CycleClusterNodeDetails)(unsafe.Pointer(&nor.Spec.CyclingActionDetails)),
+func defaultReplaceBootVolumeClusterNodeRequest(nodeId string, clusterId string, nor norv1beta1.NodeOperationRequest) containerengine.ReplaceBootVolumeClusterNodeRequest {
+	req := containerengine.ReplaceBootVolumeClusterNodeRequest{
+		NodeId:                              common.String(nodeId),
+		ClusterId:                           common.String(clusterId),
+		ReplaceBootVolumeClusterNodeDetails: *(*containerengine.ReplaceBootVolumeClusterNodeDetails)(unsafe.Pointer(&nor.Spec.NodeEvictionSettings)),
 	}
 	return req
 }
