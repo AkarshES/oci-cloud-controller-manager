@@ -15,6 +15,7 @@ PKG_SPEC   := $(WORK_DIR)/rpmbuild/SPECS/$(NAME).spec
 setup:
 	./setup.sh
 
+
 .PHONY: rpm
 rpm: $(PKG_TARGET)
 
