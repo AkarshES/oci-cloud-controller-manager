@@ -1,28 +1,37 @@
-Name:           yourapp
-Version:        1.0.0
-Release:        1%{?dist}
-Summary:        Go application example
+Name:           oci-flexvolume-driver
+Version:        %{_version}
+Release:        %{_release}%{?dist}
+Summary:        OCI's Flex Volume Driver Binary
 
-License:        MIT
-URL:            http://example.com
+License:        ASL 2.0
+URL:            https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager
 Source0:        %{name}-%{version}.tar.gz
 
+# Use passed value as an argument or default to a standard path
+# This will dictate where the binary should be installed into the user's system
+# Default path can be overridden with arguments
+%{!?_flexvolume_install_path: %define _flexvolume_install_path /usr/libexec/kubernetes/kubelet-plugins/volume/exec}
+
 %description
-This is a Go-based command-line tool.
+OCI's flex volume driver binary
 
 %prep
-%setup -q
+tar -xvzf %{SOURCE0}
 
 %build
 # No build necessary for precompiled binary
 
 %install
-mkdir -p %{buildroot}/usr/local/bin
-install -m 0755 yourapp %{buildroot}/usr/local/bin/yourapp
-
+echo "inside fvd"
+ls -lart
+echo %{_flexvolume_install_path}
+echo %{buildroot}
+rm -rf %{buildroot}
+mkdir -p %{buildroot}/%{_flexvolume_install_path}
+install -m 0755 %{name} %{buildroot}/%{_flexvolume_install_path}/oci-flexvolume-driver
 %files
-/usr/local/bin/yourapp
+%{_flexvolume_install_path}/oci-flexvolume-driver
 
 %changelog
-* Thu Nov 13 2024 Uneet <uneet.patel@oracle.com> - 1.0.0-1
-- Initial package release
+* Thu Nov 20 2024 Uneet <uneet.patel@oracle.com> - 1.0.0-1
+- Initial package release for fvd binary

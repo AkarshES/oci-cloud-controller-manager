@@ -1,47 +1,49 @@
-VERSION         ?= $(shell cat ocibuild.conf | grep source_version: | cut -d' ' -f2 | sed 's/"//g' )
-NAME            ?= ignition
-BLD_NUMBER      ?= 0
-RELEASE         ?= $(shell cat ocibuild.conf | grep minor_version: | cut -d' ' -f2 | sed 's/"//g' )
-BLD_RELEASE     ?= $(RELEASE).$(BLD_NUMBER)$(subst -,,$(BLD_BRANCH_SUFFIX))
-BLD_COMMIT_HASH ?= 01234567
+VERSION         ?= $(shell cat ocibuild.conf | grep version: | cut -d' ' -f2 | sed 's/"//g' )
+NAME            ?= oci-flexvolume-driver
 BLD_ARCH        ?= x86_64
-DIST            ?= $(error DIST not set!)
+FVD_BINARY_PATH ?= $(error FVD_BINARY_PATH not set!)
+WORK_DIR 		?= $(error WORK_DIR not set!)
 
-.PHONY: PACKAGE_TARGET PKG_SOURCE
-PKG_TARGET := rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION)-$(BLD_RELEASE).el8.$(BLD_ARCH).rpm
-PKG_SOURCE := rpmbuild/SOURCES/$(NAME)-$(BLD_VERSION).tar.gz
-PKG_SPEC   := rpmbuild/SPECS/$(NAME).spec
+.PHONY: PACKAGE_TARGET
+PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION).$(BLD_ARCH).rpm
+PKG_SOURCE := $(WORK_DIR)/rpmbuild/SOURCES/$(NAME)-$(VERSION).tar.gz
+PKG_SPEC   := $(WORK_DIR)/rpmbuild/SPECS/$(NAME).spec
 
 .DEFAULTTARGET: rpm
 
 .PHONY: setup
 setup:
 	./setup.sh
-	/usr/bin/go version
 
 .PHONY: rpm
-rpm: setup $(PKG_TARGET)
+rpm: $(PKG_TARGET)
 
-$(PKG_SOURCE): $(BINARY_PATH) | rpmbuild
-	mkdir -p $(dir $@)
-	tar -czvf $@ -C $(dir $(BINARY_PATH)) $(NAME)
-
-$(PKG_SPEC): rpmbuild
-	cp -a rpm/specs/* rpmbuild/SPECS/
-
-rpmbuild:
-	mkdir -p $(CURDIR)/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-
-$(PKG_TARGET): $(PKG_SOURCE) $(PKG_SPEC)
+$(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
+	echo "Done Packing"
+	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 	rpmbuild -bb \
 		--define "name $(NAME)" \
 		--define "_version $(VERSION)" \
-		--define "_topdir $(CURDIR)/rpmbuild" \
-		--define "release $(subst -,,$(RELEASE).$(BLD_NUMBER))$(subst -,,$(BLD_BRANCH_SUFFIX))" rpmbuild/SPECS/$(NAME).spec
+		--define "_topdir $(WORK_DIR)/rpmbuild" \
+		--define "_flexvolume_install_path $(WORK_DIR)/installtest" \
+		--define "_release 1" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
+	echo "Done Building"
+	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
+
+$(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
+	echo $@
+	echo "Printing"
+	echo $(dir $@)
+	mkdir -p $(dir $@)
+	echo "Made directory, now making zip"
+	tar -czvf $@ -C $(FVD_BINARY_PATH) $(NAME)
+
+
+$(PKG_SPEC): rpmbuild
+	cp -a $(WORK_DIR)/rpm/specs/* $(WORK_DIR)/rpmbuild/SPECS/
+
+rpmbuild:
+	mkdir -p $(WORK_DIR)/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
 clean:
 	rm -r rpmbuild
-
-include-test:
-	echo "Uneet Patel FVD"
-
