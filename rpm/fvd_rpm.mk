@@ -1,8 +1,8 @@
-VERSION         ?= $(shell cat ocibuild.conf | grep version: | cut -d' ' -f2 | sed 's/"//g' )
+VERSION         ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
 NAME            ?= oci-flexvolume-driver
 BLD_ARCH        ?= x86_64
 FVD_BINARY_PATH ?= $(error FVD_BINARY_PATH not set!)
-WORK_DIR 		?= $(error WORK_DIR not set!)
+WORK_DIR 		?= /sparta/input
 
 .PHONY: PACKAGE_TARGET
 PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION).$(BLD_ARCH).rpm
@@ -41,6 +41,8 @@ $(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
 
 
 $(PKG_SPEC): rpmbuild
+	echo $(FVD_BINARY_PATH)
+	echo $(WORK_DIR)
 	cp -a $(WORK_DIR)/rpm/specs/* $(WORK_DIR)/rpmbuild/SPECS/
 
 rpmbuild:
@@ -48,3 +50,6 @@ rpmbuild:
 
 clean:
 	rm -r rpmbuild
+
+tree:
+	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
