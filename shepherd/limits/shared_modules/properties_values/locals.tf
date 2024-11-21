@@ -21,10 +21,25 @@ locals {
     "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
     "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
     "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-    "v1.28" : "v1.28-146b8055d69-4346@sha256:b069c76d80293d0df5f39ea1f81cf9dc7cbdb625042f0f046a7271a8cf9284c2",
-    "v1.29" : "v1.29-273b5d85562-4347@sha256:2ffced2310da2353a7e7c6f8d9a04d9e6ff17bc5e4530c107585ebe6a7dd9b0d",
-    "v1.30" : "v1.30-3ef36340eb4-4349@sha256:53ab40e7c6373fd22c5e8b7f41a1fb275617089b0991ddbb30c5d57e8b69ed8e",
-    "v1.31" : "v1.31-9eff24aa0b4-4348@sha256:3c2c251d87d041492b1fd18462e61bd4c0f163b5ba55492cc7444e268b5f8451",
+    "v1.28" : "v1.28-ea0f6140510-4417@sha256:e1c2b75ec21f429d190e8dd7a92b5bc50f602af0e8910e3864e945348bcc6434",
+    "v1.29" : "v1.29-0c05aff05d5-4416@sha256:81ec016681d3df0e1471186cf719ed6d062ae51d3db9962de7212a06564c2bdb",
+    "v1.30" : "v1.30-ebf319fb8ca-4419@sha256:e3e7dd21c78dca4c4773bea5541bf532cc532e9ca06313b2bf47ded739d1be73",
+    "v1.31" : "v1.31-c9f79b0e2f8-4421@sha256:c22f4e8d74053465dcccd55dd0057374360efa2726f5d06065681f7cef2f84ed",
+  }
+
+  telesis_ipv6_csi_mapping_override = {
+    "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
+    "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
+    "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
+    "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+    "v1.28": "v1.28-ea0f6140510-4417@sha256:e1c2b75ec21f429d190e8dd7a92b5bc50f602af0e8910e3864e945348bcc6434",
+    "v1.29": "v1.29-0c05aff05d5-4416@sha256:81ec016681d3df0e1471186cf719ed6d062ae51d3db9962de7212a06564c2bdb",
+    "v1.30": "v1.30-ebf319fb8ca-4419@sha256:e3e7dd21c78dca4c4773bea5541bf532cc532e9ca06313b2bf47ded739d1be73",
+    "v1.31": "v1.31-c9f79b0e2f8-4421@sha256:c22f4e8d74053465dcccd55dd0057374360efa2726f5d06065681f7cef2f84ed",
   }
   spectra_ccm_mapping_override_hotfix_override = {
     "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -58,6 +73,28 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxcauqzilnjm4aaabx35cjcfjvzvef5yuh3e77xmja2ehnoxtdc7a"
           },
           // Telesis Single Stack IPv6 Hotfixes override https://jira.oci.oraclecorp.com/browse/OKE-34003, https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2837086
+          // & IPv6 Storage Plugins override https://jira.oci.oraclecorp.com/browse/OKE-34134, https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2864784
+          // faceuemeraldgateway
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3owbkj5sk32wfrsgrxjr7oxxev2orsulef55744k5lqnthkafs7q"
+          },
+          // faceuemerald
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaddv5fzlx2vfbfadytf5gjw2h3zkdmm7ed3vqkqnjbhnygjsoxgfq"
+          },
+          // faceuruby
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaane5tjo2ck7whumtwpadcdpgj6ofdu5adgnlufv77epa46atquuxa"
+          },
           // faceuaqua
           {
             regions = ["syd", "fra", "ord", "phx", "iad"]
@@ -86,6 +123,20 @@ locals {
             value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaazsjoewqejbgihfggzewpyvzn6iqtfg3omi6bbjrm6xjr47uk3fta"
           },
+          // Alan Chester's tenancy : omkdevcustomer
+          {
+            regions = ["phx","iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaj4ymkytn4cwasyktbc5rbqiald2enkoarepdv7pawyuw2tkazisa"
+          },
+          // OKE - odx-mockcustomer
+          {
+            regions = ["phx"]
+            env     = "prd"
+            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_ipv6_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
+          },
           // OC1-QRO okacanaryla
           {
             regions = ["qro"]
@@ -112,7 +163,79 @@ locals {
         ]
       },
       "csi-image-version-mapping" = {
-        overrides = []
+        overrides = [
+          // Telesis Single Stack IPv6 Storage Plugins override https://jira.oci.oraclecorp.com/browse/OKE-34134, https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2864784
+          // faceuemeraldgateway
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3owbkj5sk32wfrsgrxjr7oxxev2orsulef55744k5lqnthkafs7q"
+          },
+          // faceuemerald
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaddv5fzlx2vfbfadytf5gjw2h3zkdmm7ed3vqkqnjbhnygjsoxgfq"
+          },
+          // faceuruby
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaane5tjo2ck7whumtwpadcdpgj6ofdu5adgnlufv77epa46atquuxa"
+          },
+          // faceuaqua
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaak4lscthxbmkqxcvexwj4rbeizkqfdoglbkkggdmcaumvfqlpe77q"
+          },
+          // faceu
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxjbbhln4mvwtq2kkwepzpejsv4nckjvbeyugdqp2uf7demvqe6wa"
+          },
+          // picous
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaabfnkopx7w5och7l66wkgt7usfl7vmydfsagk3mmffvbg7mginy3a"
+          },
+          // faceuseed
+          {
+            regions = ["syd", "fra", "ord", "phx", "iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaazsjoewqejbgihfggzewpyvzn6iqtfg3omi6bbjrm6xjr47uk3fta"
+          },
+          // Alan Chester's tenancy omkdevcustomer
+          {
+            regions = ["phx","iad"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaj4ymkytn4cwasyktbc5rbqiald2enkoarepdv7pawyuw2tkazisa"
+          },
+          // OKE odx-mockcustomer
+          {
+            regions = ["phx"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
+          },
+          // OC1-QRO okacanaryla
+          {
+            regions = ["qro"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatxzd3axgkv7gybg2dtii3ecaetdg42wwx3x723bi6j55dgi3a7uq"
+          }
+        ]
       },
       "oci-service-controller-enabled" = {
         overrides = [
@@ -401,7 +524,19 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaanou7p4mkn5ptoicf5s5cfi2i5rff3qeeqpchwfxdxe7nvqbfokca"
           }
         ]
-      }
+      },
+      "csi-image-version-mapping" = {
+        overrides = [
+          // OC16 - SGU - Single Stack IPv6 Storage Plugins override https://jira.oci.oraclecorp.com/browse/OKE-34134, https://jira-sd.mc1.oracleiaas.com/browse/CHANGE-2864784
+          // okacanaryla
+          {
+            regions = ["sgu"]
+            env     = "prd"
+            value   = jsonencode(merge(local.csi_default_mapping.default.all, local.telesis_ipv6_csi_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaanou7p4mkn5ptoicf5s5cfi2i5rff3qeeqpchwfxdxe7nvqbfokca"
+          }
+        ]
+      },
     }
   }
 }
