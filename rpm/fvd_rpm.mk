@@ -1,7 +1,7 @@
 VERSION         ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
 NAME            ?= oci-flexvolume-driver
 BLD_ARCH        ?= x86_64
-FVD_BINARY_PATH ?= $(error FVD_BINARY_PATH not set!)
+FVD_BINARY_PATH ?= /spart/input/dist
 WORK_DIR 		?= /sparta/input
 
 .PHONY: PACKAGE_TARGET
