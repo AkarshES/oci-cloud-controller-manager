@@ -41,6 +41,8 @@ $(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
 
 
 $(PKG_SPEC): rpmbuild
+	echo "Tree printing"
+	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 	echo $(FVD_BINARY_PATH)
 	echo $(WORK_DIR)
 	cp -a $(WORK_DIR)/rpm/specs/* $(WORK_DIR)/rpmbuild/SPECS/
