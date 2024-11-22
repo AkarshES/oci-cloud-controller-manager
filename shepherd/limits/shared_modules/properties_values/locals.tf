@@ -26,25 +26,6 @@ locals {
     "v1.30" : "v1.30-3ef36340eb4-4349@sha256:53ab40e7c6373fd22c5e8b7f41a1fb275617089b0991ddbb30c5d57e8b69ed8e",
     "v1.31" : "v1.31-9eff24aa0b4-4348@sha256:3c2c251d87d041492b1fd18462e61bd4c0f163b5ba55492cc7444e268b5f8451",
   }
-    spectra_ccm_mapping_override_1_4_1 = {
-    "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.19": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.20": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.21": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.22": "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-    "v1.23": "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
-    "v1.24": "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
-    "v1.25": "v1.25-d0b59914251-38@sha256:ffa44cb1e6bc5793859a1ebf7762bcd1731ec0dea426034c44bc77ffb12ece48",
-    "v1.26": "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
-    "v1.27": "v1.27-bff7091ad1d-51@sha256:10555f13db26cbcb35dcd684be88db9897e01ad25bdcd7d65e9cb4bd1c5f386f",
-    "v1.28": "v1.28-96b9f4622cc-66@sha256:e025418727bf3a7cbf4e33627fa434c0dec25ade6bd6393422c74c6b2ba6e6df",
-    "v1.29": "v1.29-e6a7ce8ad36-62@sha256:c019c063b701292d80e573cc68f60025f0dbe2a72d1a273bfe7ec6c9fa3ca36b",
-    "v1.30": "v1.30-a9230863833-52@sha256:4ed2428817ee1884a3be6e85bf6deeb3f458f8a9dbb56b604460d62331c5d5a3",
-    "v1.31": "v1.31-dbfa7cca8c5-15@sha256:66489a44f4204203ca246562afd32c1f5f9285507daa97ab4137b5f2e72d4a84"
-  }
   spectra_ccm_mapping_override_hotfix_override = {
     "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
     "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -119,7 +100,7 @@ locals {
           {
             regions = ["phx"]
             env = "prd"
-            value = jsonencode(local.spectra_ccm_mapping_override_1_4_1)
+            value = jsonencode(local.spectra_ccm_mapping_override_hotfix_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa2d33riulr5do2zd6s3qpp44ljaji3t47433p43k3rcw7tsm3n47a"
           },
           {
