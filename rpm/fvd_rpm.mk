@@ -1,8 +1,8 @@
 VERSION         ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
 NAME            ?= oci-flexvolume-driver
 BLD_ARCH        ?= x86_64
-FVD_BINARY_PATH ?= ~/sparta/input/dist
-WORK_DIR 		?= ~/sparta/input
+FVD_BINARY_PATH ?= "~/sparta/input/dist"
+WORK_DIR 		?= "~/sparta/input"
 
 .PHONY: PACKAGE_TARGET
 PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION).$(BLD_ARCH).rpm
