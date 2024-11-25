@@ -1,8 +1,9 @@
-VERSION         ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
-NAME            ?= oci-flexvolume-driver
-BLD_ARCH        ?= x86_64
-FVD_BINARY_PATH ?= "~/sparta/input/dist"
-WORK_DIR 		?= "~/sparta/input"
+VERSION          ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
+NAME             ?= oci
+BLD_ARCH         ?= $(error BLD_ARCH not set!)
+FVD_BINARY_PATH  ?= $(error FVD_BINARY_PATH not set!)
+WORK_DIR 		 ?= $(error WORK_DIR not set!)
+RPM_INSTALL_PATH ?= $(error RPM_INSTALL_PATH not set!)
 
 .PHONY: PACKAGE_TARGET
 PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION).$(BLD_ARCH).rpm
@@ -15,42 +16,29 @@ PKG_SPEC   := $(WORK_DIR)/rpmbuild/SPECS/$(NAME).spec
 setup:
 	./setup.sh
 
-
 .PHONY: rpm
 rpm: $(PKG_TARGET)
 
 $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
-	echo "Done Packing"
-	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 	rpmbuild -bb \
 		--define "name $(NAME)" \
-		--define "_version $(VERSION)" \
+		--define "_version $(subst -,,$(VERSION))" \
 		--define "_topdir $(WORK_DIR)/rpmbuild" \
-		--define "_flexvolume_install_path $(WORK_DIR)/installtest" \
+		--define "_flexvolume_install_path $(RPM_INSTALL_PATH)" \
 		--define "_release 1" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
-	echo "Done Building"
-	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
 $(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
-	echo $@
-	echo "Printing"
-	echo $(dir $@)
 	mkdir -p $(dir $@)
-	echo "Made directory, now making zip"
 	tar -czvf $@ -C $(FVD_BINARY_PATH) $(NAME)
 
 
 $(PKG_SPEC): rpmbuild
-	echo "Tree printing"
-	find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
-	echo $(FVD_BINARY_PATH)
-	echo $(WORK_DIR)
 	cp -a $(WORK_DIR)/rpm/specs/* $(WORK_DIR)/rpmbuild/SPECS/
 
 rpmbuild:
 	mkdir -p $(WORK_DIR)/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 
-clean:
+clean-rpm:
 	rm -r rpmbuild
 
 tree:

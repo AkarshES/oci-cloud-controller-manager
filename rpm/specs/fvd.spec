@@ -1,4 +1,4 @@
-Name:           oci-flexvolume-driver
+Name:           oci
 Version:        %{_version}
 Release:        %{_release}%{?dist}
 Summary:        OCI's Flex Volume Driver Binary
@@ -10,7 +10,7 @@ Source0:        %{name}-%{version}.tar.gz
 # Use passed value as an argument or default to a standard path
 # This will dictate where the binary should be installed into the user's system
 # Default path can be overridden with arguments
-%{!?_flexvolume_install_path: %define _flexvolume_install_path /usr/libexec/kubernetes/kubelet-plugins/volume/exec}
+%{!?_flexvolume_install_path: %define _flexvolume_install_path /usr/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/}
 
 %description
 OCI's flex volume driver binary
@@ -22,15 +22,12 @@ tar -xvzf %{SOURCE0}
 # No build necessary for precompiled binary
 
 %install
-echo "inside fvd"
-ls -lart
-echo %{_flexvolume_install_path}
-echo %{buildroot}
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/%{_flexvolume_install_path}
-install -m 0755 %{name} %{buildroot}/%{_flexvolume_install_path}/oci-flexvolume-driver
+mkdir -p %{buildroot}%{_flexvolume_install_path}
+install -m 0755 %{name} %{buildroot}%{_flexvolume_install_path}
+
 %files
-%{_flexvolume_install_path}/oci-flexvolume-driver
+%{_flexvolume_install_path}/oci
 
 %changelog
 * Thu Nov 20 2024 Uneet <uneet.patel@oracle.com> - 1.0.0-1
