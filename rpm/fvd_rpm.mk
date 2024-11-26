@@ -32,7 +32,9 @@ $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
 
 $(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
 	mkdir -p $(dir $@)
+	cp $(FVD_BINARY_PATH)/$(FVD_BINARY_NAME) $(FVD_BINARY_PATH)/oci
 	tar -czvf $@ -C $(FVD_BINARY_PATH) $(FVD_BINARY_NAME)
+
 
 
 $(PKG_SPEC): rpmbuild
