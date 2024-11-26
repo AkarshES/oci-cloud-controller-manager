@@ -1,9 +1,9 @@
 VERSION          ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
-NAME             ?= oci
-BLD_ARCH         ?= $(error BLD_ARCH not set!)
-FVD_BINARY_PATH  ?= $(error FVD_BINARY_PATH not set!)
-WORK_DIR 		 ?= $(error WORK_DIR not set!)
-RPM_INSTALL_PATH ?= $(error RPM_INSTALL_PATH not set!)
+NAME             ?= "oci"
+BLD_ARCH         ?= "x86"
+FVD_BINARY_PATH  ?= ""
+WORK_DIR 		 ?= "~/sparta/input"
+RPM_INSTALL_PATH ?= ""
 
 .PHONY: PACKAGE_TARGET
 PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION).$(BLD_ARCH).rpm
@@ -22,7 +22,7 @@ rpm: $(PKG_TARGET)
 $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
 	rpmbuild -bb \
 		--define "name $(NAME)" \
-		--define "_version $(subst -,,$(VERSION))" \
+		--define "_version $(subst -,.,$(VERSION))" \
 		--define "_topdir $(WORK_DIR)/rpmbuild" \
 		--define "_flexvolume_install_path $(RPM_INSTALL_PATH)" \
 		--define "_release 1" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
