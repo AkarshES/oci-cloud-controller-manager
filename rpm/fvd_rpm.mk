@@ -1,8 +1,8 @@
 VERSION          ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
-NAME             ?= "oci"
-BLD_ARCH         ?= "x86"
+NAME             ?= oci
+BLD_ARCH         ?= x86
 FVD_BINARY_PATH  ?= ""
-WORK_DIR 		 ?= "~/sparta/input"
+WORK_DIR 		 ?= ~/sparta/input
 RPM_INSTALL_PATH ?= ""
 
 .PHONY: PACKAGE_TARGET
