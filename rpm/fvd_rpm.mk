@@ -5,11 +5,12 @@ FVD_BINARY_PATH  ?= ""
 WORK_DIR 		 ?= ~/sparta/input
 RPM_INSTALL_PATH ?= ""
 FVD_BINARY_NAME ?= "oci-flexvolume-driver"
+RPM_VERSION ?= $(subst -,_,$(VERSION))
 
 
 .PHONY: PACKAGE_TARGET
-PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(VERSION).$(BLD_ARCH).rpm
-PKG_SOURCE := $(WORK_DIR)/rpmbuild/SOURCES/$(NAME)-$(VERSION).tar.gz
+PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(RPM_VERSION).$(BLD_ARCH).rpm
+PKG_SOURCE := $(WORK_DIR)/rpmbuild/SOURCES/$(NAME)-$(RPM_VERSION).tar.gz
 PKG_SPEC   := $(WORK_DIR)/rpmbuild/SPECS/$(NAME).spec
 
 .DEFAULTTARGET: rpm
@@ -24,7 +25,7 @@ rpm: $(PKG_TARGET)
 $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
 	rpmbuild -bb \
 		--define "name $(NAME)" \
-		--define "_version $(VERSION)" \
+		--define "_version $(RPM_VERSION)" \
 		--define "_topdir $(WORK_DIR)/rpmbuild" \
 		--define "_flexvolume_install_path $(RPM_INSTALL_PATH)" \
 		--define "_release 1" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
