@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
         - name: lustre-client-setup
-          image: iad.ocir.io/axoxdievda5j/oke-public-cloud-provider-oci:v1.27-aa6a9328864-47@sha256:81767ff751e6c532af3af01abea3f1881befcce2a3c1f49ef867f5a44d1c6a06
+          image: iad.ocir.io/axoxdievda5j/oke-public-cloud-provider-oci:v1.27-bff7091ad1d-51@sha256:10555f13db26cbcb35dcd684be88db9897e01ad25bdcd7d65e9cb4bd1c5f386f
           command: ['sh', '-c', 'cp /sbin/oci-lustre-client-setup /host/usr/sbin && chroot /host /usr/bin/bash -c /usr/sbin/oci-lustre-client-setup']
           volumeMounts:
             - mountPath: /host
@@ -50,7 +50,7 @@ spec:
                   fieldPath: spec.nodeName
             - name: PATH
               value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/host/usr/bin:/host/sbin
-          image: iad.ocir.io/axoxdievda5j/oke-public-cloud-provider-oci:v1.27-aa6a9328864-47@sha256:81767ff751e6c532af3af01abea3f1881befcce2a3c1f49ef867f5a44d1c6a06
+          image: iad.ocir.io/axoxdievda5j/oke-public-cloud-provider-oci:v1.27-bff7091ad1d-51@sha256:10555f13db26cbcb35dcd684be88db9897e01ad25bdcd7d65e9cb4bd1c5f386f
           imagePullPolicy: Always
           lifecycle:
             preStop:
