@@ -159,3 +159,11 @@ resource "property_override" "overrides" {
   max    = lookup(each.value, "max", null)
   value  = lookup(each.value, "value", null)
 }
+
+output "regional_property_values" {
+  value = property_value.values
+}
+
+output "regional_property_overrides" {
+  value = property_override.overrides
+}
