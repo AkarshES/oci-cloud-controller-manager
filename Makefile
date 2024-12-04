@@ -229,3 +229,7 @@ cleanup-images:
 .PHONY: validate-mappings
 validate-mappings:
 	go run hack/release-validation.go "validate-mappings"
+
+.PHONY: clean-pop
+clean:
+	rm -rf image-release-validator-pop/out image-release-validator-pop/image_versions.json
