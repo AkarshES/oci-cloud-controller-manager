@@ -106,6 +106,8 @@ resource "shepherd_execution_target" "polaris_onsr_region_values" {
     limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
     manage_regional_values = "true"
     manage_definitions     = "false"
+    stage = "polaris"
+    pool_name_regex = "^oke-deploy-prod[0-9]*"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"])), "spectre_group_name")
     },
     lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {})

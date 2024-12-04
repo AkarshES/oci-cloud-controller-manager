@@ -68,7 +68,7 @@ locals {
   }
 
   tenancy_overrides_map = {
-  for entry in local.tenancy_overrides : "${entry.group}/${entry.name}/${entry.region}/${entry.ad}/${entry.tag}" => entry }
+    for entry in local.tenancy_overrides : "${entry.group}/${entry.name}/${entry.region}/${entry.ad}/${entry.tag}" => entry }
 
   tenancy_overrides_final = merge(local.tenancy_overrides_map, local.tenancy_overrides__all_regions_map)
   /*
@@ -117,45 +117,10 @@ locals {
   all_values = merge(local.global_default_values_map, local.default_values_map, local.regional_values_map_overrides)
 }
 
-output "regional_properties_values_overrides" {
-  value = local.regional_properties_values_overrides
+output "regional_values" {
+  value = local.all_values
 }
 
-module "all_values_validation" {
-  source = "../validation"
-
-  for_each = local.all_values
-  image_mapping_values = lookup(each.value, "value", null)
-}
-
-module "overrides_validation" {
-  source = "../validation"
-
-  for_each = local.tenancy_overrides_final
-  image_mapping_values = lookup(each.value, "value", null)
-}
-
-resource "property_value" "values" {
-  for_each = local.all_values
-
-  group  = each.value.group
-  name   = each.value.name
-  region = each.value.region
-  ad     = each.value.ad
-  min    = lookup(each.value, "min", null)
-  max    = lookup(each.value, "max", null)
-  value  = lookup(each.value, "value", null)
-}
-
-resource "property_override" "overrides" {
-  for_each = local.tenancy_overrides_final
-
-  group  = each.value.group
-  name   = each.value.name
-  region = each.value.region
-  ad     = each.value.ad
-  tag    = each.value.tag
-  min    = lookup(each.value, "min", null)
-  max    = lookup(each.value, "max", null)
-  value  = lookup(each.value, "value", null)
+output "override_values" {
+  value = local.tenancy_overrides_final
 }
