@@ -45,11 +45,11 @@ module "odo_configuration_ccm_csi_infra" {
   env_vars = [
     {
       name = "regional_image_list"
-      value = local.regional_image_list
+      value = join(",", local.regional_image_list)
     },
     {
       name = "override_image_list"
-      value = local.overrides_image_list
+      value = join(",", local.overrides_image_list)
     }
   ]
 }
