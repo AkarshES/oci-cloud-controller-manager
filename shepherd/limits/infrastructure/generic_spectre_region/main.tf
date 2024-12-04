@@ -58,7 +58,9 @@ module "odo_deployment_ccm_csi_infra" {
   source = "./shared_modules/odo_deployment"
 
   artifact_version = {
-    uri =
+    uri = "infra-release-validator-ccm-csi-67db8a897a2_4.tar.gz"
+    type = "pop"
+    version = "67db8a897a2_4"
   }
   apps             = [
     {
@@ -79,8 +81,6 @@ module "properties_values" {
   spectre_group_name = lookup(local.execution_target.additional_locals, "spectre_group_name")
   env                = lookup(local.execution_target.additional_locals, "env", "")
   realm              = local.execution_target.region.realm
-
-  depends_on = [module.odo_deployment_ccm_csi_infra]
 }
 
 resource "capability_require_capability" "oke_ccm_csi_internal_capability" {
