@@ -44,11 +44,11 @@ module "odo_configuration_ccm_csi_infra" {
   application_alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
   env_vars = [
     {
-      name = regional_image_list
+      name = "regional_image_list"
       value = local.regional_image_list
     },
     {
-      name = override_image_list
+      name = "override_image_list"
       value = local.overrides_image_list
     }
   ]

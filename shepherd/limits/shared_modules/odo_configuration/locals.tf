@@ -1,5 +1,4 @@
 locals {
-  images_json = file("${path.module}/image_versions.json")
   execution_target = var.execution_target
   steward_tenancy_info = {
     oc1 = {

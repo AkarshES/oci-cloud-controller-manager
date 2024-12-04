@@ -27,6 +27,8 @@ resource "shepherd_execution_target" "prod_build_spectre_region_et" {
     limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
     manage_regional_values = "true"
     manage_definitions     = "false"
+    stage = "prod"
+    pool_name_regex = "^oke-deploy-prod[0-9]*"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, each.key), "spectre_group_name")
   }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
   provider_override {
