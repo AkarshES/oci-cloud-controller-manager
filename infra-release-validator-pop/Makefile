@@ -1,0 +1,9 @@
+SHELL := /bin/bash
+
+.PHONY: build
+build: out/image-release-validator-hyperkube-${VERSION}.tar.gz
+
+out/image-release-validator-hyperkube-${VERSION}.tar.gz: run-command/** image_versions.json
+	mkdir -p out
+	rm -f out/*
+	tar -czvf out/image-release-validator-hyperkube-${VERSION}.tar.gz run-command image_versions.json
