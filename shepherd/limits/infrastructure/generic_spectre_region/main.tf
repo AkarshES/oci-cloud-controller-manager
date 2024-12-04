@@ -57,7 +57,9 @@ module "odo_configuration_ccm_csi_infra" {
 module "odo_deployment_ccm_csi_infra" {
   source = "./shared_modules/odo_deployment"
 
-  artifact_version = local.artifact_versions["infra-release-validator-ccm-csi"]
+  artifact_version = {
+    uri =
+  }
   apps             = [
     {
       ad = module.ad_map.physical_ad1.name
