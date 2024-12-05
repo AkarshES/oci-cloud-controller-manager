@@ -11,11 +11,11 @@ locals {
   regional_list_mid_index = floor(length(local.regional_image_list) / 2)
   overrides_list_mid_index = floor(length(local.overrides_image_list) / 2)
 
-  regional_image_list_first_half = slice(local.regional_image_list, 0, local.regional_list_mid_index)
-  regional_image_list_second_half = slice(local.regional_image_list, local.regional_list_mid_index)
+  regional_image_list_first_half = length(local.regional_image_list) > 0 ? slice(local.regional_image_list, 0, local.regional_list_mid_index) : []
+  regional_image_list_second_half = length(local.regional_image_list) > 0 ? slice(local.regional_image_list, local.regional_list_mid_index, length(local.regional_image_list) - 1) : []
 
-  overrides_image_list_first_half = slice(local.overrides_image_list, 0, local.overrides_list_mid_index)
-  overrides_image_list_second_half = slice(local.overrides_image_list, local.overrides_list_mid_index)
+  overrides_image_list_first_half = length(local.overrides_image_list) > 0 ? slice(local.overrides_image_list, 0, local.overrides_list_mid_index) : []
+  overrides_image_list_second_half = length(local.overrides_image_list) > 0 ? slice(local.overrides_image_list, local.overrides_list_mid_index, length(local.overrides_image_list) - 1) : []
 }
 
 module "ad_map" {
@@ -73,9 +73,9 @@ module "odo_configuration_ccm_csi_infra" {
 #  source = "./shared_modules/odo_deployment"
 #
 #  artifact_version = {
-#    uri = "infra-release-validator-ccm-csi-67db8a897a2_4.tar.gz"
+#    uri = "infra-release-validator-ccm-csi-457ffff55a6_5.tar.gz"
 #    type = "pop"
-#    version = "67db8a897a2_4"
+#    version = "457ffff55a6_5"
 #  }
 #  apps             = [
 #    {
