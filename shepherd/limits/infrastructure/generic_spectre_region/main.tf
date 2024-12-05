@@ -69,22 +69,22 @@ module "odo_configuration_ccm_csi_infra" {
   ]
 }
 
-#module "odo_deployment_ccm_csi_infra" {
-#  source = "./shared_modules/odo_deployment"
-#
-#  artifact_version = {
-#    uri = "infra-release-validator-ccm-csi-457ffff55a6_5.tar.gz"
-#    type = "pop"
-#    version = "457ffff55a6_5"
-#  }
-#  apps             = [
-#    {
-#      ad = module.ad_map.physical_ad1.name
-#      alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
-#    }
-#  ]
-#  depends_on = [module.odo_configuration_ccm_csi_infra]
-#}
+module "odo_deployment_ccm_csi_infra" {
+  source = "./shared_modules/odo_deployment"
+
+  artifact_version = {
+    uri = "infra-release-validator-ccm-csi-457ffff55a6_5.tar.gz"
+    type = "pop"
+    version = "457ffff55a6_5"
+  }
+  apps             = [
+    {
+      ad = module.ad_map.physical_ad1.name
+      alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
+    }
+  ]
+  depends_on = [module.odo_configuration_ccm_csi_infra]
+}
 
 resource "capability_require_capability" "regional_infra" {
   name = "oke_deploy_odo"

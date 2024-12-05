@@ -28,6 +28,7 @@ existing_tags=$(oci artifacts container image list \
   --region "$REGION" \
   --repository-name "$repo_name" \
   --all \
+  --auth instance_principal \
   --query 'data.items[*]."display-name"' \
   --output json | jq -r '.[]' | awk -F':' '{print $2}')
 
