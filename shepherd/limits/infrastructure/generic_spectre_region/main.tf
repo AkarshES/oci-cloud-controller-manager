@@ -5,10 +5,17 @@ locals {
   raw_regional_image_list = [for v in local.regional_values : regexall("\"([^\"]+?)@sha256", v)]
   raw_override_image_list = [for v in local.override_values : regexall("\"([^\"]+?)@sha256", v)]
 
-  regional_image_list = flatten(local.raw_regional_image_list)
-  overrides_image_list = flatten(local.raw_override_image_list)
+  regional_image_list = tolist(toset(flatten(local.raw_regional_image_list)))
+  overrides_image_list = tolist(toset(flatten(local.raw_override_image_list)))
 
-  image_name = "oke-public-cloud-provider-oci"
+  regional_list_mid_index = floor(length(local.regional_image_list) / 2)
+  overrides_list_mid_index = floor(length(local.overrides_image_list) / 2)
+
+  regional_image_list_first_half = slice(local.regional_image_list, 0, local.regional_list_mid_index)
+  regional_image_list_second_half = slice(local.regional_image_list, local.regional_list_mid_index)
+
+  overrides_image_list_first_half = slice(local.overrides_image_list, 0, local.overrides_list_mid_index)
+  overrides_image_list_second_half = slice(local.overrides_image_list, local.overrides_list_mid_index)
 }
 
 module "ad_map" {
@@ -44,12 +51,20 @@ module "odo_configuration_ccm_csi_infra" {
   application_alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
   env_vars = [
     {
-      name = "regional_image_list"
-      value = join(",", local.regional_image_list)
+      name = "REGIONAL_IMAGE_LIST_1"
+      value = join(",", local.regional_image_list_first_half)
     },
     {
-      name = "override_image_list"
-      value = join(",", local.overrides_image_list)
+      name = "REGIONAL_IMAGE_LIST_2"
+      value = join(",", local.regional_image_list_second_half)
+    },
+    {
+      name = "OVERRIDES_IMAGE_LIST_1"
+      value = join(",", local.overrides_image_list_first_half)
+    },
+    {
+      name = "OVERRIDES_IMAGE_LIST_2"
+      value = join(",", local.overrides_image_list_second_half)
     }
   ]
 }
