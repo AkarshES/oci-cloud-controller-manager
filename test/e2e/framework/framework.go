@@ -136,6 +136,7 @@ var (
 	clusterTypeEnum               oke.ClusterTypeEnum // Enum for OKE Cluster Type
 	addOkeSystemTags              bool
 	podsubnet                     string
+	maxPodsPerNode                int
 	cniType                       string
 	cniTypeEnum                   oke.ClusterPodNetworkOptionDetailsCniTypeEnum
 )
@@ -210,6 +211,7 @@ func init() {
 
 	flag.StringVar(&clusterType, "cluster-type", "BASIC_CLUSTER", "Cluster type can be BASIC_CLUSTER or ENHANCED_CLUSTER")
 	flag.StringVar(&podsubnet, "podsubnet", "", "OCID of the pod subnet in which to create pods for CNI type OCI_VCN_IP_NATIVE")
+	flag.IntVar(&maxPodsPerNode, "maxpodspernode", MAX_PODS_PER_NODE, "maxPods per node for OCI_VCN_IP_NATIVE")
 	flag.StringVar(&cniType, "cni-type", "FLANNEL_OVERLAY", "CNI type can be FLANNEL_OVERLAY or OCI_VCN_IP_NATIVE")
 	flag.BoolVar(&enableParallelRun, "enable-parallel-run", true, "Enables parallel running of test suite")
 	flag.BoolVar(&addOkeSystemTags, "add-oke-system-tags", true, "Adds oke system tags to new and existing loadbalancers and storage resources")
@@ -239,6 +241,9 @@ const (
 	UserAuth    AuthType = "user"
 	ServiceAuth AuthType = "service"
 )
+
+// MAX_PODS_PER_NODE : If CNI_TYPE is OCI_VCN_NATIVE MAX_PODS_PER_NODE is set to 12
+const MAX_PODS_PER_NODE = 12
 
 // Framework is the context of the text execution.
 type Framework struct {
@@ -305,6 +310,8 @@ type Framework struct {
 
 	// Pod subnet
 	PodSubnet string
+	// Max pods per node
+	MaxPodsPerNode int
 	// OCI_VCN_IP_NATIVE or FLANNEL_OVERLAY
 	CniType oke.ClusterPodNetworkOptionDetailsCniTypeEnum
 
@@ -612,6 +619,9 @@ func (f *Framework) Initialize() {
 	f.PodSubnet = podsubnet
 	Logf("OCI pod subnet OCID: %s", f.PodSubnet)
 
+	f.MaxPodsPerNode = maxPodsPerNode
+	Logf("Max pods per node: %s", f.MaxPodsPerNode)
+
 	var err error
 	if isPreUpgradeString != "" {
 		isPreUpgradeBool, err = strconv.ParseBool(isPreUpgradeString)
@@ -754,6 +764,11 @@ func (f *Framework) Initialize() {
 	}
 	f.CniType = cniTypeEnum
 	Logf("CNI Type: %s", f.CniType)
+
+	if maxPodsPerNode == 0 {
+		maxPodsPerNode = MAX_PODS_PER_NODE
+	}
+	Logf("maxPodsPerNode is: %s", f.MaxPodsPerNode)
 }
 
 // getK8sVersionValue returns the version value according to version index

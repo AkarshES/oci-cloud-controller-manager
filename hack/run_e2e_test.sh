@@ -214,7 +214,8 @@ function run_e2e_tests() {
                 --cluster-type=${CLUSTER_TYPE} \
                 --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
                 --cni-type=${CNI_TYPE} \
-                --podsubnet=${POD_SUBNET}
+                --podsubnet=${POD_SUBNET} \
+                --maxpodspernode=${MAX_PODS_PER_NODE}
     else
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_SKIP_OPT}" "${FOCUS_FP_OPT}"  \
                 test/e2e/cloud-provider-oci -- \
@@ -272,7 +273,8 @@ function run_e2e_tests() {
                 --cluster-type=${CLUSTER_TYPE} \
                 --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
                 --cni-type=${CNI_TYPE} \
-                --podsubnet=${POD_SUBNET}
+                --podsubnet=${POD_SUBNET} \
+                --maxpodspernode=${MAX_PODS_PER_NODE}
     fi
     retval=$?
     rm -f $OCI_KEY_FILE
@@ -314,7 +316,8 @@ function run_e2e_tests_existing_cluster() {
                 --cluster-type=${CLUSTER_TYPE} \
                 --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
                 --cni-type=${CNI_TYPE} \
-                --podsubnet=${POD_SUBNET}
+                --podsubnet=${POD_SUBNET} \
+                --maxpodspernode=${MAX_PODS_PER_NODE}
     else
         echo "initiating"
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_SKIP_OPT}" "${FOCUS_FP_OPT}"  \
@@ -468,7 +471,8 @@ function declare_setup () {
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
     echo "ADD_OKE_SYSTEM_TAGS is ${ADD_OKE_SYSTEM_TAGS}"
     echo "CNI_TYPE is ${CNI_TYPE}"
-    echo "POD_SUBNET is $POD_SUBNET"
+    echo "POD_SUBNET is ${POD_SUBNET}"
+    echo "MAX_PODS_PER_NODE is ${MAX_PODS_PER_NODE}"
 }
 
 function set_focus () {
@@ -552,16 +556,15 @@ function declare_environment () {
         echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
         echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
         echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
-        echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
-        echo "CNI_TYPE is ${CNI_TYPE}"
-        echo "POD_SUBNET is ${POD_SUBNET}"
     else
         echo "CLUSTER_KUBECONFIG is ${CLUSTER_KUBECONFIG}"
         echo "CLOUD_CONFIG is ${CLOUD_CONFIG}"
-        echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
-        echo "CNI_TYPE is ${CNI_TYPE}"
-        echo "POD_SUBNET is ${POD_SUBNET}"
     fi
+
+    echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
+    echo "CNI_TYPE is ${CNI_TYPE}"
+    echo "POD_SUBNET is ${POD_SUBNET}"
+    echo "MAX_PODS_PER_NODE is ${MAX_PODS_PER_NODE}"
 
     if [[ $LOCAL_RUN != 1 ]]; then
         if [[ ! -z $TC_BUILD ]]; then

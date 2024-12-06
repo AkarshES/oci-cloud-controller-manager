@@ -366,7 +366,8 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 	if cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative {
 		if podsubnet != "" {
 			nodeConfigDetails.NodePoolPodNetworkOptionDetails = oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
-				PodSubnetIds: []string{podsubnet},
+				PodSubnetIds:   []string{podsubnet},
+				MaxPodsPerNode: common.Int(maxPodsPerNode),
 			}
 		} else {
 			Logf("\tPOD SUBNET is empty %s", podsubnet)
