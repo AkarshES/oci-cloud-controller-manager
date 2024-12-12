@@ -208,7 +208,7 @@ func (p *PodReadinessController) sync(key string) error {
 		metricName = metrics.LBPodReadinessSync
 	}
 
-	lb, err := p.getLoadBalancerByName(lbProvider, p.config.CompartmentID, lbName)
+	lb, err := p.getLoadBalancerByName(lbProvider, getLoadBalancerCompartment(service, p.config.CompartmentID), lbName)
 	if err != nil {
 		if client.IsNotFound(err) {
 			logger.Infof("LB %s for service has been deleted, pod readiness sync will stop", lbName)

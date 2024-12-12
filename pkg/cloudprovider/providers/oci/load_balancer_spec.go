@@ -361,6 +361,7 @@ type LBSpec struct {
 	DefinedTags                 map[string]map[string]interface{}
 	SystemTags                  map[string]map[string]interface{}
 	ingressIpMode               *v1.LoadBalancerIPMode
+	Compartment                 string
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -369,7 +370,7 @@ type LBSpec struct {
 // NewLBSpec creates a LB Spec from a Kubernetes service and a slice of nodes.
 func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, virtualPods []*v1.Pod, subnets []string,
 	sslConfig *SSLConfig, secListFactory securityListManagerFactory, versions *IpVersions, initialLBTags *config.InitialTags,
-	existingLB *client.GenericLoadBalancer) (*LBSpec, error) {
+	existingLB *client.GenericLoadBalancer, clusterCompartment string) (*LBSpec, error) {
 	if err := validateService(svc); err != nil {
 		return nil, errors.Wrap(err, "invalid service")
 	}
@@ -455,6 +456,8 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
+	compartment := getLoadBalancerCompartment(svc, clusterCompartment)
+
 	return &LBSpec{
 		Type:                        lbType,
 		Name:                        GetLoadBalancerName(svc),
@@ -480,7 +483,17 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		DefinedTags:                 lbTags.DefinedTags,
 		SystemTags:                  getResourceTrackingSystemTagsFromConfig(logger, initialLBTags),
 		ingressIpMode:               ingressIpMode,
+		Compartment:                 compartment,
 	}, nil
+}
+
+func getLoadBalancerCompartment(svc *v1.Service, clusterCompartment string) (compartment string) {
+	if value, exist := svc.Annotations[util.CompartmentIDAnnotation]; exist {
+		compartment = value
+	} else {
+		compartment = clusterCompartment
+	}
+	return
 }
 
 func getSecurityListManagementMode(svc *v1.Service) (string, error) {
