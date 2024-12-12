@@ -48,6 +48,8 @@ var (
 	kubeAPIBurst = flag.Int("kube-api-burst", 10, "Burst to use while communicating with the kubernetes apiserver. Defaults to 10.")
 
 	handleVolumeInUseError = flag.Bool("handle-volume-inuse-error", true, "Flag to turn on/off capability to handle volume in use error in resizer controller. Defaults to true if not set.")
+	extraModifyMetadata = flag.Bool("extra-modify-metadata", false, "If set, add pv/pvc metadata to plugin modify requests as parameters.")
+
 
 	version = "unknown"
 )
@@ -66,6 +68,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	if addr == "" {
 		addr = csioptions.HttpEndpoint
 	}
+
 	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
 	}
@@ -126,6 +129,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 		csioptions.Timeout,
 		kubeClient,
 		informerFactory,
+		*extraModifyMetadata,
 		driverName)
 	if err != nil {
 		klog.ErrorS(err, "Failed to create CSI modifier")
@@ -148,14 +152,14 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 
 	resizerName := csiResizer.Name()
 	rc := controller.NewResizeController(resizerName, csiResizer, kubeClient, csioptions.Resync, informerFactory,
-		workqueue.NewItemExponentialFailureRateLimiter(csioptions.RetryIntervalStart, csioptions.RetryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](csioptions.RetryIntervalStart, csioptions.RetryIntervalMax),
 		*handleVolumeInUseError, csioptions.RetryIntervalMax)
 	modifierName := csiModifier.Name()
 	var mc modifycontroller.ModifyController
 	// Add modify controller only if the feature gate is enabled
 	if utilfeature.DefaultFeatureGate.Enabled(features.VolumeAttributesClass) {
-		mc = modifycontroller.NewModifyController(modifierName, csiModifier, kubeClient, csioptions.Resync, informerFactory,
-			workqueue.NewItemExponentialFailureRateLimiter(csioptions.RetryIntervalStart, csioptions.RetryIntervalMax))
+		mc = modifycontroller.NewModifyController(modifierName, csiModifier, kubeClient, csioptions.Resync,csioptions.RetryIntervalMax,*extraModifyMetadata, informerFactory,
+			workqueue.NewTypedItemExponentialFailureRateLimiter[string](csioptions.RetryIntervalStart, csioptions.RetryIntervalMax))
 	}
 
 	run := func(ctx context.Context) {

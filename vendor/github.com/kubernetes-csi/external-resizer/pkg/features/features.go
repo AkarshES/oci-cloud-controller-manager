@@ -19,6 +19,7 @@ package features
 import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/component-base/featuregate"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
 const (
@@ -28,6 +29,7 @@ const (
 
 	// owner: @gnufied
 	// alpha: v1.23
+	// beta: v1.32
 	//
 	// Allows users to recover from volume expansion failures
 	RecoverVolumeExpansionFailure featuregate.Feature = "RecoverVolumeExpansionFailure"
@@ -43,10 +45,20 @@ const (
 
 func init() {
 	utilfeature.DefaultMutableFeatureGate.Add(defaultResizerFeatureGates)
+	utilfeature.DefaultMutableFeatureGate.AddVersioned(defaultResizerVersionedFeatureGates)
 }
 
 var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	AnnotateFsResize:              {Default: false, PreRelease: featuregate.Alpha},
-	RecoverVolumeExpansionFailure: {Default: false, PreRelease: featuregate.Alpha},
-	VolumeAttributesClass:         {Default: false, PreRelease: featuregate.Beta},
+}
+
+var defaultResizerVersionedFeatureGates = map[featuregate.Feature]featuregate.VersionedSpecs{
+	RecoverVolumeExpansionFailure: {
+		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Alpha},
+		{Version: version.MustParse("1.32"), Default: true, PreRelease: featuregate.Beta},
+	},
+	VolumeAttributesClass :{
+		{Version: version.MustParse("1.29"), Default: false, PreRelease: featuregate.Alpha},
+		{Version: version.MustParse("1.31"), Default: false, PreRelease: featuregate.Beta},
+	},
 }
