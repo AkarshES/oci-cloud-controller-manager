@@ -31,7 +31,7 @@ import (
 	v1alpha18 "k8s.io/client-go/kubernetes/typed/certificates/v1alpha1"
 	v1beta16 "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	v19 "k8s.io/client-go/kubernetes/typed/coordination/v1"
-	v1alpha14 "k8s.io/client-go/kubernetes/typed/coordination/v1alpha1"
+	v1alpha14 "k8s.io/client-go/kubernetes/typed/coordination/v1alpha2"
 	v1beta17 "k8s.io/client-go/kubernetes/typed/coordination/v1beta1"
 	v12 "k8s.io/client-go/kubernetes/typed/core/v1"
 	v110 "k8s.io/client-go/kubernetes/typed/discovery/v1"
@@ -55,6 +55,7 @@ import (
 	v1alpha17 "k8s.io/client-go/kubernetes/typed/rbac/v1alpha1"
 	v1beta115 "k8s.io/client-go/kubernetes/typed/rbac/v1beta1"
 	"k8s.io/client-go/kubernetes/typed/resource/v1alpha3"
+	"k8s.io/client-go/kubernetes/typed/resource/v1beta1"
 	v116 "k8s.io/client-go/kubernetes/typed/scheduling/v1"
 	v1alpha19 "k8s.io/client-go/kubernetes/typed/scheduling/v1alpha1"
 	v1beta116 "k8s.io/client-go/kubernetes/typed/scheduling/v1beta1"
@@ -69,7 +70,15 @@ type MockKubeClient struct {
 	CoreClient *MockCoreClient
 }
 
-func (m MockKubeClient) CoordinationV1alpha1() v1alpha14.CoordinationV1alpha1Interface {
+func (m MockKubeClient) CoordinationV1alpha2() v1alpha14.CoordinationV1alpha2Interface {
+	return nil
+}
+
+func (m MockKubeClient) ResourceV1beta1() v1beta1.ResourceV1beta1Interface {
+	return nil
+}
+
+func (m MockKubeClient) CoordinationV1alpha1() v1alpha14.CoordinationV1alpha2Interface {
 	return nil
 }
 

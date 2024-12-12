@@ -42,7 +42,7 @@ import (
 	ctrl "github.com/kubernetes-csi/external-provisioner/v5/pkg/controller"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/features"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/owner"
-	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
+	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -60,7 +60,7 @@ import (
 	gatewayclientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gatewayInformers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
 	referenceGrantv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
-	"sigs.k8s.io/sig-storage-lib-external-provisioner/v10/controller"
+	"sigs.k8s.io/sig-storage-lib-external-provisioner/v11/controller"
 )
 
 var (
@@ -464,9 +464,8 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		csiProvisioner = capacity.NewProvisionWrapper(csiProvisioner, capacityController)
 	}
 
-	logger := klog.FromContext(ctx)
 	provisionController := newProvisionController(
-		logger,
+		ctx,
 		csioptions,
 		clientset,
 		provisionerName,
@@ -561,11 +560,11 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 
 }
 
-func newProvisionController(logger klog.Logger, csioptions csioptions.CSIOptions, clientset *kubernetes.Clientset, provisionerName string, csiProvisioner controller.Provisioner, provisionerOptions ...func(*controller.ProvisionController) error) *controller.ProvisionController {
+func newProvisionController(ctx context.Context, csioptions csioptions.CSIOptions, clientset *kubernetes.Clientset, provisionerName string, csiProvisioner controller.Provisioner, provisionerOptions ...func(*controller.ProvisionController) error) *controller.ProvisionController {
 	csioptions.RuntimeSchemeMutex.Lock()
 	defer csioptions.RuntimeSchemeMutex.Unlock()
 	provisionController := controller.NewProvisionController(
-		logger,
+		ctx,
 		clientset,
 		provisionerName,
 		csiProvisioner,
