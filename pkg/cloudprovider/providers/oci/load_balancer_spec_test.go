@@ -4726,7 +4726,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6051,7 +6051,7 @@ func TestNewLBSpecForTags(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6235,7 +6235,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6744,7 +6744,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 				slManagerFactory := func(mode string) securityListManager {
 					return newSecurityListManagerNOOP()
 				}
-				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil)
+				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			}
 			if err == nil || err.Error() != tc.expectedErrMsg {
 				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)

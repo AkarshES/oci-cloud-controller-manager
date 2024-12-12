@@ -203,7 +203,7 @@ func (cp *CloudProvider) GetLoadBalancer(ctx context.Context, clusterName string
 	if err != nil {
 		return nil, false, errors.Wrap(err, "Unable to get Load Balancer Client.")
 	}
-	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, name)
+	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), name)
 	if err != nil {
 		if client.IsNotFound(err) {
 			lbProvider.logger.Info("Load balancer does not exist")
@@ -401,7 +401,7 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 	}
 
 	details := client.GenericCreateLoadBalancerDetails{
-		CompartmentId:           &clb.config.CompartmentID,
+		CompartmentId:           &spec.Compartment,
 		DisplayName:             &spec.Name,
 		ShapeName:               &spec.Shape,
 		IsPrivate:               &spec.Internal,
@@ -607,7 +607,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to get Load Balancer Client.")
 	}
-	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, lbName)
+	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), lbName)
 	if err != nil && !client.IsNotFound(err) {
 		logger.With(zap.Error(err)).Error("Failed to get loadbalancer by name")
 		errorType = util.GetError(err)
@@ -680,7 +680,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		return nil, err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -698,7 +698,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 
 		// Check if there are any NSGs which are created by CCM (and use that), but didn't get attached to LB because the LB creation failed.
 		if !lbExists {
-			frontendNsgId, _, err = lbProvider.getFrontendNsgByName(ctx, generateNsgName(service), cp.config.CompartmentID, cp.config.VCNID, fmt.Sprintf("%s", service.UID))
+			frontendNsgId, _, err = lbProvider.getFrontendNsgByName(ctx, generateNsgName(service), spec.Compartment, cp.config.VCNID, fmt.Sprintf("%s", service.UID))
 			if err != nil {
 				return nil, err
 			}
@@ -733,7 +733,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 			if frontendNsgId == "" {
 				// Check if there are any CCM created NSGs which might be manually removed by customer causing a dirty LB
 				logger.Info("Check if managed NSGs present in VCN")
-				frontendNsgId, _, err = lbProvider.getFrontendNsgByName(ctx, generateNsgName(service), cp.config.CompartmentID, cp.config.VCNID, fmt.Sprintf("%s", service.UID))
+				frontendNsgId, _, err = lbProvider.getFrontendNsgByName(ctx, generateNsgName(service), spec.Compartment, cp.config.VCNID, fmt.Sprintf("%s", service.UID))
 				if err != nil {
 					return nil, err
 				}
@@ -752,7 +752,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 			if len(spec.NetworkSecurityGroupIds) >= MaxNsgPerVnic {
 				return nil, fmt.Errorf("invalid number of Network Security Groups (Max: 5) including managed nsg")
 			}
-			resp, err := lbProvider.client.Networking(nil).CreateNetworkSecurityGroup(ctx, cp.config.CompartmentID, cp.config.VCNID, generateNsgName(service), fmt.Sprintf("%s", service.UID))
+			resp, err := lbProvider.client.Networking(nil).CreateNetworkSecurityGroup(ctx, spec.Compartment, cp.config.VCNID, generateNsgName(service), fmt.Sprintf("%s", service.UID))
 			if err != nil {
 				logger.With(zap.Error(err)).Error("Failed to create nsg")
 				errorType = util.GetError(err)
@@ -1013,7 +1013,7 @@ func (clb *CloudLoadBalancerProvider) getLoadBalancerSubnets(ctx context.Context
 func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb *client.GenericLoadBalancer, spec *LBSpec) error {
 	lbID := *lb.Id
 	start := time.Now()
-	logger := clb.logger.With("loadBalancerID", lbID, "compartmentID", clb.config.CompartmentID, "loadBalancerType", getLoadBalancerType(spec.service), "serviceName", spec.service.Name)
+	logger := clb.logger.With("loadBalancerID", lbID, "compartmentID", spec.Compartment, "loadBalancerType", getLoadBalancerType(spec.service), "serviceName", spec.service.Name)
 
 	var actualPublicReservedIP *string
 
@@ -1170,7 +1170,7 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 func (clb *CloudLoadBalancerProvider) updateLoadBalancerBackends(ctx context.Context, lb *client.GenericLoadBalancer, spec *LBSpec) error {
 	lbID := *lb.Id
 
-	logger := clb.logger.With("loadBalancerID", lbID, "compartmentID", clb.config.CompartmentID, "loadBalancerType", getLoadBalancerType(spec.service), "serviceName", spec.service.Name)
+	logger := clb.logger.With("loadBalancerID", lbID, "compartmentID", spec.Compartment, "loadBalancerType", getLoadBalancerType(spec.service), "serviceName", spec.service.Name)
 
 	lbSubnets, err := getSubnets(ctx, spec.Subnets, clb.client.Networking(nil))
 	if err != nil {
@@ -1387,7 +1387,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	if err != nil {
 		return errors.Wrap(err, "Unable to get Load Balancer Client.")
 	}
-	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, lbName)
+	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), lbName)
 	if err != nil && !client.IsNotFound(err) {
 		logger.With(zap.Error(err)).Error("Failed to get loadbalancer by name")
 		errorType = util.GetError(err)
@@ -1478,7 +1478,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		return err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -1613,13 +1613,13 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 	if err != nil {
 		return errors.Wrap(err, "Unable to get Load Balancer Client.")
 	}
-	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, cp.config.CompartmentID, name)
+	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), name)
 	if err != nil {
 		if client.IsNotFound(err) {
 			logger.Info("Could not find load balancer. Nothing to do.")
 			if securityRuleManagementMode == NSG {
 				displayName := generateNsgName(service)
-				nsg.frontendNsgId, etag, err = lbProvider.getFrontendNsgByName(ctx, displayName, cp.config.CompartmentID, cp.config.VCNID, uid)
+				nsg.frontendNsgId, etag, err = lbProvider.getFrontendNsgByName(ctx, displayName, getLoadBalancerCompartment(service, cp.config.CompartmentID), cp.config.VCNID, uid)
 				if err != nil {
 					return errors.Wrap(err, "failed to get frontend NSG")
 				}
