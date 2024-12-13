@@ -1,25 +1,4 @@
 #!/bin/bash
-set -e
-if [[ "$#" -ne 1 ]]; then
-    >&2 echo "Usage: ./gen_images_tfvars.sh <path_to_wheelbarrow_manifest>"
-    exit
-fi
-manifest=$1
-
-echo "{\"images\": ["
-
-awk ' \
-  BEGIN { SEP=""; FS=",";} \
-  /.\/*/{ \
-    gsub(/^[ \t]+|[ \t]+$/, "", $1); \
-    gsub(/^[ \t]+|[ \t]+$/, "", $2); \
-    gsub("\\\.", "_DOT_", $2); \
-    printf "%s  {\"name\": \"%s__%s\", \"location\": \"%s\"}", SEP, $1, $2, $1; \
-    SEP=",\n"; \
-  } \
-  END {printf "\n"}' ${manifest}
-
-echo "]}"
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <path-to-wheelbarrow-manifest>"
@@ -27,7 +6,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 input_csv="$1"
-output_json="flock/v1/flock_structure/image_versions.json"
+output_json="shepherd/limits/flock_structure/image_versions.json"
 
 echo '{"images": [' > "$output_json"
 

@@ -123,7 +123,10 @@ resource "shepherd_execution_target" "prod_et" {
   uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
   tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
-  additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
+  additional_locals         = merge({
+    stage = "prod"
+    pool_name_regex = "^oke-deploy-prod[0-9]*"
+  }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
   alarms_to_watch {
     compartment_name = "assets"
     #compartment_name = format("cell%d:cell%d.mp:cell%d.mp.orchestration", split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1]) # This is a compartment in the tenancy above
