@@ -33,7 +33,6 @@ jq -r '.images[] | keys[]' "$JSON_FILE" | sort -u | while read -r repo_name; do
     repo_tags=$(fetch_repository_tags "$repo_name")
 
     expected_tags=$(jq -r --arg repo "$repo_name" '.images[][$repo] // empty' "$JSON_FILE")
-
     for tag in $expected_tags; do
         if echo "$repo_tags" | grep -q "^$tag$"; then
             continue
