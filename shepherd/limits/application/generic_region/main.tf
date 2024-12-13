@@ -6,7 +6,7 @@ module "ad_map" {
 
 locals {
   physical_ad1                     = module.ad_map.physical_ad1
-  image_validator_count            = local.artifact_versions["image-release-validator-hyperkube"].version == "skip" ? 0 : 1
+  image_validator_count            = local.artifact_versions["image-release-validator-ccm-csi"].version == "skip" ? 0 : 1
 }
 
 module "oke-cpo-images" {
