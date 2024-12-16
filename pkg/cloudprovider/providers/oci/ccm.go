@@ -49,6 +49,9 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
+// VCN_NATIVE_IP_CNI OKE Cluster
+var npnEnabled bool
+
 const (
 	// providerName uniquely identifies the Oracle Cloud Infrastructure
 	// (OCI) cloud-provider.
@@ -187,6 +190,8 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to create kubeclient: %v", err))
 	}
+
+	npnEnabled = GetIsFeatureEnabledFromEnv(cp.logger, "ENABLE_NPN_CONTROLLER", false)
 
 	factory := informers.NewSharedInformerFactory(cp.kubeclient, 5*time.Minute)
 

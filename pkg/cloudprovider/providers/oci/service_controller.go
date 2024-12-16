@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/utils/pointer"
 	"reflect"
 	"strings"
 	"sync"
@@ -325,6 +326,23 @@ func (s *ServiceController) enqueueService(obj interface{}) {
 	s.queue.Add(key)
 }
 func (s *ServiceController) enqueueServiceForEndpointSliceUpdate(targetEndpointSlice, oldEndpointSlice *discovery.EndpointSlice) {
+	/* Check if corresponding service requests managed pods as backends. i.e. AllocateLoadBalancerNodePorts == false
+	 */
+	serviceName, ok := targetEndpointSlice.Labels[discovery.LabelServiceName]
+	if !ok || serviceName == "" {
+		runtime.HandleError(fmt.Errorf("couldn't get service name for EndpointSlice %s", targetEndpointSlice.Name))
+		return
+	}
+	service, err := s.serviceLister.Services(targetEndpointSlice.Namespace).Get(serviceName)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("couldn't get service for EndpointSlice %s: %v", targetEndpointSlice.Name, err))
+		return
+	}
+
+	isManagedPodsAsBackends := reflect.DeepEqual(service.Spec.AllocateLoadBalancerNodePorts, pointer.Bool(false))
+	// Having managed pods as backends is only supported for NPN Clusters.
+	isManagedPodsAsBackends = isManagedPodsAsBackends && npnEnabled && !hasCustomNodePorts(service)
+
 	/* TODO: Keeping Support for Mixed Clusters behind feature gate since there some uncovered edge cases.
 	 *  One rare edge case is possible where the VN is deleted before the endpoint is deleted,
 	 *  in this case get node would fail for the corresponding endpoint and service enqueue won't happen
@@ -339,10 +357,10 @@ func (s *ServiceController) enqueueServiceForEndpointSliceUpdate(targetEndpointS
 			oldVirtualPodExists := s.virtualPodExistsInEndpointSlice(oldEndpointSlice, nodesMap)
 
 			// Virtual pods neither exist before nor do they exist now
-			if !targetVirtualPodExists && !oldVirtualPodExists {
+			if !targetVirtualPodExists && !oldVirtualPodExists && !isManagedPodsAsBackends {
 				return
 			}
-		} else if !targetVirtualPodExists {
+		} else if !targetVirtualPodExists || !isManagedPodsAsBackends {
 			return
 		}
 	} else {
@@ -351,7 +369,7 @@ func (s *ServiceController) enqueueServiceForEndpointSliceUpdate(targetEndpointS
 			runtime.HandleError(fmt.Errorf("couldn't determine if a virtual node exists in the cluster: %v", err))
 			return
 		}
-		if !virtualNodeExists {
+		if !virtualNodeExists && !isManagedPodsAsBackends {
 			// We don't want to queue a service that fronts non-virtual pods when there is an endpointslice event,
 			// only virtual pods are added as backends
 			return
