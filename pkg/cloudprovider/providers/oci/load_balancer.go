@@ -198,11 +198,11 @@ func (cp *CloudProvider) GetLoadBalancer(ctx context.Context, clusterName string
 	name := cp.GetLoadBalancerName(ctx, clusterName, service)
 
 	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
-	lbProvider.logger.Debug("Getting load balancer")
-
 	if err != nil {
 		return nil, false, errors.Wrap(err, "Unable to get Load Balancer Client.")
 	}
+
+	lbProvider.logger.Debug("Getting load balancer")
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), name)
 	if err != nil {
 		if client.IsNotFound(err) {
@@ -575,8 +575,11 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	loadBalancerType := getLoadBalancerType(service)
 
 	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
-	logger := lbProvider.logger
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 
+	logger := lbProvider.logger
 	if deleted, err := cp.serviceDeletedOrDoesNotExist(ctx, service); deleted {
 		if err != nil {
 			logger.With(zap.Error(err)).Error("Failed to check if service exists")
@@ -592,11 +595,12 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
-	virtualNodeExists, provisionedSvcNodes, virtualPods, err := cp.getProvisionedNodesAndVirtualPodsOfService(ctx, logger, service, clusterNodes)
+	virtualNodeExists, provisionedSvcNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndVirtualPodsOfService(ctx, logger, service, clusterNodes)
 	if err != nil {
 		return nil, err
 	}
-	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods)).Info("Ensuring load balancer")
+	// Since len(managedPods) = 0 even when it is a Flannel cluster. We cant find out if customer decided to use managed Pods on NP through this log line.
+	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods), "managedPods", len(managedPods)).Info("Ensuring load balancer")
 
 	dimensionsMap := make(map[string]string)
 
@@ -604,9 +608,6 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	var lbMetricDimension string
 	var nsgMetricDimension string
 
-	if err != nil {
-		return nil, errors.Wrap(err, "Unable to get Load Balancer Client.")
-	}
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), lbName)
 	if err != nil && !client.IsNotFound(err) {
 		logger.With(zap.Error(err)).Error("Failed to get loadbalancer by name")
@@ -680,7 +681,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		return nil, err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -895,7 +896,8 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	}
 
 	// If network partition, do not proceed
-	isNetworkPartition, err := cp.checkForNetworkPartition(logger, clusterNodes, virtualNodeExists)
+	isManagedPods := len(managedPods) != 0
+	isNetworkPartition, err := cp.checkForNetworkPartition(logger, clusterNodes, virtualNodeExists, isManagedPods)
 	if err != nil {
 		return nil, err
 	} else if isNetworkPartition {
@@ -1347,8 +1349,11 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	loadBalancerType := getLoadBalancerType(service)
 
 	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
-	logger := lbProvider.logger
+	if err != nil {
+		return errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 
+	logger := lbProvider.logger
 	if deleted, err := cp.serviceDeletedOrDoesNotExist(ctx, service); deleted {
 		if err != nil {
 			logger.With(zap.Error(err)).Error("Failed to check if service exists")
@@ -1364,14 +1369,16 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
-	virtualNodeExists, provisionedSvcNodes, virtualPods, err := cp.getProvisionedNodesAndVirtualPodsOfService(ctx, logger, service, nodes)
+	virtualNodeExists, provisionedSvcNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndVirtualPodsOfService(ctx, logger, service, nodes)
 	if err != nil {
 		return err
 	}
-	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods)).Info("Updating load balancer backends")
+	// Since len(managedPods) = 0 even when it is a Flannel cluster. We cant find out if customer decided to use managed Pods on NP through this log line.
+	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods), "managedPods", len(managedPods)).Info("Updating load balancer backends")
 
 	// If network partition, do not proceed
-	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists)
+	isManagedPods := len(managedPods) != 0
+	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists, isManagedPods)
 	if err != nil {
 		return err
 	} else if isNetworkPartition {
@@ -1383,9 +1390,6 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	var errorType string
 	var lbMetricDimension string
 
-	if err != nil {
-		return errors.Wrap(err, "Unable to get Load Balancer Client.")
-	}
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), lbName)
 	if err != nil && !client.IsNotFound(err) {
 		logger.With(zap.Error(err)).Error("Failed to get loadbalancer by name")
@@ -1477,7 +1481,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		return err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -1584,8 +1588,11 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 	loadBalancerType := getLoadBalancerType(service)
 
 	lbProvider, err := cp.getLoadBalancerProvider(ctx, service)
-	logger := lbProvider.logger
+	if err != nil {
+		return errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 
+	logger := lbProvider.logger
 	logger.Debug("Attempting to delete load balancer")
 	loadBalancerService := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 	if acquired := cp.lbLocks.TryAcquire(loadBalancerService); !acquired {
@@ -1609,9 +1616,6 @@ func (cp *CloudProvider) EnsureLoadBalancerDeleted(ctx context.Context, clusterN
 		return errors.Wrap(err, "failed to get rule management mode")
 	}
 
-	if err != nil {
-		return errors.Wrap(err, "Unable to get Load Balancer Client.")
-	}
 	lb, err := lbProvider.lbClient.GetLoadBalancerByName(ctx, getLoadBalancerCompartment(service, cp.config.CompartmentID), name)
 	if err != nil {
 		if client.IsNotFound(err) {
@@ -2045,18 +2049,19 @@ func (cp *CloudProvider) checkAllBackendNodesNotReady(nodeList []*v1.Node) bool 
 
 the list of provisioned nodes and virtual pods for the service
 */
-func (cp *CloudProvider) getProvisionedNodesAndVirtualPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service, nodes []*v1.Node) (virtualNodeExists bool, provisionedSvcNodes []*v1.Node, virtualPods []*v1.Pod, err error) {
+func (cp *CloudProvider) getProvisionedNodesAndVirtualPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service, nodes []*v1.Node) (virtualNodeExists bool, provisionedSvcNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, err error) {
 	provisionedSvcNodes, err = filterNodes(service, nodes)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to filter provisioned nodes with label selector and virtual nodes")
-		return virtualNodeExists, provisionedSvcNodes, virtualPods, err
+		return
 	}
 
 	// Check if virtual nodes exist in the cluster
 	virtualNodeExists, err = VirtualNodeExists(cp.NodeLister)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to check if cluster has virtual nodes")
-		return virtualNodeExists, provisionedSvcNodes, virtualPods, errors.Wrap(err, "failed to check if cluster has virtual nodes")
+		err = errors.Wrap(err, "failed to check if cluster has virtual nodes")
+		return
 	}
 
 	if virtualNodeExists {
@@ -2064,10 +2069,26 @@ func (cp *CloudProvider) getProvisionedNodesAndVirtualPodsOfService(ctx context.
 		virtualPods, err = cp.getVirtualPodsOfService(ctx, logger, service)
 		if err != nil {
 			logger.With(zap.Error(err)).Error("Failed to get virtual pods of the service")
-			return virtualNodeExists, provisionedSvcNodes, virtualPods, errors.Wrap(err, "failed to get virtual pods of the service")
+			err = errors.Wrap(err, "failed to get virtual pods of the service")
+			return
 		}
 	}
-	return virtualNodeExists, provisionedSvcNodes, virtualPods, nil
+
+	if isPodsAsBackendsMode(service) {
+		// Get pods scheduled on managed nodes (not virtual nodes) for the service
+		managedPods, err = cp.getManagedPodsOfService(ctx, logger, service)
+		if err != nil {
+			logger.With(zap.Error(err)).Error("Failed to get managed pods of the service")
+			err = errors.Wrap(err, "failed to get managed pods of the service")
+			return
+		}
+	}
+
+	return
+}
+
+func isPodsAsBackendsMode(service *v1.Service) bool {
+	return reflect.DeepEqual(service.Spec.AllocateLoadBalancerNodePorts, pointer.Bool(false)) && npnEnabled && !hasCustomNodePorts(service)
 }
 
 // getVirtualPodsOfService returns pods scheduled on virtual nodes fronted by the given Service
@@ -2113,6 +2134,51 @@ func (cp *CloudProvider) getVirtualPodsOfService(ctx context.Context, logger *za
 		}
 	}
 	return virtualPods, nil
+}
+
+// getManagedPodsOfService returns pods scheduled on virtual nodes fronted by the given Service
+func (cp *CloudProvider) getManagedPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service) ([]*v1.Pod, error) {
+	endpointSlices, err := cp.getEndpointSlicesForService(service)
+	if err != nil {
+		return nil, err
+	}
+
+	endpointSet := make(map[string]struct{})
+	var managedPods []*v1.Pod
+	for _, es := range endpointSlices {
+		for _, e := range es.Endpoints {
+			if e.TargetRef.Kind == "Pod" {
+				if _, exists := endpointSet[e.Addresses[0]]; exists {
+					continue
+				}
+
+				pod, err := cp.PodLister.Pods(es.Namespace).Get(e.TargetRef.Name)
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						logger.With(zap.Error(err)).Errorf("Pod object does not exist: %s", e.TargetRef.Name)
+						continue
+					}
+					return nil, err
+				}
+
+				node, err := cp.NodeLister.Get(pod.Spec.NodeName)
+				if err != nil {
+					if apierrors.IsNotFound(err) {
+						logger.With(zap.Error(err)).Errorf("Node object does not exist: %s", pod.Spec.NodeName)
+						continue
+					}
+					return nil, err
+				}
+
+				if !IsVirtualNode(node) {
+					managedPods = append(managedPods, pod)
+				}
+
+				endpointSet[e.Addresses[0]] = struct{}{}
+			}
+		}
+	}
+	return managedPods, nil
 }
 
 func (cp *CloudProvider) getEndpointSlicesForService(service *v1.Service) ([]*discovery.EndpointSlice, error) {
@@ -2201,9 +2267,9 @@ func (clb *CloudLoadBalancerProvider) checkPendingLBWorkRequests(ctx context.Con
 }
 
 // checkForNetworkPartition return true if network partition is present (all nodes are not ready) else throws an error if any
-func (cp *CloudProvider) checkForNetworkPartition(logger *zap.SugaredLogger, nodes []*v1.Node, virtualNodeExists bool) (isNetworkPartition bool, err error) {
+func (cp *CloudProvider) checkForNetworkPartition(logger *zap.SugaredLogger, nodes []*v1.Node, virtualNodeExists, isManagedPods bool) (isNetworkPartition bool, err error) {
 	// Service controller provided empty provisioned nodes list
-	if len(nodes) == 0 && !virtualNodeExists {
+	if len(nodes) == 0 && !virtualNodeExists && !isManagedPods {
 		// List all nodes in the cluster
 		nodeList, err := cp.NodeLister.List(labels.Everything())
 		if err != nil {
@@ -2369,4 +2435,13 @@ func (clb *CloudLoadBalancerProvider) SetLogger(logger *zap.SugaredLogger) {
 func (clb *CloudLoadBalancerProvider) SetLoggerWith(args ...interface{}) *zap.SugaredLogger {
 	clb.logger = clb.logger.With(args...)
 	return clb.logger
+}
+
+func hasCustomNodePorts(service *v1.Service) bool {
+	for _, port := range service.Spec.Ports {
+		if port.NodePort != 0 {
+			return true
+		}
+	}
+	return false
 }
