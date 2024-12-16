@@ -131,6 +131,10 @@ const (
 	// returns within this timeout period.
 	ServiceAnnotationLoadBalancerHealthCheckTimeout = "service.beta.kubernetes.io/oci-load-balancer-health-check-timeout"
 
+	// ServiceAnnotationLoadBalancerHealthCheckConfiguration is a Service annotation for
+	// specifying the health port, path and protocol. A health check is successful only if a successful reply is received.
+	ServiceAnnotationLoadBalancerHealthCheckConfiguration = "oci-load-balancer.oraclecloud.com/backend-health-check"
+
 	// ServiceAnnotationLoadBalancerBEProtocol is a Service annotation for specifying the
 	// load balancer listener backend protocol ("TCP", "HTTP").
 	// See: https://docs.cloud.oracle.com/iaas/Content/Balance/Concepts/balanceoverview.htm#concepts
@@ -208,6 +212,10 @@ const (
 	// ServiceAnnotationNetworkLoadBalancerHealthCheckTimeout is a Service annotation for
 	// The maximum time, in milliseconds, to wait for a reply to a health check. A health check is successful only if a reply returns within this timeout period.
 	ServiceAnnotationNetworkLoadBalancerHealthCheckTimeout = "oci-network-load-balancer.oraclecloud.com/health-check-timeout"
+
+	// ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration is a Service annotation for
+	// specifying the health port, path and protocol. A health check is successful only if a successful reply is received.
+	ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration = "oci-network-load-balancer.oraclecloud.com/backend-health-check"
 
 	// ServiceAnnotationNetworkLoadBalancerBackendPolicy is a Service annotation for
 	// The network load balancer policy for the backend set.
@@ -368,7 +376,7 @@ type LBSpec struct {
 }
 
 // NewLBSpec creates a LB Spec from a Kubernetes service and a slice of nodes.
-func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, virtualPods []*v1.Pod, subnets []string,
+func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, subnets []string,
 	sslConfig *SSLConfig, secListFactory securityListManagerFactory, versions *IpVersions, initialLBTags *config.InitialTags,
 	existingLB *client.GenericLoadBalancer, clusterCompartment string) (*LBSpec, error) {
 	if err := validateService(svc); err != nil {
@@ -408,7 +416,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
-	backendSets, err := getBackendSets(logger, svc, provisionedNodes, virtualPods, sslConfig, isPreserveSource, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
+	backendSets, err := getBackendSets(logger, svc, provisionedNodes, managedPods, virtualPods, sslConfig, isPreserveSource, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
 	if err != nil {
 		return nil, err
 	}
@@ -750,55 +758,61 @@ func getPorts(svc *v1.Service, listenerBackendIpVersion []string) (map[string]po
 	return ports, nil
 }
 
-func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, virtualPods []*v1.Pod, nodePort int32) ([]client.GenericBackend, []client.GenericBackend) {
+func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, servicePort *v1.ServicePort, isManagedPodsAsBackends bool) ([]client.GenericBackend, []client.GenericBackend) {
 	IPv4Backends := make([]client.GenericBackend, 0)
 	IPv6Backends := make([]client.GenericBackend, 0)
+	// Check if service required managed pods as backends and the cluster is NPN.
+	if !isManagedPodsAsBackends {
+		// Prepare provisioned nodes backends
+		for _, node := range provisionedNodes {
+			nodeAddressString := NodeInternalIP(node)
+			nodeAddressStringV4 := common.String(nodeAddressString.V4)
+			nodeAddressStringV6 := common.String(nodeAddressString.V6)
 
-	// Prepare provisioned nodes backends
-	for _, node := range provisionedNodes {
-		nodeAddressString := NodeInternalIP(node)
-		nodeAddressStringV4 := common.String(nodeAddressString.V4)
-		nodeAddressStringV6 := common.String(nodeAddressString.V6)
+			if *nodeAddressStringV6 == "" {
+				// Since Internal IP is optional for IPv6 populate external IP of node if present
+				externalNodeAddressString := NodeExternalIp(node)
+				nodeAddressStringV6 = common.String(externalNodeAddressString.V6)
+			}
 
-		if *nodeAddressStringV6 == "" {
-			// Since Internal IP is optional for IPv6 populate external IP of node if present
-			externalNodeAddressString := NodeExternalIp(node)
-			nodeAddressStringV6 = common.String(externalNodeAddressString.V6)
-		}
+			if *nodeAddressStringV4 == "" && *nodeAddressStringV6 == "" {
+				logger.Warnf("Node %q has an empty IP address'", node.Name)
+				continue
+			}
+			instanceID, err := MapProviderIDToResourceID(node.Spec.ProviderID)
+			if err != nil {
+				logger.Warnf("Node %q has an empty ProviderID.", node.Name)
+				continue
+			}
 
-		if *nodeAddressStringV4 == "" && *nodeAddressStringV6 == "" {
-			logger.Warnf("Node %q has an empty IP address'", node.Name)
-			continue
-		}
-		instanceID, err := MapProviderIDToResourceID(node.Spec.ProviderID)
-		if err != nil {
-			logger.Warnf("Node %q has an empty ProviderID.", node.Name)
-			continue
-		}
+			genericBackend := client.GenericBackend{
+				Port:   common.Int(int(servicePort.NodePort)),
+				Weight: common.Int(1),
+			}
 
-		genericBackend := client.GenericBackend{
-			Port:   common.Int(int(nodePort)),
-			Weight: common.Int(1),
-		}
-
-		if net2.IsIPv6String(*nodeAddressStringV6) {
-			// IPv6 IP
-			genericBackend.IpAddress = nodeAddressStringV6
-			genericBackend.TargetId = nil
-			IPv6Backends = append(IPv6Backends, genericBackend)
-		}
-		if net2.IsIPv4String(*nodeAddressStringV4) {
-			// IPv4 IP
-			genericBackend.IpAddress = nodeAddressStringV4
-			genericBackend.TargetId = &instanceID
-			IPv4Backends = append(IPv4Backends, genericBackend)
+			if net2.IsIPv6String(*nodeAddressStringV6) {
+				// IPv6 IP
+				genericBackend.IpAddress = nodeAddressStringV6
+				genericBackend.TargetId = nil
+				IPv6Backends = append(IPv6Backends, genericBackend)
+			}
+			if net2.IsIPv4String(*nodeAddressStringV4) {
+				// IPv4 IP
+				genericBackend.IpAddress = nodeAddressStringV4
+				genericBackend.TargetId = &instanceID
+				IPv4Backends = append(IPv4Backends, genericBackend)
+			}
 		}
 	}
 
+	virtualPodPort := servicePort.NodePort
+	if isManagedPodsAsBackends {
+		virtualPodPort = int32(servicePort.TargetPort.IntValue())
+	}
 	// Prepare virtual pods backends
 	for _, pod := range virtualPods {
 		genericPod := client.GenericBackend{
-			Port:   common.Int(int(nodePort)),
+			Port:   common.Int(int(virtualPodPort)),
 			Weight: common.Int(1),
 		}
 		if len(pod.Status.PodIPs) > 0 {
@@ -826,10 +840,42 @@ func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, virtual
 			}
 		}
 	}
+	// Prepare managed pods backends
+	for _, pod := range managedPods {
+		genericPod := client.GenericBackend{
+			// TODO: May need change?
+			Port:   common.Int(servicePort.TargetPort.IntValue()),
+			Weight: common.Int(1),
+		}
+		if len(pod.Status.PodIPs) > 0 {
+			for _, podIp := range pod.Status.PodIPs {
+				if podIp.IP == "" {
+					logger.Warnf("Managed pod %q has an empty Pod IP", pod.Name)
+					continue
+				}
+				//privateIpOcid, ok := pod.Annotations[PrivateIPOCIDAnnotation]
+				//if !ok {
+				//	logger.Warnf("Virtual pod %q has an empty PrivateIP OCID", pod.Name)
+				//	continue
+				//}
+				//logger.Infof("Managed pod ip: %q", podIp.IP)
+				if net2.IsIPv4String(podIp.IP) {
+					genericPod.IpAddress = common.String(podIp.IP)
+					genericPod.TargetId = nil
+					IPv4Backends = append(IPv4Backends, genericPod)
+				}
+				if net2.IsIPv6String(podIp.IP) {
+					genericPod.IpAddress = common.String(podIp.IP)
+					genericPod.TargetId = nil
+					IPv6Backends = append(IPv6Backends, genericPod)
+				}
+			}
+		}
+	}
 	return IPv4Backends, IPv6Backends
 }
 
-func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, virtualPods []*v1.Pod, sslCfg *SSLConfig, isPreserveSource bool, listenerBackendIpVersion []string) (map[string]client.GenericBackendSetDetails, error) {
+func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, sslCfg *SSLConfig, isPreserveSource bool, listenerBackendIpVersion []string) (map[string]client.GenericBackendSetDetails, error) {
 	backendSets := make(map[string]client.GenericBackendSetDetails)
 	loadbalancerPolicy, err := getLoadBalancerPolicy(svc)
 	if err != nil {
@@ -851,7 +897,7 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 		if err != nil {
 			return nil, err
 		}
-		backendsIPv4, backendsIPv6 := getBackends(logger, provisionedNodes, virtualPods, servicePort.NodePort)
+		backendsIPv4, backendsIPv6 := getBackends(logger, provisionedNodes, managedPods, virtualPods, &servicePort, isPodsAsBackendsMode(svc))
 		genericBackendSetDetails := client.GenericBackendSetDetails{
 			Name:             common.String(backendSetName),
 			Policy:           &loadbalancerPolicy,
@@ -874,6 +920,13 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 }
 
 func getHealthChecker(svc *v1.Service) (*client.GenericHealthChecker, error) {
+	var healthCheck = &client.GenericHealthChecker{
+		Protocol:         lbNodesHealthCheckProto,
+		IsForcePlainText: common.Bool(false),
+		UrlPath:          common.String(lbNodesHealthCheckPath),
+		Port:             common.Int(lbNodesHealthCheckPort),
+		ReturnCode:       common.Int(http.StatusOK),
+	}
 
 	retries, err := getHealthCheckRetries(svc)
 	if err != nil {
@@ -890,39 +943,46 @@ func getHealthChecker(svc *v1.Service) (*client.GenericHealthChecker, error) {
 		return nil, err
 	}
 
+	healthCheck.Retries = &retries
+	healthCheck.IntervalInMillis = &intervalInMillis
+	healthCheck.TimeoutInMillis = &timeoutInMillis
+
 	// Default healthcheck protocol is set to HTTP
-	isForcePlainText := false
+	healthCheck.IsForcePlainText = common.Bool(false)
 
 	// HTTP healthcheck for HTTPS backends
-	_, ok := svc.Annotations[ServiceAnnotationLoadBalancerTLSBackendSetSecret]
-	if ok {
-		isForcePlainText = true
+	if _, ok := svc.Annotations[ServiceAnnotationLoadBalancerTLSBackendSetSecret]; ok {
+		healthCheck.IsForcePlainText = common.Bool(true)
 	}
 
 	checkPath, checkPort := helper.GetServiceHealthCheckPathPort(svc)
 	if checkPath != "" {
-		return &client.GenericHealthChecker{
-			Protocol:         lbNodesHealthCheckProto,
-			IsForcePlainText: common.Bool(isForcePlainText),
-			UrlPath:          &checkPath,
-			Port:             common.Int(int(checkPort)),
-			Retries:          &retries,
-			IntervalInMillis: &intervalInMillis,
-			TimeoutInMillis:  &timeoutInMillis,
-			ReturnCode:       common.Int(http.StatusOK),
-		}, nil
+		healthCheck.Port = common.Int(int(checkPort))
 	}
 
-	return &client.GenericHealthChecker{
-		Protocol:         lbNodesHealthCheckProto,
-		IsForcePlainText: common.Bool(isForcePlainText),
-		UrlPath:          common.String(lbNodesHealthCheckPath),
-		Port:             common.Int(lbNodesHealthCheckPort),
-		Retries:          &retries,
-		IntervalInMillis: &intervalInMillis,
-		TimeoutInMillis:  &timeoutInMillis,
-		ReturnCode:       common.Int(http.StatusOK),
-	}, nil
+	if isPodsAsBackendsMode(svc) {
+		if config, configNLB := svc.Annotations[ServiceAnnotationLoadBalancerHealthCheckConfiguration], svc.Annotations[ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration]; config != "" || configNLB != "" {
+			if config == "" {
+				config = configNLB
+			}
+			healthCheck = &client.GenericHealthChecker{
+				Retries:          &retries,
+				IntervalInMillis: &intervalInMillis,
+				TimeoutInMillis:  &timeoutInMillis,
+			}
+			err = json.Unmarshal([]byte(config), healthCheck)
+			if err != nil {
+				return nil, err
+			}
+			if healthCheck.Protocol == "" || healthCheck.Port == nil {
+				return nil, errors.New("protocol and port are required JSON fields for health check configuration")
+			}
+		} else {
+			return nil, errors.New("Health check annotation is required when using Pods as Backends mode. i.e. AllocateLoadBalancerNodePorts is set to true.")
+		}
+	}
+
+	return healthCheck, nil
 }
 
 func getHealthCheckRetries(svc *v1.Service) (int, error) {
@@ -1601,7 +1661,7 @@ func updateSpecWithLbSubnets(spec *LBSpec, lbSubnetId []string) (*LBSpec, error)
 
 // getIpFamilies gets ip families based on the field set in the spec
 func getIpFamilies(svc *v1.Service) []string {
-	ipFamilies := []string{}
+	var ipFamilies []string
 	for _, ipFamily := range svc.Spec.IPFamilies {
 		ipFamilies = append(ipFamilies, string(ipFamily))
 	}

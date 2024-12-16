@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"k8s.io/utils/pointer"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -199,7 +201,7 @@ func (p *PodReadinessController) sync(key string) error {
 	lbProvider := p.getLoadBalancerProvider(lbType)
 	lbName := GetLoadBalancerName(service)
 
-	logger = logger.With("loadBalancerName", lbName)
+	logger = lbProvider.logger.With("loadBalancerName", lbName)
 	dimensionsMap := make(map[string]string)
 	metricName := ""
 	if lbType == NLB {
@@ -247,6 +249,10 @@ func (p *PodReadinessController) sync(key string) error {
 		podReadinessCondition := getPodReadinessCondition(service.Namespace, service.Name, backendSetName)
 		unhealthyBackendMap := getUnhealthyBackendMap(backendSetHealth, podReadinessCondition)
 
+		isManagedPodsAsBackends := reflect.DeepEqual(service.Spec.AllocateLoadBalancerNodePorts, pointer.Bool(false))
+		// Having managed pods as backends is only supported for NPN Clusters.
+		isManagedPodsAsBackends = isManagedPodsAsBackends && npnEnabled && !hasCustomNodePorts(service)
+
 		for _, pod := range pods {
 			if !hasReadinessGate(pod, podReadinessCondition) {
 				continue
@@ -261,6 +267,10 @@ func (p *PodReadinessController) sync(key string) error {
 
 				// Check if virtual pod
 				if IsVirtualNode(node) {
+					// Pod has not been added to the backend set yet
+					logger.Debugf("pod has not been added yet:%s", pod.Status.PodIP)
+					continue
+				} else if isManagedPodsAsBackends {
 					// Pod has not been added to the backend set yet
 					logger.Debugf("pod has not been added yet:%s", pod.Status.PodIP)
 					continue
@@ -456,9 +466,9 @@ func getUpdatedPodCondition(backendHealthMap map[string]v1.PodCondition, condTyp
 		return cond
 	}
 
-	// For virtual pods, if their corresponding backend is healthy they will not have an entry in the backendHealthMap,
+	// For virtual & managed pods, if their corresponding backend is healthy they will not have an entry in the backendHealthMap,
 	// we return a healthy condition
-	// For regular pods, since they are not added as backends, they will not have an entry in the backendHealthMap,
+	// For regular pods when not requesting managed pods as backends, since they are not added as backends, they will not have an entry in the backendHealthMap,
 	// we return a healthy condition
 	return v1.PodCondition{
 		Type:   condType,

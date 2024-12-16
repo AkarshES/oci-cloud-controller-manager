@@ -72,6 +72,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 		defaultSubnetOne string
 		defaultSubnetTwo string
 		nodes            []*v1.Node
+		managedPods      []*v1.Pod
 		virtualPods      []*v1.Pod
 		service          *v1.Service
 		expected         *LBSpec
@@ -3954,7 +3955,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				DefinedTags:  map[string]map[string]interface{}{"namespace": {"cluster": "CommonCluster", "owner": "CommonClusterOwner"}, "namespace2": {"cost": "staging"}},
 			},
 		},
-		"merge intial lb tags with common tags": {
+		"merge initial lb tags with common tags": {
 			defaultSubnetOne: "one",
 			defaultSubnetTwo: "two",
 			IpVersions: &IpVersions{
@@ -4726,7 +4727,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			if err != nil {
 				t.Error(err)
 			}
@@ -4746,6 +4747,7 @@ func TestNewLBSpecForTags(t *testing.T) {
 		defaultSubnetOne string
 		defaultSubnetTwo string
 		nodes            []*v1.Node
+		managedPods      []*v1.Pod
 		virtualPods      []*v1.Pod
 		service          *v1.Service
 		sslConfig        *SSLConfig
@@ -6051,7 +6053,7 @@ func TestNewLBSpecForTags(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6067,6 +6069,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 		defaultSubnetOne string
 		defaultSubnetTwo string
 		nodes            []*v1.Node
+		managedPods      []*v1.Pod
 		virtualPods      []*v1.Pod
 		service          *v1.Service
 		expected         *LBSpec
@@ -6235,7 +6238,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6252,6 +6255,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 		defaultSubnetOne string
 		defaultSubnetTwo string
 		nodes            []*v1.Node
+		managedPods      []*v1.Pod
 		virtualPods      []*v1.Pod
 		service          *v1.Service
 		//add cp or cp security list
@@ -6744,7 +6748,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 				slManagerFactory := func(mode string) securityListManager {
 					return newSecurityListManagerNOOP()
 				}
-				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
 			}
 			if err == nil || err.Error() != tc.expectedErrMsg {
 				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)
@@ -7073,8 +7077,9 @@ func TestRequiresFrontendNsg(t *testing.T) {
 func Test_getBackends(t *testing.T) {
 	type args struct {
 		nodes       []*v1.Node
+		managedPods []*v1.Pod
 		virtualPods []*v1.Pod
-		nodePort    int32
+		servicePort *v1.ServicePort
 	}
 	var tests = []struct {
 		name     string
@@ -7084,7 +7089,7 @@ func Test_getBackends(t *testing.T) {
 	}{
 		{
 			name:     "no nodes",
-			args:     args{nodePort: 80},
+			args:     args{servicePort: &v1.ServicePort{NodePort: 80}},
 			want:     []client.GenericBackend{},
 			wantIPv6: []client.GenericBackend{},
 		},
@@ -7118,7 +7123,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want: []client.GenericBackend{
 				{IpAddress: common.String("0.0.0.0"), Port: common.Int(80), Weight: common.Int(1), TargetId: &testNodeString},
@@ -7150,7 +7155,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want:     []client.GenericBackend{},
 			wantIPv6: []client.GenericBackend{},
@@ -7210,7 +7215,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want: []client.GenericBackend{
 				{IpAddress: common.String("0.0.0.0"), Port: common.Int(80), Weight: common.Int(1), TargetId: &testNodeString},
@@ -7261,7 +7266,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want:     []client.GenericBackend{},
 			wantIPv6: []client.GenericBackend{},
@@ -7341,7 +7346,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want: []client.GenericBackend{
 				{IpAddress: common.String("0.0.0.0"), Port: common.Int(80), Weight: common.Int(1), TargetId: &testNodeString},
@@ -7388,7 +7393,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want: []client.GenericBackend{
 				{IpAddress: common.String("0.0.0.0"), Port: common.Int(80), Weight: common.Int(1), TargetId: common.String("privateIpOcid")},
@@ -7480,7 +7485,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want: []client.GenericBackend{
 				{IpAddress: common.String("0.0.0.0"), Port: common.Int(80), Weight: common.Int(1), TargetId: &testNodeString},
@@ -7567,7 +7572,7 @@ func Test_getBackends(t *testing.T) {
 						},
 					},
 				},
-				nodePort: 80,
+				servicePort: &v1.ServicePort{NodePort: 80},
 			},
 			want: []client.GenericBackend{},
 			wantIPv6: []client.GenericBackend{
@@ -7579,7 +7584,7 @@ func Test_getBackends(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := zap.L()
-			gotIpv4, gotIpv6 := getBackends(logger.Sugar(), tt.args.nodes, tt.args.virtualPods, tt.args.nodePort)
+			gotIpv4, gotIpv6 := getBackends(logger.Sugar(), tt.args.nodes, tt.args.managedPods, tt.args.virtualPods, tt.args.servicePort, false)
 			if !reflect.DeepEqual(gotIpv4, tt.want) {
 				t.Errorf("getBackends() = %+v, want %+v", gotIpv4, tt.want)
 			}
@@ -10622,6 +10627,7 @@ func Test_getBackendSets(t *testing.T) {
 	testCases := map[string]struct {
 		service                  *v1.Service
 		provisionedNodes         []*v1.Node
+		managedPods              []*v1.Pod
 		virtualPods              []*v1.Pod
 		sslCfg                   *SSLConfig
 		isPreserveSource         bool
@@ -11727,7 +11733,7 @@ func Test_getBackendSets(t *testing.T) {
 	for name, tc := range testCases {
 		logger := zap.L()
 		t.Run(name, func(t *testing.T) {
-			gotBackendSets, err := getBackendSets(logger.Sugar(), tc.service, tc.provisionedNodes, tc.virtualPods, tc.sslCfg, tc.isPreserveSource, tc.listenerBackendIpVersion)
+			gotBackendSets, err := getBackendSets(logger.Sugar(), tc.service, tc.provisionedNodes, tc.managedPods, tc.virtualPods, tc.sslCfg, tc.isPreserveSource, tc.listenerBackendIpVersion)
 			if tc.err != nil && err == nil {
 				t.Errorf("Expected  \n%+v\nbut got\n%+v", tc.err, err)
 			}
@@ -12001,6 +12007,81 @@ func Test_getLoadBalancerSourceRanges(t *testing.T) {
 				if !contains(tt.sourceCIDRs, cidr) {
 					t.Errorf("getLoadBalancerSourceRanges() = %+v, want %+v", result, tt.sourceCIDRs)
 				}
+			}
+		})
+	}
+}
+func Test_unmarshalJSON(t *testing.T) {
+	var tests = []struct {
+		name                         string
+		configJsonString             string
+		initialGenericHealthChecker  *client.GenericHealthChecker
+		expectedGenericHealthChecker *client.GenericHealthChecker
+		error                        error
+	}{
+		{
+			name:                        "only required fields",
+			configJsonString:            "{\"protocol\": \"http\", \"port\": 80}",
+			initialGenericHealthChecker: &client.GenericHealthChecker{},
+			expectedGenericHealthChecker: &client.GenericHealthChecker{
+				Protocol: "http",
+				Port:     pointer.Int(80),
+			},
+		},
+		{
+			name:                        "more than required fields",
+			configJsonString:            "{\"protocol\": \"http\", \"port\": 80, \"urlPath\": \"/healthz\", \"returnCode\": 200}",
+			initialGenericHealthChecker: &client.GenericHealthChecker{},
+			expectedGenericHealthChecker: &client.GenericHealthChecker{
+				Protocol:   "http",
+				Port:       pointer.Int(80),
+				UrlPath:    pointer.String("/healthz"),
+				ReturnCode: pointer.Int(200),
+			},
+		},
+		{
+			name:                        "invalid JSON",
+			configJsonString:            "{\"protocol\": \"http\", \"port\": \"80\", \"urlPath\": \"/healthz\", \"returnCode\": 200}",
+			initialGenericHealthChecker: &client.GenericHealthChecker{},
+			expectedGenericHealthChecker: &client.GenericHealthChecker{
+				Protocol:   "http",
+				Port:       pointer.Int(80),
+				UrlPath:    pointer.String("/healthz"),
+				ReturnCode: pointer.Int(200),
+			},
+			error: errors.New("invalid JSON, some error"),
+		},
+		{
+			name:                        "protocol tcp",
+			configJsonString:            "{\"protocol\": \"tcp\", \"port\": 80}",
+			initialGenericHealthChecker: &client.GenericHealthChecker{},
+			expectedGenericHealthChecker: &client.GenericHealthChecker{
+				Protocol: "tcp",
+				Port:     pointer.Int(80),
+			},
+		},
+		{
+			name:             "protocol tcp expected to fail",
+			configJsonString: "{\"protocol\": \"tcp\", \"port\": 80}",
+			initialGenericHealthChecker: &client.GenericHealthChecker{
+				UrlPath: pointer.String("/healthz"),
+			},
+			expectedGenericHealthChecker: &client.GenericHealthChecker{
+				Protocol: "tcp",
+				Port:     pointer.Int(80),
+			},
+			error: errors.New("some error"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.initialGenericHealthChecker
+			err := json.Unmarshal([]byte(tt.configJsonString), &result)
+			if err != nil && tt.error == nil {
+				t.Errorf("Got error = %+v, want %+v", err, tt.error)
+			}
+			if err == nil && tt.error == nil && !reflect.DeepEqual(result, tt.expectedGenericHealthChecker) {
+				t.Errorf("Unmarshalled value = %+v, want %+v", result, tt.expectedGenericHealthChecker)
 			}
 		})
 	}
