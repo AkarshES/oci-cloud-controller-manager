@@ -27,16 +27,16 @@ type GenericSessionPersistenceConfiguration struct {
 }
 
 type GenericHealthChecker struct {
-	Protocol          string
-	IsForcePlainText  *bool
-	Port              *int
-	UrlPath           *string
-	Retries           *int
-	TimeoutInMillis   *int
-	IntervalInMillis  *int
-	ResponseBodyRegex *string
+	Protocol          string  `json:"protocol,required"`
+	IsForcePlainText  *bool   `json:"isForcePlainText,omitempty"`
+	Port              *int    `json:"port,required"`
+	UrlPath           *string `json:"urlPath,omitempty"`
+	Retries           *int    `json:"retries,omitempty"`
+	TimeoutInMillis   *int    `json:"timeoutInMillis,omitempty"`
+	IntervalInMillis  *int    `json:"intervalInMillis,omitempty"`
+	ResponseBodyRegex *string `json:"responseBodyRegex,omitempty"`
 	// Only needed for NLB
-	ReturnCode *int
+	ReturnCode *int `json:"returnCode,omitempty"`
 }
 
 type GenericBackend struct {
