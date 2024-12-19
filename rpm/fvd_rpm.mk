@@ -6,7 +6,7 @@ WORK_DIR 		 ?= ~/sparta/input
 RPM_INSTALL_PATH ?= "/usr/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/"
 FVD_BINARY_NAME ?= "oci-flexvolume-driver"
 RPM_VERSION ?= $(subst -,_,$(VERSION))
-
+RELEASE ?= 1
 
 .PHONY: PACKAGE_TARGET
 PKG_TARGET := $(WORK_DIR)/rpmbuild/RPMS/$(BLD_ARCH)/$(NAME)-$(RPM_VERSION).$(BLD_ARCH).rpm
@@ -28,7 +28,7 @@ $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
 		--define "_version $(RPM_VERSION)" \
 		--define "_topdir $(WORK_DIR)/rpmbuild" \
 		--define "_flexvolume_install_path $(RPM_INSTALL_PATH)" \
-		--define "_release 1" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
+		--define "_release $(RELEASE)" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
 
 $(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
 	mkdir -p $(dir $@)
