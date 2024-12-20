@@ -722,7 +722,7 @@ func (f *Framework) Initialize() {
 
 		Logf("OkeClusterK8sVersion=%v", f.OkeClusterK8sVersion)
 		Logf("OkeNodePoolK8sVersion=%v", f.OkeNodePoolK8sVersion)
-		if compareVersions(f.OkeClusterK8sVersion, f.OkeNodePoolK8sVersion) < 0 {
+		if CompareVersions(f.OkeClusterK8sVersion, f.OkeNodePoolK8sVersion) < 0 {
 			Failf("Cluster K8s Version is less than Nodepool K8s version")
 		}
 
