@@ -1,4 +1,4 @@
-// Copyright 2018 Oracle and/or its affiliates. All rights reserved.
+// Copyright (C) 2018, 2025, Oracle and/or its affiliates.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
 	"github.com/oracle/oci-go-sdk/v65/compartments"
@@ -256,11 +257,11 @@ func setupBaseClient(log *zap.SugaredLogger, client *common.BaseClient, signer c
 }
 
 // New constructs an OCI API client.
-func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimiter *RateLimiter, targetTenancyID string) (Interface, error) {
+func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimiter *RateLimiter, cloudProviderConfig *providercfg.Config) (Interface, error) {
 
 	signer := common.RequestSigner(cp, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
 	interceptor := func(r *http.Request) error {
-		r.Header.Set("x-cross-tenancy-request", targetTenancyID)
+		r.Header.Set("x-cross-tenancy-request", cloudProviderConfig.Auth.TenancyID)
 		return nil
 	}
 
@@ -376,23 +377,15 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		RetryPolicy: newRetryPolicy(),
 	}
 
-	loadbalancer := loadbalancerClientStruct{
-		loadbalancer:    lb,
-		requestMetadata: requestMetadata,
-		rateLimiter:     *opRateLimiter,
-	}
-	networkloadbalancer := networkLoadbalancer{
-		networkloadbalancer: nlb,
-		requestMetadata:     requestMetadata,
-		rateLimiter:         *opRateLimiter,
-	}
+	loadbalancer := NewLBClient(lb, requestMetadata, opRateLimiter)
+	networkloadbalancer := NewNLBClient(nlb, requestMetadata, opRateLimiter)
 
 	c := &client{
 		compute:             &compute,
 		network:             &network,
 		identity:            &identity,
-		loadbalancer:        &loadbalancer,
-		networkloadbalancer: &networkloadbalancer,
+		loadbalancer:        loadbalancer,
+		networkloadbalancer: networkloadbalancer,
 		bs:                  &bs,
 		filestorage:         &fss,
 		containerEngine:     &containerEngine,
