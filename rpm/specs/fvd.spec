@@ -10,7 +10,7 @@ Source0:        %{name}-%{version}.tar.gz
 # Use passed value as an argument or default to a standard path
 # This will dictate where the binary should be installed into the user's system
 # Default path can be overridden with arguments
-%{!?_flexvolume_install_path: %define _flexvolume_install_path /usr/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/}
+%{!?_flexvolume_install_path: %define _flexvolume_install_path /etc/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/}
 
 %description
 OCI's flex volume driver binary
