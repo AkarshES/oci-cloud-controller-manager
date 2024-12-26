@@ -15,6 +15,10 @@
 # temp directory for which we pull repos to.
 export TMP_DEP_DIR		:= ${PWD}/temp_repos
 
+CWD := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+include rpm/fvd_rpm.mk
+
 # ioke/screts repository settings (clone-secrets))
 SECRETS_REPO	:= ssh://git@bitbucket.oci.oraclecorp.com:7999/okei/secrets.git
 
@@ -243,3 +247,10 @@ install-controller-runtime:
 .PHONY: npn-generate
 npn-generate:
 	$(GOPATH)/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./api/..."
+
+.PHONY: rpm-test
+rpm-test:
+	ls -lart
+	pwd
+	echo "Test"
+	find . -print | grep -v "vendor"
