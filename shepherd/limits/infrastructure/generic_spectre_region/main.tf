@@ -1,5 +1,5 @@
 locals {
-  pop_version = "78e6f5721b6_7"
+  pop_version = "2888495b32b_6"
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
   override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
