@@ -6,7 +6,7 @@ module "ad_map" {
 
 locals {
   physical_ad1                     = module.ad_map.physical_ad1
-  image_validator_count            = local.artifact_versions["image-release-validator-ccm-csi"].version == "skip" ? 0 : 1
+  image_validator_count            = local.artifact_versions["release-validator-ccm-csi"].version == "skip" ? 0 : 1
 }
 
 module "oke-cpo-images" {
@@ -25,7 +25,7 @@ module "odo_deployment_ccm_csi" {
   source = "./shared_modules/odo_deployment"
   image_validator_count = local.image_validator_count
 
-  artifact_version = local.artifact_versions["image-release-validator-ccm-csi"]
+  artifact_version = local.artifact_versions["release-validator-ccm-csi"]
   apps             = [
     {
       ad = local.physical_ad1.name
