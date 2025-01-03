@@ -1,5 +1,5 @@
 locals {
-  pop_version = "fe5c7fd6716_6"
+  pop_version = "78e6f5721b6_7"
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
   override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
@@ -40,7 +40,7 @@ module "odo_configuration_ccm_csi_image_push" {
 
   realm                   = lower(local.execution_target.region.realm)
   stage                   = local.execution_target.additional_locals.stage
-  artifact_set_identifier = "image-release-validator-ccm-csi"
+  artifact_set_identifier = "release-validator-ccm-csi"
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
   physical_ad1            = module.ad_map.physical_ad1.name
@@ -54,7 +54,7 @@ module "odo_configuration_ccm_csi_infra" {
 
   realm                   = lower(local.execution_target.region.realm)
   stage                   = local.execution_target.additional_locals.stage
-  artifact_set_identifier = "infra-release-validator-ccm-csi"
+  artifact_set_identifier = "release-validator-ccm-csi"
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
   physical_ad1            = module.ad_map.physical_ad1.name
@@ -82,10 +82,10 @@ module "odo_configuration_ccm_csi_infra" {
 }
 
 module "odo_deployment_ccm_csi_infra" {
-  source = "./shared_modules/odo_deployment"
+  source = "./odo_deployment"
 
   artifact_version = {
-    uri = "infra-release-validator-ccm-csi-${local.pop_version}.tar.gz"
+    uri = "release-validator-ccm-csi-${local.pop_version}.tar.gz"
     type = "pop"
     version = local.pop_version
   }

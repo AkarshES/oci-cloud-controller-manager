@@ -16,9 +16,7 @@ JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
-# Check if REGIONAL_IMAGE_LIST_1 is not empty
 if [ -n "$REGIONAL_IMAGE_LIST_1" ]; then
-  # Logic from Script 1
   IFS=',' read -r -a regional_image_list_1 <<< "$REGIONAL_IMAGE_LIST_1"
   IFS=',' read -r -a regional_image_list_2 <<< "$REGIONAL_IMAGE_LIST_2"
 
@@ -64,7 +62,6 @@ if [ -n "$REGIONAL_IMAGE_LIST_1" ]; then
     echo "All images are present in OCIR."
   fi
 else
-  # Logic from Script 2
   fetch_repository_tags() {
     local repo_name=$1
     oci artifacts container image list \

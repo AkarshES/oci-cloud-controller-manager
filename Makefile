@@ -232,4 +232,4 @@ validate-mappings:
 
 .PHONY: clean-pop
 clean:
-	rm -rf image-release-validator-pop/out image-release-validator-pop/image_versions.json
+	rm -rf release-validator-pop/out release-validator-pop/image_versions.json
