@@ -1,4 +1,6 @@
 resource "odo_deployment" "deployment" {
+  count = var.image_validator_count
+
   ad = var.apps[0].ad
   alias = var.apps[0].alias
   artifact {
