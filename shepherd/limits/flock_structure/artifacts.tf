@@ -21,20 +21,11 @@ resource "shepherd_artifacts" "artifacts" {
   }
 }
 
-resource "shepherd_artifacts" "pop_artifacts_infra" {
+resource "shepherd_artifacts" "pop_artifacts" {
   artifact {
-    name        = "infra-release-validator-ccm-csi"
+    name        = "release-validator-ccm-csi"
     type        = "pop"
-    location    = "infra-release-validator-ccm-csi"
-    description = "POP to validate images exist in OCIR"
-  }
-}
-
-resource "shepherd_artifacts" "pop_artifacts_app" {
-  artifact {
-    name        = "image-release-validator-ccm-csi"
-    type        = "pop"
-    location    = "image-release-validator-ccm-csi"
+    location    = "release-validator-ccm-csi"
     description = "POP to validate images exist in OCIR"
   }
 }

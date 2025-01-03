@@ -1,5 +1,5 @@
 locals {
-  pop_version = "fe5c7fd6716_6"
+  pop_version = "78e6f5721b6_7"
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
   override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
@@ -82,10 +82,10 @@ module "odo_configuration_ccm_csi_infra" {
 }
 
 module "odo_deployment_ccm_csi_infra" {
-  source = "./shared_modules/odo_deployment"
+  source = "./odo_deployment"
 
   artifact_version = {
-    uri = "infra-release-validator-ccm-csi-${local.pop_version}.tar.gz"
+    uri = "image-release-validator-ccm-csi-${local.pop_version}.tar.gz"
     type = "pop"
     version = local.pop_version
   }
