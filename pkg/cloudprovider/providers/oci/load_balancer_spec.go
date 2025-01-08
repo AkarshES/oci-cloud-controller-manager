@@ -167,6 +167,9 @@ const (
 	// exchange for Workload Identity Token which can then be used for LB/NLB Client to communicate to OCI LB/NLB API.
 	ServiceAnnotationServiceAccountName = "oci.oraclecloud.com/workload-service-account"
 
+	// ServiceAnnotationOpcParentRptUrl is a service annotation to specify opc-parent-rpt-url in order to implement resource principal v3
+	ServiceAnnotationOpcParentRptUrl = "oci.oraclecloud.com/opc-parent-rpt-url"
+
 	// ServiceAnnotationLoadBalancerSecurityRuleManagementMode is a Service annotation for
 	// specifying the security rule management mode ("SL-All", "SL-Frontend", "NSG", "None") that configures how security lists are managed by the CCM
 	ServiceAnnotationLoadBalancerSecurityRuleManagementMode = "oci.oraclecloud.com/security-rule-management-mode"

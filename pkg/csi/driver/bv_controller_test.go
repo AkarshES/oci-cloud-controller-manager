@@ -22,7 +22,6 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	authv1 "k8s.io/api/authentication/v1"
 	kubeAPI "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -177,7 +176,7 @@ func (MockOCIClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }
 
-func (MockOCIClient) LoadBalancer(logger *zap.SugaredLogger, lbType string, tenancy string, token *authv1.TokenRequest) client.GenericLoadBalancerInterface {
+func (MockOCIClient) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociConfig *client.OCIClientConfig) client.GenericLoadBalancerInterface {
 	return &MockLoadBalancerClient{}
 }
 
@@ -599,7 +598,7 @@ func (c *MockLoadBalancerClient) UpdateLoadBalancer(ctx context.Context, lbID st
 }
 
 // Networking mocks client VirtualNetwork implementation.
-func (p *MockProvisionerClient) LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) client.GenericLoadBalancerInterface {
+func (p *MockProvisionerClient) LoadBalancer(*zap.SugaredLogger, string, *client.OCIClientConfig) client.GenericLoadBalancerInterface {
 	return &MockLoadBalancerClient{}
 }
 
