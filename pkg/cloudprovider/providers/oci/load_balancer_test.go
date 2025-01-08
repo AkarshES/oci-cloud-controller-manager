@@ -889,6 +889,24 @@ func TestCloudProvider_getLoadBalancerProvider(t *testing.T) {
 			wantLbType: "*oci.MockNetworkLoadBalancerClient",
 			cp:         cp,
 		},
+
+		"Resource Principal v3": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "testservice-nlb",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:   "nlb",
+						ServiceAnnotationServiceAccountName: `sa`,
+						ServiceAnnotationOpcParentRptUrl:    "https://containerengine.us-ashburn-1.oci.oraclecloud.com/20180828/clusterNamespaces/...",
+					},
+				},
+			},
+			wantErr:    false,
+			wantLbType: "*oci.MockNetworkLoadBalancerClient",
+			cp:         cp,
+		},
 		"Fail to Get Load Balancer Provider type LB with Workload Identity RP when SA does not exist": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{

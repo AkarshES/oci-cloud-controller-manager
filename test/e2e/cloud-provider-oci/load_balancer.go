@@ -166,7 +166,7 @@ var _ = Describe("Service [Slow]", func() {
 							sharedfw.Failf("Compartment Id undefined.")
 						}
 						lbType := strings.TrimSuffix(test.lbType, "-wris")
-						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 						sharedfw.ExpectNoError(err)
 
 						if !reflect.DeepEqual(loadBalancer.DefinedTags, testDefinedTags) {
@@ -195,7 +195,7 @@ var _ = Describe("Service [Slow]", func() {
 						if strings.HasSuffix(test.lbType, "-wris") {
 							lbType = strings.TrimSuffix(test.lbType, "-wris")
 						}
-						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 						sharedfw.ExpectNoError(err)
 						sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
 						if setupF.AddOkeSystemTags && !sharedfw.HasOkeSystemTags(loadBalancer.SystemTags) {
@@ -420,7 +420,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 				lbType := strings.TrimSuffix(test.lbType, "-wris")
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 
 				frontendNsgId := loadBalancer.NetworkSecurityGroupIds[0]
@@ -855,7 +855,7 @@ var _ = Describe("CipherSuite tests Loadbalancer TLS", func() {
 			tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
 			sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
 
-			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 			sharedfw.ExpectNoError(err)
 
 			err = f.WaitForLoadBalancerSSLConfigurationChange(loadBalancer, tcpService)
@@ -1085,7 +1085,7 @@ var _ = Describe("BackendSet only enabled TLS - NodePool Scaling", func() {
 
 			sharedfw.WaitReadySchedulableNodesOrDie(f.ClientSet, newNodeCount)
 
-			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 			sharedfw.ExpectNoError(err)
 
 			By("waiting for the LB backends to match nodes on cluster")
@@ -1300,7 +1300,7 @@ var _ = Describe("GRPC Listeners only enabled TLS", func() {
 			} else {
 				sharedfw.Failf("Compartment Id undefined.")
 			}
-			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), cloudprovider.LB, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), cloudprovider.LB, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 			sharedfw.ExpectNoError(err)
 			protocol := *loadBalancer.Listeners["GRPC-443"].Protocol
 			Expect(protocol == cloudprovider.ProtocolGrpc).To(BeTrue())
@@ -1515,7 +1515,7 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 				} else {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 
 				By("Validate isPreserveSource in the backend set is as expected")
@@ -1653,7 +1653,7 @@ var _ = Describe("LB Properties", func() {
 				} else {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				err = f.VerifyHealthCheckConfig(*loadBalancer.Id, 1, 1000, test.CreateInterval, test.lbType)
 				sharedfw.ExpectNoError(err)
@@ -1803,7 +1803,7 @@ var _ = Describe("LB Properties", func() {
 				lbName := cloudprovider.GetLoadBalancerName(tcpService)
 				ctx := context.TODO()
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				sharedfw.Logf("Actual Load Balancer Shape: %s, Expected shape: %s", *loadBalancer.ShapeName, lbShapeTest.initialShape)
 				Expect(strings.Compare(*loadBalancer.ShapeName, lbShapeTest.initialShape) == 0).To(BeTrue())
@@ -1889,7 +1889,7 @@ var _ = Describe("LB Properties", func() {
 			} else {
 				sharedfw.Failf("Compartment Id undefined.")
 			}
-			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 			sharedfw.ExpectNoError(err)
 			err = f.VerifyLoadBalancerConnectionIdleTimeout(*loadBalancer.Id, 500)
 			sharedfw.ExpectNoError(err)
@@ -2018,7 +2018,7 @@ var _ = Describe("LB Properties", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				By("waiting upto 5m0s to verify whether LB has been created with provided initial NSGs through config")
 				err = f.WaitForLoadBalancerNSGChange(loadBalancer, []string{nsgIds}, test.lbtype)
@@ -2147,7 +2147,7 @@ var _ = Describe("LB Properties", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 
 				err = f.VerifyLoadBalancerPolicy(*loadBalancer.Id, test.CreationAnnotations[test.PolicyAnnotation], test.lbType)
@@ -2291,7 +2291,7 @@ var _ = Describe("LB Properties", func() {
 					}
 
 					lbType := strings.TrimSuffix(test.lbType, "-wris")
-					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 					sharedfw.ExpectNoError(err)
 					By("waiting upto 5m0s to verify whether LB has been created with public reservedIP")
 
@@ -2405,7 +2405,7 @@ var _ = Describe("LB Properties", func() {
 				} else {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				err = f.VerifyProxyProtocolV2(*loadBalancer.Id, test.lbType, true)
 				sharedfw.ExpectNoError(err)
@@ -2647,7 +2647,7 @@ var _ = Describe("SKE - scale virtual pods", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 
 				By("waiting for the LB backends to match virtual pods")
@@ -3129,7 +3129,7 @@ var _ = Describe("SKE - LB Properties", func() {
 				} else {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				err = f.VerifyHealthCheckConfig(*loadBalancer.Id, 1, 1000, test.CreateInterval, test.lbType)
 				sharedfw.ExpectNoError(err)
@@ -3276,7 +3276,7 @@ var _ = Describe("SKE - LB Properties", func() {
 				lbName := cloudprovider.GetLoadBalancerName(tcpService)
 				ctx := context.TODO()
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				sharedfw.Logf("Actual Load Balancer Shape: %s, Expected shape: %s", *loadBalancer.ShapeName, lbShapeTest.initialShape)
 				Expect(strings.Compare(*loadBalancer.ShapeName, lbShapeTest.initialShape) == 0).To(BeTrue())
@@ -3359,7 +3359,7 @@ var _ = Describe("SKE - LB Properties", func() {
 			} else {
 				sharedfw.Failf("Compartment Id undefined.")
 			}
-			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 			sharedfw.ExpectNoError(err)
 			err = f.VerifyLoadBalancerConnectionIdleTimeout(*loadBalancer.Id, 500)
 			sharedfw.ExpectNoError(err)
@@ -3485,7 +3485,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				By("waiting upto 5m0s to verify whether LB has been created with provided initial NSGs through config")
 				err = f.WaitForLoadBalancerNSGChange(loadBalancer, []string{nsgIds}, test.lbtype)
@@ -3601,7 +3601,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 
 				err = f.VerifyLoadBalancerPolicy(*loadBalancer.Id, test.CreationAnnotations[test.PolicyAnnotation], test.lbType)
@@ -3697,7 +3697,7 @@ var _ = Describe("SKE - LB Properties", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 				By("waiting upto 5m0s to verify whether LB has been created with public reservedIP")
 
@@ -3836,7 +3836,7 @@ var _ = Describe("Mixed Cluster - scale managed and virtual pods", func() {
 					sharedfw.Failf("Compartment Id undefined.")
 				}
 
-				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, "", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
 
 				By("waiting for the LB backends to match pods on mixed cluster")

@@ -119,6 +119,7 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 	lbType := getLoadBalancerType(svc)
 	name := GetLoadBalancerName(svc)
 	var serviceAccountToken *authv1.TokenRequest
+	var opcParentRptUrl string
 	var err error
 
 	logger := cp.logger.With("loadBalancerName", name, "loadBalancerType", lbType, "serviceName", svc.Name, "serviceUid", svc.UID)
@@ -134,16 +135,26 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 		logger = logger.With("serviceAccount", sa, "nameSpace", svc.Namespace)
 	}
 
-	lbClient := cp.client.LoadBalancer(logger, lbType, cp.config.Auth.TenancyID, serviceAccountToken)
+	if s, ok := svc.Annotations[ServiceAnnotationOpcParentRptUrl]; ok {
+		opcParentRptUrl = s
+	}
+
+	ociClientConfig := &client.OCIClientConfig{
+		SaToken:      serviceAccountToken,
+		TenancyId:    cp.config.Auth.TenancyID,
+		ParentRptURL: opcParentRptUrl,
+	}
+	lbClient := cp.client.LoadBalancer(logger, lbType, ociClientConfig)
 	if lbClient == nil {
 		return CloudLoadBalancerProvider{}, errors.New(fmt.Sprintf("Error creating Workload Identity based %s Client. Perhaps you are using an OKE BASIC_CLUSTER?", lbType))
 	}
-	ociClientConfig := &client.OCIClientConfig{
-		SaToken:   serviceAccountToken,
-		TenancyId: cp.config.Auth.TenancyID,
+	cpClient := cp.client.NewWorkloadIdentityClient(logger, lbType, ociClientConfig)
+	if cpClient == nil {
+		return CloudLoadBalancerProvider{}, errors.New(fmt.Sprintf("Error creating Workload Identity based Clients. Perhaps you are using an OKE BASIC_CLUSTER?"))
 	}
+
 	return CloudLoadBalancerProvider{
-		client:       cp.client.NewWorkloadIdentityClient(logger, lbType, ociClientConfig),
+		client:       cpClient,
 		lbClient:     lbClient,
 		logger:       logger,
 		metricPusher: cp.metricPusher,
@@ -773,7 +784,6 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 			dimensionsMap[metrics.ComponentDimension] = nsgMetricDimension
 			dimensionsMap[metrics.ResourceOCIDDimension] = *resp.Id
 			metrics.SendMetricData(cp.metricPusher, getMetric(util.NSGType, Create), time.Since(startTime).Seconds(), dimensionsMap)
-
 		}
 		if len(backendNsgs) > 0 {
 			for _, nsg := range backendNsgs {
