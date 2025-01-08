@@ -890,7 +890,7 @@ func (j *ServiceTestJig) TestHTTPHealthCheckNodePort(host string, port int, requ
 
 func (f *CloudProviderFramework) VerifyHealthCheckConfig(loadBalancerId string, retries, timeout, interval int, lbtype string) error {
 	for start := time.Now(); time.Since(start) < 5*time.Minute; time.Sleep(5 * time.Second) {
-		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
 		if err != nil {
 			return err
 		}
@@ -909,7 +909,7 @@ func (f *CloudProviderFramework) VerifyHealthCheckConfig(loadBalancerId string, 
 
 func (f *CloudProviderFramework) VerifyProxyProtocolV2(loadBalancerId string, lbtype string, expectPpv2 bool) error {
 	for start := time.Now(); time.Since(start) < 5*time.Minute; time.Sleep(5 * time.Second) {
-		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
 		if err != nil {
 			return err
 		}
@@ -945,7 +945,7 @@ func testProxyProtocolV2(loadBalancer *client.GenericLoadBalancer, lbtype string
 // to be the same as the spec
 func (f *CloudProviderFramework) WaitForLoadBalancerNSGChange(lb *client.GenericLoadBalancer, nsgIds []string, lbtype string) error {
 	condition := func() (bool, error) {
-		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, "", nil).GetLoadBalancer(context.TODO(), *lb.Id)
+		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, nil).GetLoadBalancer(context.TODO(), *lb.Id)
 		if err != nil {
 			return false, err
 		}
@@ -963,7 +963,7 @@ func (f *CloudProviderFramework) WaitForLoadBalancerNSGChange(lb *client.Generic
 // WaitForLoadBalancerSSLConfigurationChange polls for validating the associated Listener SSL config to be the same as the spec
 func (f *CloudProviderFramework) WaitForLoadBalancerSSLConfigurationChange(lb *client.GenericLoadBalancer, service *v1.Service) error {
 	condition := func() (bool, error) {
-		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancer(context.TODO(), *lb.Id)
+		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancer(context.TODO(), *lb.Id)
 		if err != nil {
 			return false, err
 		}
@@ -980,7 +980,7 @@ func (f *CloudProviderFramework) WaitForLoadBalancerSSLConfigurationChange(lb *c
 func (f *CloudProviderFramework) WaitForLoadBalancerShapeChange(lb *client.GenericLoadBalancer, shape, fMin, fMax string) error {
 	condition := func() (bool, error) {
 
-		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancer(context.TODO(), *lb.Id)
+		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancer(context.TODO(), *lb.Id)
 		if err != nil {
 			return false, err
 		}
@@ -1023,7 +1023,7 @@ func testHealthCheckConfig(loadBalancer *client.GenericLoadBalancer, retries int
 
 func (f *CloudProviderFramework) VerifyLoadBalancerConnectionIdleTimeout(loadBalancerId string, connectionIdleTimeout int) error {
 	for start := time.Now(); time.Since(start) < 5*time.Minute; time.Sleep(2 * time.Second) {
-		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
 		if err != nil {
 			return err
 		}
@@ -1060,7 +1060,7 @@ func (f *CloudProviderFramework) VerifyLoadBalancerBackendSetsWithVirtualPods(se
 		return err
 	}
 	for start := time.Now(); time.Since(start) < 5*time.Minute; time.Sleep(5 * time.Second) {
-		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
 		if err != nil {
 			return err
 		}
@@ -1079,7 +1079,7 @@ func (f *CloudProviderFramework) VerifyLoadBalancerBackendSetsWithPodsOnMixedClu
 		return err
 	}
 	for start := time.Now(); time.Since(start) < 5*time.Minute; time.Sleep(5 * time.Second) {
-		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
 		if err != nil {
 			return err
 		}
@@ -1394,7 +1394,7 @@ func EnableAndDisableInternalLB() (enable func(svc *v1.Service), disable func(sv
 
 func (f *CloudProviderFramework) VerifyLoadBalancerPolicy(loadBalancerId string, loadbalancerPolicy string, lbtype string) error {
 	pollFunc := func() (done bool, err error) {
-		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, "", nil).GetLoadBalancer(context.TODO(), loadBalancerId)
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbtype, nil).GetLoadBalancer(context.TODO(), loadBalancerId)
 		if err != nil {
 			return false, err
 		}

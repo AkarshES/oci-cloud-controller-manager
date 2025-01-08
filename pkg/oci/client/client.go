@@ -48,7 +48,7 @@ const ClusterIpFamilyEnv = "CLUSTER_IP_FAMILY"
 // Interface of consumed OCI API functionality.
 type Interface interface {
 	Compute() ComputeInterface
-	LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) GenericLoadBalancerInterface
+	LoadBalancer(*zap.SugaredLogger, string, *OCIClientConfig) GenericLoadBalancerInterface
 	Networking(*OCIClientConfig) NetworkingInterface
 	BlockStorage() BlockStorageInterface
 	FSS(*OCIClientConfig) FileStorageInterface
@@ -400,10 +400,10 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 
 // LoadBalancer constructs an OCI LB/NLB API client using workload identity token if service account provided
 // or else returns the default cluster level client
-func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTenancyID string, tokenRequest *authv1.TokenRequest) (genericLoadBalancer GenericLoadBalancerInterface) {
+func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociConfig *OCIClientConfig) (genericLoadBalancer GenericLoadBalancerInterface) {
 
 	// tokenRequest is nil if Workload Identity LB/NLB client is not requested
-	if tokenRequest == nil {
+	if ociConfig.SaToken == nil {
 		if lbType == "nlb" {
 			return c.networkloadbalancer
 		}
@@ -414,9 +414,8 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTe
 		return nil
 	}
 
-	// If tokenRequest is present then the requested LB/NLB client is WRIS / Workload Identity RP based
-	tokenProvider := auth.NewSuppliedServiceAccountTokenProvider(tokenRequest.Status.Token)
-	configProvider, err := auth.OkeWorkloadIdentityConfigurationProviderWithServiceAccountTokenProvider(tokenProvider)
+	// If tokenRequest is present then the requested LB/NLB client is WRIS(Workload Identity) / Nested RP based
+	configProvider, err := getConfigurationProvider(logger, ociConfig.SaToken, ociConfig.ParentRptURL)
 	if err != nil {
 		logger.Error("Failed to get oke workload identity configuration provider! " + err.Error())
 		return nil
@@ -424,7 +423,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, targetTe
 
 	signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
 	interceptor := func(r *http.Request) error {
-		r.Header.Set("x-cross-tenancy-request", targetTenancyID)
+		r.Header.Set("x-cross-tenancy-request", ociConfig.TenancyId)
 		return nil
 	}
 
@@ -658,6 +657,10 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 		return c
 	}
 	configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+	if err != nil {
+		c.logger.Error("Failed to get oke workload identity configuration provider! " + err.Error())
+		return nil
+	}
 	signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
 	interceptor := func(r *http.Request) error {
 		r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
@@ -676,7 +679,7 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 		return nil
 	}
 
-	loadbalancer := c.LoadBalancer(logger, lbType, ociClientConfig.TenancyId, ociClientConfig.SaToken)
+	loadbalancer := c.LoadBalancer(logger, lbType, ociClientConfig)
 	networkloadbalancer := loadbalancer
 
 	return &client{

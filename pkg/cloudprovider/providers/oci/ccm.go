@@ -238,6 +238,7 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 		cp.logger.Info("Pod readiness controller is enabled")
 
 		podReadinessController := NewPodReadinessController(
+			cp,
 			cp.kubeclient,
 			cp.client,
 			cp.logger,

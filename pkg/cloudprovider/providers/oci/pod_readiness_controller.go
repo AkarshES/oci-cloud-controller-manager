@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"k8s.io/utils/pointer"
 	"reflect"
 	"strconv"
@@ -48,6 +49,7 @@ const (
 )
 
 type PodReadinessController struct {
+	provider      *CloudProvider
 	kubeClient    clientset.Interface
 	recorder      record.EventRecorder
 	ociClient     client.Interface
@@ -61,6 +63,7 @@ type PodReadinessController struct {
 }
 
 func NewPodReadinessController(
+	provider *CloudProvider,
 	kubeClient clientset.Interface,
 	ociClient client.Interface,
 	logger *zap.SugaredLogger,
@@ -82,6 +85,7 @@ func NewPodReadinessController(
 	}
 
 	return &PodReadinessController{
+		provider:      provider,
 		kubeClient:    kubeClient,
 		recorder:      recorder,
 		ociClient:     ociClient,
@@ -198,7 +202,10 @@ func (p *PodReadinessController) sync(key string) error {
 	}
 
 	lbType := getLoadBalancerType(service)
-	lbProvider := p.getLoadBalancerProvider(lbType)
+	lbProvider, err := p.provider.getLoadBalancerProvider(context.Background(), service)
+	if err != nil {
+		return errors.Wrap(err, "Unable to get Load Balancer Client.")
+	}
 	lbName := GetLoadBalancerName(service)
 
 	logger = lbProvider.logger.With("loadBalancerName", lbName)
@@ -356,16 +363,6 @@ func (clb *CloudLoadBalancerProvider) getBackendSetHealth(ctx context.Context, l
 		return nil, err
 	}
 	return res, nil
-}
-
-func (p *PodReadinessController) getLoadBalancerProvider(lbType string) CloudLoadBalancerProvider {
-	return CloudLoadBalancerProvider{
-		client:       p.ociClient,
-		lbClient:     p.ociClient.LoadBalancer(p.logger, lbType, p.config.Auth.TenancyID, nil),
-		logger:       p.logger,
-		metricPusher: p.metricPusher,
-		config:       p.config,
-	}
 }
 
 func getPodReadinessCondition(serviceNamespace, serviceName string, backendSetName string) v1.PodConditionType {
