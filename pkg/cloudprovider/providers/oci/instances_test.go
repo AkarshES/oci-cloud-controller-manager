@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"go.uber.org/zap"
-	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	v1discovery "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -859,7 +858,7 @@ func (MockOCIClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }
 
-func (MockOCIClient) LoadBalancer(logger *zap.SugaredLogger, lbType string, tenancy string, token *authv1.TokenRequest) client.GenericLoadBalancerInterface {
+func (MockOCIClient) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociConfig *client.OCIClientConfig) client.GenericLoadBalancerInterface {
 	if lbType == "nlb" {
 		return &MockNetworkLoadBalancerClient{}
 	}

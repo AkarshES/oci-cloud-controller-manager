@@ -29,7 +29,6 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/core"
 	errors2 "github.com/pkg/errors"
 	"go.uber.org/zap"
-	authv1 "k8s.io/api/authentication/v1"
 )
 
 func TestComputeAveragesByReturnCode(t *testing.T) {
@@ -996,7 +995,7 @@ func TestConvertCoreVNICtoNPNStatus(t *testing.T) {
 type MockOCIClient struct {
 }
 
-func (c MockOCIClient) LoadBalancer(*zap.SugaredLogger, string, string, *authv1.TokenRequest) client.GenericLoadBalancerInterface {
+func (c MockOCIClient) LoadBalancer(*zap.SugaredLogger, string, *client.OCIClientConfig) client.GenericLoadBalancerInterface {
 	return nil
 }
 
