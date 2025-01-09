@@ -6,7 +6,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 input_csv="$1"
-output_json="shepherd/limits/flock_structure/image_versions.json"
+output_json="release-validator-pop/image_versions.json"
 
 echo '{"images": [' > "$output_json"
 

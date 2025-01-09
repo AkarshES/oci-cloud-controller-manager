@@ -21,13 +21,14 @@ awk ' \
 
 echo "]}"
 
+
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <path-to-wheelbarrow-manifest>"
   exit 1
 fi
 
 input_csv="$1"
-output_json="flock/v1/flock_structure/image_versions.json"
+output_json="release-validator-pop/image_versions.json"
 
 echo '{"images": [' > "$output_json"
 

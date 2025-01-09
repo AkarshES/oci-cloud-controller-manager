@@ -10,7 +10,7 @@ locals {
 }
 
 module "oke-cpo-images" {
-  source                   = "./ocir_images"
+  source                   = "./shared_modules"
   service_artifact_version = local.artifact_versions
 }
 
@@ -23,7 +23,7 @@ module "oke-cpo-images" {
 #}
 #
 #module "odo_deployment_ccm_csi" {
-#  source = "./shared_modules/odo_deployment"
+#  source = "./odo_deployment"
 #  image_validator_count = local.image_validator_count
 #
 #  artifact_version = local.artifact_versions["release-validator-ccm-csi"]

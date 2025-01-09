@@ -111,7 +111,7 @@ module "properties_values" {
   env                = lookup(local.execution_target.additional_locals, "env", "")
   realm              = local.execution_target.region.realm
 
-  depends_on = [module.odo_deployment_ccm_csi_infra]
+//  depends_on = [module.odo_deployment_ccm_csi_infra]
 }
 
 resource "capability_require_capability" "oke_ccm_csi_internal_capability" {
