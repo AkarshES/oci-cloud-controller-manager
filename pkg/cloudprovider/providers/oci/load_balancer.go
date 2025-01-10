@@ -391,7 +391,8 @@ func (clb *CloudLoadBalancerProvider) ensureSSLCertificates(ctx context.Context,
 
 // createLoadBalancer creates a new OCI load balancer based on the given spec.
 func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, spec *LBSpec) (lbStatus *v1.LoadBalancerStatus, lbOCID string, err error) {
-	logger := clb.logger.With("loadBalancerName", spec.Name, "loadBalancerType", getLoadBalancerType(spec.service))
+	lbType := getLoadBalancerType(spec.service)
+	logger := clb.logger.With("loadBalancerName", spec.Name, "loadBalancerType", lbType)
 	logger.Info("Attempting to create a new load balancer")
 
 	// First update the security lists so that if it fails (due to the etag
@@ -454,6 +455,10 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 				Id: reservedIpOCID,
 			},
 		}
+	}
+
+	if lbType == NLB {
+		details.CpgId = spec.ClusterPlacementGroupId
 	}
 
 	serviceUid := fmt.Sprintf("%s", spec.service.UID)
