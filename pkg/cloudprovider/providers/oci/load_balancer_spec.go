@@ -259,6 +259,10 @@ const (
 
 	// ServiceAnnotationNetworkLoadBalancerExternalIpOnly is a service a boolean annotation to skip private ip when assigning to ingress resource for NLB service
 	ServiceAnnotationNetworkLoadBalancerExternalIpOnly = "oci-network-load-balancer.oraclecloud.com/external-ip-only"
+
+	// ServiceAnnotationNetworkLoadBalancerClusterPlacementGroupId is a service annotation to provision Network Loadbalancer
+	// with the given Cluster Placement Group resource https://docs.oracle.com/en-us/iaas/Content/cluster-placement-groups/overview.htm
+	ServiceAnnotationNetworkLoadBalancerClusterPlacementGroupId = "oci-network-load-balancer.oraclecloud.com/cluster-placement-group-id"
 )
 
 // Virtual Node Annotations
@@ -373,6 +377,7 @@ type LBSpec struct {
 	SystemTags                  map[string]map[string]interface{}
 	ingressIpMode               *v1.LoadBalancerIPMode
 	Compartment                 string
+	ClusterPlacementGroupId     *string
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -469,6 +474,8 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 
 	compartment := getLoadBalancerCompartment(svc, clusterCompartment)
 
+	cpgId := getClusterPlacementGroupId(svc)
+
 	return &LBSpec{
 		Type:                        lbType,
 		Name:                        GetLoadBalancerName(svc),
@@ -495,6 +502,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		SystemTags:                  getResourceTrackingSystemTagsFromConfig(logger, initialLBTags),
 		ingressIpMode:               ingressIpMode,
 		Compartment:                 compartment,
+		ClusterPlacementGroupId:     cpgId,
 	}, nil
 }
 
@@ -1749,4 +1757,11 @@ func isSkipPrivateIP(svc *v1.Service) (bool, error) {
 		return false, errors.Wrap(err, fmt.Sprintf("invalid value: %s provided for annotation: %s", annotationValue, annotationString))
 	}
 	return skipPrivateIp, nil
+}
+
+func getClusterPlacementGroupId(svc *v1.Service) *string {
+	if cpgId, exists := svc.Annotations[ServiceAnnotationNetworkLoadBalancerClusterPlacementGroupId]; exists {
+		return &cpgId
+	}
+	return nil
 }
