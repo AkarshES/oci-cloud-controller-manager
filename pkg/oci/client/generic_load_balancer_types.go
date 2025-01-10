@@ -102,6 +102,9 @@ type GenericCreateLoadBalancerDetails struct {
 
 	// Only needed for LB
 	Certificates map[string]GenericCertificate
+
+	// Internal. Only supported by NLB
+	CpgId *string
 }
 
 type GenericShapeDetails struct {

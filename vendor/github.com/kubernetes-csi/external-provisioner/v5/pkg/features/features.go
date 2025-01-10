@@ -19,7 +19,6 @@ package features
 import (
 	"k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/component-base/featuregate"
-	"k8s.io/apimachinery/pkg/util/version"
 )
 
 const (
@@ -55,25 +54,13 @@ const (
 
 func init() {
 	feature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates)
-	feature.DefaultMutableFeatureGate.AddVersioned(defaultKubernetesVersionedFeatureGates)
 }
 
 // defaultKubernetesFeatureGates consists of all known feature keys specific to external-provisioner.
 // To add a new feature, define a key for it above and add it here.
 var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	Topology:                       {Default: true, PreRelease: featuregate.GA},
-}
-
-var defaultKubernetesVersionedFeatureGates = map[featuregate.Feature]featuregate.VersionedSpecs{
-	HonorPVReclaimPolicy: {
-		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Alpha},
-		{Version: version.MustParse("1.31"), Default: true, PreRelease: featuregate.Beta},
-	},
-	CrossNamespaceVolumeDataSource: {
-		{Version: version.MustParse("1.26"), Default: false, PreRelease: featuregate.Alpha},
-	},
-	VolumeAttributesClass: {
-		{Version: version.MustParse("1.29"), Default: false, PreRelease: featuregate.Alpha},
-		{Version: version.MustParse("1.31"), Default: false, PreRelease: featuregate.Beta},
-	},
+	HonorPVReclaimPolicy:           {Default: true, PreRelease: featuregate.Beta},
+	CrossNamespaceVolumeDataSource: {Default: false, PreRelease: featuregate.Alpha},
+	VolumeAttributesClass:          {Default: false, PreRelease: featuregate.Beta},
 }

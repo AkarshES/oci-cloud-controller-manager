@@ -369,7 +369,7 @@ github.com/opencontainers/go-digest
 ## explicit; go 1.19
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/pkg/pwalkdir
-# github.com/oracle/oci-go-sdk/v65 v65.2.0 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p
+# github.com/oracle/oci-go-sdk/v65 v65.2.0 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p
 ## explicit; go 1.13
 github.com/oracle/oci-go-sdk/v65/common
 github.com/oracle/oci-go-sdk/v65/common/auth
@@ -1770,8 +1770,6 @@ sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1
 ## explicit; go 1.23
 sigs.k8s.io/json
 sigs.k8s.io/json/internal/golang/encoding/json
-# sigs.k8s.io/sig-storage-lib-external-provisioner/v10 v10.0.1
-## explicit; go 1.22.0
 # sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1
 ## explicit; go 1.22.0
 sigs.k8s.io/sig-storage-lib-external-provisioner/v11/controller
@@ -1794,7 +1792,7 @@ sigs.k8s.io/structured-merge-diff/v4/value
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/goyaml.v2
 # github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
-# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p
+# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p
 # k8s.io/api => k8s.io/api v0.32.1
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.32.1
 # k8s.io/apimachinery => k8s.io/apimachinery v0.32.1

@@ -100,6 +100,7 @@ func (c *networkLoadbalancer) CreateLoadBalancer(ctx context.Context, details *G
 		BackendSets:                 c.genericBackendSetDetailsToBackendSets(details.BackendSets),
 		FreeformTags:                details.FreeformTags,
 		DefinedTags:                 details.DefinedTags,
+		CpgId:                       details.CpgId,
 	}
 
 	if details.IpVersion != nil {

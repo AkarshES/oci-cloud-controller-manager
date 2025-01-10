@@ -14,8 +14,8 @@ bitbucket.oci.oraclecorp.com/oke/bmc-go-sdk v0.0.0-20180119173458-fe578152e621/g
 bitbucket.oci.oraclecorp.com/oke/oci-go-common v1.0.4-0.20200706161333-eb59f40527dd/go.mod h1:vV+DBk4RXaIh/Fw9q5BIy7Z/oqPWb/jVeVHt6NkykKY=
 bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.1-0.20220429183118-f0129d710185 h1:ce+1Z2Bvv+gqbmC1n+RUZ8dMG9QGEMoW95PA6G1p11U=
 bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.1-0.20220429183118-f0129d710185/go.mod h1:UZ8NMW2U4h4NVbHaP6TYLjRKkvUBuSAtEspw23Um2WI=
-bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p h1:imDm/6gcP1Z7/yeR4y/7iSdMYj3QqaVneaXolN+kpqI=
-bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.75.1-p/go.mod h1:IBEV9l1qBzUpo7zgGaRUhbB05BVfcDGYRFBCPlTcPp0=
+bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p h1:brzH9CAQlno3RCiffrEywox8+grZAaKHOQxQEQTg50Y=
+bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p/go.mod h1:IBEV9l1qBzUpo7zgGaRUhbB05BVfcDGYRFBCPlTcPp0=
 cel.dev/expr v0.19.1 h1:NciYrtDRIR0lNCnH1LFJegdjspNx9fI59O7TWcua/W4=
 cel.dev/expr v0.19.1/go.mod h1:MrpN08Q+lEBs+bGYdLxxHkZoUSsCp0nSKTs0nTymJgw=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
@@ -1473,8 +1473,6 @@ sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd/go.mod h1:B8JuhiUyNFVKdsE8h6
 sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3/go.mod h1:18nIHnGi6636UCz6m8i4DhaJ65T6EruyzmoQqI2BVDo=
 sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 h1:gBQPwqORJ8d8/YNZWEjoZs7npUVDpVXUUOFfW6CgAqE=
 sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8/go.mod h1:mdzfpAEoE6DHQEN0uh9ZbOCuHbLK5wOm7dK4ctXE9Tg=
-sigs.k8s.io/sig-storage-lib-external-provisioner/v10 v10.0.1 h1:uhd7RobUnVmfkRb3gkYQh4tBOiBEBvdwW/nAthG95Rc=
-sigs.k8s.io/sig-storage-lib-external-provisioner/v10 v10.0.1/go.mod h1:mfQ2enu5yAHUhpNWsce9NmkqkRQsk70zQT+7KjZ+JMo=
 sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1 h1:yB7zWcVJFLN9wB8XIOLaYL7H+XnnvwH94gcPuWZx7sk=
 sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1/go.mod h1:yWwEQYfQG/gSUQbLft2uTF/KPnoMt/cGj9vEMj5ripI=
 sigs.k8s.io/sig-storage-lib-external-provisioner/v9 v9.1.0-rc.0 h1:0aLQSafwBXlXTPiA9wJK5wEDsgYUh5uJlKHpBw9dwCk=
