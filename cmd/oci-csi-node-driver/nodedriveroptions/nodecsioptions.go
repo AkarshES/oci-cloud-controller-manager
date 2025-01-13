@@ -33,7 +33,6 @@ type NodeCSIOptions struct {
 	FssCsiAddress                 string
 	FssKubeletRegistrationPath    string
 	FssEndpoint                   string
-	OnlyEnableLustreDriver        bool
 	LustreCsiAddress              string
 	LustreKubeletRegistrationPath string
 	LustreEndpoint                string
