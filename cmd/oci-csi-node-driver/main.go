@@ -16,7 +16,9 @@ package main
 
 import (
 	"flag"
+	"os"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
@@ -51,16 +53,17 @@ func main() {
 	flag.StringVar(&nodecsioptions.FssCsiAddress, "fss-csi-address", "/run/fss/socket", "Path of the FSS CSI driver socket that the node-driver-registrar will connect to.")
 	flag.StringVar(&nodecsioptions.FssKubeletRegistrationPath, "fss-kubelet-registration-path", "", "Path of the FSS CSI driver socket on the Kubernetes host machine.")
 	flag.BoolVar(&nodecsioptions.EnableFssDriver, "fss-csi-driver-enabled", false, "Handle flag to enable FSS CSI driver")
-	flag.StringVar(&nodecsioptions.LustreEndpoint, "lustre-endpoint", "unix:///var/lib/kubelet/plugins/lustre.csi.oraclecloud.com/csi.sock", "Lustre CSI endpoint")
-	flag.StringVar(&nodecsioptions.LustreCsiAddress, "lustre-csi-address", "/var/lib/kubelet/plugins/lustre.csi.oraclecloud.com/csi.sock", "Path of the Lustre CSI driver socket that the node-driver-registrar will connect to.")
+	flag.StringVar(&nodecsioptions.LustreEndpoint, "lustre-endpoint", "unix:///lustre/csi.sock", "Lustre CSI endpoint")
+	flag.StringVar(&nodecsioptions.LustreCsiAddress, "lustre-csi-address", "/lustre/csi.sock", "Path of the Lustre CSI driver socket that the node-driver-registrar will connect to.")
 	flag.StringVar(&nodecsioptions.LustreKubeletRegistrationPath, "lustre-kubelet-registration-path", "/var/lib/kubelet/plugins/lustre.csi.oraclecloud.com/csi.sock", "Path of the Lustre CSI driver socket on the Kubernetes host machine.")
-	flag.BoolVar(&nodecsioptions.OnlyEnableLustreDriver, "only-lustre-csi-driver-enabled", false, "Handle flag to enable Lustre CSI driver")
 
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "true")
 	flag.Parse()
 
 	viper.Set("log-level", getLevel(nodecsioptions.LogLevel))
+
+	enableLustreDriver := IsLustreDriverEnabled()
 
 	blockvolumeNodeOptions := nodedriveroptions.NodeOptions{
 		Name:                   "BV",
@@ -96,25 +99,27 @@ func main() {
 
 	stopCh := signals.SetupSignalHandler()
 
-	if nodecsioptions.OnlyEnableLustreDriver {
-		go nodedriver.RunNodeDriver(lustreNodeOptions, stopCh)
-	} else {
-		go nodedriver.RunNodeDriver(blockvolumeNodeOptions, stopCh)
-		if nodecsioptions.EnableFssDriver {
-			go nodedriver.RunNodeDriver(fssNodeOptions, stopCh)
-		}
+	go nodedriver.RunNodeDriver(blockvolumeNodeOptions, stopCh)
+	if nodecsioptions.EnableFssDriver {
+		go nodedriver.RunNodeDriver(fssNodeOptions, stopCh)
 	}
-	if nodecsioptions.OnlyEnableLustreDriver {
-		go nodedriverregistrar.RunNodeRegistrar(driver.LustreDriverName, nodecsioptions.LustreCsiAddress, nodecsioptions.LustreKubeletRegistrationPath, nodecsioptions.ConnectionTimeout)
-	} else {
-		go nodedriverregistrar.RunNodeRegistrar(driver.BlockVolumeDriverName, nodecsioptions.CsiAddress, nodecsioptions.KubeletRegistrationPath, nodecsioptions.ConnectionTimeout)
-		if nodecsioptions.EnableFssDriver {
-			go nodedriverregistrar.RunNodeRegistrar(driver.FSSDriverName, nodecsioptions.FssCsiAddress, nodecsioptions.FssKubeletRegistrationPath, nodecsioptions.ConnectionTimeout)
-		}
+	if enableLustreDriver {
+		go nodedriver.RunNodeDriver(lustreNodeOptions, stopCh)
 	}
 
+	go nodedriverregistrar.RunNodeRegistrar(driver.BlockVolumeDriverName, nodecsioptions.CsiAddress, nodecsioptions.KubeletRegistrationPath, nodecsioptions.ConnectionTimeout)
+	if nodecsioptions.EnableFssDriver {
+		go nodedriverregistrar.RunNodeRegistrar(driver.FSSDriverName, nodecsioptions.FssCsiAddress, nodecsioptions.FssKubeletRegistrationPath, nodecsioptions.ConnectionTimeout)
+	}
+	if enableLustreDriver {
+		go nodedriverregistrar.RunNodeRegistrar(driver.LustreDriverName, nodecsioptions.LustreCsiAddress, nodecsioptions.LustreKubeletRegistrationPath, nodecsioptions.ConnectionTimeout)
+	}
 
 	<-stopCh
+}
+
+func IsLustreDriverEnabled() bool {
+	return strings.EqualFold(os.Getenv("LUSTRE_DRIVER_ENABLED"), "true")
 }
 
 func getLevel(loglevel string) int8 {
