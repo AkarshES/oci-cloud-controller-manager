@@ -125,7 +125,27 @@ func (j *PVCTestJig) CheckMountOptions(namespace string, podName string, expecte
 		Failf("NFS mount with Mount Options failed in pod '%v' with error '%v'", podName, pollErr.Error())
 	}
 }
-
+func (j *PVCTestJig) CheckLustreMountOptions(namespace string, podName string, expectedPath string, expectedOptions []string) {
+	command := fmt.Sprintf("mount -t lustre")
+	if pollErr := wait.PollImmediate(K8sResourcePoll, DefaultTimeout, func() (bool, error) {
+		stdout, err := RunHostCmd(namespace, podName, command)
+		if err != nil {
+			Logf("got err: %v, retry until timeout", err)
+			return false, nil
+		}
+		if stdout == "" || !strings.Contains(stdout, expectedPath) {
+			return false, errors.Errorf("Lustre Mount not found for path %s. Mounted as %s", expectedPath, stdout)
+		}
+		for _, option := range expectedOptions {
+			if !strings.Contains(stdout, option) {
+				return false, errors.Errorf("Lustre Mount Options check failed. Mounted as %s", stdout)
+			}
+		}
+		return true, nil
+	}); pollErr != nil {
+		Failf("Lustre mount with Mount Options failed in pod '%v' with error '%v'", podName, pollErr.Error())
+	}
+}
 func (j *PVCTestJig) ExtractDataFromBlockDevice(namespace string, podName string, devicePath string, outFile string) {
 	By("extract data from block device")
 	command := fmt.Sprintf("dd if=%s count=1 | tr -d '\\000' > %s", devicePath, outFile)
@@ -479,4 +499,31 @@ func (j *PVCTestJig) CheckVolumeOwnership(namespace, podName, mountPath, expecte
 	} else {
 		Failf("Actual Volume group ownership: %v and expected ownership: %v is not matching", cmdOutput, expectedOwner)
 	}
+}
+
+func (j *PVCTestJig) GetNodeNameFromPod(podName, namespace string) string {
+	pod, err := j.KubeClient.CoreV1().Pods(namespace).Get(context.Background(), podName, metav1.GetOptions{})
+	if err != nil {
+		Failf("Failed to get pod %q: %v", podName, err)
+	}
+	return pod.Spec.NodeName
+}
+
+func (j *PVCTestJig) GetCSIPodNameRunningOnNode( nodeName string) (string) {
+
+	// List all pods in the kube-system namespace
+	pods, err := j.KubeClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Failf("Failed to list pods in kube-system namespace: %v", err)
+	}
+
+	// Find the csi-oci-node pod running on the specific node
+	for _, p := range pods.Items {
+		if p.Spec.NodeName == nodeName && p.Labels["app"] == "csi-oci-node" {
+			return p.Name
+		}
+	}
+
+	Failf("Failed to find csi-oci-node pod on node %v in kube-system namespace: %v", nodeName, err)
+	return ""
 }
