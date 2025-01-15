@@ -1,4 +1,6 @@
-FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493-aarch64:1.20.8-165 as builder
+FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke/go-boringcrypto-4493:go1.22.7-25 as builder
+
+RUN microdnf install yum yum-utils
 
 ARG COMPONENT
 ENV SRC /gopath/src/github.com/oracle/oci-cloud-controller-manager
