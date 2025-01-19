@@ -42,7 +42,7 @@ import (
 	ctrl "github.com/kubernetes-csi/external-provisioner/v5/pkg/controller"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/features"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/owner"
-	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
+	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime/schema"

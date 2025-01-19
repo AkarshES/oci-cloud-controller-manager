@@ -444,8 +444,8 @@ github.com/kubernetes-csi/csi-test/v5 v5.3.1 h1:Wiukp1In+kif+BFo6q2ExjgB+MbrAz4j
 github.com/kubernetes-csi/csi-test/v5 v5.3.1/go.mod h1:7hA2cSYJ6T8CraEZPA6zqkLZwemjBD54XAnPsPC3VpA=
 github.com/kubernetes-csi/external-attacher v0.0.0-20241219151210-16acc03adce9 h1:a/ODobPEE2d0pMN4BuyhTCjdJ+O8B8dQsvySBLofIQI=
 github.com/kubernetes-csi/external-attacher v0.0.0-20241219151210-16acc03adce9/go.mod h1:KfZQSqQgSEuN5BUoH+brg/RV9cnL7LKbEL//8Mh7tsY=
-github.com/kubernetes-csi/external-provisioner/v5 v5.0.0-20250113115032-e2d90af19b37 h1:V4MJRGR3+mtnNtH6Q+iX58VYw24ZTyxcjuj1FwbSYV4=
-github.com/kubernetes-csi/external-provisioner/v5 v5.0.0-20250113115032-e2d90af19b37/go.mod h1:XCRwMX5LaOgNxPMUiKlDymWPvkIYWiXRNZMoASS56dk=
+github.com/kubernetes-csi/external-provisioner/v5 v5.2.0 h1:wlYp2a2pzrmzIuw9O1ll4P/YGD2YB378nP3wC3BAzAY=
+github.com/kubernetes-csi/external-provisioner/v5 v5.2.0/go.mod h1:DLAnMYEFgrSgw0bvMA4qq3Opmg2+WKA455IPZ1kHtMI=
 github.com/kubernetes-csi/external-resizer v1.13.1 h1:MapaOxNIKOELjaTBWACGwa8e0WV67wH0WXuw22SFnog=
 github.com/kubernetes-csi/external-resizer v1.13.1/go.mod h1:wmt4NS/oEXxHMuVtEaiUU94tVlEO5tlrrNd+3Y7hzcc=
 github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0 h1:qS4r4ljINLWKJ9m9Ge3Q3sGZ/eIoDVDT2RhAdQFHb1k=

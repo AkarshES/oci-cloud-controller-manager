@@ -151,14 +151,14 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 
 	resizerName := csiResizer.Name()
 	rc := controller.NewResizeController(resizerName, csiResizer, kubeClient, csioptions.Resync, informerFactory,
-		workqueue.NewItemExponentialFailureRateLimiter(csioptions.RetryIntervalStart, csioptions.RetryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](csioptions.RetryIntervalStart, csioptions.RetryIntervalMax),
 		*handleVolumeInUseError, csioptions.RetryIntervalMax)
 	modifierName := csiModifier.Name()
 	var mc modifycontroller.ModifyController
 	// Add modify controller only if the feature gate is enabled
 	if utilfeature.DefaultFeatureGate.Enabled(features.VolumeAttributesClass) {
-		mc = modifycontroller.NewModifyController(modifierName, csiModifier, kubeClient, csioptions.Resync, informerFactory,
-			workqueue.NewItemExponentialFailureRateLimiter(csioptions.RetryIntervalStart, csioptions.RetryIntervalMax))
+		mc = modifycontroller.NewModifyController(modifierName, csiModifier, kubeClient, csioptions.Resync,csioptions.RetryIntervalMax,*extraModifyMetadata, informerFactory,
+			workqueue.NewTypedItemExponentialFailureRateLimiter[string](csioptions.RetryIntervalStart, csioptions.RetryIntervalMax))
 	}
 
 	run := func(ctx context.Context) {
