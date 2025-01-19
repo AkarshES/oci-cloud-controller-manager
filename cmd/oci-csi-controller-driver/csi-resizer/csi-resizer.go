@@ -48,6 +48,8 @@ var (
 	kubeAPIBurst = flag.Int("kube-api-burst", 10, "Burst to use while communicating with the kubernetes apiserver. Defaults to 10.")
 
 	handleVolumeInUseError = flag.Bool("handle-volume-inuse-error", true, "Flag to turn on/off capability to handle volume in use error in resizer controller. Defaults to true if not set.")
+	extraModifyMetadata = flag.Bool("extra-modify-metadata", false, "If set, add pv/pvc metadata to plugin modify requests as parameters.")
+
 
 	version = "unknown"
 )
@@ -126,6 +128,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 		csioptions.Timeout,
 		kubeClient,
 		informerFactory,
+		*extraModifyMetadata,
 		driverName)
 	if err != nil {
 		klog.ErrorS(err, "Failed to create CSI modifier")
