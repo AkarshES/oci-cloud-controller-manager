@@ -53,7 +53,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/kubernetes-csi/csi-lib-utils v0.20.0
 	github.com/kubernetes-csi/external-attacher v0.0.0-20241219151210-16acc03adce9 //v4.8.0
-	github.com/kubernetes-csi/external-provisioner/v5 v5.0.0-20250113115032-e2d90af19b37 //v5.1.0+
+	github.com/kubernetes-csi/external-provisioner/v5 v5.2.0 //v5.2.0
 	github.com/kubernetes-csi/external-resizer v1.13.1
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
 	github.com/onsi/ginkgo v1.16.5

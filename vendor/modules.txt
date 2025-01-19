@@ -228,7 +228,7 @@ github.com/kubernetes-csi/csi-lib-utils/rpc
 ## explicit; go 1.23.1
 github.com/kubernetes-csi/external-attacher/pkg/attacher
 github.com/kubernetes-csi/external-attacher/pkg/controller
-# github.com/kubernetes-csi/external-provisioner/v5 v5.0.0-20250113115032-e2d90af19b37
+# github.com/kubernetes-csi/external-provisioner/v5 v5.2.0
 ## explicit; go 1.23.1
 github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity
 github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity/topology
