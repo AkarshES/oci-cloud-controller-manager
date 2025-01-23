@@ -81,6 +81,14 @@ locals {
         "false"]
       default_value = "false"
     }
+    "lustre-csi-driver-enabled" = {
+      type = "ENUM"
+      description = "Enable installation of lustre csi driver"
+      options = [
+        "true",
+        "false"]
+      default_value = "false"
+    }
   }
 
   
