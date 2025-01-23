@@ -90,9 +90,6 @@ const (
 	lbLifecycleStateActive           = "ACTIVE"
 	lbMaximumNetworkSecurityGroupIds = 5
 	excludeBackendFromLBLabel        = "node.kubernetes.io/exclude-from-external-load-balancers"
-
-	// Service Account Token expiration in seconds
-	serviceAccountTokenExpiry = 21600 // 6 Hours
 )
 
 // Protects security rule addition against update by multiple LBs in parallel
@@ -119,6 +116,7 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 	lbType := getLoadBalancerType(svc)
 	name := GetLoadBalancerName(svc)
 	var serviceAccountToken *authv1.TokenRequest
+	var serviceAccount *v1.ServiceAccount
 	var opcParentRptUrl string
 	var err error
 
@@ -128,7 +126,7 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 	if sa, useWI := svc.Annotations[ServiceAnnotationServiceAccountName]; useWI && sa == "" { // When using Workload Identity
 		return CloudLoadBalancerProvider{}, errors.New("Error fetching service account, empty string provided via " + ServiceAnnotationServiceAccountName)
 	} else if useWI {
-		serviceAccountToken, err = cp.getServiceAccountTokenIfSet(ctx, svc)
+		serviceAccountToken, serviceAccount, err = cp.getServiceAccountTokenIfSet(ctx, svc)
 		if err != nil {
 			return CloudLoadBalancerProvider{}, errors.New("Unable to get service account token. Error:" + err.Error())
 		}
@@ -140,6 +138,7 @@ func (cp *CloudProvider) getLoadBalancerProvider(ctx context.Context, svc *v1.Se
 	}
 
 	ociClientConfig := &client.OCIClientConfig{
+		Sa:           serviceAccount,
 		SaToken:      serviceAccountToken,
 		TenancyId:    cp.config.Auth.TenancyID,
 		ParentRptURL: opcParentRptUrl,
@@ -178,24 +177,22 @@ func (cp *CloudProvider) serviceDeletedOrDoesNotExist(ctx context.Context, svc *
 	return false, nil
 }
 
-var ServiceAccountTokenExpiry = int64(serviceAccountTokenExpiry)
-
 // Use Worker Identity RP based Client based on annotation: "oke.oci.oraclecloud.com/use-service-account"
 // if found.
-func (cp *CloudProvider) getServiceAccountTokenIfSet(ctx context.Context, svc *v1.Service) (*authv1.TokenRequest, error) {
-	_, err := cp.ServiceAccountLister.ServiceAccounts(svc.Namespace).Get(svc.Annotations[ServiceAnnotationServiceAccountName])
+func (cp *CloudProvider) getServiceAccountTokenIfSet(ctx context.Context, svc *v1.Service) (serviceAccountTokenRequest *authv1.TokenRequest, serviceAccount *v1.ServiceAccount, err error) {
+	serviceAccount, err = cp.ServiceAccountLister.ServiceAccounts(svc.Namespace).Get(svc.Annotations[ServiceAnnotationServiceAccountName])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	tokenRequest := authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: &ServiceAccountTokenExpiry}}
+	serviceAccountTokenRequest = &authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: &client.ServiceAccountTokenExpiry}}
 
-	serviceAccountTokenRequest, err := cp.kubeclient.CoreV1().ServiceAccounts(svc.Namespace).CreateToken(ctx, svc.Annotations[ServiceAnnotationServiceAccountName], &tokenRequest, metav1.CreateOptions{})
+	serviceAccountTokenRequest, err = cp.kubeclient.CoreV1().ServiceAccounts(svc.Namespace).CreateToken(ctx, svc.Annotations[ServiceAnnotationServiceAccountName], serviceAccountTokenRequest, metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return serviceAccountTokenRequest, nil
+	return
 }
 
 // GetLoadBalancerName returns the name of the loadbalancer
