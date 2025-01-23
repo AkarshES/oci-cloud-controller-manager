@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"os"
 	"strings"
@@ -39,11 +40,18 @@ import (
 
 // defaultSynchronousAPIContextTimeout is the time we wait for synchronous APIs
 // to respond before we timeout the request
-const defaultSynchronousAPIContextTimeout = 10 * time.Second
-const defaultSynchronousAPIPollContextTimeout = 10 * time.Minute
+const (
+	defaultSynchronousAPIContextTimeout = 10 * time.Second
 
-const Ipv6Stack = "IPv6"
-const ClusterIpFamilyEnv = "CLUSTER_IP_FAMILY"
+	defaultSynchronousAPIPollContextTimeout = 10 * time.Minute
+
+	Ipv6Stack = "IPv6"
+
+	ClusterIpFamilyEnv = "CLUSTER_IP_FAMILY"
+
+	// Service Account Token expiration in seconds
+	serviceAccountTokenExpiry = 21600 // 6 Hours
+)
 
 // Interface of consumed OCI API functionality.
 type Interface interface {
@@ -58,6 +66,7 @@ type Interface interface {
 }
 
 type OCIClientConfig struct {
+	Sa           *v1.ServiceAccount
 	SaToken      *authv1.TokenRequest
 	ParentRptURL string
 	TenancyId    string
@@ -208,8 +217,9 @@ type client struct {
 	requestMetadata common.RequestMetadata
 	rateLimiter     RateLimiter
 
-	subnetCache cache.Store
-	logger      *zap.SugaredLogger
+	subnetCache         cache.Store
+	configProviderCache cache.Store
+	logger              *zap.SugaredLogger
 }
 
 func setupBaseClient(log *zap.SugaredLogger, client *common.BaseClient, signer common.HTTPRequestSigner, interceptor common.RequestInterceptor, endpointOverrideEnvVar string) {
@@ -391,19 +401,32 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 		rateLimiter:     *opRateLimiter,
 		requestMetadata: requestMetadata,
 
-		subnetCache: cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-		logger:      logger,
+		subnetCache:         cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+		configProviderCache: cache.NewTTLStore(providerConfigCacheKeyFn, serviceAccountTokenExpiryTime-time.Hour),
+		logger:              logger,
 	}
 
 	return c, nil
 }
 
+var ServiceAccountTokenExpiry = int64(serviceAccountTokenExpiry)
+var serviceAccountTokenExpiryTime = serviceAccountTokenExpiry * time.Second
+
+type providerConfigCacheKeyValue struct {
+	Key    string
+	Config common.ConfigurationProvider
+}
+
+func providerConfigCacheKeyFn(obj interface{}) (string, error) {
+	return obj.(*providerConfigCacheKeyValue).Key, nil
+}
+
 // LoadBalancer constructs an OCI LB/NLB API client using workload identity token if service account provided
 // or else returns the default cluster level client
-func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociConfig *OCIClientConfig) (genericLoadBalancer GenericLoadBalancerInterface) {
+func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociClientConfig *OCIClientConfig) (genericLoadBalancer GenericLoadBalancerInterface) {
 
 	// tokenRequest is nil if Workload Identity LB/NLB client is not requested
-	if ociConfig.SaToken == nil {
+	if ociClientConfig.SaToken == nil {
 		if lbType == "nlb" {
 			return c.networkloadbalancer
 		}
@@ -415,7 +438,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociConfi
 	}
 
 	// If tokenRequest is present then the requested LB/NLB client is WRIS(Workload Identity) / Nested RP based
-	configProvider, err := getConfigurationProvider(logger, ociConfig.SaToken, ociConfig.ParentRptURL)
+	configProvider, err := c.getConfigurationProvider(logger, ociClientConfig)
 	if err != nil {
 		logger.Error("Failed to get oke workload identity configuration provider! " + err.Error())
 		return nil
@@ -423,7 +446,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociConfi
 
 	signer := common.RequestSigner(configProvider, append(common.DefaultGenericHeaders(), "x-cross-tenancy-request"), common.DefaultBodyHeaders())
 	interceptor := func(r *http.Request) error {
-		r.Header.Set("x-cross-tenancy-request", ociConfig.TenancyId)
+		r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 		return nil
 	}
 
@@ -476,7 +499,7 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 		return c
 	}
 	if ociClientConfig.SaToken != nil {
-		configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+		configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
 
 		network, err := core.NewVirtualNetworkClientWithConfigurationProvider(configProvider)
 		if err != nil {
@@ -502,6 +525,8 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 			rateLimiter:     c.rateLimiter,
 			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
 			logger:          c.logger,
+
+			configProviderCache: c.configProviderCache,
 		}
 	}
 	return c
@@ -518,7 +543,7 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 	}
 	if ociClientConfig.SaToken != nil {
 
-		configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+		configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
 
 		identity, err := identity.NewIdentityClientWithConfigurationProvider(configProvider)
 		if err != nil {
@@ -558,6 +583,8 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 			rateLimiter:     c.rateLimiter,
 			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
 			logger:          c.logger,
+
+			configProviderCache: c.configProviderCache,
 		}
 	}
 	return c
@@ -574,7 +601,7 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 	}
 	if ociClientConfig.SaToken != nil {
 
-		configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+		configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
 		fc, err := filestorage.NewFileStorageClientWithConfigurationProvider(configProvider)
 		if err != nil {
 			c.logger.Errorf("Failed to create FSS workload identity client %v", err)
@@ -600,6 +627,8 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 			rateLimiter:     c.rateLimiter,
 			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
 			logger:          c.logger,
+
+			configProviderCache: c.configProviderCache,
 		}
 	}
 	return c
@@ -625,22 +654,34 @@ func getDefaultRequestMetadata(existingRequestMetadata common.RequestMetadata) c
 	return requestMetadata
 }
 
-func getConfigurationProvider(logger *zap.SugaredLogger, tokenRequest *authv1.TokenRequest, rptURL string) (common.ConfigurationProvider, error) {
+func (c *client) getConfigurationProvider(logger *zap.SugaredLogger, ociClientConfig *OCIClientConfig) (common.ConfigurationProvider, error) {
 
-	tokenProvider := auth.NewSuppliedServiceAccountTokenProvider(tokenRequest.Status.Token)
+	// Refer cache for provider config
+	configProviderCacheVal, exists, err := c.configProviderCache.GetByKey(ociClientConfig.Sa.Namespace + string(ociClientConfig.Sa.UID) + ociClientConfig.ParentRptURL)
+	if exists && err == nil {
+		return configProviderCacheVal.(providerConfigCacheKeyValue).Config, nil
+	}
+
+	tokenProvider := auth.NewSuppliedServiceAccountTokenProvider(ociClientConfig.SaToken.Status.Token)
 	configProvider, err := auth.OkeWorkloadIdentityConfigurationProviderWithServiceAccountTokenProvider(tokenProvider)
 	if err != nil {
 		logger.Errorf("failed to get workload identity configuration provider %v", err.Error())
 		return nil, err
 	}
 
-	if rptURL != "" {
-		configProvider, err = auth.ResourcePrincipalV3ConfiguratorBuilder(configProvider).WithParentRPSTURL("").WithParentRPTURL(rptURL).Build()
+	if ociClientConfig.ParentRptURL != "" {
+		configProvider, err = auth.ResourcePrincipalV3ConfiguratorBuilder(configProvider).WithParentRPSTURL("").WithParentRPTURL(ociClientConfig.ParentRptURL).Build()
 		if err != nil {
 			logger.Errorf("failed to get resource Principal configuration provider %v", err.Error())
 			return nil, err
 		}
 	}
+
+	// Populate provider config in cache
+	c.configProviderCache.Add(providerConfigCacheKeyValue{
+		Key:    ociClientConfig.Sa.Namespace + string(ociClientConfig.Sa.UID) + ociClientConfig.ParentRptURL,
+		Config: configProvider,
+	})
 	return configProvider, nil
 }
 
@@ -656,7 +697,7 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 	if ociClientConfig.SaToken == nil {
 		return c
 	}
-	configProvider, err := getConfigurationProvider(c.logger, ociClientConfig.SaToken, ociClientConfig.ParentRptURL)
+	configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
 	if err != nil {
 		c.logger.Error("Failed to get oke workload identity configuration provider! " + err.Error())
 		return nil
@@ -695,7 +736,8 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 		rateLimiter:     c.rateLimiter,
 		requestMetadata: c.requestMetadata,
 
-		subnetCache: cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-		logger:      logger,
+		configProviderCache: c.configProviderCache,
+		subnetCache:         c.subnetCache,
+		logger:              logger,
 	}
 }
