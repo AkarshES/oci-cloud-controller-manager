@@ -1431,7 +1431,7 @@ func TestFSSControllerDriver_getServiceAccountToken(t *testing.T) {
 			tokenRequest := authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: &ServiceAccountTokenExpiry}}
 			exp, _ := fss.KubeClient.CoreV1().ServiceAccounts(tt.saNamespace).CreateToken(context.Background(), tt.saName, &tokenRequest, metav1.CreateOptions{})
 
-			got, _ := tt.FSSControllerDriver.getServiceAccountToken(context.Background(), tt.saName, tt.saNamespace)
+			got, _, _ := tt.FSSControllerDriver.getServiceAccountToken(context.Background(), tt.saName, tt.saNamespace)
 
 			if !reflect.DeepEqual(got, exp) != tt.wantErr && (got.Status.Token != tt.want) {
 				t.Errorf("getServiceAccountToken() expected string = %v, Got String %v", tt.want, got)
