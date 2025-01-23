@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	"strings"
 	"time"
 
@@ -80,25 +81,25 @@ type SecretParameters struct {
 	parentRptURL string
 }
 
-func (d *FSSControllerDriver) getServiceAccountToken(context context.Context, saName string, saNamespace string) (*authv1.TokenRequest, error) {
+func (d *FSSControllerDriver) getServiceAccountToken(context context.Context, saName string, saNamespace string) (tokenRequest *authv1.TokenRequest, serviceAccount *v1.ServiceAccount, err error) {
 	d.logger.With("serviceAccount", saName).With("serviceAccountNamespace", saNamespace).
 		Info("Creating the service account token for service account.")
 	if saName == "" || saNamespace == "" {
-		return nil, status.Error(codes.InvalidArgument, "Failed to get service account token. Missing service account or namespaces in request.")
+		return nil, nil, status.Error(codes.InvalidArgument, "Failed to get service account token. Missing service account or namespaces in request.")
 	}
 	// validate service account exists
-	if _, err := d.serviceAccountLister.ServiceAccounts(saNamespace).Get(saName); err != nil {
+	if serviceAccount, err = d.serviceAccountLister.ServiceAccounts(saNamespace).Get(saName); err != nil {
 		d.logger.With(zap.Error(err)).Errorf("Error fetching service account %v in the namespace %v", saName, saNamespace)
-		return nil, status.Errorf(codes.Internal, "Error fetching service account %v in the namespace %v", saName, saNamespace)
+		return nil, nil, status.Errorf(codes.Internal, "Error fetching service account %v in the namespace %v", saName, saNamespace)
 	}
-	tokenRequest := authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: &ServiceAccountTokenExpiry}}
-	saToken, err := d.KubeClient.CoreV1().ServiceAccounts(saNamespace).CreateToken(context, saName, &tokenRequest, metav1.CreateOptions{})
+	tokenRequest = &authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: &ServiceAccountTokenExpiry}}
+	tokenRequest, err = d.KubeClient.CoreV1().ServiceAccounts(saNamespace).CreateToken(context, saName, tokenRequest, metav1.CreateOptions{})
 
 	if err != nil {
 		d.logger.With(zap.Error(err)).Errorf("Error creating service account token for service account %v in the namespace %v", saName, saNamespace)
-		return nil, status.Errorf(codes.Internal, "Error creating service account token for service account %v in the namespace %v", saName, saNamespace)
+		return nil, nil, status.Errorf(codes.Internal, "Error creating service account token for service account %v in the namespace %v", saName, saNamespace)
 	}
-	return saToken, nil
+	return
 }
 
 func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
@@ -123,17 +124,19 @@ func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateV
 	dimensionsMap[metrics.ResourceOCIDDimension] = volumeName
 
 	var serviceAccountToken *authv1.TokenRequest
+	var serviceAccount *v1.ServiceAccount
 
 	secretParameters := extractSecretParameters(log, req.GetSecrets())
 	if secretParameters.serviceAccount != "" || secretParameters.serviceAccountNamespace != "" {
-		serviceAccountTokenCreated, err := d.getServiceAccountToken(ctx, secretParameters.serviceAccount, secretParameters.serviceAccountNamespace)
+		serviceAccountTokenCreated, serviceAccountFetched, err := d.getServiceAccountToken(ctx, secretParameters.serviceAccount, secretParameters.serviceAccountNamespace)
 		if err != nil {
 			return nil, err
 		}
 		serviceAccountToken = serviceAccountTokenCreated
+		serviceAccount = serviceAccountFetched
 	}
 
-	ociClientConfig := &client.OCIClientConfig{ SaToken: serviceAccountToken, ParentRptURL: secretParameters.parentRptURL, TenancyId: d.config.Auth.TenancyID }
+	ociClientConfig := &client.OCIClientConfig{SaToken: serviceAccountToken, ParentRptURL: secretParameters.parentRptURL, TenancyId: d.config.Auth.TenancyID, Sa: serviceAccount}
 
 	networkingClient := d.client.Networking(ociClientConfig)
 	if networkingClient == nil {
@@ -607,7 +610,7 @@ func extractStorageClassParameters(ctx context.Context, d *FSSControllerDriver, 
 	}
 
 	if client.IsIpv6SingleStackCluster() {
-		if !strings.Contains(availabilityDomain,":") {
+		if !strings.Contains(availabilityDomain, ":") {
 			log.Errorf("Full AvailabilityDomain with prefix not provided in storage class for IPv6 single stack cluster.")
 			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.ErrValidation, util.CSIStorageType)
 			metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
@@ -785,17 +788,18 @@ func (d *FSSControllerDriver) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	filesystemOcid, mountTargetIP, exportPath := volumeHandler.FilesystemOcid, volumeHandler.MountTargetIPAddress, volumeHandler.FsExportPath
 
 	var serviceAccountToken *authv1.TokenRequest
+	var serviceAccount *v1.ServiceAccount
+	var err error
 
 	secretParameters := extractSecretParameters(log, req.GetSecrets())
 	if secretParameters.serviceAccount != "" || secretParameters.serviceAccountNamespace != "" {
-		serviceAccountTokenGenerated, err := d.getServiceAccountToken(ctx, secretParameters.serviceAccount, secretParameters.serviceAccountNamespace)
+		serviceAccountToken, serviceAccount, err = d.getServiceAccountToken(ctx, secretParameters.serviceAccount, secretParameters.serviceAccountNamespace)
 		if err != nil {
 			return nil, err
 		}
-		serviceAccountToken = serviceAccountTokenGenerated
 	}
 
-	ociClientConfig := &client.OCIClientConfig{ SaToken: serviceAccountToken, ParentRptURL: secretParameters.parentRptURL, TenancyId: d.config.Auth.TenancyID }
+	ociClientConfig := &client.OCIClientConfig{SaToken: serviceAccountToken, ParentRptURL: secretParameters.parentRptURL, TenancyId: d.config.Auth.TenancyID, Sa: serviceAccount}
 
 	fssClient := d.client.FSS(ociClientConfig)
 
@@ -993,17 +997,18 @@ func (d *FSSControllerDriver) ValidateVolumeCapabilities(ctx context.Context, re
 	filesystemOcid, mountTargetIP, exportPath := volumeHandler.FilesystemOcid, volumeHandler.MountTargetIPAddress, volumeHandler.FsExportPath
 
 	var serviceAccountToken *authv1.TokenRequest
+	var serviceAccount *v1.ServiceAccount
+	var err error
 
 	secretParameters := extractSecretParameters(log, req.GetSecrets())
 	if secretParameters.serviceAccount != "" || secretParameters.serviceAccountNamespace != "" {
-		serviceAccountTokenGenerated, err := d.getServiceAccountToken(ctx, secretParameters.serviceAccount, secretParameters.serviceAccountNamespace)
+		serviceAccountToken, serviceAccount, err = d.getServiceAccountToken(ctx, secretParameters.serviceAccount, secretParameters.serviceAccountNamespace)
 		if err != nil {
 			return nil, err
 		}
-		serviceAccountToken = serviceAccountTokenGenerated
 	}
 
-	ociClientConfig := &client.OCIClientConfig{ SaToken: serviceAccountToken, ParentRptURL: secretParameters.parentRptURL, TenancyId: d.config.Auth.TenancyID }
+	ociClientConfig := &client.OCIClientConfig{SaToken: serviceAccountToken, ParentRptURL: secretParameters.parentRptURL, TenancyId: d.config.Auth.TenancyID, Sa: serviceAccount}
 
 	networkingClient := d.client.Networking(ociClientConfig)
 	if networkingClient == nil {
