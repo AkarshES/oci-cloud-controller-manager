@@ -411,7 +411,7 @@ type providerConfigCacheKeyValue struct {
 }
 
 func providerConfigCacheKeyFn(obj interface{}) (string, error) {
-	return obj.(*providerConfigCacheKeyValue).Key, nil
+	return obj.(providerConfigCacheKeyValue).Key, nil
 }
 
 // LoadBalancer constructs an OCI LB/NLB API client using workload identity token if service account provided
@@ -433,7 +433,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociClien
 	// If tokenRequest is present then the requested LB/NLB client is WRIS(Workload Identity) / Nested RP based
 	configProvider, err := c.getConfigurationProvider(logger, ociClientConfig)
 	if err != nil {
-		logger.Error("Failed to get oke workload identity configuration provider! " + err.Error())
+		logger.Error("Failed to get oke workload identity RP / nested RP configuration provider! " + err.Error())
 		return nil
 	}
 
@@ -493,7 +493,10 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 	}
 	if ociClientConfig.SaToken != nil {
 		configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
-
+		if err != nil {
+			c.logger.Error("Failed to get oke workload identity RP / nested RP configuration provider! " + err.Error())
+			return nil
+		}
 		network, err := core.NewVirtualNetworkClientWithConfigurationProvider(configProvider)
 		if err != nil {
 			c.logger.Errorf("Failed to create Network workload identity client %v", err)
@@ -537,7 +540,10 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 	if ociClientConfig.SaToken != nil {
 
 		configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
-
+		if err != nil {
+			c.logger.Error("Failed to get oke workload identity RP / nested RP configuration provider! " + err.Error())
+			return nil
+		}
 		identity, err := identity.NewIdentityClientWithConfigurationProvider(configProvider)
 		if err != nil {
 			c.logger.Errorf("Failed to create Identity workload identity  %v", err)
@@ -595,6 +601,10 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 	if ociClientConfig.SaToken != nil {
 
 		configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
+		if err != nil {
+			c.logger.Error("Failed to get oke workload identity RP / nested RP configuration provider! " + err.Error())
+			return nil
+		}
 		fc, err := filestorage.NewFileStorageClientWithConfigurationProvider(configProvider)
 		if err != nil {
 			c.logger.Errorf("Failed to create FSS workload identity client %v", err)
