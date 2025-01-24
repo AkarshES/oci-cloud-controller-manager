@@ -72,9 +72,9 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	klog.Infof("Adding feature gate: ")
 	bs, _ := json.Marshal(csioptions.FeatureGates)
 	klog.Infof("Adding feature gate : %s", string(bs))
-	/*if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
+	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
-	}*/
+	}
 
 	var config *rest.Config
 	var err error

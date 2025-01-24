@@ -405,6 +405,7 @@ func (f *featureGate) Type() string {
 
 // Add adds features to the featureGate.
 func (f *featureGate) Add(features map[Feature]FeatureSpec) error {
+	klog.Infof("****defaultKubernetesFeatureGates %v",features)
 	vs := map[Feature]VersionedSpecs{}
 	for name, spec := range features {
 		// if no version is provided for the FeatureSpec, it is defaulted to version 0.0 so that it can be enabled/disabled regardless of emulation version.
@@ -418,18 +419,20 @@ func (f *featureGate) Add(features map[Feature]FeatureSpec) error {
 func (f *featureGate) AddVersioned(features map[Feature]VersionedSpecs) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-
+	klog.Infof("****defaultVersionedKubernetesFeatureGates %v", features)
 	if f.closed {
 		return fmt.Errorf("cannot add a feature gate after adding it to the flag set")
 	}
 
 	// Copy existing state
 	known := f.GetAllVersioned()
-
+	klog.Infof("****Known value %v", known)
 	for name, specs := range features {
 		sort.Sort(specs)
+		klog.Infof("****Name %s specs %v", name,specs)
 		if existingSpec, found := known[name]; found {
 			sort.Sort(existingSpec)
+			klog.Infof("****Name %s existingSpec %v", name,existingSpec)
 			if reflect.DeepEqual(existingSpec, specs) {
 				continue
 			}
