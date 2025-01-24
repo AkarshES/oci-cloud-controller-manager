@@ -16,6 +16,7 @@ package csiprovisioner
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"k8s.io/klog/v2"
 	"math/rand"
@@ -106,10 +107,12 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		fsType = ""
 		endpoint = csioptions.FssEndpoint
 	}
-
-	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
+	klog.Infof("Adding feature gate: ")
+	bs, _ := json.Marshal(csioptions.FeatureGates)
+	klog.Infof("Adding feature gate : %s", string(bs))
+	/*if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
-	}
+	}*/
 
 	ctx := context.Background()
 
