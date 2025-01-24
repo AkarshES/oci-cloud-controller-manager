@@ -16,6 +16,7 @@ package csiresizer
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -68,9 +69,12 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	if addr == "" {
 		addr = csioptions.HttpEndpoint
 	}
-	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
+	klog.Infof("Adding feature gate: ")
+	bs, _ := json.Marshal(csioptions.FeatureGates)
+	klog.Infof("Adding feature gate : %s", string(bs))
+	/*if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
-	}
+	}*/
 
 	var config *rest.Config
 	var err error
