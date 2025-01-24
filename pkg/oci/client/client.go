@@ -16,7 +16,6 @@ package client
 
 import (
 	"context"
-	v1 "k8s.io/api/core/v1"
 	"net/http"
 	"os"
 	"strings"
@@ -34,6 +33,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	authv1 "k8s.io/api/authentication/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/flowcontrol"
 )
@@ -667,7 +667,7 @@ func getDefaultRequestMetadata(existingRequestMetadata common.RequestMetadata) c
 func (c *client) getConfigurationProvider(logger *zap.SugaredLogger, ociClientConfig *OCIClientConfig) (common.ConfigurationProvider, error) {
 
 	// Refer cache for provider config
-	configProviderCacheVal, exists, err := c.configProviderCache.GetByKey(ociClientConfig.Sa.Namespace + string(ociClientConfig.Sa.UID) + ociClientConfig.ParentRptURL)
+	configProviderCacheVal, exists, err := c.configProviderCache.GetByKey(getProviderConfigCacheKeyFromOciClientConfig(ociClientConfig))
 	if exists && err == nil {
 		return configProviderCacheVal.(providerConfigCacheKeyValue).Config, nil
 	}
@@ -689,10 +689,14 @@ func (c *client) getConfigurationProvider(logger *zap.SugaredLogger, ociClientCo
 
 	// Populate provider config in cache
 	c.configProviderCache.Add(providerConfigCacheKeyValue{
-		Key:    ociClientConfig.Sa.Namespace + string(ociClientConfig.Sa.UID) + ociClientConfig.ParentRptURL,
+		Key:    getProviderConfigCacheKeyFromOciClientConfig(ociClientConfig),
 		Config: configProvider,
 	})
 	return configProvider, nil
+}
+
+func getProviderConfigCacheKeyFromOciClientConfig(ociClientConfig *OCIClientConfig) string {
+	return ociClientConfig.Sa.Namespace + string(ociClientConfig.Sa.UID) + ociClientConfig.ParentRptURL
 }
 
 func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *OCIClientConfig) Interface {
