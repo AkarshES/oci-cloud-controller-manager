@@ -8591,7 +8591,7 @@ func Test_getHealthChecker(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			result, err := getHealthChecker(tc.service)
+			result, err := getHealthChecker(tc.service, &v1.ServicePort{Port: 10256}, nil, nil)
 
 			if tc.err != nil && err == nil {
 				t.Errorf("Error: expected\n%+v\nbut got\n%+v", tc.err, err)
@@ -11980,7 +11980,7 @@ func Test_getPorts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := getPorts(tt.service, tt.ipVersions)
+			result, err := getPorts(tt.service, tt.ipVersions, nil, nil)
 			if !reflect.DeepEqual(result, tt.ports) {
 				t.Errorf("getPorts() = %+v, want %+v", result, tt.ports)
 			}
