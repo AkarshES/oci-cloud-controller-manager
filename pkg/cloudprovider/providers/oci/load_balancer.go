@@ -615,6 +615,10 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	// Since len(managedPods) = 0 even when it is a Flannel cluster. We cant find out if customer decided to use managed Pods on NP through this log line.
 	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods), "managedPods", len(managedPods)).Info("Ensuring load balancer")
 
+	// Reset node list since we need not manage resources for nodes when its Pods as Backend mode
+	if isPodsAsBackendsMode(service) {
+		provisionedSvcNodes = []*v1.Node{}
+	}
 	dimensionsMap := make(map[string]string)
 
 	var errorType string
@@ -1387,6 +1391,11 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	// Since len(managedPods) = 0 even when it is a Flannel cluster. We cant find out if customer decided to use managed Pods on NP through this log line.
 	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods), "managedPods", len(managedPods)).Info("Updating load balancer backends")
 
+	// Reset node list since we need not manage resources for nodes when its Pods as Backend mode
+	if isPodsAsBackendsMode(service) {
+		provisionedSvcNodes = []*v1.Node{}
+	}
+
 	// If network partition, do not proceed
 	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists, isPodsAsBackendsMode(service))
 	if err != nil {
@@ -1781,6 +1790,12 @@ func (clb *CloudLoadBalancerProvider) cleanupSecurityRulesForLoadBalancerDelete(
 		}
 	}
 	nodes, _, err := clb.getNodesAndPodsByIPs(ctx, cp, ipSet.UnsortedList(), service)
+
+	// Reset node list since we need not manage resources for nodes when its Pods as Backend mode
+	if isPodsAsBackendsMode(service) {
+		nodes = []*v1.Node{}
+	}
+
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to fetch nodes by internal ips")
 		return errors.Wrap(err, "fetching nodes by internal ips")
