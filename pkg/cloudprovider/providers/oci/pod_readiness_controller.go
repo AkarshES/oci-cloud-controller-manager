@@ -6,9 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"k8s.io/utils/pointer"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -34,6 +31,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -256,9 +254,8 @@ func (p *PodReadinessController) sync(key string) error {
 		podReadinessCondition := getPodReadinessCondition(service.Namespace, service.Name, backendSetName)
 		unhealthyBackendMap := getUnhealthyBackendMap(backendSetHealth, podReadinessCondition)
 
-		isManagedPodsAsBackends := reflect.DeepEqual(service.Spec.AllocateLoadBalancerNodePorts, pointer.Bool(false))
 		// Having managed pods as backends is only supported for NPN Clusters.
-		isManagedPodsAsBackends = isManagedPodsAsBackends && npnEnabled && !hasCustomNodePorts(service)
+		isManagedPodsAsBackends := isPodsAsBackendsMode(service)
 
 		for _, pod := range pods {
 			if !hasReadinessGate(pod, podReadinessCondition) {
@@ -285,6 +282,9 @@ func (p *PodReadinessController) sync(key string) error {
 			}
 
 			backendName := fmt.Sprintf("%s:%d", pod.Status.PodIP, servicePort.NodePort)
+			if isPodsAsBackendsMode(service) {
+				backendName = fmt.Sprintf("%s:%d", pod.Status.PodIP, getTargetPortOfPod(&servicePort, pod))
+			}
 			if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
 				logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
 				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)

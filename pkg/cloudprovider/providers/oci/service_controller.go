@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/utils/pointer"
 	"reflect"
 	"strings"
 	"sync"
@@ -339,9 +338,8 @@ func (s *ServiceController) enqueueServiceForEndpointSliceUpdate(targetEndpointS
 		return
 	}
 
-	isManagedPodsAsBackends := reflect.DeepEqual(service.Spec.AllocateLoadBalancerNodePorts, pointer.Bool(false))
 	// Having managed pods as backends is only supported for NPN Clusters.
-	isManagedPodsAsBackends = isManagedPodsAsBackends && npnEnabled && !hasCustomNodePorts(service)
+	isManagedPodsAsBackends := isPodsAsBackendsMode(service)
 
 	/* TODO: Keeping Support for Mixed Clusters behind feature gate since there some uncovered edge cases.
 	 *  One rare edge case is possible where the VN is deleted before the endpoint is deleted,
@@ -360,7 +358,7 @@ func (s *ServiceController) enqueueServiceForEndpointSliceUpdate(targetEndpointS
 			if !targetVirtualPodExists && !oldVirtualPodExists && !isManagedPodsAsBackends {
 				return
 			}
-		} else if !targetVirtualPodExists || !isManagedPodsAsBackends {
+		} else if !targetVirtualPodExists && !isManagedPodsAsBackends {
 			return
 		}
 	} else {

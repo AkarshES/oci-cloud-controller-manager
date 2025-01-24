@@ -909,8 +909,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	}
 
 	// If network partition, do not proceed
-	isManagedPods := len(managedPods) != 0
-	isNetworkPartition, err := cp.checkForNetworkPartition(logger, clusterNodes, virtualNodeExists, isManagedPods)
+	isNetworkPartition, err := cp.checkForNetworkPartition(logger, clusterNodes, virtualNodeExists, isPodsAsBackendsMode(service))
 	if err != nil {
 		return nil, err
 	} else if isNetworkPartition {
@@ -1390,8 +1389,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods), "managedPods", len(managedPods)).Info("Updating load balancer backends")
 
 	// If network partition, do not proceed
-	isManagedPods := len(managedPods) != 0
-	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists, isManagedPods)
+	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists, isPodsAsBackendsMode(service))
 	if err != nil {
 		return err
 	} else if isNetworkPartition {
@@ -1837,7 +1835,7 @@ func (clb *CloudLoadBalancerProvider) cleanupSecurityRulesForLoadBalancerDelete(
 		return err
 	}
 
-	portsNsg, err := getPorts(service, convertOciIpVersionsToOciIpFamilies(ipVersions.ListenerBackendIpVersion))
+	portsNsg, err := getPorts(service, convertOciIpVersionsToOciIpFamilies(ipVersions.ListenerBackendIpVersion), nil, nil)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get ports from spec")
 	}
