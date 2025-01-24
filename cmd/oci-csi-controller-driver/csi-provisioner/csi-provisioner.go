@@ -107,9 +107,9 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		endpoint = csioptions.FssEndpoint
 	}
 
-	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
+	/*if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
-	}
+	}*/
 
 	ctx := context.Background()
 

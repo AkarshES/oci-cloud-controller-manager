@@ -68,9 +68,9 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	if addr == "" {
 		addr = csioptions.HttpEndpoint
 	}
-	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
+	/*if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
-	}
+	}*/
 
 	var config *rest.Config
 	var err error
