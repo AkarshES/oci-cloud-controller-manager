@@ -297,7 +297,7 @@ regular_schedule_for_all = [
             },
             {
                 "title": "OC31 Deployments",
-                "airport_codes": ["izq"],
+                "airport_codes": ["izq", "jjt"],
                 "labels": ["normal"],
                 "depends_on": {"realms": ["OC1"]}
             },
@@ -330,5 +330,4 @@ excluded_locations = [
     "OC9-me-duqm-1",
     "OC12-us-gov-manassas-1",
     "OC12-us-gov-saltlakecity-1",
-    "OC31-ap-silverdale-1"              # region currently in RB, move to above once moved to prod
 ]
