@@ -31,7 +31,7 @@ meta_template = {
     "components": [],
     "flocks": [],
     "release_templates": [],
-    "schedule": regular_schedule_for_all,
+    "schedule": oke_common_release_schedule,
     "exclude_locations": excluded_locations
 }
 

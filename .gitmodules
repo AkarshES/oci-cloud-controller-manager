@@ -1,0 +1,3 @@
+[submodule "release-tooling/templates/shared_modules"]
+	path = release-tooling/templates/shared_modules
+	url = ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oke-common-release-tooling.git
