@@ -44,17 +44,18 @@ const (
 )
 
 func init() {
-	utilfeature.DefaultMutableFeatureGate.AddVersioned(defaultResizerFeatureGates)
+	utilfeature.DefaultMutableFeatureGate.Add(defaultResizerFeatureGates)
+	//utilfeature.DefaultMutableFeatureGate.AddVersioned(defaultResizerFeatureGates)
 }
 
-var defaultResizerFeatureGates1 = map[featuregate.Feature]featuregate.FeatureSpec{
+var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	AnnotateFsResize:              {Default: false, PreRelease: featuregate.Alpha},
 	RecoverVolumeExpansionFailure: {Default: true, PreRelease: featuregate.Beta},
 	VolumeAttributesClass:         {Default: false, PreRelease: featuregate.Beta},
 	
 }
 
-var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.VersionedSpecs{
+var defaultResizerFeatureGates_new = map[featuregate.Feature]featuregate.VersionedSpecs{
 	AnnotateFsResize: {{Version: version.MustParse("v1.22"),Default: false, PreRelease: featuregate.Alpha}},
 	RecoverVolumeExpansionFailure: {
 		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Alpha},
