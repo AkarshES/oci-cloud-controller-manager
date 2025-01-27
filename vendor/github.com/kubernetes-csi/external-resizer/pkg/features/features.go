@@ -50,9 +50,6 @@ func init() {
 
 var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	AnnotateFsResize:              {Default: false, PreRelease: featuregate.Alpha},
-	RecoverVolumeExpansionFailure: {Default: true, PreRelease: featuregate.Beta},
-	VolumeAttributesClass:         {Default: false, PreRelease: featuregate.Beta},
-	
 }
 
 var defaultResizerFeatureGates_new = map[featuregate.Feature]featuregate.VersionedSpecs{
