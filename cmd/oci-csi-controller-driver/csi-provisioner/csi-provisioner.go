@@ -41,7 +41,7 @@ import (
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity/topology"
 	ctrl "github.com/kubernetes-csi/external-provisioner/v5/pkg/controller"
-	"github.com/kubernetes-csi/external-provisioner/v5/pkg/features"
+	"k8s.io/kubernetes/pkg/features"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/owner"
 	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"

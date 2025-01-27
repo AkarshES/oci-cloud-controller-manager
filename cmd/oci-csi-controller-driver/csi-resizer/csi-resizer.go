@@ -27,7 +27,7 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/metrics"
 	"github.com/kubernetes-csi/external-resizer/pkg/controller"
 	"github.com/kubernetes-csi/external-resizer/pkg/csi"
-	"github.com/kubernetes-csi/external-resizer/pkg/features"
+	"k8s.io/kubernetes/pkg/features"
 	"github.com/kubernetes-csi/external-resizer/pkg/modifier"
 	"github.com/kubernetes-csi/external-resizer/pkg/modifycontroller"
 	"github.com/kubernetes-csi/external-resizer/pkg/resizer"
