@@ -19,6 +19,7 @@ package features
 import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/component-base/featuregate"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
 const (
@@ -43,11 +44,24 @@ const (
 )
 
 func init() {
-	//utilfeature.DefaultMutableFeatureGate.Add(defaultResizerFeatureGates)
+	utilfeature.DefaultMutableFeatureGate.AddVersioned(defaultResizerFeatureGates)
 }
 
-var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
+var defaultResizerFeatureGates1 = map[featuregate.Feature]featuregate.FeatureSpec{
 	AnnotateFsResize:              {Default: false, PreRelease: featuregate.Alpha},
 	RecoverVolumeExpansionFailure: {Default: true, PreRelease: featuregate.Beta},
 	VolumeAttributesClass:         {Default: false, PreRelease: featuregate.Beta},
+	
+}
+
+var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.VersionedSpecs{
+	AnnotateFsResize: {{Version: version.MustParse("v1.22"),Default: false, PreRelease: featuregate.Alpha}},
+	RecoverVolumeExpansionFailure: {
+		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Alpha},
+		{Version: version.MustParse("1.32"), Default: true, PreRelease: featuregate.Beta},
+	},
+	VolumeAttributesClass :{
+		{Version: version.MustParse("1.29"), Default: false, PreRelease: featuregate.Alpha},
+		{Version: version.MustParse("1.31"), Default: false, PreRelease: featuregate.Beta},
+	},
 }
