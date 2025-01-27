@@ -43,7 +43,7 @@ const (
 )
 
 func init() {
-	utilfeature.DefaultMutableFeatureGate.Add(defaultResizerFeatureGates)
+	//utilfeature.DefaultMutableFeatureGate.Add(defaultResizerFeatureGates)
 }
 
 var defaultResizerFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{

@@ -53,7 +53,7 @@ const (
 )
 
 func init() {
-	feature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates)
+	//feature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates)
 }
 
 // defaultKubernetesFeatureGates consists of all known feature keys specific to external-provisioner.
