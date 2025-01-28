@@ -1,5 +1,19 @@
 locals {
 
+  roma_ccm_mapping_override = {
+    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+    "v1.29" : "v1.29-b42bf1ab166-4766@sha256:9124dc96512a7998910cd4bb5cc07dc2e0f9e8ae243ff56f97898d53b357c977",
+    "v1.30" : "v1.30-dd9a6803a33-4765@sha256:efb767e5f1d53e223794b91a287f0fe099a4eba9ac7054852dace9646ec24b85",
+    "v1.31" : "v1.31-405cad3eb26-4768@sha256:e6ec4e4c031a086188660d52c822abfd4828742b2a6269e66c0f6b034a71f2f7"
+  }
+
   yubi_ccm_mapping_override = {
     "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
     "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -58,6 +72,64 @@ locals {
             env = "prd"
             value = jsonencode(local.spectra_ccm_mapping_override_hotfix_override)
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaziiwdjytm4z2gbij4xchpuywbwxozkfod3z4g3qorsz5zcyufz7a"
+          },
+          /*
+          Pinned OMK tenancies with CPO 1.6.1 ccm mappings for Roma LA
+          https://jira.oci.oraclecorp.com/browse/OKE-35076
+          */
+          {
+            regions = ["iad", "phx"]
+            env = "integ"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafyd4yolgubij6qz7kgxxl5ps2qhqkfoqrvxtjvdccy66ifxmglia"
+          },
+          {
+            regions = ["iad", "phx"]
+            env = "integ"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaj4ymkytn4cwasyktbc5rbqiald2enkoarepdv7pawyuw2tkazisa"
+          },
+          {
+            regions = ["iad", "phx"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaqeq267dfoqjqjvcfgazlo6tqv7nfnv2rv767dm5ecf2wqlbsh5sa"
+          },
+          {
+            regions = ["iad", "phx"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaepbccznc477ibxxopf2o3ki4bvfn47ji2zqvdfluqtutcduggn4q"
+          },
+          {
+            regions = ["iad", "phx"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3jtqmhbxuyvz42zvw7ltv5elx3dgypxjmtqd7yvhveqer7r7vwqa"
+          },
+          {
+            regions = ["iad", "phx", "sjc", "syd", "fra"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3gudsvkwk52fnlmglncjuir56hhbuxoffdvc5muc2aqsuelmfuma"
+          },
+          {
+            regions = ["iad", "phx", "sjc", "syd", "fra"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaar4ugvbhybeczkonzvnyz3h4bqlqezfhpibviyqtyenzozj5xh4va"
+          },
+          {
+            regions = ["iad", "phx", "sjc", "syd", "fra"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaarf636mkhnvtlwm77bhcukivkpql4qz2lhcximxyhsgnliud5ylwa"
+          },
+          {
+            regions = ["iad", "phx", "sjc", "syd", "fra"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaauw2eedsk3udqtclhqpphcsy4xhxfrtr4uiqwa3efx5hzzaaas45a"
           }
         ]
       },

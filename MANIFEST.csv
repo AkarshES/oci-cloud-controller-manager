@@ -43,9 +43,6 @@ oke-public-cloud-provider-oci                     , v1.28-eeb0f8e9df3-57
 oke-public-cloud-provider-oci-linux_x86_64        , v1.27-bff7091ad1d-51
 oke-public-cloud-provider-oci-linux_arm64_v8      , v1.27-bff7091ad1d-51
 oke-public-cloud-provider-oci                     , v1.27-bff7091ad1d-51
-oke-public-cloud-provider-oci-linux_x86_64        , v1.31-c1491328453-6
-oke-public-cloud-provider-oci-linux_arm64_v8      , v1.31-c1491328453-6
-oke-public-cloud-provider-oci                     , v1.31-c1491328453-6
 oke-public-cloud-provider-oci-linux_x86_64        , v1.28-96b9f4622cc-66
 oke-public-cloud-provider-oci-linux_arm64_v8      , v1.28-96b9f4622cc-66
 oke-public-cloud-provider-oci                     , v1.28-96b9f4622cc-66
@@ -61,9 +58,6 @@ oke-public-cloud-provider-oci                     , v1.29-593b5de8c7b-66
 oke-public-cloud-provider-oci-linux_x86_64        , v1.30-e29f5456e73-58
 oke-public-cloud-provider-oci-linux_arm64_v8      , v1.30-e29f5456e73-58
 oke-public-cloud-provider-oci                     , v1.30-e29f5456e73-58
-oke-public-cloud-provider-oci-linux_x86_64        , v1.31-32b2397ff78-18
-oke-public-cloud-provider-oci-linux_arm64_v8      , v1.31-32b2397ff78-18
-oke-public-cloud-provider-oci                     , v1.31-32b2397ff78-18
 oke-public-cloud-provider-oci-linux_x86_64        , v1.30-9996b0758fd-4095
 oke-public-cloud-provider-oci-linux_arm64_v8      , v1.30-9996b0758fd-4095
 oke-public-cloud-provider-oci                     , v1.30-9996b0758fd-4095
@@ -86,3 +80,6 @@ oke-public-cloud-provider-oci                     , v1.28-cb1635cc6c7-80
 oke-public-cloud-provider-oci                     , v1.29-13ef016091f-80
 oke-public-cloud-provider-oci                     , v1.30-424c53e6898-73
 oke-public-cloud-provider-oci                     , v1.31-46a28c37e3d-32
+oke-public-cloud-provider-oci                     , v1.29-b42bf1ab166-4766
+oke-public-cloud-provider-oci                     , v1.30-dd9a6803a33-4765
+oke-public-cloud-provider-oci                     , v1.31-405cad3eb26-4768
