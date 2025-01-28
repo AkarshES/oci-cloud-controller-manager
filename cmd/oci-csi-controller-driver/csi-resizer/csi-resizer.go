@@ -16,7 +16,6 @@ package csiresizer
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -27,7 +26,7 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/metrics"
 	"github.com/kubernetes-csi/external-resizer/pkg/controller"
 	"github.com/kubernetes-csi/external-resizer/pkg/csi"
-	"k8s.io/kubernetes/pkg/features"
+	"github.com/kubernetes-csi/external-resizer/pkg/features"
 	"github.com/kubernetes-csi/external-resizer/pkg/modifier"
 	"github.com/kubernetes-csi/external-resizer/pkg/modifycontroller"
 	"github.com/kubernetes-csi/external-resizer/pkg/resizer"
@@ -69,9 +68,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	if addr == "" {
 		addr = csioptions.HttpEndpoint
 	}
-	klog.Infof("Adding feature gate: ")
-	bs, _ := json.Marshal(csioptions.FeatureGates)
-	klog.Infof("Adding feature gate : %s", string(bs))
+
 	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
 	}

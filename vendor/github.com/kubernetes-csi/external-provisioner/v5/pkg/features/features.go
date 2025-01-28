@@ -55,7 +55,7 @@ const (
 
 func init() {
 	feature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates)
-	//feature.DefaultMutableFeatureGate.AddVersioned(defaultKubernetesFeatureGates)
+	feature.DefaultMutableFeatureGate.AddVersioned(defaultKubernetesVersionedFeatureGates)
 }
 
 // defaultKubernetesFeatureGates consists of all known feature keys specific to external-provisioner.
@@ -64,13 +64,7 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	Topology:                       {Default: true, PreRelease: featuregate.GA},
 }
 
-var defaultKubernetesFeatureGates_new = map[featuregate.Feature]featuregate.VersionedSpecs{
-	Topology: {
-		{Version: version.MustParse("0.4"),Default: false, PreRelease: featuregate.Alpha},
-		{Version: version.MustParse("1.2"),Default: true, PreRelease: featuregate.Beta},
-		{Version: version.MustParse("5.0"),Default: true, PreRelease: featuregate.GA},
-
-	},
+var defaultKubernetesVersionedFeatureGates = map[featuregate.Feature]featuregate.VersionedSpecs{
 	HonorPVReclaimPolicy: {
 		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Alpha},
 		{Version: version.MustParse("1.31"), Default: true, PreRelease: featuregate.Beta},

@@ -16,7 +16,6 @@ package csiprovisioner
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"k8s.io/klog/v2"
 	"math/rand"
@@ -41,7 +40,7 @@ import (
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/capacity/topology"
 	ctrl "github.com/kubernetes-csi/external-provisioner/v5/pkg/controller"
-	"k8s.io/kubernetes/pkg/features"
+	"github.com/kubernetes-csi/external-provisioner/v5/pkg/features"
 	"github.com/kubernetes-csi/external-provisioner/v5/pkg/owner"
 	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
@@ -107,9 +106,7 @@ func StartCSIProvisioner(csioptions csioptions.CSIOptions, csiDriver driver.CSID
 		fsType = ""
 		endpoint = csioptions.FssEndpoint
 	}
-	klog.Infof("Adding feature gate: ")
-	bs, _ := json.Marshal(csioptions.FeatureGates)
-	klog.Infof("Adding feature gate : %s", string(bs))
+
 	if err := utilfeature.DefaultMutableFeatureGate.SetFromMap(csioptions.FeatureGates); err != nil {
 		klog.Fatal(err)
 	}
