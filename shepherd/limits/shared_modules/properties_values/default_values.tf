@@ -101,6 +101,15 @@ locals {
       }
     }
 
+    lustre-csi-driver-enabled = {
+      "dev.oc1" = {
+        "all": "true"
+      }
+      "integ.oc1" = {
+        "all": "true"
+      }
+    }
+
     // CCM related mappings
     ccm_image_version_mapping = {
       "default" = {
