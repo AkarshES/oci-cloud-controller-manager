@@ -189,7 +189,7 @@ func (block *blockProvisioner) Provision(options controller.ProvisionOptions, ad
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to find existence of volume")
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(block.metricPusher, metrics.PVProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, fmt.Errorf("failed to check existence of volume %v", err)
@@ -197,7 +197,7 @@ func (block *blockProvisioner) Provision(options controller.ProvisionOptions, ad
 
 	if len(volumes) > 1 {
 		logger.Error("Duplicate volume exists")
-		fvdMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(util.ErrValidation, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(block.metricPusher, metrics.PVProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil, fmt.Errorf("duplicate volume %q exists", string(options.PVC.UID))
@@ -218,7 +218,7 @@ func (block *blockProvisioner) Provision(options controller.ProvisionOptions, ad
 		if err != nil {
 			logger.With("Compartment Id", block.compartmentID).With(zap.Error(err)).Error("Failed to create volume")
 			errorType = util.GetError(err)
-			fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+			fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 			dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 			metrics.SendMetricData(block.metricPusher, metrics.PVProvision, time.Since(startTime).Seconds(), dimensionsMap)
 			return nil, errors.Wrap(err, "Failed to create volume")
@@ -230,7 +230,7 @@ func (block *blockProvisioner) Provision(options controller.ProvisionOptions, ad
 	if err != nil {
 		logger.With("volumeID", *volume.Id).Error("Timed out while waiting for the volume.")
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(block.metricPusher, metrics.PVProvision, time.Since(startTime).Seconds(), dimensionsMap)
 		_ = block.client.BlockStorage().DeleteVolume(ctx, *volume.Id)
@@ -265,7 +265,7 @@ func (block *blockProvisioner) Provision(options controller.ProvisionOptions, ad
 			MountOptions: options.StorageClass.MountOptions,
 		},
 	}
-	fvdMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.FVDStorageType)
+	fvdMetricDimension = util.GetComponentForMetricDimension(util.Success, util.FVDStorageType)
 	dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 	dimensionsMap[metrics.ResourceOCIDDimension] = *volume.Id
 	metrics.SendMetricData(block.metricPusher, metrics.PVProvision, time.Since(startTime).Seconds(), dimensionsMap)
@@ -300,7 +300,7 @@ func (block *blockProvisioner) Delete(volume *v1.PersistentVolume) error {
 
 	if client.IsNotFound(err) {
 		logger.With(zap.Error(err)).Info("Volume not found. Presuming already deleted.")
-		fvdMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(util.ErrValidation, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(block.metricPusher, metrics.PVDelete, time.Since(startTime).Seconds(), dimensionsMap)
 		return nil
@@ -309,12 +309,12 @@ func (block *blockProvisioner) Delete(volume *v1.PersistentVolume) error {
 	if err != nil {
 		logger.Error("Couldn't delete the volume")
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(block.metricPusher, metrics.PVDelete, time.Since(startTime).Seconds(), dimensionsMap)
 	} else {
 		logger.Info("Successfully deleted the volume")
-		fvdMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(util.Success, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(block.metricPusher, metrics.PVDelete, time.Since(startTime).Seconds(), dimensionsMap)
 	}

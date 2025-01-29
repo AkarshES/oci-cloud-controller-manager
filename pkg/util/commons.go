@@ -30,6 +30,7 @@ const (
 	ErrTagLimitReached = "TAG_LIMIT_REACHED"
 	Success            = "SUCCESS"
 	BackupCreating     = "CREATING"
+	PANIC              = "PANIC"
 
 	// Components generating errors
 	// Load Balancer
@@ -92,7 +93,7 @@ func GetError(err error) string {
 	return ErrValidation
 }
 
-func GetMetricDimensionForComponent(err string, component string) string {
+func GetComponentForMetricDimension(err string, component string) string {
 	if err == "" || component == "" {
 		return ""
 	}

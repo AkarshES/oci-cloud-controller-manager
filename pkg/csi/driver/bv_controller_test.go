@@ -1251,7 +1251,7 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 			defer cancel()
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: ""},
@@ -1316,7 +1316,7 @@ func TestControllerDriver_DeleteVolume(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: ""},
@@ -1422,7 +1422,7 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 			defer cancel()
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: &util.MockKubeClient{
 					CoreClient: &util.MockCoreClient{},
 				},
@@ -1496,7 +1496,7 @@ func TestControllerDriver_ControllerUnpublishVolume(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 			defer cancel()
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: &util.MockKubeClient{
 					CoreClient: &util.MockCoreClient{},
 				},
@@ -1638,7 +1638,7 @@ func TestControllerDriver_ControllerExpandVolume(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: ""},
@@ -2083,7 +2083,7 @@ func TestCreateSnapshot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: ""},
@@ -2136,7 +2136,7 @@ func TestControllerDriver_DeleteSnapshot(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &BlockVolumeControllerDriver{ControllerDriver{
+			d := &BlockVolumeControllerDriver{&ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: ""},

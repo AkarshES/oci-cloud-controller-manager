@@ -419,7 +419,6 @@ func (c *client) CreateMountTarget(ctx context.Context, details fss.CreateMountT
 	if !c.rateLimiter.Writer.TryAccept() {
 		return nil, RateLimitError(false, "CreateMountTarget")
 	}
-
 	resp, err := c.filestorage.CreateMountTarget(ctx, fss.CreateMountTargetRequest{
 		CreateMountTargetDetails: details,
 		RequestMetadata:          c.requestMetadata,

@@ -78,4 +78,5 @@ const (
 	BackendSetsCountDimension = "backendSetsCount"
 	VolumeVpusPerGBDimension  = "vpusPerGB"
 	InstanceIdDimension       = "instanceID"
+	ClusterOCID               = "clusterId"
 )

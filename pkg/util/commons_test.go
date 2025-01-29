@@ -45,7 +45,7 @@ func TestGetMetricDimensionForComponent(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			actualMetricDimension := GetMetricDimensionForComponent(tt.err, tt.component)
+			actualMetricDimension := GetComponentForMetricDimension(tt.err, tt.component)
 			if actualMetricDimension != tt.expectedMetricDimension {
 				t.Errorf("Expected errorType = %s, but got %s", tt.expectedMetricDimension, actualMetricDimension)
 				return
