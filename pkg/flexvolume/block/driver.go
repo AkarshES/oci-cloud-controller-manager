@@ -223,7 +223,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	id, err := lookupNodeID(d.K, nodeName)
 	if err != nil {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "Failed to look up node id: ", err)
@@ -233,7 +233,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	id, err = ociprovider.MapProviderIDToResourceID(id)
 	if err != nil {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "Failed to map nodes provider id to instance id: ", err)
@@ -244,7 +244,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	instance, err := c.Compute().GetInstance(ctx, id)
 	if err != nil {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "Failed to get instance: ", err)
@@ -256,7 +256,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	attachment, err := c.Compute().FindVolumeAttachment(ctx, compartmentID, volumeOCID, nil)
 	if err != nil && !client.IsNotFound(err) {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "Got error in finding volume attachment", err)
@@ -264,7 +264,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	// volume already attached to an instance
 	if err == nil {
 		if *attachment.GetInstanceId() != *instance.Id {
-			fvdMetricDimension = util.GetMetricDimensionForComponent(util.ErrValidation, util.FVDStorageType)
+			fvdMetricDimension = util.GetComponentForMetricDimension(util.ErrValidation, util.FVDStorageType)
 			dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 			metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 			return flexvolume.Fail(logger, "Already attached to another instance: ", *attachment.GetInstanceId())
@@ -273,12 +273,12 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 		iscsiAttachment, err := getISCSIAttachment(attachment)
 		if err != nil {
 			errorType = util.GetError(err)
-			fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+			fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 			dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 			metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 			return flexvolume.Fail(logger, iscsiError)
 		}
-		fvdMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(util.Success, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.DriverStatus{
@@ -291,7 +291,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	attachment, err = c.Compute().AttachVolume(ctx, *instance.Id, volumeOCID, false)
 	if err != nil {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "Failed to attach volume: ", err)
@@ -299,7 +299,7 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	attachment, err = c.Compute().WaitForVolumeAttached(ctx, *attachment.GetId())
 	if err != nil {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, err)
@@ -309,13 +309,13 @@ func (d OCIFlexvolumeDriver) Attach(logger *zap.SugaredLogger, opts flexvolume.O
 	iscsiAttachment, err := getISCSIAttachment(attachment)
 	if err != nil {
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, iscsiError)
 	}
 
-	fvdMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.FVDStorageType)
+	fvdMetricDimension = util.GetComponentForMetricDimension(util.Success, util.FVDStorageType)
 	dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 	metrics.SendMetricData(d.metricPusher, metrics.PVAttach, time.Since(startTime).Seconds(), dimensionsMap)
 
@@ -352,13 +352,13 @@ func (d OCIFlexvolumeDriver) Detach(logger *zap.SugaredLogger, pvOrVolumeName, n
 		if apierrors.IsNotFound(err) {
 			// https://jira.oci.oraclecorp.com/browse/OKE-14168 : Volume detachment is deferred
 			logger.Info("Node is not found, volume is likely already detached.")
-			fvdMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.FVDStorageType)
+			fvdMetricDimension = util.GetComponentForMetricDimension(util.Success, util.FVDStorageType)
 			dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 			metrics.SendMetricData(d.metricPusher, metrics.PVDetach, time.Since(startTime).Seconds(), dimensionsMap)
 			return flexvolume.Succeed(logger, "Volume detachment completed.")
 		}
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVDetach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "failed to get compartmentID from node annotation: ", err)
@@ -368,7 +368,7 @@ func (d OCIFlexvolumeDriver) Detach(logger *zap.SugaredLogger, pvOrVolumeName, n
 	if err != nil {
 		logger.Error("Error in finding volume attachment")
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVDetach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, "Failed to find volume attachment: ", err)
@@ -378,7 +378,7 @@ func (d OCIFlexvolumeDriver) Detach(logger *zap.SugaredLogger, pvOrVolumeName, n
 	if err != nil {
 		logger.Error("Error detaching the volume")
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVDetach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, err)
@@ -388,13 +388,13 @@ func (d OCIFlexvolumeDriver) Detach(logger *zap.SugaredLogger, pvOrVolumeName, n
 	if err != nil {
 		logger.Error("Error while waiting for volume to be detached")
 		errorType = util.GetError(err)
-		fvdMetricDimension = util.GetMetricDimensionForComponent(errorType, util.FVDStorageType)
+		fvdMetricDimension = util.GetComponentForMetricDimension(errorType, util.FVDStorageType)
 		dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 		metrics.SendMetricData(d.metricPusher, metrics.PVDetach, time.Since(startTime).Seconds(), dimensionsMap)
 		return flexvolume.Fail(logger, err)
 	}
 
-	fvdMetricDimension = util.GetMetricDimensionForComponent(util.Success, util.FVDStorageType)
+	fvdMetricDimension = util.GetComponentForMetricDimension(util.Success, util.FVDStorageType)
 	dimensionsMap[metrics.ComponentDimension] = fvdMetricDimension
 	metrics.SendMetricData(d.metricPusher, metrics.PVDetach, time.Since(startTime).Seconds(), dimensionsMap)
 	return flexvolume.Succeed(logger, "Volume detachment completed.")

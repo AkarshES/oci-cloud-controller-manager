@@ -225,7 +225,7 @@ func (p *PodReadinessController) sync(key string) error {
 			return nil
 		}
 		logger.With(zap.Error(err)).Error("failed to get loadbalancer by name")
-		dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
+		dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), util.LoadBalancerType)
 		dimensionsMap[metrics.ResourceOCIDDimension] = lbName
 		metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 		return err
@@ -248,7 +248,7 @@ func (p *PodReadinessController) sync(key string) error {
 		backendSetHealth, err := p.getBackendSetHealth(lbProvider, *lb.Id, backendSetName)
 		if err != nil {
 			logger.With(zap.Error(err)).Error("failed to get backend set health")
-			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
+			dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), util.LoadBalancerType)
 			metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 			return err
 		}
@@ -299,7 +299,7 @@ func (p *PodReadinessController) sync(key string) error {
 				}
 				if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
 					logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
-					dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
+					dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), util.LoadBalancerType)
 					metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 					return err
 				}
@@ -326,7 +326,7 @@ func (p *PodReadinessController) sync(key string) error {
 				}
 				if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
 					logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
-					dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
+					dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), util.LoadBalancerType)
 					metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 					return err
 				}
@@ -335,7 +335,7 @@ func (p *PodReadinessController) sync(key string) error {
 	}
 
 	logger.Info("Successfully completed pod readiness sync")
-	dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.Success, util.LoadBalancerType)
+	dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.Success, util.LoadBalancerType)
 	dimensionsMap[metrics.BackendSetsCountDimension] = strconv.Itoa(len(backendSets))
 	metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 	return nil
