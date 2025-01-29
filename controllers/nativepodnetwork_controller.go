@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -41,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	npnv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
+	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
@@ -105,6 +107,7 @@ type NativePodNetworkReconciler struct {
 	OCIClient        ociclient.Interface
 	TimeTakenTracker sync.Map
 	Recorder         record.EventRecorder
+	Config           *providercfg.Config
 }
 
 // VnicAttachmentResponse is used to store the response for attach VNIC
@@ -283,9 +286,23 @@ func computeAveragesByReturnCode(errorArray []ErrorMetric) map[string]float64 {
 func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var err error
 	var failReason, failMessage = "NPNReconcileFailed", ""
+	var panicOccurred = false
 	var npn npnv1beta1.NativePodNetwork
 	defer func() {
-		if failMessage != "" && err != nil {
+		if rec := recover(); rec != nil {
+			panicOccurred = true
+			err = fmt.Errorf("panic recovered %v stack is %s", rec, string(debug.Stack()))
+			log.FromContext(ctx).
+				WithValues("component", "npn-controller").
+				Error(err, "Recovered from panic in NPN Reconcile")
+			dimensionsMap := make(map[string]string)
+			dimensionsMap[metrics.ClusterOCID] = r.Config.ClusterID
+			metrics.SendMetricData(r.MetricPusher, "NPN_PANIC", 1, dimensionsMap)
+			return
+		}
+		if panicOccurred {
+			r.Recorder.Event(&npn, v1.EventTypeWarning, "NPNReconcileFailed", "Fatal error occurred")
+		} else if failMessage != "" && err != nil {
 			r.Recorder.Event(&npn, v1.EventTypeWarning, failReason, failMessage+": "+err.Error())
 		} else if failMessage != "" {
 			r.Recorder.Event(&npn, v1.EventTypeWarning, failReason, failMessage)

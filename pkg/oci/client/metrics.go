@@ -29,6 +29,15 @@ var (
 		},
 		[]string{"resource", "code", "verb"},
 	)
+	cpoHealthz = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "cpo_controller_health",
+		Help: "Health of Controller (1=Ok, 0=Failed)",
+	}, []string{"controller"})
+
+	cpoReadyz = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "cpo_controller_ready",
+		Help: "Liveness of Controller (1=Ready, 0=NotReady)",
+	}, []string{"controller"})
 )
 
 type resource string
@@ -95,6 +104,28 @@ func incRequestCounter(err error, v verb, r resource) {
 	}).Inc()
 }
 
+func SetHealthStatusForController(c string, health string) {
+	value := 0
+	if health == "ok" {
+		value = 1
+	}
+	cpoHealthz.With(prometheus.Labels{
+		"controller": c,
+	}).Set(float64(value))
+}
+
+func SetReadinessForController(c string, health string) {
+	value := 0
+	if health == "ok" {
+		value = 1
+	}
+	cpoReadyz.With(prometheus.Labels{
+		"controller": c,
+	}).Set(float64(value))
+}
+
 func init() {
 	prometheus.MustRegister(ociRequestCounter)
+	prometheus.MustRegister(cpoHealthz)
+	prometheus.MustRegister(cpoReadyz)
 }

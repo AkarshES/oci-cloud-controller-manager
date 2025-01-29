@@ -104,12 +104,12 @@ type ControllerDriver struct {
 
 // BlockVolumeControllerDriver extends ControllerDriver
 type BlockVolumeControllerDriver struct {
-	ControllerDriver
+	*ControllerDriver
 }
 
 // FSSControllerDriver extends ControllerDriver
 type FSSControllerDriver struct {
-	ControllerDriver
+	*ControllerDriver
 	serviceAccountLister listersv1.ServiceAccountLister
 }
 
@@ -148,11 +148,10 @@ type ControllerDriverConfig struct {
 	DriverVersion          string
 	ClusterIpFamily        string
 }
-
 type MetricPusherGetter func(logger *zap.SugaredLogger) (*metrics.MetricPusher, error)
 
-func newControllerDriver(kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, config *providercfg.Config, c client.Interface, metricPusher *metrics.MetricPusher, clusterIpFamily string) ControllerDriver {
-	return ControllerDriver{
+func newControllerDriver(kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, config *providercfg.Config, c client.Interface, metricPusher *metrics.MetricPusher, clusterIpFamily string) *ControllerDriver {
+	return &ControllerDriver{
 		KubeClient:      kubeClientSet,
 		logger:          logger,
 		util:            &csi_util.Util{Logger: logger},
@@ -176,30 +175,54 @@ func newNodeDriver(nodeID string, nodeMetaData *csi_util.NodeMetadata, kubeClien
 }
 
 func GetControllerDriver(name string, kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, config *providercfg.Config, c client.Interface, clusterIpFamily string) csi.ControllerServer {
-	metricPusher, err := getMetricPusher(newMetricPusher, logger)
-	if err != nil {
-		logger.With("error", err).Error("Metrics collection could not be enabled")
-		// disable metric collection
-		metricPusher = nil
-	}
+	controllerDriver := newControllerDriver(kubeClientSet, logger, config, c, nil, clusterIpFamily)
 
-	if name == BlockVolumeDriverName {
-		return &BlockVolumeControllerDriver{ControllerDriver: newControllerDriver(kubeClientSet, logger, config, c, metricPusher, clusterIpFamily)}
-	}
-	if name == FSSDriverName {
+	startMetricPusherInit(controllerDriver, logger)
 
+	switch name {
+	case BlockVolumeDriverName:
+		return &BlockVolumeControllerDriver{ControllerDriver: controllerDriver}
+
+	case FSSDriverName:
+		// FSS-specific informer setup
 		factory := informers.NewSharedInformerFactory(kubeClientSet, 5*time.Minute)
 		serviceAccountInformer := factory.Core().V1().ServiceAccounts()
 		go serviceAccountInformer.Informer().Run(wait.NeverStop)
 
 		if !cache.WaitForCacheSync(wait.NeverStop, serviceAccountInformer.Informer().HasSynced) {
-			utilruntime.HandleError(fmt.Errorf("timed out waiting for informers to sync"))
+			err := fmt.Errorf("timed out waiting for informers to sync")
+			utilruntime.HandleError(err)
+			return nil
 		}
 
-		return &FSSControllerDriver{ControllerDriver: newControllerDriver(kubeClientSet, logger, config, c, metricPusher, clusterIpFamily), serviceAccountLister: serviceAccountInformer.Lister()}
+		return &FSSControllerDriver{
+			ControllerDriver:     controllerDriver,
+			serviceAccountLister: serviceAccountInformer.Lister(),
+		}
 
+	default:
+		logger.Errorf("Unknown controller driver name: %s", name)
+		return nil
 	}
-	return nil
+}
+
+func startMetricPusherInit(controllerDriver *ControllerDriver, logger *zap.SugaredLogger) {
+	go func() {
+		retryInterval := 5 * time.Second
+		for {
+			logger.Info("Attempting to initialize metric pusher...")
+			metricPusher, err := getMetricPusher(newMetricPusher, logger)
+			if err != nil || metricPusher == nil {
+				logger.With("error", err).Warnf("Failed to get metric pusher. Retrying in %v...", retryInterval)
+				time.Sleep(retryInterval)
+				continue
+			}
+
+			logger.Info("Successfully initialized metric pusher")
+			controllerDriver.metricPusher = metricPusher
+			return
+		}
+	}()
 }
 
 func newMetricPusher(logger *zap.SugaredLogger) (*metrics.MetricPusher, error) {

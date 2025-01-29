@@ -746,7 +746,7 @@ func TestFSSControllerDriver_CreateVolume(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 		defer cancel()
 		t.Run(tt.name, func(t *testing.T) {
-			d := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+			d := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: "", Auth: config.AuthConfig{TenancyID: tt.args.tenancyId}},
@@ -853,7 +853,7 @@ func TestFSSControllerDriver_DeleteVolume(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+			d := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: "", Auth: config.AuthConfig{TenancyID: tt.args.tenancyId}},
@@ -1062,7 +1062,7 @@ func TestExtractStorageClassParameters(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			os.Setenv("CLUSTER_IP_FAMILY", tt.clusterIPFamily)
-			d := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+			d := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 				KubeClient: nil,
 				logger:     zap.S(),
 				config:     &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
@@ -1094,15 +1094,15 @@ func isStorageClassParametersEqual(gotStorageClassParameters, expectedStorageCla
 
 func Test_validateMountTargetWithClusterIpFamily(t *testing.T) {
 
-	ipv4ClusterDriver := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+	ipv4ClusterDriver := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 		clusterIpFamily: csi_util.Ipv4Stack,
 	}}
 
-	ipv6ClusterDriver := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+	ipv6ClusterDriver := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 		clusterIpFamily: csi_util.Ipv6Stack,
 	}}
 
-	dualStackClusterDriver := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+	dualStackClusterDriver := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 		clusterIpFamily: strings.Join([]string{csi_util.Ipv4Stack, csi_util.Ipv6Stack}, ","),
 	}}
 
@@ -1164,7 +1164,7 @@ func Test_validateMountTargetWithClusterIpFamily(t *testing.T) {
 
 func Test_validateMountTargetSubnetWithClusterIpFamily(t *testing.T) {
 	logger := zap.S()
-	ipv4ClusterDriver := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+	ipv4ClusterDriver := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 		KubeClient:      nil,
 		logger:          logger,
 		config:          &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
@@ -1173,7 +1173,7 @@ func Test_validateMountTargetSubnetWithClusterIpFamily(t *testing.T) {
 		client:          NewClientProvisioner(nil, nil, &MockFileStorageClient{}),
 	}}
 
-	ipv6ClusterDriver := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+	ipv6ClusterDriver := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 		KubeClient:      nil,
 		logger:          logger,
 		config:          &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
@@ -1182,7 +1182,7 @@ func Test_validateMountTargetSubnetWithClusterIpFamily(t *testing.T) {
 		client:          NewClientProvisioner(nil, nil, &MockFileStorageClient{}),
 	}}
 
-	dualStackClusterDriver := &FSSControllerDriver{ControllerDriver: ControllerDriver{
+	dualStackClusterDriver := &FSSControllerDriver{ControllerDriver: &ControllerDriver{
 		KubeClient:      nil,
 		logger:          logger,
 		config:          &providercfg.Config{CompartmentID: "oc1.compartment.xxxx"},
@@ -1391,7 +1391,7 @@ func TestFSSControllerDriver_getServiceAccountToken(t *testing.T) {
 	time.Sleep(time.Second)
 
 	fss := &FSSControllerDriver{
-		ControllerDriver: ControllerDriver{
+		ControllerDriver: &ControllerDriver{
 			client:     nil,
 			KubeClient: kc,
 			config:     &providercfg.Config{CompartmentID: "testCompartment"},
