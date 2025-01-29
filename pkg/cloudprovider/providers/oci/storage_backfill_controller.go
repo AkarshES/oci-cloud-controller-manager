@@ -202,7 +202,7 @@ func (sb *StorageBackfillController) backfill(pvName string) error {
 		bv, err := sb.getBv(volume.id)
 		if err != nil {
 			logger.With(zap.Error(err)).Errorf("failed to get BV for id %s", volume.id)
-			dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), volume.metricNamePrefix)
+			dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), volume.metricNamePrefix)
 			dimensionsMap[metrics.ResourceOCIDDimension] = volume.id
 			metrics.SendMetricData(sb.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 			return err
@@ -213,7 +213,7 @@ func (sb *StorageBackfillController) backfill(pvName string) error {
 			err = sb.addBlockVolumeOkeSystemTags(bv)
 			if err != nil {
 				logger.With(zap.Error(err)).Warnf("updateBlockVolume didn't succeed. unable to add oke system tags")
-				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), volume.metricNamePrefix)
+				dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), volume.metricNamePrefix)
 				dimensionsMap[metrics.ResourceOCIDDimension] = volume.id
 				metrics.SendMetricData(sb.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
 				return err

@@ -18,8 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"golang.org/x/time/rate"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -27,16 +25,12 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	cloudprovider "k8s.io/cloud-provider"
 	cloudControllerManager "k8s.io/cloud-provider/app"
 	cloudControllerManagerConfig "k8s.io/cloud-provider/app/config"
 	"k8s.io/cloud-provider/names"
@@ -47,30 +41,20 @@ import (
 	"k8s.io/component-base/term"
 	"k8s.io/component-base/version/verflag"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
-	v1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
-	csicontroller "github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csi-controller"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
-	"github.com/oracle/oci-cloud-controller-manager/controllers"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci"
-	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
-	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
-	_ "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client" // for oci client metric registration
-	provisioner "github.com/oracle/oci-cloud-controller-manager/pkg/volume/provisioner/core"
 )
 
 var (
-	logLevel                                                                                  int8
-	minVolumeSize, resourcePrincipalFile, metricsEndpoint, logfilePath                        string
-	enableCSI, enableVolumeProvisioning, volumeRoundingEnabled, useResourcePrincipal, logJSON bool
-	enableNPNController                                                                       bool
-	enableOCIServiceController                                                                bool
-	resourcePrincipalInitialTimeout                                                           time.Duration
+	logLevel                                                           int8
+	resourcePrincipalFile, logfilePath                                 string
+	enableCSI, enableVolumeProvisioning, useResourcePrincipal, logJSON bool
+	enableNPNController                                                bool
+	enableOCIServiceController                                         bool
+	resourcePrincipalInitialTimeout                                    time.Duration
 )
 
 var csioption = csioptions.CSIOptions{}
@@ -81,6 +65,9 @@ var (
 	configFilePath            = "/etc/oci/config.yaml"
 )
 
+const maxRetries = 50
+const initialRetryDelay = 5 * time.Second
+
 const (
 	defaultFssAddress  = "/var/run/shared-tmpfs/csi-fss.sock"
 	defaultFssEndpoint = "unix:///var/run/shared-tmpfs/csi-fss.sock"
@@ -90,6 +77,12 @@ const (
 const (
 	norDefaultRateLimit     = 10
 	norMaxBurstTokens   int = 10
+)
+
+const (
+	initialInterval = 10 * time.Second
+	maxInterval     = 5 * time.Minute
+	jitterFactor    = 0.2
 )
 
 // NewCloudProviderOCICommand creates a *cobra.Command object with default parameters
@@ -225,259 +218,204 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 		os.Exit(1)
 	}()
 
+	err := InitSharedManager(scheme, options)
+	if err != nil {
+		logger.Fatalf("Failed to initialise manager %v", err)
+	}
+	mgr, err := GetSharedManager()
+	if err != nil {
+		logger.Fatalf("Failed to get manager %v", err)
+	}
+
+	// Metrics Controller
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		http.Handle("/metrics", promhttp.Handler())
-		if err := http.ListenAndServe(metricsEndpoint, nil); err != nil {
-			logger.With(zap.Error(err)).Errorf("Error exposing metrics at %s/metrics", metricsEndpoint)
-		}
-		cancelFunc()
+		runControllerWithRetry(ctx, mgr, metricsController, config, options, logger)
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		logger := logger.With(zap.String("component", "volume-provisioner"))
-		if !enableVolumeProvisioning {
-			logger.Info("Volume provisioning is disabled")
-			return
-		}
-		// TODO Pass an options/config struct instead of config variables
-		if err := provisioner.Run(logger, options.Generic.ClientConnection.Kubeconfig, options.Master, minVolumeSize, volumeRoundingEnabled, ctx.Done()); err != nil {
-			logger.With(zap.Error(err)).Error("Error running volume provisioner")
-		}
-		cancelFunc()
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		// Run starts all the cloud controller manager control loops.
-		cloudProvider := cloudInitializer(logger, config)
-
-		controllerInitializers := cloudControllerManager.ConstructControllerInitializers(getInitFuncConstructors(logger), config, cloudProvider)
-		// TODO move to newer cloudControllerManager dependency that provides a way to pass channel/context
-		if err := cloudControllerManager.Run(config, cloudProvider, controllerInitializers, make(map[string]cloudControllerManager.WebhookHandler), ctx.Done()); err != nil {
-			logger.With(zap.Error(err)).Error("Error running cloud controller manager")
-		}
-		cancelFunc()
-	}()
-
-	if enableCSI == true {
+	// Volume Provisioner
+	if enableVolumeProvisioning {
 		wg.Add(1)
-		logger := logger.With(zap.String("component", "csi-controller"))
-		logger.Info("CSI is enabled.")
 		go func() {
 			defer wg.Done()
-			csioption.Master = options.Master
-			csioption.Kubeconfig = options.Generic.ClientConnection.Kubeconfig
-			csioption.FssCsiAddress = csioptions.GetFssAddress(csioption.CsiAddress, defaultFssAddress)
-			csioption.FssEndpoint = csioptions.GetFssAddress(csioption.Endpoint, defaultFssEndpoint)
-			csioption.FssVolumeNamePrefix = csioptions.GetFssVolumeNamePrefix(csioption.VolumeNamePrefix)
-			// Check and update feature gate for CrossNamespaceDataSource
-			csioption.FeatureGates = csioptions.UpdateFeatureGates(csioption.FeatureGates)
-			csioption.RuntimeSchemeMutex = new(sync.Mutex)
-			err := csicontroller.Run(csioption, ctx.Done())
-			if err != nil {
-				logger.With(zap.Error(err)).Error("Error running csi-controller")
-			}
-			cancelFunc()
+			runControllerWithRetry(ctx, mgr, volumeProvisioner, config, options, logger)
 		}()
 	} else {
-		logger := logger.With(zap.String("component", "csi-controller"))
+		logger.Info("Volume provisioning is disabled")
+	}
+
+	// CCM controller
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runControllerWithRetry(ctx, mgr, ccmController, config, options, logger)
+	}()
+
+	// CSI controller
+	if enableCSI == true {
+		logger.Info("CSI is enabled.")
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			runControllerWithRetry(ctx, mgr, csiController, config, options, logger)
+		}()
+	} else {
 		logger.Info("CSI is disabled.")
 	}
 
 	enableNPN := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NPN_CONTROLLER", false)
-	logger = logger.With(zap.String("component", "node-cr-manager"))
-	ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
 	enableNOR := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NOR_CONTROLLER", false)
-	norControllerBvrLimit := oci.GetIntegerFromEnv(logger, "NOR_CONTROLLER_BVR_RATE_LIMIT_RPM", 10)
-	norControllerRebootLimit := oci.GetIntegerFromEnv(logger, "NOR_CONTROLLER_REBOOT_RATE_LIMIT_RPM", 10)
+	enableNodeControllers := shouldStartControllerManager(enableNOR, enableNPN, enableNPNController)
 
-	//instantiate manager and hook up controller with manager
-	if shouldStartControllerManager(enableNOR, enableNPN, enableNPNController) {
-		wg.Add(1)
-		logger.Info("CRD is enabled. Instantiating manager.")
-		go func() {
-			defer wg.Done()
-			utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-			mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-				Scheme: scheme,
-				Metrics: metricsserver.Options{
-					BindAddress: ":8080",
-				},
-				HealthProbeBindAddress:  ":8081",
-				LeaderElection:          true,
-				LeaderElectionID:        "npn.oci.oraclecloud.com",
-				LeaderElectionNamespace: "kube-system",
-			})
+	// NPN controller
+	if enableNodeControllers {
+		//setup NPN Controller with manager if NPN Enabled
+		if enableNPN || enableNPNController {
+			npnCtrl, err := GetController(npnController, ctx, logger, mgr)
 			if err != nil {
-				controllerManagerSetupLog.Error(err, "unable to start manager")
-				os.Exit(1)
+				logger.Fatalf("Failed to create NPN Controller: %v", err)
 			}
 
-			if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-				controllerManagerSetupLog.Error(err, "unable to set up health check")
-				os.Exit(1)
+			if err := npnCtrl.Run(mgr, config, options); err != nil {
+				logger.Fatalf("NPN Controller failed to start: %v", err)
 			}
-
-			if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-				controllerManagerSetupLog.Error(err, "unable to set up ready check")
-				os.Exit(1)
-			}
-
-			configPath, ok := os.LookupEnv("CONFIG_YAML_FILENAME")
-
-			if !ok {
-				configPath = configFilePath
-			}
-			cfg := providercfg.GetConfig(logger, configPath)
-			ociClient := getOCIClient(logger, cfg)
-
-			metricPusher, err := metrics.NewMetricPusher(logger)
-			if err != nil {
-				logger.With("error", err).Error("metrics collection could not be enabled")
-				// disable metrics
-				metricPusher = nil
-			}
-			//setup NPN Controller with manager if NPN Enabled
-			if enableNPN || enableNPNController {
-				logger = logger.With(zap.String("component", "npn-controller"))
-				utilruntime.Must(v1beta1.AddToScheme(scheme))
-				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
-				logger.Info("NPN controller is enabled.")
-				if err = (&controllers.NativePodNetworkReconciler{
-					Client:       mgr.GetClient(),
-					Scheme:       mgr.GetScheme(),
-					MetricPusher: metricPusher,
-					OCIClient:    ociClient,
-				}).SetupWithManager(mgr); err != nil {
-					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "NativePodNetwork")
-					os.Exit(1)
-				}
-			}
-
-			//setup NOR Controller with manager if NOR Enabled
-			if enableNOR {
-				logger := logger.With(zap.String("component", "nor-controller"))
-				ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
-				utilruntime.Must(norv1beta1.AddToScheme(scheme))
-				logger.Info("NOR controller is enabled.")
-
-				master := options.Master
-				kubeConfigPath := options.Generic.ClientConnection.Kubeconfig
-				logger.Info("master is ", master, "kubeconfig is", kubeConfigPath)
-
-				kubeClient := config.Client
-
-				norControllerBvrLimiter := generateRateLimiter(norControllerBvrLimit)
-				norControllerRebootLimiter := generateRateLimiter(norControllerRebootLimit)
-
-				if err = (&controllers.NodeOperationRuleReconciler{
-					Client:            mgr.GetClient(),
-					Scheme:            mgr.GetScheme(),
-					OCIClient:         ociClient,
-					KubeClient:        kubeClient,
-					Config:            cfg,
-					MetricPusher:      metricPusher,
-					BvrRateLimiter:    norControllerBvrLimiter,
-					RebootRateLimiter: norControllerRebootLimiter,
-				}).SetupWithManager(mgr); err != nil {
-					controllerManagerSetupLog.Error(err, "unable to create controller", "controller", "nor-controller")
-					os.Exit(1)
-				}
-			}
-
-			//Now that all the controllers are hooked up, start the manager
-			logger = logger.With(zap.String("component", "node-cr-manager"))
-			ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
-			controllerManagerSetupLog.Info("starting manager")
-			if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-				controllerManagerSetupLog.Error(err, "problem running manager")
-				// TODO: Handle the case of NPN controller not running more gracefully
-				os.Exit(1)
-			}
-		}()
+		}
 	} else {
 		logger.Info("crd manager not instantiated as no customer resource enabled.")
 	}
 
+	// NOR controller
+	if enableNodeControllers {
+		if enableNOR {
+			norCtrl, err := GetController(norController, ctx, logger, mgr)
+			if err != nil {
+				logger.Fatalf("Failed to create NPN Controller: %v", err)
+			}
+
+			if err := norCtrl.Run(mgr, config, options); err != nil {
+				logger.Fatalf("NOR Controller failed to start: %v", err)
+			}
+		}
+	} else {
+		logger.Info("crd manager not instantiated as no customer resource enabled.")
+	}
+
+	controllers := []string{metricsController, ccmController, volumeProvisioner}
+	if enableCSI {
+		controllers = append(controllers, csiController)
+	}
+	if enableNPN {
+		controllers = append(controllers, npnController)
+	}
+	if enableNOR {
+		controllers = append(controllers, norController)
+	}
+	for _, controllerName := range controllers {
+		controller, err := GetController(controllerName, ctx, logger, mgr)
+		if err != nil {
+			logger.Fatalf("Failed to create %s: %v", controllerName, err)
+		}
+		if err := controller.AddHealthCheck(mgr, options); err != nil {
+			logger.Fatalf("Failed to add health checks for %s: %v", controllerName, err)
+		}
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		monitorHealth(ctx, logger)
+	}()
+
+	//Now that all the controllers are hooked up, start the manager
+	logger = logger.With(zap.String("component", "shared-manager"))
+	ctrl.SetLogger(zapr.NewLogger(logger.Desugar()))
+	controllerManagerSetupLog.Info("starting manager")
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		controllerManagerSetupLog.Error(err, "problem running manager")
+	}
 	// wait for all the go routines to finish.
 	wg.Wait()
 }
 
-func cloudInitializer(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.CompletedConfig) cloudprovider.Interface {
-	cloudConfig := config.ComponentConfig.KubeCloudShared.CloudProvider
-	// initialize cloud provider with the cloud provider name and config file provided
-	cloud, err := cloudprovider.InitCloudProvider(cloudConfig.Name, cloudConfig.CloudConfigFile)
-	if err != nil {
-		logger.With(zap.Error(err)).Fatalf("Cloud provider could not be initialized: %v", err)
-	}
-	if cloud == nil {
-		logger.With(zap.Error(err)).Fatalf("Cloud provider is nil")
-	}
+func runControllerWithRetry(ctx context.Context, mgr ctrl.Manager, controllerName string, config *cloudControllerManagerConfig.CompletedConfig, options *options.CloudControllerManagerOptions, logger *zap.SugaredLogger) {
+	logger = logger.With(zap.String("component", controllerName))
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Infof("Stopping retries for %s due to context cancellation", controllerName)
+			return
+		default:
+			controller, err := GetController(controllerName, ctx, logger, mgr)
+			if err != nil {
+				logger.Errorf("Failed to get controller: %v", err)
+				time.Sleep(initialInterval)
+				continue
+			}
 
-	if !cloud.HasClusterID() {
-		if config.ComponentConfig.KubeCloudShared.AllowUntaggedCloud {
-			logger.With(zap.Error(err)).Info("detected a cluster without a ClusterID.  A ClusterID will be required in the future.  Please tag your cluster to avoid any future issues")
-		} else {
-			logger.With(zap.Error(err)).Fatalf("no ClusterID found.  A ClusterID is required for the cloud provider to function properly.  This check can be bypassed by setting the allow-untagged-cloud option")
+			var retryInterval = initialInterval
+
+			for {
+				select {
+				case <-ctx.Done():
+					logger.Infof("Stopping retries for %s due to context cancellation", controllerName)
+					return
+				default:
+					err := func() error {
+						defer func() {
+							if r := recover(); r != nil {
+								logger.Errorf("Recovered from panic in %s: %v", controllerName, r)
+							}
+						}()
+						return controller.Run(mgr, config, options)
+					}()
+
+					if err != nil {
+						logger.Errorf("Controller %s failed: %v", controllerName, err)
+						retryInterval = calculateExponentialBackoff(retryInterval, maxInterval, jitterFactor)
+						logger.Infof("Retrying %s in %s...", controllerName, retryInterval)
+						time.Sleep(retryInterval)
+					} else {
+						logger.Infof("Controller %s started successfully", controllerName)
+						// If controller exits normally, restart it after a short delay
+						time.Sleep(initialInterval)
+					}
+				}
+			}
 		}
 	}
-
-	return cloud
 }
 
-func getOCIClient(logger *zap.SugaredLogger, config *providercfg.Config) client.Interface {
-	c, err := client.GetClient(logger, config)
+func monitorHealth(ctx context.Context, logger *zap.SugaredLogger) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorf("Recovered from Panic in monitorHealth %v", r)
+		}
+	}()
 
-	if err != nil {
-		logger.With(zap.Error(err)).Fatal("client can not be generated.")
-	}
-	return c
-}
+	ticker := time.NewTicker(2 * time.Minute)
+	defer ticker.Stop()
 
-func getInitFuncConstructors(logger *zap.SugaredLogger) map[string]cloudControllerManager.ControllerInitFuncConstructor {
-	initConstructors := cloudControllerManager.DefaultInitFuncConstructors
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("Shutting down health monitoring")
+			return
+		case <-ticker.C:
+			controllers := []string{metricsController, ccmController, csiController, volumeProvisioner, npnController, norController}
+			for _, controller := range controllers {
+				healthResp, err := getHealth(controller)
+				if err != nil {
+					logger.Error("Error occurred", err)
+				}
+				client.SetHealthStatusForController(controller, healthResp)
 
-	isOciSvcCtrlEnvEnabled := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_OCI_SERVICE_CONTROLLER", false)
-	if isOciSvcCtrlEnvEnabled || enableOCIServiceController {
-		// Disable default Kubernetes Cloud Provider service controller
-		cloudControllerManager.ControllersDisabledByDefault.Insert("service")
-
-		// Add OCI service controller init func
-		initConstructors["oci-service"] = cloudControllerManager.ControllerInitFuncConstructor{
-			InitContext: cloudControllerManager.ControllerInitContext{
-				ClientName: "service-controller",
-			},
-			Constructor: oci.StartOciServiceControllerWrapper,
+				livenessResp, err := getLiveness(controller)
+				if err != nil {
+					logger.Error("Error occurred", err)
+				}
+				client.SetHealthStatusForController(controller, livenessResp)
+			}
 		}
 	}
-
-	return initConstructors
-}
-
-func shouldStartControllerManager(crdEnabled ...bool) bool {
-	for _, v := range crdEnabled {
-		if v == true {
-			return true
-		}
-	}
-	return false
-}
-
-func getRateLimitValue(rateLimitFromLimits int) int {
-	if rateLimitFromLimits <= 0 {
-		return norDefaultRateLimit
-	} else {
-		return rateLimitFromLimits
-	}
-}
-
-func generateRateLimiter(rateLimitFromLimits int) *rate.Limiter {
-	rateLimit := getRateLimitValue(rateLimitFromLimits)
-	return rate.NewLimiter(rate.Every(time.Minute/time.Duration(rateLimit)), norMaxBurstTokens)
 }

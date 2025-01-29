@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
@@ -167,6 +169,16 @@ func (p *MetricPusher) sendMetricData(name string, value float64, dimensions map
 
 // SendMetricData is used to send the metric
 func SendMetricData(metricPusher *MetricPusher, metric string, value float64, dimensionsMap map[string]string) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err := fmt.Errorf("panic recovered %v stack is %s", rec, string(debug.Stack()))
+			log.FromContext(context.Background()).
+				WithValues("component", "metric-pusher").
+				Error(err, "Recovered from panic in metric pusher")
+			return
+		}
+	}()
+
 	if metricPusher == nil {
 		return
 	}
