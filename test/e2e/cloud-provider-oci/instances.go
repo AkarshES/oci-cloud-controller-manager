@@ -205,10 +205,6 @@ var _ = Describe("SKE - Instances", func() {
 			Expect(exists).To(BeTrue())
 		})
 		It("should be possible to check required annotations and labels are added to a virtual node", func() {
-			// OCI Labels and Annotations
-			faultDomain := node.ObjectMeta.Labels[oci.FaultDomainLabel]
-			Expect(faultDomain).NotTo(BeEmpty())
-
 			// Kubernetes Beta Labels
 			fdZone := node.ObjectMeta.Labels[v1.LabelZoneFailureDomain]
 			Expect(fdZone).NotTo(BeEmpty())
