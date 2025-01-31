@@ -345,7 +345,7 @@ func TestGetVirtualNodePatchBytes(t *testing.T) {
 		virtualNode        *containerengine.VirtualNode
 		expectedPatchBytes []byte
 	}{
-		"FD and Node-Role label not present": {
+		"FD label and Node-Role label not present": {
 			node: &v1.Node{
 				ObjectMeta: metav1.ObjectMeta{},
 			},
@@ -379,6 +379,15 @@ func TestGetVirtualNodePatchBytes(t *testing.T) {
 				FaultDomain: &virtualNodeFD,
 			},
 			expectedPatchBytes: []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, virtualNodeFD, VirtualNodeRoleLabel, "")),
+		},
+		"Fault Domain not present": {
+			node: &v1.Node{
+				ObjectMeta: metav1.ObjectMeta{},
+			},
+			virtualNode: &containerengine.VirtualNode{
+				FaultDomain: nil,
+			},
+			expectedPatchBytes: []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, "", VirtualNodeRoleLabel, VirtualNodeRoleLabelValue)),
 		},
 	}
 	logger := zap.L()
