@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"k8s.io/utils/pointer"
 	"time"
 
 	"github.com/pkg/errors"
@@ -265,8 +266,9 @@ func getNodePatchBytes(cacheNode *v1.Node, instance *core.Instance, logger *zap.
 
 func getVirtualNodePatchBytes(virtualNode *containerengine.VirtualNode, logger *zap.SugaredLogger) []byte {
 	// Set faultDomain label on VirtualNode
-	logger.Infof("Adding virtual node labels from cloud provider: %s=%s, %s=%s", FaultDomainLabel, *virtualNode.FaultDomain, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue)
-	return []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, *virtualNode.FaultDomain, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue))
+	vnFaultDomain := pointer.StringDeref(virtualNode.FaultDomain, "")
+	logger.Infof("Adding virtual node labels from cloud provider: %s=%s, %s=%s", FaultDomainLabel, vnFaultDomain, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue)
+	return []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\", \"%s\":\"%s\"}}}", FaultDomainLabel, vnFaultDomain, VirtualNodeRoleLabel, VirtualNodeRoleLabelValue))
 }
 
 func getInstanceByNode(cacheNode *v1.Node, nic *NodeInfoController, logger *zap.SugaredLogger) (*core.Instance, error) {
