@@ -1,3 +1,7 @@
+variable "cpo-image-validation-enabled" {
+  default = true
+}
+
 module "ad_map" {
   source                = "./ad_map"
   root_compartment_ocid = local.execution_target.tenancy_ocid
@@ -6,7 +10,7 @@ module "ad_map" {
 
 locals {
   physical_ad1                     = module.ad_map.physical_ad1
-  image_validator_count            = local.artifact_versions["release-validator-ccm-csi"].version == "skip" ? 0 : 1
+  image_validator_count            = var.cpo-image-validation-enabled ? 1 : 0
 }
 
 module "oke-cpo-images" {
@@ -17,8 +21,8 @@ module "oke-cpo-images" {
 # Uncomment the following code to enable validation of images once the odo application is configured in all regions.
 
 #module "odo_deployment_ccm_csi" {
+#  count = local.image_validator_count
 #  source = "./odo_deployment"
-#  image_validator_count = local.image_validator_count
 #
 #  artifact_version = local.artifact_versions["release-validator-ccm-csi"]
 #  apps             = [
