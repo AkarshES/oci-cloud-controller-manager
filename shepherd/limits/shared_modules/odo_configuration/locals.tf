@@ -14,7 +14,7 @@ locals {
       ocid = "ocid1.tenancy.oc4..aaaaaaaaytm6y4lhmpbj6gjwqh27fzgqn7uzipjiqnrgg4efyym726g5afzq"
     }
     default = {
-      ocid_template = "ocid1.tenancy.%s..aaaaaaaaguapt5ory5p7yl54pj4pcua3tdtagkqcoorsx43mp6c6es6kqkva"
+      ocid = "ocid1.tenancy.%s..aaaaaaaaguapt5ory5p7yl54pj4pcua3tdtagkqcoorsx43mp6c6es6kqkva"
     }
   }
 
