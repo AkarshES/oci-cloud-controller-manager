@@ -14,7 +14,3 @@ variable apps {
   }))
   description = "ODO apps to use for the deployments"
 }
-
-variable image_validator_count {
-  type = number
-}

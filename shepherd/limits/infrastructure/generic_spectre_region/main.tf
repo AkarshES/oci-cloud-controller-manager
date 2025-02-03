@@ -1,3 +1,7 @@
+variable "cpo-image-validation-enabled" {
+  default = true
+}
+
 locals {
   pop_version = "2888495b32b_6"
 
@@ -81,9 +85,10 @@ module "odo_configuration_ccm_csi_infra" {
   depends_on = [module.validation_module]
 }
 
-#Uncomment the following code to enable image validation after the odo app is configured in all regions.
+# Uncomment the following code to enable validation of images once the odo application is configured in all regions.
 
 #module "odo_deployment_ccm_csi_infra" {
+#  count = var.cpo-image-validation-enabled ? 0 : 1
 #  source = "./odo_deployment"
 #
 #  artifact_version = {
