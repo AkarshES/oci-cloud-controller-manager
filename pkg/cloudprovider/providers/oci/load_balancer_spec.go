@@ -19,10 +19,13 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"go.uber.org/zap"
+	"golang.org/x/exp/maps"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -191,6 +194,12 @@ const (
 
 	// ServiceAnnotationLoadbalancerBackendSetSSLConfig is a service annotation allows you to set the cipher suite on the backendSet
 	ServiceAnnotationLoadbalancerBackendSetSSLConfig = "oci.oraclecloud.com/oci-load-balancer-backendset-ssl-config"
+
+	// ServiceAnnotationRuleSets allows the user to specify rule sets of actions applied to traffic at a load balancer listener
+	// https://docs.oracle.com/en-us/iaas/Content/Balance/Tasks/managingrulesets.htm
+	// Expected format is a JSON blob containing a JSON object literal with keys being rule names and values being a JSON
+	// representation of a valid Rule object. https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/Rule
+	ServiceAnnotationRuleSets = "oci.oraclecloud.com/oci-load-balancer-rule-sets"
 )
 
 // NLB specific annotations
@@ -351,7 +360,7 @@ type ManagedNetworkSecurityGroup struct {
 }
 
 func requiresCertificate(svc *v1.Service) bool {
-	if svc.Annotations[ServiceAnnotationLoadBalancerType] == NLB {
+	if getLoadBalancerType(svc) == NLB {
 		return false
 	}
 	_, ok := svc.Annotations[ServiceAnnotationLoadBalancerSSLPorts]
@@ -411,6 +420,7 @@ type LBSpec struct {
 	SystemTags                  map[string]map[string]interface{}
 	Compartment                 string
 	ClusterPlacementGroupId     *string
+	RuleSets                    map[string]loadbalancer.RuleSetDetails
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -443,6 +453,11 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	sourceCIDRs, err := getLoadBalancerSourceRanges(svc)
+	if err != nil {
+		return nil, err
+	}
+
+	ruleSets, err := getRuleSets(svc)
 	if err != nil {
 		return nil, err
 	}
@@ -501,7 +516,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	compartment := getLoadBalancerCompartment(svc, clusterCompartment)
-	
+
 	cpgId := getClusterPlacementGroupId(svc)
 
 	return &LBSpec{
@@ -530,6 +545,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		SystemTags:                  getResourceTrackingSystemTagsFromConfig(logger, initialLBTags),
 		Compartment:                 compartment,
 		ClusterPlacementGroupId:     cpgId,
+		RuleSets:                    ruleSets,
 	}, nil
 }
 
@@ -1353,6 +1369,13 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 		proxyProtocolVersion = common.Int(version)
 	}
 
+	ruleSets, _ := getRuleSets(svc)
+	var rs []string
+	if ruleSets != nil {
+		rs = maps.Keys(ruleSets)
+		slices.Sort(rs)
+	}
+
 	listeners := make(map[string]client.GenericListener)
 	for _, servicePort := range svc.Spec.Ports {
 		protocol := string(servicePort.Protocol)
@@ -1397,6 +1420,7 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 			DefaultBackendSetName: common.String(getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))),
 			Protocol:              &protocol,
 			Port:                  &port,
+			RuleSetNames:          rs,
 			SslConfiguration:      sslConfiguration,
 		}
 
@@ -1943,4 +1967,21 @@ func getClusterPlacementGroupId(svc *v1.Service) *string {
 		return &cpgId
 	}
 	return nil
+}
+
+func getRuleSets(svc *v1.Service) (rs map[string]loadbalancer.RuleSetDetails, err error) {
+	annotation, exists := svc.Annotations[ServiceAnnotationRuleSets]
+	if !exists {
+		return nil, nil
+	}
+
+	if getLoadBalancerType(svc) == NLB {
+		return rs, fmt.Errorf("invalid annotation %s. Rule Sets are not supported by Network Load Balancer", ServiceAnnotationRuleSets)
+	}
+
+	if annotation == "" {
+		annotation = "{}"
+	}
+	err = json.NewDecoder(strings.NewReader(annotation)).Decode(&rs)
+	return rs, err
 }
