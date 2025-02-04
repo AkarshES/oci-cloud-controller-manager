@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	v1discovery "k8s.io/api/discovery/v1"
@@ -1124,6 +1125,18 @@ var updateLoadBalancerErrors = map[string]error{
 	"work request fail": errors.New("internal server error"),
 }
 
+func (c *MockLoadBalancerClient) CreateRuleSet(ctx context.Context, lbID string, name string, details *loadbalancer.RuleSetDetails) (string, error) {
+	return "", nil
+}
+
+func (c *MockLoadBalancerClient) UpdateRuleSet(ctx context.Context, lbID string, name string, details *loadbalancer.RuleSetDetails) (string, error) {
+	return "", nil
+}
+
+func (c *MockLoadBalancerClient) DeleteRuleSet(ctx context.Context, lbID string, name string) (string, error) {
+	return "", nil
+}
+
 func (c *MockLoadBalancerClient) UpdateLoadBalancer(ctx context.Context, lbID string, details *client.GenericUpdateLoadBalancerDetails) (string, error) {
 	if err, ok := updateLoadBalancerErrors[lbID]; ok {
 		return "", err
@@ -1227,6 +1240,18 @@ func (c *MockNetworkLoadBalancerClient) CreateListener(ctx context.Context, lbID
 }
 
 func (c *MockNetworkLoadBalancerClient) DeleteListener(ctx context.Context, lbID, name string) (string, error) {
+	return "", nil
+}
+
+func (c *MockNetworkLoadBalancerClient) CreateRuleSet(ctx context.Context, lbID string, name string, details *loadbalancer.RuleSetDetails) (string, error) {
+	return "", nil
+}
+
+func (c *MockNetworkLoadBalancerClient) UpdateRuleSet(ctx context.Context, lbID string, name string, details *loadbalancer.RuleSetDetails) (string, error) {
+	return "", nil
+}
+
+func (c *MockNetworkLoadBalancerClient) DeleteRuleSet(ctx context.Context, lbID string, name string) (string, error) {
 	return "", nil
 }
 

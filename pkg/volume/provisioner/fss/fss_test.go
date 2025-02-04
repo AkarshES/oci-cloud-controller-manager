@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -486,6 +487,18 @@ func (c *MockLoadBalancerClient) CreateListener(ctx context.Context, lbID string
 }
 
 func (c *MockLoadBalancerClient) DeleteListener(ctx context.Context, lbID, name string) (string, error) {
+	return "", nil
+}
+
+func (c *MockLoadBalancerClient) CreateRuleSet(ctx context.Context, lbID string, name string, details *loadbalancer.RuleSetDetails) (string, error) {
+	return "", nil
+}
+
+func (c *MockLoadBalancerClient) UpdateRuleSet(ctx context.Context, lbID string, name string, details *loadbalancer.RuleSetDetails) (string, error) {
+	return "", nil
+}
+
+func (c *MockLoadBalancerClient) DeleteRuleSet(ctx context.Context, lbID string, name string) (string, error) {
 	return "", nil
 }
 
