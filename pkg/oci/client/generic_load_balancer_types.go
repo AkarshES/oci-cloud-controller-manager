@@ -1,5 +1,7 @@
 package client
 
+import "github.com/oracle/oci-go-sdk/v65/loadbalancer"
+
 const (
 	GenericIPv4        GenericIpVersion = "IPv4"
 	GenericIPv6        GenericIpVersion = "IPv6"
@@ -105,6 +107,8 @@ type GenericCreateLoadBalancerDetails struct {
 
 	// Internal. Only supported by NLB
 	CpgId *string
+
+	RuleSets map[string]loadbalancer.RuleSetDetails
 }
 
 type GenericShapeDetails struct {
@@ -149,6 +153,7 @@ type GenericLoadBalancer struct {
 	Listeners               map[string]GenericListener
 	Certificates            map[string]GenericCertificate
 	BackendSets             map[string]GenericBackendSetDetails
+	RuleSets                map[string]loadbalancer.RuleSetDetails
 	IpVersion               *GenericIpVersion
 
 	FreeformTags map[string]string

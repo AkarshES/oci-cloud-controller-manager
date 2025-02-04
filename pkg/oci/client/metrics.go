@@ -44,6 +44,7 @@ const (
 	backendSetResource                   resource = "load_balancer_backend_set"
 	backendSetHealthResource             resource = "load_balancer_backend_set_health"
 	listenerResource                     resource = "load_balancer_listener"
+	ruleSetResource                      resource = "load_balancer_rule_set"
 	shapeResource                        resource = "load_balancer_shape"
 	certificateResource                  resource = "load_balancer_certificate"
 	workRequestResource                  resource = "load_balancer_work_request"
