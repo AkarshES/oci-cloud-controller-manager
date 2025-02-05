@@ -18,21 +18,19 @@ module "oke-cpo-images" {
   service_artifact_version = local.artifact_versions
 }
 
-# Uncomment the following code to enable validation of images once the odo application is configured in all regions.
+module "odo_deployment_ccm_csi" {
+  count = local.image_validator_count
+  source = "./odo_deployment"
 
-#module "odo_deployment_ccm_csi" {
-#  count = local.image_validator_count
-#  source = "./odo_deployment"
-#
-#  artifact_version = local.artifact_versions["release-validator-ccm-csi"]
-#  apps             = [
-#    {
-#      ad = local.physical_ad1.name
-#      alias = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
-#    }
-#  ]
-#  depends_on            = [module.oke-cpo-images]
-#}
+  artifact_version = local.artifact_versions["release-validator-ccm-csi"]
+  apps             = [
+    {
+      ad = local.physical_ad1.name
+      alias = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
+    }
+  ]
+  depends_on            = [module.oke-cpo-images]
+}
 
 resource "capability_require_capability" "oke_regional_infrastructure" {
   name = "oke_regional_infrastructure"
