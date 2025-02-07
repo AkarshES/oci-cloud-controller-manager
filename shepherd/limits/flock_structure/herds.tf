@@ -58,10 +58,7 @@ resource "shepherd_execution_target" "herds_et" {
   uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
   tenancy_name              = lookup(lookup(local.overrides.tenancy_info, "rbaas", {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
-  additional_locals         = merge({
-    stage = "herds"
-    pool_name_regex = "^oke-deploy-rbaas[0-9]*"
-  }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
+  additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
   alarms_to_watch {
     compartment_name = "assets"
     labels           = [format(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "watch_mp_release_label_format"), split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1])]
@@ -127,8 +124,6 @@ resource "shepherd_execution_target" "herds_region_values" {
     limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
     manage_regional_values = "true"
     manage_definitions     = "false"
-    stage = "herds"
-    pool_name_regex = "^oke-deploy-rbaas[0-9]*"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"])), "spectre_group_name")
     },
     lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {})

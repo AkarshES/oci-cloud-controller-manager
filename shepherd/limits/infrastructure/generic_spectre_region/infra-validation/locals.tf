@@ -1,1 +1,0 @@
-./../../../shared_modules/properties_values/locals.tf
