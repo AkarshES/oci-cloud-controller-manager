@@ -85,23 +85,25 @@ module "odo_configuration_ccm_csi_infra" {
   depends_on = [module.validation_module]
 }
 
-module "odo_deployment_ccm_csi_infra" {
-  count = var.cpo-image-validation-enabled ? 0 : 1
-  source = "./odo_deployment"
+# Uncomment the following code to enable validation of images once the odo application is configured in all regions.
 
-  artifact_version = {
-    uri = "release-validator-ccm-csi-${local.pop_version}.tar.gz"
-    type = "pop"
-    version = local.pop_version
-  }
-  apps             = [
-    {
-      ad = module.ad_map.physical_ad1.name
-      alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
-    }
-  ]
-  depends_on = [module.odo_configuration_ccm_csi_infra]
-}
+#module "odo_deployment_ccm_csi_infra" {
+#  count = var.cpo-image-validation-enabled ? 0 : 1
+#  source = "./odo_deployment"
+#
+#  artifact_version = {
+#    uri = "release-validator-ccm-csi-${local.pop_version}.tar.gz"
+#    type = "pop"
+#    version = local.pop_version
+#  }
+#  apps             = [
+#    {
+#      ad = module.ad_map.physical_ad1.name
+#      alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
+#    }
+#  ]
+#  depends_on = [module.odo_configuration_ccm_csi_infra]
+#}
 
 resource "capability_require_capability" "regional_infra" {
   name = "oke_deploy_odo"
@@ -114,7 +116,7 @@ module "properties_values" {
   env                = lookup(local.execution_target.additional_locals, "env", "")
   realm              = local.execution_target.region.realm
 
-  depends_on = [module.odo_deployment_ccm_csi_infra]
+#  depends_on = [module.odo_deployment_ccm_csi_infra]
 }
 
 resource "capability_require_capability" "oke_ccm_csi_internal_capability" {
