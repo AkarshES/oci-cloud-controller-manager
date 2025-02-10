@@ -201,7 +201,7 @@ const (
 	operationLatency   = "OPERATION_LATENCY_IN_SECONDS"
 	operationFailure   = "OPERATION_FAILURE"
 	removeLabelFailure = "LABEL_REMOVAL_FAILURE"
-
+	gcTriggered        = "GC_TRIGGERED"
 	// health
 	panic = "PANIC"
 
@@ -474,6 +474,8 @@ func (r *NodeOperationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			updatedSucceededNodes, numberOfNodesGarbageCollected := sortSucceededNodesAndGarbageCollect(updatedSucceededNodes)
 
 			if numberOfNodesGarbageCollected > 0 {
+				log.Info(fmt.Sprint("Garbage collection kick off. ", nor.Name, " is calculated as ", strconv.Itoa(numberOfNodesGarbageCollected)))
+				r.sendMetricsWithClusterId(gcTriggered, 1, make(map[string]string))
 				r.Recorder.Event(&nor, v1.EventTypeNormal, evenReasonGarbageCollection, strconv.Itoa(numberOfNodesGarbageCollected)+eventMsgGarbageCollection)
 			}
 
