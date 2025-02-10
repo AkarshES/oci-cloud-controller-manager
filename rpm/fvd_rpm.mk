@@ -24,10 +24,10 @@ rpm: $(PKG_TARGET)
 
 $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
 	rpmbuild -bb \
-		--define "name $(NAME)" \
 		--define "_version $(RPM_VERSION)" \
 		--define "_topdir $(WORK_DIR)/rpmbuild" \
 		--define "_flexvolume_install_path $(RPM_INSTALL_PATH)" \
+		--define "_flexvolume_install_name $(NAME)" \
 		--define "_release $(RELEASE)" $(WORK_DIR)/rpmbuild/SPECS/fvd.spec
 
 $(PKG_SOURCE): $(FVD_BINARY_PATH) | rpmbuild
