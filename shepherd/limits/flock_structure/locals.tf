@@ -745,6 +745,7 @@ locals {
     "polaris.oc1.us-sanjose-1.cell0" = {}
     "dev.oc1.us-ashburn-1.cell0"     = {}
     "dev.oc1.eu-frankfurt-1.cell0"   = {}
+    "dev.oc1.uk-london-1.cell0"      = {}
     "dev.oc1.us-phoenix-1.cell0"     = {
       predecessor = "dev.oc1.us-ashburn-1.cell0"
       image_name  = local.io_overlay_uek5_images["20210111"].name
