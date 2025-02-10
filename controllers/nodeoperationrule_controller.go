@@ -49,11 +49,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"sort"
 )
 
 var (
@@ -101,8 +101,8 @@ const (
 	eventMsgFailedNodeOperation       string = "Failed with operation on node with work request ID: "
 	eventReasonCancelledNodeOperation string = "CancelledNodeOperation"
 	eventMsgCancelledNodeOperation    string = "Cancelled operation on node: "
-	eventMsgGarbageCollection   	  string = " nodes garbage collected in the succeededNodes section"
-	evenReasonGarbageCollection 	  string = "GarbageCollectNOR"
+	eventMsgGarbageCollection         string = " nodes garbage collected in the succeededNodes section"
+	evenReasonGarbageCollection       string = "GarbageCollectNOR"
 )
 
 // logging related
@@ -1387,4 +1387,8 @@ func sortSucceededNodesAndGarbageCollect(SucceededNodes []norv1beta1.NodeOperati
 	sort.Slice(SucceededNodes, func(i, j int) bool {
 		return SucceededNodes[i].SuccessTimestamp.Time.Before(SucceededNodes[j].SuccessTimestamp.Time)
 	})
+	numberOfSucceededNodes := len(SucceededNodes)
+	numberOFNodesTrimmed = numberOfSucceededNodes - maxSuccededNodesBeforeGarbageCollection
+	//Return the last maxSuccededNodesBeforeGarbageCollection number of elements
+	return SucceededNodes[numberOFNodesTrimmed:], numberOFNodesTrimmed
 }
