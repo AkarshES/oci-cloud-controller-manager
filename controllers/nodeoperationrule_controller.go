@@ -85,7 +85,7 @@ const (
 
 // Garbage Collection related
 const (
-	maxSuccededNodesBeforeGarbageCollection = 1000
+	maxSuccededNodesBeforeGarbageCollection = 3
 )
 
 // event record related
