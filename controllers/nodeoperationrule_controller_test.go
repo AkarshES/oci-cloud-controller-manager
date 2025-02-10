@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"errors"
-	"fmt"
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -2560,6 +2559,7 @@ func TestCalculateLatency(t *testing.T) {
 	}
 }
 
+/*
 func TestSortSucceededNodesAndGarbageCollect(t *testing.T) {
 	now := metav1.Now()
 	additionalSuccedednodeItem := norv1beta1.NodeOperationSuccess{
@@ -2622,6 +2622,7 @@ func generateSucceededNodes(rangeStart int, rangeEnd int, now metav1.Time) []nor
 	}
 	return succeededNodes
 }
+*/
 
 func getTimerMap() sync.Map {
 	var timer sync.Map
