@@ -53,6 +53,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"sort"
 )
 
 var (
@@ -82,6 +83,11 @@ const (
 	finalizer           string = "nodeoperationrule.oci.oraclecloud.com/finalizers"
 )
 
+// Garbage Collection related
+const (
+	maxSuccededNodesBeforeGarbageCollection = 1000
+)
+
 // event record related
 const (
 	eventReasonValidatedNOR           string = "ValidatedNOR"
@@ -95,6 +101,8 @@ const (
 	eventMsgFailedNodeOperation       string = "Failed with operation on node with work request ID: "
 	eventReasonCancelledNodeOperation string = "CancelledNodeOperation"
 	eventMsgCancelledNodeOperation    string = "Cancelled operation on node: "
+	eventMsgGarbageCollection   	  string = " nodes garbage collected in the succeededNodes section"
+	evenReasonGarbageCollection 	  string = "GarbageCollectNOR"
 )
 
 // logging related
@@ -459,6 +467,16 @@ func (r *NodeOperationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		log.Info(fmt.Sprint("current status: in progress: ", updatedInProgressNodes, " pending: ", updatedPendingNodes, " backoff: ", updatedRetryableNodes, " canceled: ", updatedCanceledNodes, " succeeded: ", updatedSucceededNodes))
 		if hasInProgressNodesSucceededOrCanceled {
 			log.Info("there are succeeded or canceled work requests, will update nor status")
+
+			//Perform Garbage collection if the number of SucceededNodes > 1000
+			// Rate limits is 10 per minute. So no way we would have removed succeeded nodes that are just introduced as part of this cycle
+			//Sort SucceededNodes and remove the ones that are the oldest in the queue by SuccessTimestamp
+			updatedSucceededNodes, numberOfNodesGarbageCollected := sortSucceededNodesAndGarbageCollect(updatedSucceededNodes)
+
+			if numberOfNodesGarbageCollected > 0 {
+				r.Recorder.Event(&nor, v1.EventTypeNormal, evenReasonGarbageCollection, strconv.Itoa(numberOfNodesGarbageCollected)+eventMsgGarbageCollection)
+			}
+
 			return r.updateStatus(ctx, req.NamespacedName, updatedInProgressNodes, updatedPendingNodes, updatedRetryableNodes, updatedSucceededNodes, updatedCanceledNodes)
 		}
 	}
@@ -1188,6 +1206,7 @@ func (r *NodeOperationRuleReconciler) updateStatus(ctx context.Context,
 		logger.Error(err, "failed ot get updated NOR CR")
 		return ctrl.Result{}, err
 	}
+
 	updatedNor.Status.InProgressNodes = updatedInProgressNodes
 	updatedNor.Status.BackOffNodes = updatedRetryableNodes
 	updatedNor.Status.PendingNodes = updatedPendingNodes
@@ -1356,4 +1375,16 @@ func calculateLatency(timer sync.Map, norName string, nodeName string) float64 {
 		return latency
 	}
 	return 0
+}
+
+func sortSucceededNodesAndGarbageCollect(SucceededNodes []norv1beta1.NodeOperationSuccess) ([]norv1beta1.NodeOperationSuccess, int) {
+	numberOFNodesTrimmed := 0
+	if SucceededNodes == nil || len(SucceededNodes) < maxSuccededNodesBeforeGarbageCollection {
+		return SucceededNodes, numberOFNodesTrimmed
+	}
+	//Given that we append to the list of SucceededNodes, ideally it should already be sorted by SuccessTimestamp
+	//we sort it anyway just in case there is any discrepancy.Not a costly operation since the number of nodes sorted should always be ~1000
+	sort.Slice(SucceededNodes, func(i, j int) bool {
+		return SucceededNodes[i].SuccessTimestamp.Time.Before(SucceededNodes[j].SuccessTimestamp.Time)
+	})
 }

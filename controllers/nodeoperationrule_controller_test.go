@@ -2559,6 +2559,69 @@ func TestCalculateLatency(t *testing.T) {
 	}
 }
 
+func TestSortSucceededNodesAndGarbageCollect(t *testing.T) {
+	now := metav1.Now()
+	additionalSuccedednodeItem := norv1beta1.NodeOperationSuccess{
+		NodeName:         "latestNode",
+		SuccessTimestamp: metav1.NewTime(now.Time.Add(time.Duration(3000) * time.Second)),
+	}
+	testCases := []struct {
+		name                          string
+		succededNodesBeforeGC         []norv1beta1.NodeOperationSuccess
+		succededNodesAfterGC          []norv1beta1.NodeOperationSuccess
+		numberOfNodesGarbageCollected int
+		err                           error
+	}{
+		{
+			name:                          "SucceededNodes less than 1000",
+			succededNodesBeforeGC:         generateSucceededNodes(0, 10, now),
+			succededNodesAfterGC:          generateSucceededNodes(0, 10, now),
+			numberOfNodesGarbageCollected: 0,
+		},
+		{
+			name:                          "SucceededNodes count more than 1000",
+			succededNodesBeforeGC:         generateSucceededNodes(0, 1100, now),
+			succededNodesAfterGC:          generateSucceededNodes(100, 1100, now),
+			numberOfNodesGarbageCollected: 100,
+		},
+		{
+			name:                          "SucceededNodes count more than 1000, and also needs to be sorted",
+			succededNodesBeforeGC:         append([]norv1beta1.NodeOperationSuccess{additionalSuccedednodeItem}, generateSucceededNodes(0, 1000, now)...),
+			succededNodesAfterGC:          append(generateSucceededNodes(1, 1000, now), additionalSuccedednodeItem),
+			numberOfNodesGarbageCollected: 1,
+		},
+	}
+
+	t.Parallel()
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			SucceededNodes, numberOfNodesGarbageCollected := sortSucceededNodesAndGarbageCollect(testCase.succededNodesBeforeGC)
+			if !reflect.DeepEqual(testCase.succededNodesAfterGC, SucceededNodes) {
+				t.Errorf("expected: %+v, but actual mergeFilterLabels => %+v", testCase.succededNodesAfterGC, SucceededNodes)
+			} else {
+				t.Logf("expected: %+v, and actual mergeFilterLabels => %+v", testCase.succededNodesAfterGC, SucceededNodes)
+			}
+			if numberOfNodesGarbageCollected != testCase.numberOfNodesGarbageCollected {
+				t.Errorf("expected number of garbageCollection: %d, but actual number of garbageCollection => %d", testCase.numberOfNodesGarbageCollected, numberOfNodesGarbageCollected)
+			}
+		})
+	}
+}
+
+func generateSucceededNodes(rangeStart int, rangeEnd int, now metav1.Time) []norv1beta1.NodeOperationSuccess {
+	succeededNodes := make([]norv1beta1.NodeOperationSuccess, 0)
+	dummyNodeIp := "1.0.1."
+	for rangeStart < rangeEnd {
+		succeededNodes = append(succeededNodes,
+			norv1beta1.NodeOperationSuccess{
+				NodeName:         fmt.Sprintf("%s%d", dummyNodeIp, rangeStart),
+				SuccessTimestamp: metav1.NewTime(now.Time.Add(time.Duration(rangeStart) * time.Second)),
+			})
+		rangeStart++
+	}
+	return succeededNodes
+}
+
 func getTimerMap() sync.Map {
 	var timer sync.Map
 	ts := time.Now()
