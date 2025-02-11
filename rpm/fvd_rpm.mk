@@ -23,7 +23,7 @@ setup:
 rpm: $(PKG_TARGET)
 
 $(PKG_TARGET): $(PKG_SPEC) $(PKG_SOURCE)
-	rpmbuild -bb \
+	rpmbuild -v -bb \
 		--define "_version $(RPM_VERSION)" \
 		--define "_topdir $(WORK_DIR)/rpmbuild" \
 		--define "_flexvolume_install_path $(RPM_INSTALL_PATH)" \
