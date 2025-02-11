@@ -28,7 +28,7 @@ mkdir -p %{buildroot}%{_flexvolume_install_path}
 install -m 0755 %{_flexvolume_install_name} %{buildroot}%{_flexvolume_install_path}
 
 %files
-%{_flexvolume_install_path}/oci
+/etc/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/oci
 
 %changelog
 * Thu Nov 20 2024 Uneet <uneet.patel@oracle.com> - 1.0.0-1
