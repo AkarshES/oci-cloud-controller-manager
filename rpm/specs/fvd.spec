@@ -1,4 +1,4 @@
-Name:           oci-flexvolume-driver
+Name:           oci-oke-flexvolume-driver
 Version:        %{_version}
 Release:        %{_release}%{?dist}
 Summary:        OCI's Flex Volume Driver Binary
@@ -28,7 +28,7 @@ mkdir -p %{buildroot}%{_flexvolume_install_path}
 install -m 0755 %{_flexvolume_install_name} %{buildroot}%{_flexvolume_install_path}
 
 %files
-/etc/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/oci
+%{_flexvolume_install_path}oci
 
 %changelog
 * Thu Nov 20 2024 Uneet <uneet.patel@oracle.com> - 1.0.0-1
