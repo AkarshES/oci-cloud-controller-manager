@@ -1,5 +1,6 @@
 VERSION          ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
-VERSION_V_REMOVED ?= $(shell echo $(VERSION) | sed 's/^v//')FVD_INSTALL_NAME ?= oci
+VERSION_V_REMOVED ?= $(shell echo $(VERSION) | sed 's/^v//')
+FVD_INSTALL_NAME ?= oci
 BLD_ARCH         ?= x86
 FVD_BINARY_PATH  ?= ""
 WORK_DIR 		 ?= ~/sparta/input
