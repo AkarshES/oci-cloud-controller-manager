@@ -114,7 +114,7 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3gudsvkwk52fnlmglncjuir56hhbuxoffdvc5muc2aqsuelmfuma"
           },
           {
-            regions = ["iad", "phx", "sjc", "syd", "fra"]
+            regions = ["iad", "phx", "sjc", "syd", "fra", "cwl"]
             env = "prd"
             value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaar4ugvbhybeczkonzvnyz3h4bqlqezfhpibviyqtyenzozj5xh4va"
@@ -126,7 +126,7 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaarf636mkhnvtlwm77bhcukivkpql4qz2lhcximxyhsgnliud5ylwa"
           },
           {
-            regions = ["iad", "phx", "sjc", "syd", "fra"]
+            regions = ["iad", "phx", "sjc", "syd", "fra", "cwl"]
             env = "prd"
             value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaauw2eedsk3udqtclhqpphcsy4xhxfrtr4uiqwa3efx5hzzaaas45a"
@@ -409,6 +409,28 @@ locals {
             env          = "prd"
             value        = "true"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaaft2mucrx352mvjgie7ez7lobrnvn56hv5lkxm7kbv6m6wrwo22q"
+          }
+        ]
+      }
+    },
+    "oc16" = {
+      "ccm-image-version-mapping" = {
+        overrides = [
+          /*
+          Pinned OMK tenancies with CPO 1.6.1 ccm mappings for Roma LA
+          https://jira.oci.oraclecorp.com/browse/OKE-35076
+          */
+          {
+            regions = ["sgu"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaai5vbmtglv6yngv6gldw6u4iqksco3zt5ynaxgy5sutaiqsord45q"
+          },
+          {
+            regions = ["sgu"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaauv7ahg73tey6jj2kx3vhl56qs2anwehvtqluwrk5gitggsqlvt3q"
           }
         ]
       }
