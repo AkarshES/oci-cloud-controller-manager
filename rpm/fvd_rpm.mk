@@ -1,11 +1,11 @@
 VERSION          ?= $(shell cat ocibuild.conf | grep ccmVersion: | cut -d' ' -f2 | sed 's/"//g' )
-FVD_INSTALL_NAME ?= oci
+VERSION_V_REMOVED ?= $(shell echo $(VERSION) | sed 's/^v//')FVD_INSTALL_NAME ?= oci
 BLD_ARCH         ?= x86
 FVD_BINARY_PATH  ?= ""
 WORK_DIR 		 ?= ~/sparta/input
 RPM_INSTALL_PATH ?= "/etc/libexec/kubernetes/kubelet-plugins/volume/exec/oracle~oci/"
 INPUT_FVD_BINARY_NAME ?= "oci-flexvolume-driver"
-RPM_VERSION ?= $(subst -,_,$(VERSION))
+RPM_VERSION ?= $(subst -,_,$(VERSION_V_REMOVED))
 RELEASE ?= 1
 
 .PHONY: PACKAGE_TARGET

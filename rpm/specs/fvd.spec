@@ -1,4 +1,4 @@
-Name:           oci-oke-flexvolume-driver
+Name:           oci-oke-flexvolume-driver-%{_version}
 Version:        %{_version}
 Release:        %{_release}%{?dist}
 Summary:        OCI's Flex Volume Driver Binary
