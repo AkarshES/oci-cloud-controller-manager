@@ -762,6 +762,7 @@ locals {
       image_url   = local.io_overlay_uek5_images["20210111"].url
     }
     "integ.oc1.eu-frankfurt-1.cell0" = {}
+    "integ.oc1.uk-london-1.cell0"    = {}
     "polaris.oc1.us-sanjose-1.cell1" = {
       oke_secrets_namespace = "oke-prime-polaris-cell1"
     },
