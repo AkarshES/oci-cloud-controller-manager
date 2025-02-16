@@ -317,7 +317,7 @@ func (j *PVCTestJig) CheckVSContentExists(pvName string) bool {
 }
 
 // CreateVolumeBackup is a function to create a block volume backup
-func (j *PVCTestJig) CreateVolumeBackup(bs ocicore.BlockstorageClient, adLabel string, compartmentId string, volumeId string, backupName string) *string {
+func (j *PVCTestJig) CreateVolumeBackup(bs ocicore.BlockstorageClient, compartmentId string, volumeId string, backupName string) *string {
 	request := ocicore.CreateVolumeBackupRequest{
 		CreateVolumeBackupDetails: ocicore.CreateVolumeBackupDetails{
 			VolumeId:      &volumeId,
