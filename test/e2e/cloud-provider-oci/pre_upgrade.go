@@ -23,7 +23,7 @@ var _ = Describe("Pre Upgrade testing", func() {
 
 			scName := f.CreateStorageClassOrFail(framework.ClassOCI, core.ProvisionerNameDefault, nil, pvcJig.Labels, "", false, "Delete", nil)
 			serviceName := pvcJig.CreateService(setupF.UpgradeTestingNamespace)
-			pvcJig.CreateAndAwaitStatefulSet("csi-app-oci-0", serviceName, scName, framework.MinVolumeBlock, setupF.AdLabel, replicas)
+			pvcJig.CreateAndAwaitStatefulSet("csi-app-oci-0", serviceName, scName, framework.MinVolumeBlock, "", replicas)
 		})
 
 		It("Should be possible to create a persistent volume claim (PVC) for a block storage of Ext3 file system ", func() {
@@ -31,7 +31,7 @@ var _ = Describe("Pre Upgrade testing", func() {
 
 			scName := f.CreateStorageClassOrFail(framework.ClassOCIExt3, core.ProvisionerNameDefault, map[string]string{block.FSType: "ext3"}, pvcJig.Labels, "", false, "Delete", nil)
 			serviceName := pvcJig.CreateService(setupF.UpgradeTestingNamespace)
-			pvcJig.CreateAndAwaitStatefulSet("csi-app-oci-1", serviceName, scName, framework.MinVolumeBlock, setupF.AdLabel, replicas)
+			pvcJig.CreateAndAwaitStatefulSet("csi-app-oci-1", serviceName, scName, framework.MinVolumeBlock, "", replicas)
 		})
 	})
 
@@ -64,7 +64,7 @@ var _ = Describe("Pre Upgrade testing", func() {
 
 	Context("[pre-upgrade]", func() {
 		It("Basic Create Statefulset with PVC and POD for CSI-FSS", func() {
-			scParameters := map[string]string{"availabilityDomain": setupF.AdLabel, "mountTargetOcid": setupF.MntTargetOcid}
+			scParameters := map[string]string{"availabilityDomain": "", "mountTargetOcid": setupF.MntTargetOcid}
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-dyn-preupgrade-test")
 			scName := f.CreateStorageClassOrFail(framework.ClassFssDynamic, framework.FssProvisionerType, scParameters, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			serviceName := pvcJig.CreateService(setupF.UpgradeTestingNamespace)
