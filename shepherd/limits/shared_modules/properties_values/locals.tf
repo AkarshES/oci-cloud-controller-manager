@@ -14,18 +14,6 @@ locals {
     "v1.31" : "v1.31-405cad3eb26-4768@sha256:e6ec4e4c031a086188660d52c822abfd4828742b2a6269e66c0f6b034a71f2f7"
   }
 
-  yubi_ccm_mapping_override = {
-    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-    "v1.30" : "v1.30-9996b0758fd-4095@sha256:9b9e7a0e3fd8f124065bc41c998da5187bc35ef3e14de7aafee7bce18d79573d",
-  }
-
   spectra_ccm_mapping_override_hotfix_override = {
     "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
     "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -50,13 +38,6 @@ locals {
     "oc1" = {
       "ccm-image-version-mapping" = {
         overrides = [
-          // YUBI GRPC override https://jira.oci.oraclecorp.com/browse/OKE-33286
-          {
-            regions = ["bom", "hyd"]
-            env     = "prd"
-            value   = jsonencode(merge(local.ccm_default_mapping.default.all, local.yubi_ccm_mapping_override))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxcauqzilnjm4aaabx35cjcfjvzvef5yuh3e77xmja2ehnoxtdc7a"
-          },
           /*
           Pin Spectra tenancies with CPO 1.4.1 mappings to avoid any future reconcilation impacting NLB
           https://jira.oci.oraclecorp.com/browse/OKE-34092
