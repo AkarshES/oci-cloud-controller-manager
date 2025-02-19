@@ -64,6 +64,7 @@ vendor/**/Dockerfile
 
 release-tooling/releases/cpo-release/*
 release-tooling/.log
+release-tooling/templates/cpo-release/rendered_cm_template.yaml
 
 # pyenv file
 .python-version

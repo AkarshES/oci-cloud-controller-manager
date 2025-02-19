@@ -23,13 +23,13 @@ pip install --upgrade jira
 
 1. Update all the relevant info in release-tooling/templates/cpo-release/config.j2
 2. Update commit ID and artifact information (against the "artifacts" and "artifact_version_resolvers" keys) in release-tooling/templates/cpo-release/meta.py
+3. Update the Jira SD personal access token (generate one in profile section in Jira SD if you don't have already) in jira_pat.txt
 
 **Notes:**
-1. Due to current upstream sheepy limitation, we can only create one type of template at one time, and we will need to manually combine the releases tables after creating two CMs.
-2. The change locations field is from config.j2, this file need to be manually edited every time there is a new region added (please check the (region build page)[https://devops.oci.oraclecorp.com/region-build/regions?regionsFilter=state%20%3D%20%22Production%22&sortInfo%5BsortBy%5D=Generation&sortInfo%5BsortDirection%5D=Desc]) for recently GA regions (Note: Even though this is a good starting point, this page does not include regions where OKE is GA but the whole region is not GA yet so please check our slack channels for latest information)
+1. The change locations field is from config.j2, this file need to be manually edited every time there is a new region added (please check the (region build page)[https://devops.oci.oraclecorp.com/region-build/regions?regionsFilter=state%20%3D%20%22Production%22&sortInfo%5BsortBy%5D=Generation&sortInfo%5BsortDirection%5D=Desc]) for recently GA regions (Note: Even though this is a good starting point, this page does not include regions where OKE is GA but the whole region is not GA yet so please check our slack channels for latest information)
+2. Currently, spectre.values.setup execution targets are not supported (upstream sheepy limitation), we will need to manually add in case these targets need to be included (usually found for RB regions)
 
 #TODO: Use region build [capabilities](https://devops.oci.oraclecorp.com/region-build/capabilities?owner=oracle-kubernetes-engine) to automate the above
-
 
 ## Update gitmodules (template/shared_modules)
 This gitmodule is reading release schedule from https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oke-common-release-tooling/browse to create Shepherd links.
@@ -43,43 +43,18 @@ make add-gitmodule
 make update-gitmodule
 ```
 
-# Creating the application releases CM
+# Creating the CM
 
-## Initialising the template to generate a JSON which is used for releases, deployment and CM creation
+```
+python3 create_cm.py
+```
+
+## Steps being run by the script (Only for reference)
 
 ```
 sheepy init -t templates/cpo-release/meta.py -m "app=true" --output-file app.json 
-```
-
-## Create Application Releases
-
-```
-sheepy deploy -d releases/cpo-release/app.json create --all 
-```
-
-## Create CM
-
-```
+sheepy deploy -d releases/cpo-release/app.json create --all
 sheepy cm -d releases/cpo-release/app.json create
-```
-
-# Creating the infrastructure releases CM
-
-## Initialising the template to generate a JSON which is used for releases, deployment and CM creation
-
-```
-<change the config ID in meta.py if you plan to create infra releases with a different config ID>
-sheepy init -t templates/cpo-release/meta.py -m "infra=true" --output-file infra.json 
-```
-
-## Create Application Releases
-
-```
+sheepy init -t templates/cpo-release/meta.py -m "infra=true" --output-file infra.json
 sheepy deploy -d releases/cpo-release/infra.json create --all 
-```
-
-## Create CM
-
-```
-sheepy cm -d releases/cpo-release/infra.json create
 ```

@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="6755484d-e940-4d06-b9dc-33c225a3b919"
+config_id="3b9bfefb-4f2a-471d-ac32-455ee8e3ff78"
 
 app_release_template = {
     "alias": "image-push",
@@ -63,27 +63,27 @@ if app:
             {
                 "resolver_type": "static",
                 "artifacts": {
-                    "oke-public-cloud-provider-oci__v1_DOT_28-cb1635cc6c7-80",
-                    "oke-public-cloud-provider-oci__v1_DOT_29-13ef016091f-80",
-                    "oke-public-cloud-provider-oci__v1_DOT_30-424c53e6898-73",
-                    "oke-public-cloud-provider-oci__v1_DOT_31-46a28c37e3d-32"
+                    "oke-public-cloud-provider-oci__v1_DOT_29-52952d84357-85",
+                    "oke-public-cloud-provider-oci__v1_DOT_30-9044ad39710-79",
+                    "oke-public-cloud-provider-oci__v1_DOT_31-a6da006e913-37",
+                    "oke-public-cloud-provider-oci__v1_DOT_32-5c08a5b7630-3"
                 },
                 "resolver_params": {
                     "static_versions": {
-                        "oke-public-cloud-provider-oci__v1_DOT_28-cb1635cc6c7-80": {
-                            "version": "v1.28-cb1635cc6c7-80",
+                        "oke-public-cloud-provider-oci__v1_DOT_29-52952d84357-85": {
+                            "version": "v1.29-52952d84357-85",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_29-13ef016091f-80": {
-                            "version": "v1.29-13ef016091f-80",
+                        "oke-public-cloud-provider-oci__v1_DOT_30-9044ad39710-79": {
+                            "version": "v1.30-9044ad39710-79",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_30-424c53e6898-73": {
-                            "version": "v1.30-424c53e6898-73",
+                        "oke-public-cloud-provider-oci__v1_DOT_31-a6da006e913-37": {
+                            "version": "v1.31-a6da006e913-37",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_31-46a28c37e3d-32": {
-                            "version": "v1.31-46a28c37e3d-32",
+                        "oke-public-cloud-provider-oci__v1_DOT_32-5c08a5b7630-3": {
+                            "version": "v1.32-5c08a5b7630-3",
                             "summary": "CPO image to be pushed for release"
                         },
                     }
