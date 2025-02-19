@@ -40,8 +40,14 @@ type GenericHealthChecker struct {
 	TimeoutInMillis   *int    `json:"timeoutInMillis,omitempty"`
 	IntervalInMillis  *int    `json:"intervalInMillis,omitempty"`
 	ResponseBodyRegex *string `json:"responseBodyRegex,omitempty"`
-	// Only needed for NLB
+
+	// Only needed for NLB & when using Pods as Backends mode
 	ReturnCode *int `json:"returnCode,omitempty"`
+	// Base64 encoded pattern to be sent as UDP or TCP health check probe.
+	RequestData []byte `mandatory:"false" json:"requestData,omitempty"`
+	// Base64 encoded pattern to be validated as UDP or TCP health check probe response.
+	ResponseData []byte                                       `mandatory:"false" json:"responseData,omitempty"`
+	Dns          *networkloadbalancer.DnsHealthCheckerDetails `mandatory:"false" json:"dns"`
 }
 
 type GenericBackend struct {

@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	apiservice "k8s.io/kubernetes/pkg/api/v1/service"
-	"k8s.io/utils/pointer"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -139,15 +138,8 @@ const (
 	ServiceAnnotationLoadBalancerHealthCheckTimeout = "service.beta.kubernetes.io/oci-load-balancer-health-check-timeout"
 
 	// ServiceAnnotationLoadBalancerHealthCheckConfiguration is a Service annotation for
-	// specifying the health port, path and protocol. A health check is successful only if a successful reply is received.
+	// specifying the health port, path, protocol, etc. A health check is successful only if a successful reply is received.
 	ServiceAnnotationLoadBalancerHealthCheckConfiguration = "oci-load-balancer.oraclecloud.com/health-check"
-
-	// ServiceAnnotationLoadBalancerHealthCheckMode is a Service annotation for
-	// specifying the health check more.
-	// "annotation": Only annotation is considered for single Health Check for all backendsets
-	// "probes": Only Readiness Probes and Liveness Probes are considered with later overriding prior's configuration when present.
-	// "probes-preferred": If Readiness and Liveness probes do not exist for a port fall back to the annotation for healthcheck configuration for that port
-	ServiceAnnotationLoadBalancerHealthCheckMode = "oci-load-balancer.oraclecloud.com/health-check-mode"
 
 	// ServiceAnnotationLoadBalancerBEProtocol is a Service annotation for specifying the
 	// load balancer listener backend protocol ("TCP", "HTTP").
@@ -240,13 +232,6 @@ const (
 	// specifying the health port, path and protocol. A health check is successful only if a successful reply is received.
 	ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration = "oci-network-load-balancer.oraclecloud.com/health-check"
 
-	// ServiceAnnotationNetworkLoadBalancerHealthCheckMode is a Service annotation for
-	// specifying the health check more.
-	// "annotation": Only annotation is considered for single Health Check for all backendsets
-	// "probes": Only Readiness Probes and Liveness Probes are considered with later overriding prior's configuration when present.
-	// "probes-preferred": If Readiness and Liveness probes do not exist for a port fall back to the annotation for healthcheck configuration for that port
-	ServiceAnnotationNetworkLoadBalancerHealthCheckMode = "oci-network-load-balancer.oraclecloud.com/health-check-mode"
-
 	// ServiceAnnotationNetworkLoadBalancerBackendPolicy is a Service annotation for
 	// The network load balancer policy for the backend set.
 	ServiceAnnotationNetworkLoadBalancerBackendPolicy = "oci-network-load-balancer.oraclecloud.com/backend-policy"
@@ -320,30 +305,6 @@ const (
 	DefaultCipherSuiteForGRPC = "oci-default-http2-ssl-cipher-suite-v1"
 )
 
-// HealthCheckModeEnum Enum with underlying type: string
-type HealthCheckModeEnum string
-
-// Set of constants representing the allowable values for DnsHealthCheckTransportProtocolsEnum
-const (
-	HealthCheckModeAnnotation      HealthCheckModeEnum = "annotation"
-	HealthCheckModeReadinessProbes HealthCheckModeEnum = "readiness-probes"
-	HealthCheckModeLivenessProbes  HealthCheckModeEnum = "Liveness-probes"
-	HealthCheckModeTargetPorts     HealthCheckModeEnum = "target-ports"
-)
-
-var mappingHealthCheckModeEnumLowerCase = map[string]HealthCheckModeEnum{
-	"annotation":       HealthCheckModeAnnotation,
-	"readiness-probes": HealthCheckModeReadinessProbes,
-	"Liveness-probes":  HealthCheckModeLivenessProbes,
-	"target-ports":     HealthCheckModeTargetPorts,
-}
-
-// GetMappingHealthCheckModeEnum performs case Insensitive comparison on enum value and return the desired enum
-func GetMappingHealthCheckModeEnum(val string) (HealthCheckModeEnum, bool) {
-	enum, ok := mappingHealthCheckModeEnumLowerCase[strings.ToLower(val)]
-	return enum, ok
-}
-
 // certificateData is a structure containing the data about a K8S secret required
 // to store SSL information required for BackendSets and Listeners
 type certificateData struct {
@@ -393,10 +354,7 @@ func requiresCertificate(svc *v1.Service) bool {
 
 func requiresNsgManagement(svc *v1.Service) bool {
 	manageNSG := strings.ToLower(svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode])
-	if manageNSG == "nsg" {
-		return true
-	}
-	return false
+	return manageNSG == "nsg"
 }
 
 // NewSSLConfig constructs a new SSLConfig.
@@ -611,6 +569,7 @@ func getSecurityListManagementMode(svc *v1.Service) (string, error) {
 		ManagementModeFrontend: struct{}{},
 	}
 	annotationExists := false
+	isPodsAsBackendsMode := isPodsAsBackendsMode(svc)
 	var annotationValue string
 	switch lbType {
 	case NLB:
@@ -622,16 +581,29 @@ func getSecurityListManagementMode(svc *v1.Service) (string, error) {
 			if _, ok := knownSecListModes[annotationValue]; !ok {
 				return "", fmt.Errorf("invalid value: %s provided for annotation: %s", annotationValue, ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode)
 			}
+			// TODO: Add link to the public docs about pods as backends mode once it's published
+			if isPodsAsBackendsMode && annotationValue == ManagementModeAll {
+				return "", fmt.Errorf("unsupported value: %s provided for annotation: %s when using Pods as Backends mode", annotationValue, ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode)
+			}
 			return svc.Annotations[ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode], nil
 		}
 	default:
 		annotationValue, annotationExists = svc.Annotations[ServiceAnnotationLoadBalancerSecurityListManagementMode]
 		if !annotationExists {
+			if isPodsAsBackendsMode {
+				return "", fmt.Errorf("annotation: %s is required for Pods as Backends mode load balancer", ServiceAnnotationLoadBalancerSecurityListManagementMode)
+			}
 			return ManagementModeAll, nil
 		}
 		if _, ok := knownSecListModes[annotationValue]; !ok {
 			logger.Infof("invalid value: %s provided for annotation: %s; using default All", annotationValue, ServiceAnnotationLoadBalancerSecurityListManagementMode)
+			if isPodsAsBackendsMode {
+				return "", fmt.Errorf("unsupported value: %s provided for annotation: %s", annotationValue, ServiceAnnotationLoadBalancerSecurityListManagementMode)
+			}
 			return ManagementModeAll, nil
+		}
+		if isPodsAsBackendsMode && annotationValue == ManagementModeAll {
+			return "", fmt.Errorf("unsupported value: %s provided for annotation: %s when using Pods as Backends mode", annotationValue, ServiceAnnotationLoadBalancerSecurityListManagementMode)
 		}
 		return svc.Annotations[ServiceAnnotationLoadBalancerSecurityListManagementMode], nil
 	}
@@ -652,22 +624,26 @@ func getRuleManagementMode(svc *v1.Service) (string, *ManagedNetworkSecurityGrou
 		backendNsgId:          []string{},
 	}
 
-	annotationExists := false
-	var annotationValue string
-	annotationValue, annotationExists = svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode]
+	annotationValue, annotationExists := svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode]
 	if !annotationExists {
 		secListMode, err := getSecurityListManagementMode(svc)
 		return secListMode, &nsg, err
 	}
 
-	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeSlAll) {
+	if strings.EqualFold(annotationValue, RuleManagementModeSlAll) {
+		if isPodsAsBackendsMode(svc) {
+			return "", &nsg, fmt.Errorf("invalid value: %s provided for annotation: %s. Not a supported setting for Pods as Backends mode", annotationValue, ServiceAnnotationLoadBalancerSecurityRuleManagementMode)
+		}
 		return ManagementModeAll, &nsg, nil
 	}
-	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeSlFrontend) {
+	if strings.EqualFold(annotationValue, RuleManagementModeSlFrontend) {
+		if isPodsAsBackendsMode(svc) {
+			return "", &nsg, fmt.Errorf("invalid value: %s provided for annotation: %s. Not a supported setting for Pods as Backends mode", annotationValue, ServiceAnnotationLoadBalancerSecurityRuleManagementMode)
+		}
 		return ManagementModeFrontend, &nsg, nil
 	}
 
-	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeNsg) {
+	if strings.EqualFold(annotationValue, RuleManagementModeNsg) {
 		nsg = ManagedNetworkSecurityGroup{
 			nsgRuleManagementMode: RuleManagementModeNsg,
 			frontendNsgId:         "",
@@ -745,15 +721,22 @@ func (s *LBSpec) Certificates() (map[string]client.GenericCertificate, error) {
 
 // TODO(apryde): aggregate errors using an error list.
 func validateService(svc *v1.Service) error {
-	secListMgmtMode, err := getSecurityListManagementMode(svc)
+	lbType := getLoadBalancerType(svc)
+
+	secListMgmtMode, nsg, err := getRuleManagementMode(svc)
 	if err != nil {
 		return err
 	}
 
-	lbType := getLoadBalancerType(svc)
-
-	if err := validateProtocols(svc.Spec.Ports, lbType, secListMgmtMode); err != nil {
-		return err
+	_, annotationExists := svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode]
+	if !annotationExists {
+		if err = validateProtocols(svc.Spec.Ports, lbType, secListMgmtMode); err != nil {
+			return err
+		}
+	} else {
+		if err = validateProtocols(svc.Spec.Ports, lbType, nsg.nsgRuleManagementMode); err != nil {
+			return err
+		}
 	}
 
 	if svc.Spec.SessionAffinity != v1.ServiceAffinityNone {
@@ -835,7 +818,7 @@ func getBackendSetName(protocol string, port int) string {
 func getPorts(svc *v1.Service, listenerBackendIpVersion []string, managedPods []*v1.Pod, virtualPods []*v1.Pod) (map[string]portSpec, error) {
 	ports := make(map[string]portSpec)
 	for backendSetName, servicePort := range getBackendSetNamePortMap(svc) {
-		healthChecker, err := getHealthChecker(svc, &servicePort, managedPods, virtualPods)
+		healthChecker, err := getHealthChecker(svc)
 		if err != nil {
 			return nil, err
 		}
@@ -1001,7 +984,7 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 				return nil, err
 			}
 		}
-		healthChecker, err := getHealthChecker(svc, &servicePort, managedPods, virtualPods)
+		healthChecker, err := getHealthChecker(svc)
 		if err != nil {
 			return nil, err
 		}
@@ -1042,12 +1025,12 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 	return backendSets, nil
 }
 
-func getHealthChecker(svc *v1.Service, svcPort *v1.ServicePort, managedPods []*v1.Pod, virtualPods []*v1.Pod) (*client.GenericHealthChecker, error) {
+func getHealthChecker(svc *v1.Service) (*client.GenericHealthChecker, error) {
 	var healthCheck = &client.GenericHealthChecker{
-		Protocol:         lbNodesHealthCheckProto,
+		Protocol:         lbNodesHealthCheckDefaultProtocol,
 		IsForcePlainText: common.Bool(false),
-		UrlPath:          common.String(lbNodesHealthCheckPath),
-		Port:             common.Int(lbNodesHealthCheckPort),
+		UrlPath:          common.String(lbNodesHealthCheckDefaultPath),
+		Port:             common.Int(lbNodesHealthCheckDefaultPort),
 		ReturnCode:       common.Int(http.StatusOK),
 	}
 
@@ -1087,12 +1070,13 @@ func getHealthChecker(svc *v1.Service, svcPort *v1.ServicePort, managedPods []*v
 		// Reset health check so old annotations do not affect the settings provided through new config annotation (json value)
 		// Default setting for Pods as Backends mode
 		healthCheck = &client.GenericHealthChecker{
+			Port:             common.Int(0),
 			Retries:          &retries,
 			IntervalInMillis: &intervalInMillis,
 			TimeoutInMillis:  &timeoutInMillis,
 			ReturnCode:       common.Int(http.StatusOK),
 		}
-		if err = getHealthCheckForPodsBackends(svc, svcPort, append(managedPods, virtualPods...), healthCheck); err != nil {
+		if err = getHealthCheckForPodsBackends(svc, healthCheck); err != nil {
 			return healthCheck, err
 		}
 	}
@@ -1100,78 +1084,68 @@ func getHealthChecker(svc *v1.Service, svcPort *v1.ServicePort, managedPods []*v
 	return healthCheck, nil
 }
 
-func getHealthCheckForPodsBackends(svc *v1.Service, svcPort *v1.ServicePort, pods []*v1.Pod, healthCheck *client.GenericHealthChecker) error {
-	//targetPort := getTargetPortOfServicePort(svcPort, pods)
+func getHealthCheckForPodsBackends(svc *v1.Service, healthCheck *client.GenericHealthChecker) (err error) {
+	healthCheckJson, exists := getHealthcheckAnnotation(svc)
+	if !exists {
+		// Error out if healthcheck annotation is not provided.
+		switch getLoadBalancerType(svc) {
+		case NLB:
+			return errors.New("Health check annotation (" + ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration + ") value can not be empty when using Pods as Backends mode. i.e. AllocateLoadBalancerNodePorts is set to false.\nRefer: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer_topic-Summaryofannotations.htm")
+		default:
+			return errors.New("Health check annotation (" + ServiceAnnotationLoadBalancerHealthCheckConfiguration + ") value can not be empty when using Pods as Backends mode. i.e. AllocateLoadBalancerNodePorts is set to false.\nRefer: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer_topic-Summaryofannotations.htm")
+		}
+	}
 
+	err = getHealthCheckForPodsBackendsFromJson(healthCheckJson, healthCheck)
+	if err == nil {
+		switch getLoadBalancerType(svc) {
+		case NLB:
+			healthCheck.IsForcePlainText = nil
+		default:
+			healthCheck.ResponseData = nil
+			healthCheck.RequestData = nil
+			healthCheck.Dns = nil
+		}
+		if healthCheck.Port == nil {
+			healthCheck.Port = common.Int(0)
+		}
+		if healthCheck.ReturnCode == nil {
+			healthCheck.ReturnCode = common.Int(http.StatusOK)
+		}
+		if healthCheck.Protocol == "TCP" {
+			healthCheck.ReturnCode = nil
+		}
+	}
+	return err
+}
+
+func getHealthcheckAnnotation(svc *v1.Service) (annotation string, exists bool) {
 	switch getLoadBalancerType(svc) {
 	case NLB:
-		//switch mode, _ := GetMappingHealthCheckModeEnum(svc.Annotations[ServiceAnnotationNetworkLoadBalancerHealthCheckMode]); mode {
-		//case "": // Do Nothing if Health Check Mode is not set
-		//case HealthCheckModeAnnotation:
-		//	return getHealthCheckForPodsBackendsAnnotationMode(svc.Annotations[ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration], healthCheck)
-		//case HealthCheckModeReadinessProbes:
-		//	getHealthCheckForPodsBackendsTargetPortsMode(targetPort, svcPort, healthCheck)
-		//	return getHealthCheckForPodsBackendsProbesMode(targetPort, HealthCheckModeReadinessProbes, svcPort, pods, healthCheck)
-		//default:
-		//	return getHealthCheckForPodsBackendsTargetPortsMode(targetPort, svcPort, healthCheck)
-		//}
-
 		if annotationExistsString(svc, ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration) {
-			return getHealthCheckForPodsBackendsAnnotationMode(svc.Annotations[ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration], healthCheck)
+			return svc.Annotations[ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration], true
 		}
-		// Error out if healthcheck annotation is not provided.
-		return errors.New("Health check annotation (oci-network-load-balancer.oraclecloud.com/health-check) can not be empty when using Pods as Backends mode. i.e. AllocateLoadBalancerNodePorts is set to false.\nRefer: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer_topic-Summaryofannotations.htm")
-
-		// Cannot be used as the default mode until further design considerations
-		//getHealthCheckForPodsBackendsTargetPortsMode(svcPort, healthCheck)
 	default:
-		//switch mode, _ := GetMappingHealthCheckModeEnum(svc.Annotations[ServiceAnnotationLoadBalancerHealthCheckMode]); mode {
-		//case "": // Do Nothing if Health Check Mode is not set
-		//case HealthCheckModeAnnotation:
-		//	return getHealthCheckForPodsBackendsAnnotationMode(svc.Annotations[ServiceAnnotationLoadBalancerHealthCheckConfiguration], healthCheck)
-		//case HealthCheckModeReadinessProbes:
-		//	getHealthCheckForPodsBackendsTargetPortsMode(targetPort, svcPort, healthCheck)
-		//	return getHealthCheckForPodsBackendsProbesMode(targetPort, HealthCheckModeReadinessProbes, svcPort, pods, healthCheck)
-		//default:
-		//	return getHealthCheckForPodsBackendsTargetPortsMode(targetPort, svcPort, healthCheck)
-		//}
-
 		if annotationExistsString(svc, ServiceAnnotationLoadBalancerHealthCheckConfiguration) {
-			return getHealthCheckForPodsBackendsAnnotationMode(svc.Annotations[ServiceAnnotationLoadBalancerHealthCheckConfiguration], healthCheck)
+			return svc.Annotations[ServiceAnnotationLoadBalancerHealthCheckConfiguration], true
 		}
-		// Error out if healthcheck annotation is not provided.
-		return errors.New("Health check annotation (oci-load-balancer.oraclecloud.com/health-check) can not be empty when using Pods as Backends mode. i.e. AllocateLoadBalancerNodePorts is set to false.\nRefer: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer_topic-Summaryofannotations.htm")
-
-		// Cannot be used as the default mode until further design considerations
-		//getHealthCheckForPodsBackendsTargetPortsMode(svcPort, healthCheck)
 	}
+	return
 }
 
-func getHealthCheckForPodsBackendsTargetPortsMode(targetPort int, port *v1.ServicePort, healthCheck *client.GenericHealthChecker) error {
-	if targetPort == 0 {
-		return errors.New(fmt.Sprintf("TargetPort not defined for service port %d.", port.Port))
-	}
-	switch strings.ToUpper(string(port.Protocol)) {
-	case "UDP":
-		healthCheck.Protocol = "UDP"
-	default:
-		healthCheck.Protocol = "TCP"
-	}
-	healthCheck.Port = common.Int(targetPort)
-	return nil
-}
-
-func getHealthCheckForPodsBackendsAnnotationMode(config string, healthCheck *client.GenericHealthChecker) error {
+func getHealthCheckForPodsBackendsFromJson(config string, healthCheck *client.GenericHealthChecker) error {
 	if config == "" {
-		return errors.New("Health check annotation can not be empty when using Pods as Backends mode. i.e. AllocateLoadBalancerNodePorts is set to false.\nRefer: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingloadbalancer_topic-Summaryofannotations.htm")
+		return errors.New("invalid health check configuration JSON. Health check cannot be empty when using Pods as Backends mode")
 	}
-	err := json.Unmarshal([]byte(config), healthCheck)
-	if err != nil {
-		return err
+
+	if err := json.Unmarshal([]byte(config), healthCheck); err != nil {
+		return fmt.Errorf("invalid health check configuration JSON: %v. Please check the configuration and ensure it is a valid JSON", err)
 	}
-	if healthCheck.Protocol == "" || healthCheck.Port == nil {
-		return errors.New("protocol and port are required JSON fields for health check configuration")
+
+	if healthCheck == nil || healthCheck.Protocol == "" {
+		return errors.New("invalid health check configuration JSON. Protocol is a required field")
 	}
+
 	return nil
 }
 
@@ -1182,79 +1156,27 @@ func annotationExistsString(svc *v1.Service, match string) bool {
 	return false
 }
 
-func getHealthCheckForPodsBackendsProbesMode(targetPort int, mode HealthCheckModeEnum, port *v1.ServicePort, pods []*v1.Pod, healthCheck *client.GenericHealthChecker) error {
-	for _, pod := range pods {
-		for _, container := range pod.Spec.Containers {
-			for _, containerPort := range container.Ports {
-				if containerPort.ContainerPort == int32(targetPort) {
-					switch mode {
-					case HealthCheckModeReadinessProbes:
-						if container.ReadinessProbe.TimeoutSeconds != 0 {
-							healthCheck.TimeoutInMillis = common.Int(int(container.ReadinessProbe.TimeoutSeconds) * 1000)
-						}
-						if container.ReadinessProbe.PeriodSeconds != 0 {
-							healthCheck.IntervalInMillis = common.Int(int(container.ReadinessProbe.PeriodSeconds) * 1000)
-						}
-						if container.ReadinessProbe.SuccessThreshold != 0 {
-							healthCheck.Retries = common.Int(int(container.ReadinessProbe.SuccessThreshold))
-						}
-						if container.ReadinessProbe.TCPSocket != nil {
-							healthCheck.Protocol = "TCP"
-							healthCheck.Port = common.Int(container.ReadinessProbe.TCPSocket.Port.IntValue())
-						}
-						if container.ReadinessProbe.HTTPGet != nil {
-							healthCheck.Protocol = "HTTP"
-							if container.ReadinessProbe.HTTPGet.Scheme == "HTTPS" {
-								healthCheck.Protocol = "HTTPS"
-							}
-							healthCheck.Port = common.Int(container.ReadinessProbe.HTTPGet.Port.IntValue())
-							healthCheck.UrlPath = &container.ReadinessProbe.HTTPGet.Path
-						}
-					case HealthCheckModeLivenessProbes:
-						if container.LivenessProbe.TimeoutSeconds != 0 {
-							healthCheck.TimeoutInMillis = common.Int(int(container.LivenessProbe.TimeoutSeconds) * 1000)
-						}
-						if container.LivenessProbe.PeriodSeconds != 0 {
-							healthCheck.IntervalInMillis = common.Int(int(container.LivenessProbe.PeriodSeconds) * 1000)
-						}
-						if container.LivenessProbe.SuccessThreshold != 0 {
-							healthCheck.Retries = common.Int(int(container.LivenessProbe.SuccessThreshold))
-						}
-						if container.LivenessProbe.TCPSocket != nil {
-							healthCheck.Protocol = "TCP"
-							healthCheck.Port = common.Int(container.LivenessProbe.TCPSocket.Port.IntValue())
-						}
-						if container.LivenessProbe.HTTPGet != nil {
-							healthCheck.Protocol = "HTTP"
-							if container.LivenessProbe.HTTPGet.Scheme == "HTTPS" {
-								healthCheck.Protocol = "HTTPS"
-							}
-							healthCheck.Port = common.Int(container.LivenessProbe.HTTPGet.Port.IntValue())
-							healthCheck.UrlPath = &container.LivenessProbe.HTTPGet.Path
-						}
-					}
-
-					if healthCheck.Protocol == "" || healthCheck.Port == nil {
-						return errors.New("protocol and port are required JSON fields for health check configuration")
-					}
-					return nil
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func getTargetPortOfServicePort(servicePort *v1.ServicePort, pods []*v1.Pod) int {
-	if servicePort.TargetPort.Type == intstr.Int {
-		return servicePort.TargetPort.IntValue()
+	if len(pods) == 0 {
+		return 0
+	}
+
+	svcTargetPort := servicePort.TargetPort
+	if svcTargetPort.IntValue() == 0 && svcTargetPort.StrVal == "" {
+		// svcTargetPort is not specified, use port as svcTargetPort
+		svcTargetPort = intstr.FromInt(int(servicePort.Port))
+	}
+
+	if svcTargetPort.Type == intstr.Int {
+		return svcTargetPort.IntValue()
 	}
 
 	// Only applicable to target-ports healthcheck mode. If we decide to not move ahead with this remove the following code.
 	for _, pod := range pods {
-		for _, container := range pod.Spec.Containers {
+		// Check both Containers and InitContainers
+		for _, container := range append(pod.Spec.Containers, pod.Spec.InitContainers...) {
 			for _, containerPort := range container.Ports {
-				if servicePort.TargetPort.String() == containerPort.Name {
+				if svcTargetPort.String() == containerPort.Name {
 					return int(containerPort.ContainerPort)
 				}
 			}
@@ -1264,23 +1186,31 @@ func getTargetPortOfServicePort(servicePort *v1.ServicePort, pods []*v1.Pod) int
 }
 
 func getTargetPortOfPod(servicePort *v1.ServicePort, pod *v1.Pod) int {
-	if servicePort.TargetPort.Type == intstr.Int {
-		return servicePort.TargetPort.IntValue()
+	targetPort := servicePort.TargetPort
+	if targetPort.IntValue() == 0 && targetPort.StrVal == "" {
+		// targetPort is not specified, use port as targetPort
+		targetPort = intstr.FromInt(int(servicePort.Port))
 	}
 
-	for _, container := range pod.Spec.Containers {
+	if targetPort.Type == intstr.Int {
+		return targetPort.IntValue()
+	}
+
+	// Check both Containers and InitContainers
+	for _, container := range append(pod.Spec.Containers, pod.Spec.InitContainers...) {
 		for _, containerPort := range container.Ports {
-			if servicePort.TargetPort.String() == containerPort.Name {
+			if targetPort.String() == containerPort.Name {
 				return int(containerPort.ContainerPort)
 			}
 		}
 	}
+
 	return 0
 }
 
 func getHealthCheckRetries(svc *v1.Service) (int, error) {
 	lbType := getLoadBalancerType(svc)
-	var retries = 3
+	var retries = lbNodesHealthCheckDefaultRetries
 	annotationValue := ""
 	annotationExists := false
 	annotationString := ""
@@ -1308,7 +1238,7 @@ func getHealthCheckRetries(svc *v1.Service) (int, error) {
 
 func getHealthCheckInterval(svc *v1.Service) (int, error) {
 	lbType := getLoadBalancerType(svc)
-	var intervalInMillis = 10000
+	var intervalInMillis = lbNodesHealthCheckDefaultIntervalInMillis
 	annotationValue := ""
 	annotationExists := false
 	annotationString := ""
@@ -1344,7 +1274,7 @@ func getHealthCheckInterval(svc *v1.Service) (int, error) {
 
 func getHealthCheckTimeout(svc *v1.Service) (int, error) {
 	lbType := getLoadBalancerType(svc)
-	var timeoutInMillis = 3000
+	var timeoutInMillis = lbNodesHealthCheckDefaultTimeoutInMillis
 	annotationValue := ""
 	annotationExists := false
 	annotationString := ""
@@ -1531,9 +1461,9 @@ func getListenersNetworkLoadBalancer(svc *v1.Service, listenerBackendIpVersion [
 
 	if ppv2EnabledValue, ppv2AnnotationSet := svc.Annotations[ServiceAnnotationNetworkLoadBalancerIsPpv2Enabled]; ppv2AnnotationSet {
 		if strings.ToLower(ppv2EnabledValue) == "true" {
-			enablePpv2 = pointer.Bool(true)
+			enablePpv2 = common.Bool(true)
 		} else if strings.ToLower(ppv2EnabledValue) == "false" {
-			enablePpv2 = pointer.Bool(false)
+			enablePpv2 = common.Bool(false)
 		}
 	}
 
@@ -1928,29 +1858,21 @@ func getBackendSetNamePortMap(service *v1.Service) map[string]v1.ServicePort {
 	for _, servicePort := range service.Spec.Ports {
 		port := int(servicePort.Port)
 		backendSetName := ""
-		if requireIPv4 {
-			if len(portsMap[port]) > 1 {
-				if mixedProtocolsPortSet[port] {
-					continue
-				}
-				backendSetName = getBackendSetName(ProtocolTypeMixed, port)
-				mixedProtocolsPortSet[port] = true
-			} else {
-				backendSetName = getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))
+		if len(portsMap[port]) > 1 {
+			if mixedProtocolsPortSet[port] {
+				continue
 			}
+			backendSetName = getBackendSetName(ProtocolTypeMixed, port)
+			mixedProtocolsPortSet[port] = true
+		} else {
+			backendSetName = getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))
+		}
+		backendSetNameIPv6 := fmt.Sprintf("%s", backendSetName+"-"+IPv6)
+
+		if requireIPv4 {
 			backendSetPortMap[backendSetName] = servicePort
 		}
 		if requireIPv6 {
-			if len(portsMap[port]) > 1 {
-				if mixedProtocolsPortSet[port] {
-					continue
-				}
-				backendSetName = getBackendSetName(ProtocolTypeMixed, port)
-				mixedProtocolsPortSet[port] = true
-			} else {
-				backendSetName = getBackendSetName(string(servicePort.Protocol), int(servicePort.Port))
-			}
-			backendSetNameIPv6 := fmt.Sprintf("%s", backendSetName+"-"+IPv6)
 			backendSetPortMap[backendSetNameIPv6] = servicePort
 		}
 

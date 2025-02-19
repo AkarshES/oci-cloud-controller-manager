@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -1275,6 +1276,18 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 			if err != nil {
 				t.Fatalf("getVirtualPodsOfService() error = %v", err)
 			}
+			sort.Slice(got, func(i, j int) bool {
+				if got[i].GetUID() > got[j].GetUID() {
+					return true
+				}
+				return false
+			})
+			sort.Slice(tt.want, func(i, j int) bool {
+				if tt.want[i].GetUID() > tt.want[j].GetUID() {
+					return true
+				}
+				return false
+			})
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getVirtualPodsOfService() got = %v, want %v", got, tt.want)
 			}

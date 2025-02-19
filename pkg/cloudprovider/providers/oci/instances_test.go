@@ -21,8 +21,6 @@ import (
 	"reflect"
 	"testing"
 
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
-
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -30,8 +28,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	v1discoverylisters "k8s.io/client-go/listers/discovery/v1"
 
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -504,6 +504,7 @@ var (
 	podList = map[string]*v1.Pod{
 		"virtualPod1": {
 			ObjectMeta: metav1.ObjectMeta{
+				UID:  uuid.NewUUID(),
 				Name: "virtualPod1",
 				Labels: map[string]string{
 					"app": "pod1",
@@ -515,6 +516,7 @@ var (
 		},
 		"virtualPod2": {
 			ObjectMeta: metav1.ObjectMeta{
+				UID:  uuid.NewUUID(),
 				Name: "virtualPod2",
 				Labels: map[string]string{
 					"app": "pod2",
@@ -532,6 +534,7 @@ var (
 		},
 		"virtualPodIPv4Ipv6": {
 			ObjectMeta: metav1.ObjectMeta{
+				UID:  uuid.NewUUID(),
 				Name: "virtualPodIPv4Ipv6",
 				Labels: map[string]string{
 					"app": "pod3",
@@ -550,6 +553,7 @@ var (
 		},
 		"regularPod1": {
 			ObjectMeta: metav1.ObjectMeta{
+				UID:  uuid.NewUUID(),
 				Name: "regularPod1",
 			},
 			Spec: v1.PodSpec{
@@ -558,6 +562,7 @@ var (
 		},
 		"regularPod2": {
 			ObjectMeta: metav1.ObjectMeta{
+				UID:  uuid.NewUUID(),
 				Name: "regularPod2",
 			},
 			Spec: v1.PodSpec{

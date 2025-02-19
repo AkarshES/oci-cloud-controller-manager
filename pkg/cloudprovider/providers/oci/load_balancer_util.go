@@ -217,27 +217,27 @@ func getHealthCheckerChanges(actual *client.GenericHealthChecker, desired *clien
 	}
 	//If there is no value for ResponseBodyRegex and ReturnCode in the LBSpec,
 	//We would let the LBCS to set the default value. There is no point of reconciling.
-	if toString(desired.ResponseBodyRegex) != "" && toString(actual.ResponseBodyRegex) != toString(desired.ResponseBodyRegex) {
+	if desired.ResponseBodyRegex != nil && toString(desired.ResponseBodyRegex) != "" && toString(actual.ResponseBodyRegex) != toString(desired.ResponseBodyRegex) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:ResponseBodyRegex", toString(actual.ResponseBodyRegex), toString(desired.ResponseBodyRegex)))
 	}
 
-	if toInt(actual.Retries) != toInt(desired.Retries) {
+	if desired.Retries != nil && toInt(actual.Retries) != toInt(desired.Retries) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Retries", toInt(actual.Retries), toInt(desired.Retries)))
 	}
 
-	if toInt(desired.ReturnCode) != 0 && toInt(actual.ReturnCode) != toInt(desired.ReturnCode) {
+	if desired.ReturnCode != nil && toInt(actual.ReturnCode) != toInt(desired.ReturnCode) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:ReturnCode", toInt(actual.ReturnCode), toInt(desired.ReturnCode)))
 	}
 
-	if toInt(actual.TimeoutInMillis) != toInt(desired.TimeoutInMillis) {
+	if desired.TimeoutInMillis != nil && toInt(actual.TimeoutInMillis) != toInt(desired.TimeoutInMillis) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:TimeoutInMillis", toInt(actual.TimeoutInMillis), toInt(desired.TimeoutInMillis)))
 	}
 
-	if toInt(actual.IntervalInMillis) != toInt(desired.IntervalInMillis) {
+	if desired.IntervalInMillis != nil && toInt(actual.IntervalInMillis) != toInt(desired.IntervalInMillis) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:IntervalInMillis", toInt(actual.IntervalInMillis), toInt(desired.IntervalInMillis)))
 	}
 
-	if toString(actual.UrlPath) != toString(desired.UrlPath) {
+	if desired.UrlPath != nil && toString(actual.UrlPath) != toString(desired.UrlPath) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:UrlPath", toString(actual.UrlPath), toString(desired.UrlPath)))
 	}
 
@@ -245,11 +245,63 @@ func getHealthCheckerChanges(actual *client.GenericHealthChecker, desired *clien
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Protocol", toString(&actual.Protocol), toString(&desired.Protocol)))
 	}
 
-	if toBool(actual.IsForcePlainText) != toBool(desired.IsForcePlainText) {
+	if desired.IsForcePlainText != nil && toBool(actual.IsForcePlainText) != toBool(desired.IsForcePlainText) {
 		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:IsForcePlainText", toBool(actual.IsForcePlainText), toBool(desired.IsForcePlainText)))
 	}
 
+	if desired.RequestData != nil && string(actual.RequestData) != string(desired.RequestData) {
+		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:RequestData:RequestData", string(actual.RequestData), string(desired.RequestData)))
+	}
+
+	if desired.ResponseData != nil && string(actual.ResponseData) != string(desired.ResponseData) {
+		healthCheckerChanges = append(healthCheckerChanges, fmt.Sprintf(changeFmtStr, "BackendSet:ResponseData:ResponseData", string(actual.ResponseData), string(desired.ResponseData)))
+	}
+
+	if dnsChanges := getHealthCheckerDnsChanges(actual.Dns, desired.Dns); len(dnsChanges) != 0 {
+		healthCheckerChanges = append(healthCheckerChanges, dnsChanges...)
+	}
+
 	return healthCheckerChanges
+}
+
+func getHealthCheckerDnsChanges(actual, desired *networkloadbalancer.DnsHealthCheckerDetails) []string {
+	var dnsChanges []string
+
+	if actual == nil && desired == nil {
+		return dnsChanges
+	}
+
+	if actual == nil {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns", "NOT_PRESENT", "PRESENT"))
+		return dnsChanges
+	}
+
+	if desired == nil {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns", "PRESENT", "NOT_PRESENT"))
+		return dnsChanges
+	}
+
+	if desired.DomainName != nil && toString(actual.DomainName) != toString(desired.DomainName) {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:DomainName", toString(actual.DomainName), toString(desired.DomainName)))
+	}
+
+	if string(actual.TransportProtocol) != string(desired.TransportProtocol) {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:TransportProtocol", string(actual.TransportProtocol), string(desired.TransportProtocol)))
+	}
+
+	if string(actual.QueryClass) != string(desired.QueryClass) {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:QueryClass", string(actual.QueryClass), string(desired.QueryClass)))
+	}
+
+	if string(actual.QueryType) != string(desired.QueryType) {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:QueryType", string(actual.QueryType), string(desired.QueryType)))
+	}
+
+	if !reflect.DeepEqual(actual.Rcodes, desired.Rcodes) {
+		dnsChanges = append(dnsChanges, fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:Rcodes", fmt.Sprintf("%v", actual.Rcodes), fmt.Sprintf("%v", desired.Rcodes)))
+	}
+
+	return dnsChanges
 }
 
 // TODO(horwitz): this doesn't check weight which we may want in the future to
@@ -316,15 +368,18 @@ func healthCheckerToDetails(hc *client.GenericHealthChecker) *client.GenericHeal
 		return nil
 	}
 	return &client.GenericHealthChecker{
-		Protocol:         hc.Protocol,
-		IsForcePlainText: hc.IsForcePlainText,
-		IntervalInMillis: hc.IntervalInMillis,
-		Port:             hc.Port,
-		//ResponseBodyRegex: hc.ResponseBodyRegex,
-		Retries:         hc.Retries,
-		ReturnCode:      hc.ReturnCode,
-		TimeoutInMillis: hc.TimeoutInMillis,
-		UrlPath:         hc.UrlPath,
+		Protocol:          hc.Protocol,
+		IsForcePlainText:  hc.IsForcePlainText,
+		IntervalInMillis:  hc.IntervalInMillis,
+		Port:              hc.Port,
+		ResponseBodyRegex: hc.ResponseBodyRegex,
+		Retries:           hc.Retries,
+		ReturnCode:        hc.ReturnCode,
+		TimeoutInMillis:   hc.TimeoutInMillis,
+		UrlPath:           hc.UrlPath,
+		RequestData:       hc.RequestData,
+		ResponseData:      hc.ResponseData,
+		Dns:               hc.Dns,
 	}
 }
 
@@ -731,7 +786,7 @@ func validateProtocols(servicePorts []api.ServicePort, lbType string, secListMgm
 			return fmt.Errorf("OCI load balancers do not support UDP")
 		}
 		if servicePort.Protocol == api.ProtocolUDP && lbType == NLB && secListMgmtMode != ManagementModeNone {
-			return fmt.Errorf("Security list management mode can only be 'None' for UDP protocol")
+			return fmt.Errorf("Security rule management mode can only be 'None' for UDP protocol")
 		}
 	}
 	return nil

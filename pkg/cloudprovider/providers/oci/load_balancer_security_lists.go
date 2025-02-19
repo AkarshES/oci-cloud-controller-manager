@@ -712,7 +712,7 @@ func healthCheckPortInUse(serviceLister listersv1.ServiceLister, port int32) (bo
 		if service.Spec.ExternalTrafficPolicy == api.ServiceExternalTrafficPolicyCluster {
 			// This service is using the default healthcheck port, so we must check if
 			// any other service is also using this default healthcheck port.
-			if port == lbNodesHealthCheckPort {
+			if port == lbNodesHealthCheckDefaultPort {
 				return true, nil
 			}
 		} else if service.Spec.ExternalTrafficPolicy == api.ServiceExternalTrafficPolicyLocal {
