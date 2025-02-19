@@ -9062,7 +9062,7 @@ func Test_getHealthChecker(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			result, err := getHealthChecker(tc.service, &v1.ServicePort{Port: 10256}, nil, nil)
+			result, err := getHealthChecker(tc.service)
 
 			if tc.err != nil && err == nil {
 				t.Errorf("Error: expected\n%+v\nbut got\n%+v", tc.err, err)
