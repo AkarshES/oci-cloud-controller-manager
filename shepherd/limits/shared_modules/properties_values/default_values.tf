@@ -29,10 +29,10 @@ locals {
         "v1.26" : "v1.26-d5c95b4f813-25@sha256:d401f00fc5f6d2710f916b44450c5f4264673f1403a4aabeba98393e318fcec1",
         "v1.27" : "v1.27-bff7091ad1d-51@sha256:10555f13db26cbcb35dcd684be88db9897e01ad25bdcd7d65e9cb4bd1c5f386f",
         "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
-        "v1.29" : "v1.29-13ef016091f-80@sha256:2c7bf660d548975c3c7cf079153eec6e716a9399e6eb01cde5f56102125ef40b",
-        "v1.30" : "v1.30-424c53e6898-73@sha256:0fde8115356b9654282bf361c7ae55aa9b95c510c34775bec501264bca999648",
-        "v1.31" : "v1.31-46a28c37e3d-32@sha256:64472a97837f58f3f33489077923b0babf8802453f16b195b260b559fbd52b6d",
-        "v1.32" : "v1.32-2eb6e737df9-2@sha256:26c7eb0833c08c69508beadfd0b135d7e312cc3dcceab6e34e8ac6030753ef46",
+        "v1.29" : "v1.29-9fb67276896-88@sha256:bf72989625783bde02c57668bb45a0b95a4e162e22c33fcc379296544bf24e49",
+        "v1.30" : "v1.30-355fd0c359b-81@sha256:8c5a4e0ba89ef4c6b166e66837509bd633d9c051797a184a832cb5fe50121e21",
+        "v1.31" : "v1.31-ebe76e102e6-39@sha256:64b8ea55494fe1361b6aae7c5256ef9aba8d15837c1edf9f8cd2e07eb89984dd",
+        "v1.32" : "v1.32-01ab1cd7cc9-5@sha256:e7992d6fbf4c61ec8de8b539528cd63b9f3d99948d09ffdafa39fd59949a4f70"
       }
     }
   }
@@ -104,10 +104,7 @@ locals {
     }
 
     lustre-csi-driver-enabled = {
-      "dev.oc1" = {
-        "all": "true"
-      }
-      "integ.oc1" = {
+      "default" = {
         "all": "true"
       }
     }
