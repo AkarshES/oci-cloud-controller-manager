@@ -592,6 +592,9 @@ func healthCheckerToHealthCheckerDetails(healthChecker *GenericHealthChecker) *n
 		TimeoutInMillis:   healthChecker.TimeoutInMillis,
 		IntervalInMillis:  healthChecker.IntervalInMillis,
 		UrlPath:           healthChecker.UrlPath,
+		RequestData:       healthChecker.RequestData,
+		ResponseData:      healthChecker.ResponseData,
+		Dns:               healthChecker.Dns,
 	}
 
 	return &healthCheckerDetails
@@ -698,13 +701,17 @@ func (c *networkLoadbalancer) backendSetsToGenericBackendSetDetails(backendSets 
 		ipVersion := GenericIpVersion(v.IpVersion)
 		genericBackendSetDetails[k] = GenericBackendSetDetails{
 			HealthChecker: &GenericHealthChecker{
-				Protocol:         string(v.HealthChecker.Protocol),
-				Port:             v.HealthChecker.Port,
-				UrlPath:          v.HealthChecker.UrlPath,
-				Retries:          v.HealthChecker.Retries,
-				ReturnCode:       v.HealthChecker.ReturnCode,
-				TimeoutInMillis:  v.HealthChecker.TimeoutInMillis,
-				IntervalInMillis: v.HealthChecker.IntervalInMillis,
+				Protocol:          string(v.HealthChecker.Protocol),
+				Port:              v.HealthChecker.Port,
+				UrlPath:           v.HealthChecker.UrlPath,
+				Retries:           v.HealthChecker.Retries,
+				ReturnCode:        v.HealthChecker.ReturnCode,
+				TimeoutInMillis:   v.HealthChecker.TimeoutInMillis,
+				IntervalInMillis:  v.HealthChecker.IntervalInMillis,
+				ResponseBodyRegex: v.HealthChecker.ResponseBodyRegex,
+				RequestData:       v.HealthChecker.RequestData,
+				ResponseData:      v.HealthChecker.ResponseData,
+				Dns:               v.HealthChecker.Dns,
 			},
 			Name:             v.Name,
 			Policy:           &policyString,
@@ -796,13 +803,17 @@ func (c *networkLoadbalancer) genericBackendSetDetailsToBackendSets(backendSets 
 	for k, v := range backendSets {
 		nlbBackendSetDetails := networkloadbalancer.BackendSetDetails{
 			HealthChecker: &networkloadbalancer.HealthChecker{
-				Protocol:         networkloadbalancer.HealthCheckProtocolsEnum(v.HealthChecker.Protocol),
-				Port:             v.HealthChecker.Port,
-				UrlPath:          v.HealthChecker.UrlPath,
-				Retries:          v.HealthChecker.Retries,
-				ReturnCode:       v.HealthChecker.ReturnCode,
-				TimeoutInMillis:  v.HealthChecker.TimeoutInMillis,
-				IntervalInMillis: v.HealthChecker.IntervalInMillis,
+				Protocol:          networkloadbalancer.HealthCheckProtocolsEnum(v.HealthChecker.Protocol),
+				Port:              v.HealthChecker.Port,
+				UrlPath:           v.HealthChecker.UrlPath,
+				Retries:           v.HealthChecker.Retries,
+				ReturnCode:        v.HealthChecker.ReturnCode,
+				TimeoutInMillis:   v.HealthChecker.TimeoutInMillis,
+				IntervalInMillis:  v.HealthChecker.IntervalInMillis,
+				ResponseBodyRegex: v.HealthChecker.ResponseBodyRegex,
+				RequestData:       v.HealthChecker.RequestData,
+				ResponseData:      v.HealthChecker.ResponseData,
+				Dns:               v.HealthChecker.Dns,
 			},
 			Policy:           networkloadbalancer.NetworkLoadBalancingPolicyEnum(*v.Policy),
 			Backends:         c.genericBackendDetailsToBackendDetails(v.Backends),

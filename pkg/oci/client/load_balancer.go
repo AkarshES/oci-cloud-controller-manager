@@ -325,6 +325,22 @@ func (c *loadbalancerClientStruct) ListWorkRequests(ctx context.Context, compart
 	return genericWorkRequests, nil
 }
 
+func loadbalancerHealthCheckerToHealthCheckerDetails(healthChecker *GenericHealthChecker) *loadbalancer.HealthCheckerDetails {
+	healthCheckerDetails := loadbalancer.HealthCheckerDetails{
+		Port:              healthChecker.Port,
+		Protocol:          &healthChecker.Protocol,
+		Retries:           healthChecker.Retries,
+		ReturnCode:        healthChecker.ReturnCode,
+		ResponseBodyRegex: healthChecker.ResponseBodyRegex,
+		TimeoutInMillis:   healthChecker.TimeoutInMillis,
+		IntervalInMillis:  healthChecker.IntervalInMillis,
+		UrlPath:           healthChecker.UrlPath,
+		IsForcePlainText:  healthChecker.IsForcePlainText,
+	}
+
+	return &healthCheckerDetails
+}
+
 func (c *loadbalancerClientStruct) CreateBackendSet(ctx context.Context, lbID string, name string, details *GenericBackendSetDetails) (string, error) {
 	if !c.rateLimiter.Writer.TryAccept() {
 		return "", RateLimitError(true, "CreateBackendSet")
@@ -332,18 +348,9 @@ func (c *loadbalancerClientStruct) CreateBackendSet(ctx context.Context, lbID st
 	createBackendSetRequest := loadbalancer.CreateBackendSetRequest{
 		LoadBalancerId: &lbID,
 		CreateBackendSetDetails: loadbalancer.CreateBackendSetDetails{
-			Name:     &name,
-			Backends: c.genericBackendDetailsToBackendDetails(details.Backends),
-			HealthChecker: &loadbalancer.HealthCheckerDetails{
-				Protocol:         &details.HealthChecker.Protocol,
-				IsForcePlainText: details.HealthChecker.IsForcePlainText,
-				Port:             details.HealthChecker.Port,
-				UrlPath:          details.HealthChecker.UrlPath,
-				Retries:          details.HealthChecker.Retries,
-				ReturnCode:       details.HealthChecker.ReturnCode,
-				TimeoutInMillis:  details.HealthChecker.TimeoutInMillis,
-				IntervalInMillis: details.HealthChecker.IntervalInMillis,
-			},
+			Name:                            &name,
+			Backends:                        c.genericBackendDetailsToBackendDetails(details.Backends),
+			HealthChecker:                   loadbalancerHealthCheckerToHealthCheckerDetails(details.HealthChecker),
 			Policy:                          details.Policy,
 			SessionPersistenceConfiguration: getSessionPersistenceConfiguration(details.SessionPersistenceConfiguration),
 		},
@@ -372,17 +379,8 @@ func (c *loadbalancerClientStruct) UpdateBackendSet(ctx context.Context, lbID st
 		LoadBalancerId: &lbID,
 		BackendSetName: &name,
 		UpdateBackendSetDetails: loadbalancer.UpdateBackendSetDetails{
-			Backends: c.genericBackendDetailsToBackendDetails(details.Backends),
-			HealthChecker: &loadbalancer.HealthCheckerDetails{
-				Protocol:         &details.HealthChecker.Protocol,
-				IsForcePlainText: details.HealthChecker.IsForcePlainText,
-				Port:             details.HealthChecker.Port,
-				UrlPath:          details.HealthChecker.UrlPath,
-				Retries:          details.HealthChecker.Retries,
-				ReturnCode:       details.HealthChecker.ReturnCode,
-				TimeoutInMillis:  details.HealthChecker.TimeoutInMillis,
-				IntervalInMillis: details.HealthChecker.IntervalInMillis,
-			},
+			Backends:                        c.genericBackendDetailsToBackendDetails(details.Backends),
+			HealthChecker:                   loadbalancerHealthCheckerToHealthCheckerDetails(details.HealthChecker),
 			Policy:                          details.Policy,
 			SessionPersistenceConfiguration: getSessionPersistenceConfiguration(details.SessionPersistenceConfiguration),
 		},
@@ -851,14 +849,15 @@ func (c *loadbalancerClientStruct) backendSetsToGenericBackendSetDetails(backend
 	for k, v := range backendSets {
 		backendDetailsStruct := GenericBackendSetDetails{
 			HealthChecker: &GenericHealthChecker{
-				Protocol:         *v.HealthChecker.Protocol,
-				IsForcePlainText: v.HealthChecker.IsForcePlainText,
-				Port:             v.HealthChecker.Port,
-				UrlPath:          v.HealthChecker.UrlPath,
-				Retries:          v.HealthChecker.Retries,
-				ReturnCode:       v.HealthChecker.ReturnCode,
-				TimeoutInMillis:  v.HealthChecker.TimeoutInMillis,
-				IntervalInMillis: v.HealthChecker.IntervalInMillis,
+				Protocol:          *v.HealthChecker.Protocol,
+				IsForcePlainText:  v.HealthChecker.IsForcePlainText,
+				Port:              v.HealthChecker.Port,
+				UrlPath:           v.HealthChecker.UrlPath,
+				Retries:           v.HealthChecker.Retries,
+				ReturnCode:        v.HealthChecker.ReturnCode,
+				TimeoutInMillis:   v.HealthChecker.TimeoutInMillis,
+				IntervalInMillis:  v.HealthChecker.IntervalInMillis,
+				ResponseBodyRegex: v.HealthChecker.ResponseBodyRegex,
 			},
 			Policy:   v.Policy,
 			Name:     v.Name,
@@ -884,14 +883,15 @@ func (c *loadbalancerClientStruct) genericBackendSetDetailsToBackendSets(backend
 	for k, v := range backendSets {
 		backendSetDetailsStruct := loadbalancer.BackendSetDetails{
 			HealthChecker: &loadbalancer.HealthCheckerDetails{
-				Protocol:         &v.HealthChecker.Protocol,
-				IsForcePlainText: v.HealthChecker.IsForcePlainText,
-				Port:             v.HealthChecker.Port,
-				UrlPath:          v.HealthChecker.UrlPath,
-				Retries:          v.HealthChecker.Retries,
-				ReturnCode:       v.HealthChecker.ReturnCode,
-				TimeoutInMillis:  v.HealthChecker.TimeoutInMillis,
-				IntervalInMillis: v.HealthChecker.IntervalInMillis,
+				Protocol:          &v.HealthChecker.Protocol,
+				IsForcePlainText:  v.HealthChecker.IsForcePlainText,
+				Port:              v.HealthChecker.Port,
+				UrlPath:           v.HealthChecker.UrlPath,
+				Retries:           v.HealthChecker.Retries,
+				ReturnCode:        v.HealthChecker.ReturnCode,
+				TimeoutInMillis:   v.HealthChecker.TimeoutInMillis,
+				IntervalInMillis:  v.HealthChecker.IntervalInMillis,
+				ResponseBodyRegex: v.HealthChecker.ResponseBodyRegex,
 			},
 			Policy:   v.Policy,
 			Backends: c.genericBackendDetailsToBackendDetails(v.Backends),
