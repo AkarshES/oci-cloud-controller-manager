@@ -78,9 +78,12 @@ const (
 	// Fallback value if annotation on service is not set
 	lbDefaultShape = "100Mbps"
 
-	lbNodesHealthCheckPath  = "/healthz"
-	lbNodesHealthCheckPort  = k8sports.ProxyHealthzPort
-	lbNodesHealthCheckProto = "HTTP"
+	lbNodesHealthCheckDefaultPath             = "/healthz"
+	lbNodesHealthCheckDefaultPort             = k8sports.ProxyHealthzPort
+	lbNodesHealthCheckDefaultProtocol         = "HTTP"
+	lbNodesHealthCheckDefaultRetries          = 3
+	lbNodesHealthCheckDefaultTimeoutInMillis  = 3000
+	lbNodesHealthCheckDefaultIntervalInMillis = 10000
 
 	// default connection idle timeout per protocol
 	// https://docs.cloud.oracle.com/en-us/iaas/Content/Balance/Reference/connectionreuse.htm#ConnectionConfiguration
@@ -618,7 +621,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
-	virtualNodeExists, provisionedSvcNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndVirtualPodsOfService(ctx, logger, service, clusterNodes)
+	virtualNodeExists, provisionedSvcNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndPodsOfService(ctx, logger, service, clusterNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -927,7 +930,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	}
 
 	// If network partition, do not proceed
-	isNetworkPartition, err := cp.checkForNetworkPartition(logger, clusterNodes, virtualNodeExists, isPodsAsBackendsMode(service))
+	isNetworkPartition, err := cp.checkForNetworkPartition(logger, clusterNodes, virtualNodeExists)
 	if err != nil {
 		return nil, err
 	} else if isNetworkPartition {
@@ -1468,7 +1471,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	}
 	defer cp.lbLocks.Release(loadBalancerService)
 
-	virtualNodeExists, provisionedSvcNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndVirtualPodsOfService(ctx, logger, service, nodes)
+	virtualNodeExists, provisionedSvcNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndPodsOfService(ctx, logger, service, nodes)
 	if err != nil {
 		return err
 	}
@@ -1485,7 +1488,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	}
 
 	// If network partition, do not proceed
-	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists, isPodsAsBackendsMode(service))
+	isNetworkPartition, err := cp.checkForNetworkPartition(logger, nodes, virtualNodeExists)
 	if err != nil {
 		return err
 	} else if isNetworkPartition {
@@ -2180,11 +2183,9 @@ func (cp *CloudProvider) checkAllBackendNodesNotReady(nodeList []*v1.Node) bool 
 }
 
 /*
-	getProvisionedNodesAndVirtualPodsOfService return true if Virtual Nodes exist in the cluster and
-
-the list of provisioned nodes and virtual pods for the service
+getProvisionedNodesAndPodsOfService return true if Virtual Nodes exist in the cluster and the list of provisioned nodes, managed pods and virtual pods for the service
 */
-func (cp *CloudProvider) getProvisionedNodesAndVirtualPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service, nodes []*v1.Node) (virtualNodeExists bool, provisionedSvcNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, err error) {
+func (cp *CloudProvider) getProvisionedNodesAndPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service, nodes []*v1.Node) (virtualNodeExists bool, provisionedSvcNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, err error) {
 	provisionedSvcNodes, err = filterNodes(service, nodes)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to filter provisioned nodes with label selector and virtual nodes")
@@ -2199,24 +2200,18 @@ func (cp *CloudProvider) getProvisionedNodesAndVirtualPodsOfService(ctx context.
 		return
 	}
 
-	if virtualNodeExists {
-		// Get pods scheduled on virtual nodes for the service
-		virtualPods, err = cp.getVirtualPodsOfService(ctx, logger, service)
-		if err != nil {
-			logger.With(zap.Error(err)).Error("Failed to get virtual pods of the service")
-			err = errors.Wrap(err, "failed to get virtual pods of the service")
-			return
-		}
+	// Get pods scheduled on managed and virtual nodes for the service
+	managedPods, virtualPods, err = cp.getManagedAndVirtualPodsOfService(ctx, logger, service)
+	if err != nil {
+		logger.With(zap.Error(err)).Error("Failed to get virtual or managed pods of the service")
+		err = errors.Wrap(err, "failed to get virtual or managed pods of the service")
+		return
 	}
-
-	if isPodsAsBackendsMode(service) {
-		// Get pods scheduled on managed nodes (not virtual nodes) for the service
-		managedPods, err = cp.getManagedPodsOfService(ctx, logger, service)
-		if err != nil {
-			logger.With(zap.Error(err)).Error("Failed to get managed pods of the service")
-			err = errors.Wrap(err, "failed to get managed pods of the service")
-			return
-		}
+	if !virtualNodeExists {
+		virtualPods = nil
+	}
+	if !isPodsAsBackendsMode(service) {
+		managedPods = nil
 	}
 
 	return
@@ -2226,59 +2221,17 @@ func isPodsAsBackendsMode(service *v1.Service) bool {
 	return reflect.DeepEqual(service.Spec.AllocateLoadBalancerNodePorts, pointer.Bool(false)) && npnEnabled && !hasCustomNodePorts(service)
 }
 
-// getVirtualPodsOfService returns pods scheduled on virtual nodes fronted by the given Service
-func (cp *CloudProvider) getVirtualPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service) ([]*v1.Pod, error) {
+// getManagedAndVirtualPodsOfService returns pods scheduled on managed nodes and pods scheduled on virtual nodes fronted by the given Service
+func (cp *CloudProvider) getManagedAndVirtualPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service) ([]*v1.Pod, []*v1.Pod, error) {
 	endpointSlices, err := cp.getEndpointSlicesForService(service)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	endpointSet := make(map[string]struct{})
+	virtualPodsSet := make(map[string]*v1.Pod)
+	managedPodsSet := make(map[string]*v1.Pod)
 	var virtualPods []*v1.Pod
-	for _, es := range endpointSlices {
-		for _, e := range es.Endpoints {
-			if e.TargetRef.Kind == "Pod" {
-				if _, exists := endpointSet[e.Addresses[0]]; exists {
-					continue
-				}
-
-				pod, err := cp.PodLister.Pods(es.Namespace).Get(e.TargetRef.Name)
-				if err != nil {
-					if apierrors.IsNotFound(err) {
-						logger.With(zap.Error(err)).Errorf("Pod object does not exist: %s", e.TargetRef.Name)
-						continue
-					}
-					return nil, err
-				}
-
-				node, err := cp.NodeLister.Get(pod.Spec.NodeName)
-				if err != nil {
-					if apierrors.IsNotFound(err) {
-						logger.With(zap.Error(err)).Errorf("Node object does not exist: %s", pod.Spec.NodeName)
-						continue
-					}
-					return nil, err
-				}
-
-				if IsVirtualNode(node) {
-					virtualPods = append(virtualPods, pod)
-				}
-
-				endpointSet[e.Addresses[0]] = struct{}{}
-			}
-		}
-	}
-	return virtualPods, nil
-}
-
-// getManagedPodsOfService returns pods scheduled on virtual nodes fronted by the given Service
-func (cp *CloudProvider) getManagedPodsOfService(ctx context.Context, logger *zap.SugaredLogger, service *v1.Service) ([]*v1.Pod, error) {
-	endpointSlices, err := cp.getEndpointSlicesForService(service)
-	if err != nil {
-		return nil, err
-	}
-
-	endpointSet := make(map[string]struct{})
 	var managedPods []*v1.Pod
 	for _, es := range endpointSlices {
 		for _, e := range es.Endpoints {
@@ -2293,7 +2246,7 @@ func (cp *CloudProvider) getManagedPodsOfService(ctx context.Context, logger *za
 						logger.With(zap.Error(err)).Errorf("Pod object does not exist: %s", e.TargetRef.Name)
 						continue
 					}
-					return nil, err
+					return nil, nil, err
 				}
 
 				node, err := cp.NodeLister.Get(pod.Spec.NodeName)
@@ -2302,18 +2255,28 @@ func (cp *CloudProvider) getManagedPodsOfService(ctx context.Context, logger *za
 						logger.With(zap.Error(err)).Errorf("Node object does not exist: %s", pod.Spec.NodeName)
 						continue
 					}
-					return nil, err
+					return nil, nil, err
 				}
 
-				if !IsVirtualNode(node) {
-					managedPods = append(managedPods, pod)
+				if IsVirtualNode(node) {
+					virtualPodsSet[string(pod.UID)] = pod
+				} else {
+					// Managed Node
+					managedPodsSet[string(pod.UID)] = pod
 				}
 
 				endpointSet[e.Addresses[0]] = struct{}{}
 			}
 		}
 	}
-	return managedPods, nil
+	// Return a list of unique pods
+	for _, pod := range virtualPodsSet {
+		virtualPods = append(virtualPods, pod)
+	}
+	for _, pod := range managedPodsSet {
+		managedPods = append(managedPods, pod)
+	}
+	return managedPods, virtualPods, nil
 }
 
 func (cp *CloudProvider) getEndpointSlicesForService(service *v1.Service) ([]*discovery.EndpointSlice, error) {
@@ -2402,9 +2365,9 @@ func (clb *CloudLoadBalancerProvider) checkPendingLBWorkRequests(ctx context.Con
 }
 
 // checkForNetworkPartition return true if network partition is present (all nodes are not ready) else throws an error if any
-func (cp *CloudProvider) checkForNetworkPartition(logger *zap.SugaredLogger, nodes []*v1.Node, virtualNodeExists, isManagedPods bool) (isNetworkPartition bool, err error) {
+func (cp *CloudProvider) checkForNetworkPartition(logger *zap.SugaredLogger, nodes []*v1.Node, virtualNodeExists bool) (isNetworkPartition bool, err error) {
 	// Service controller provided empty provisioned nodes list
-	if len(nodes) == 0 && !virtualNodeExists && !isManagedPods {
+	if len(nodes) == 0 && !virtualNodeExists {
 		// List all nodes in the cluster
 		nodeList, err := cp.NodeLister.List(labels.Everything())
 		if err != nil {
@@ -2521,7 +2484,7 @@ func (clb *CloudLoadBalancerProvider) getLbListenerBackendSetIpVersion(ipFamilie
 	case string(v1.IPFamilyPolicyPreferDualStack):
 		if errIPv6Subnet != nil && errIPv4Subnet != nil {
 			// should never happen
-			return nil, errors.New("subnet does not have IPv4 or IPv6 cidr, can't create loadbalancer")
+			return nil, errors.New("subnet does not have both IPv4 and IPv6 cidr, can't create loadbalancer")
 		}
 		if errIPv6Subnet != nil {
 			clb.logger.Warn("subnet provided does not have IPv6 subnet CIDR block, creating listeners and backends of ip-version IPv4")

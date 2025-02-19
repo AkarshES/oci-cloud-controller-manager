@@ -2406,7 +2406,7 @@ func TestHasBackendSetChanged(t *testing.T) {
 					TimeoutInMillis: common.Int(1),
 				},
 			},
-			expected: true,
+			expected: false,
 		},
 		{
 			name: "HealthChecker retries present in actual and not in desired",
@@ -2421,7 +2421,7 @@ func TestHasBackendSetChanged(t *testing.T) {
 					Retries: common.Int(2),
 				},
 			},
-			expected: true,
+			expected: false,
 		},
 		{
 			name: "HealthChecker IntervalInMillis present in actual and not in desired",
@@ -2436,7 +2436,7 @@ func TestHasBackendSetChanged(t *testing.T) {
 					IntervalInMillis: common.Int(1000),
 				},
 			},
-			expected: true,
+			expected: false,
 		},
 		{
 			name: "HealthChecker UrlPath changes",
