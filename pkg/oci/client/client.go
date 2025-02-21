@@ -426,7 +426,7 @@ func providerConfigCacheKeyFn(obj interface{}) (string, error) {
 func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociClientConfig *OCIClientConfig) (genericLoadBalancer GenericLoadBalancerInterface) {
 
 	// tokenRequest is nil if Workload Identity LB/NLB client is not requested
-	if ociClientConfig.SaToken == nil {
+	if ociClientConfig == nil || ociClientConfig.SaToken == nil {
 		if lbType == "nlb" {
 			return c.networkloadbalancer
 		}
@@ -707,8 +707,7 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 	var compute core.ComputeClient
 	var identityClient identity.IdentityClient
 	*/
-
-	if ociClientConfig.SaToken == nil {
+	if ociClientConfig == nil || ociClientConfig.SaToken == nil {
 		return c
 	}
 	configProvider, err := c.getConfigurationProvider(c.logger, ociClientConfig)
