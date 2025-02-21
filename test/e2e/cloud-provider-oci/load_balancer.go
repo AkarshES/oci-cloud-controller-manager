@@ -2519,6 +2519,11 @@ var _ = Describe("LB Properties", func() {
 					})
 					// Wait for the load balancer to be destroyed asynchronously
 					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+
+					// Wait for OCI load balancer to be deleted
+					err = f.WaitForLoadBalancerLifecycleState(loadBalancer, lbType, "DELETED")
+					sharedfw.ExpectNoError(err)
+
 					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
 				}()
 			}
