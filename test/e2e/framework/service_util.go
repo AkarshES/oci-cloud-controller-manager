@@ -74,6 +74,8 @@ const (
 	LoadBalancerCreateTimeoutDefault = 20 * time.Minute
 	LoadBalancerCreateTimeoutLarge   = 2 * time.Hour
 
+	LoadBalancerDeleteTimeoutDefault = 2 * time.Minute
+
 	// Time required by the loadbalancer to cleanup, proportional to numApps/Ing.
 	// Bring the cleanup timeout back down to 5m once b/33588344 is resolved.
 	LoadBalancerCleanupTimeout = 15 * time.Minute
@@ -547,6 +549,29 @@ func EnsureLoadBalancerResourcesDeleted(ip, portRange string) error {
 	return nil
 }
 
+// WaitForLoadBalancerLifecycleState polls until OCI Load Balancer or Network Load Balancer has reached the desired lifecycle state
+func (f *CloudProviderFramework) WaitForLoadBalancerLifecycleState(lb *client.GenericLoadBalancer, lbType, desiredState string) error {
+	condition := func() (bool, error) {
+
+		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancer(context.TODO(), *lb.Id)
+		if err != nil {
+			if client.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		fmt.Println("Current state is: " + *updatedLB.LifecycleState)
+		if *updatedLB.LifecycleState != desiredState {
+			return false, nil
+		}
+		return true, nil
+	}
+	if err := wait.Poll(5*time.Second, LoadBalancerDeleteTimeoutDefault, condition); err != nil {
+		return fmt.Errorf("LB failed to reach the desired lifecycle state: %s", desiredState)
+	}
+	return nil
+}
+
 func (j *ServiceTestJig) WaitForLoadBalancerDestroyOrFail(namespace, name string, ip string, port int, timeout time.Duration) *v1.Service {
 	// TODO: once support ticket 21807001 is resolved, reduce this timeout back to something reasonable
 	defer func() {
@@ -1003,6 +1028,7 @@ func (f *CloudProviderFramework) WaitForLoadBalancerShapeChange(lb *client.Gener
 	}
 	return nil
 }
+
 func testHealthCheckConfig(loadBalancer *client.GenericLoadBalancer, retries int, timeout int, interval int) (bool, error) {
 	if loadBalancer != nil && len(loadBalancer.BackendSets) != 0 {
 		for _, backendSet := range loadBalancer.BackendSets {
