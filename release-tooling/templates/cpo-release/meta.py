@@ -111,6 +111,12 @@ if infra:
                 "name": "main",
                 "shepherd_phase": lambda scope: f"prd.{scope.realm.lower()}",
                 "execution_target": lambda scope: f"spectre.values.prd.{scope.realm.lower()}.{scope.region_name.lower()}"
+            },
+            {
+                "scope": "region",
+                "name": "main",
+                "shepherd_phase": lambda scope: f"prd.{scope.realm.lower()}",
+                "execution_target": lambda scope: f"prd.{scope.realm.lower()}.{scope.region_name.lower()}.{scope.stage.lower()}"
             }
         ]
     })
