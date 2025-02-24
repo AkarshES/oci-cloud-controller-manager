@@ -70,9 +70,6 @@ oke-public-cloud-provider-oci                     , v1.30-ebf319fb8ca-4419
 oke-public-cloud-provider-oci-linux_x86_64        , v1.31-c9f79b0e2f8-4421
 oke-public-cloud-provider-oci-linux_arm64_v8      , v1.31-c9f79b0e2f8-4421
 oke-public-cloud-provider-oci                     , v1.31-c9f79b0e2f8-4421
-oke-public-cloud-provider-oci                     , v1.29-ad69a5aaaf2-4426
-oke-public-cloud-provider-oci                     , v1.30-33eb1206a53-4413
-oke-public-cloud-provider-oci                     , v1.31-2bebf836dd5-4427
 oke-public-cloud-provider-oci                     , v1.28-cb1635cc6c7-80
 oke-public-cloud-provider-oci                     , v1.29-13ef016091f-80
 oke-public-cloud-provider-oci                     , v1.30-424c53e6898-73
@@ -88,3 +85,4 @@ oke-public-cloud-provider-oci                     , v1.29-9fb67276896-88
 oke-public-cloud-provider-oci                     , v1.30-355fd0c359b-81
 oke-public-cloud-provider-oci                     , v1.31-ebe76e102e6-39
 oke-public-cloud-provider-oci                     , v1.32-01ab1cd7cc9-5
+oke-public-cloud-provider-oci                     , v1.32-fef3de1bc29-34
