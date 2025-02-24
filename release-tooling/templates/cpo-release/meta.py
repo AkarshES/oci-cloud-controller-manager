@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="17280259-14b6-4302-b29e-ce5e93a49490"
+config_id="985d26c8-0d3d-4001-8f9c-5efffe9d8bb3"
 
 app_release_template = {
     "alias": "image-push",
@@ -66,7 +66,8 @@ if app:
                     "oke-public-cloud-provider-oci__v1_DOT_29-0911461af79-92",
                     "oke-public-cloud-provider-oci__v1_DOT_30-a67f7b269a7-85",
                     "oke-public-cloud-provider-oci__v1_DOT_31-c7e5bd92e29-43",
-                    "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11"
+                    "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11",
+                    "release-validator-ccm-csi"
                 },
                 "resolver_params": {
                     "static_versions": {
@@ -85,6 +86,10 @@ if app:
                         "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11": {
                             "version": "v1.32-c01d1d4113e-11",
                             "summary": "CPO image to be pushed for release"
+                        },
+                        "release-validator-ccm-csi": {
+                            "version": "42adb2ce10d_25",
+                            "summary": "Release validator POP image to be pushed for release"
                         },
                     }
                 }
@@ -106,6 +111,12 @@ if infra:
             "change_type": "Infrastructure"
         },
         "logical_phases": [
+            {
+                "scope": "region",
+                "name": "main",
+                "shepherd_phase": lambda scope: f"prd.{scope.realm.lower()}",
+                "execution_target": lambda scope: f"prd.{scope.realm.lower()}.{scope.region_name.lower()}.cell0"
+            },
             {
                 "scope": "region",
                 "name": "main",

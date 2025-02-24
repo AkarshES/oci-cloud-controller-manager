@@ -1,4 +1,6 @@
 locals {
+  // Update the pop version corresponding to the pop build for app release
+  pop_version = "42adb2ce10d_25"
 
   // Update the ccm image sha value here for updating CCM versions for respective k8s versions across all realms
   ccm_default_mapping = {
@@ -832,4 +834,8 @@ locals {
   global_default_values_map = {
   for property in local.global_default_values_list : "${property.group}/${property.name}/${property.region}/${property.ad}" => property
   }
+}
+
+output "pop_version" {
+  value = local.pop_version
 }
