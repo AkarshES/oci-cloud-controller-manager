@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="17280259-14b6-4302-b29e-ce5e93a49490"
+config_id="19f56f9a-57c3-4e16-861d-67206f13a5b8"
 
 app_release_template = {
     "alias": "image-push",
@@ -63,28 +63,33 @@ if app:
             {
                 "resolver_type": "static",
                 "artifacts": {
-                    "oke-public-cloud-provider-oci__v1_DOT_29-0911461af79-92",
-                    "oke-public-cloud-provider-oci__v1_DOT_30-a67f7b269a7-85",
-                    "oke-public-cloud-provider-oci__v1_DOT_31-c7e5bd92e29-43",
-                    "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11"
+                    "oke-public-cloud-provider-oci__v1_DOT_29-9fb67276896-88",
+                    "oke-public-cloud-provider-oci__v1_DOT_30-355fd0c359b-81",
+                    "oke-public-cloud-provider-oci__v1_DOT_31-ebe76e102e6-39",
+                    "oke-public-cloud-provider-oci__v1_DOT_32-01ab1cd7cc9-5",
+                    "release-validator-ccm-csi"
                 },
                 "resolver_params": {
                     "static_versions": {
-                        "oke-public-cloud-provider-oci__v1_DOT_29-0911461af79-92": {
-                            "version": "v1.29-0911461af79-92",
+                        "oke-public-cloud-provider-oci__v1_DOT_29-9fb67276896-88": {
+                            "version": "v1.29-9fb67276896-88",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_30-a67f7b269a7-85": {
-                            "version": "v1.30-a67f7b269a7-85",
+                        "oke-public-cloud-provider-oci__v1_DOT_30-355fd0c359b-81": {
+                            "version": "v1.30-355fd0c359b-81",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_31-c7e5bd92e29-43": {
-                            "version": "v1.31-c7e5bd92e29-43",
+                        "oke-public-cloud-provider-oci__v1_DOT_31-ebe76e102e6-39": {
+                            "version": "v1.31-ebe76e102e6-39",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11": {
-                            "version": "v1.32-c01d1d4113e-11",
+                        "oke-public-cloud-provider-oci__v1_DOT_32-01ab1cd7cc9-5": {
+                            "version": "v1.32-01ab1cd7cc9-5",
                             "summary": "CPO image to be pushed for release"
+                        },
+                        "release-validator-ccm-csi": {
+                            "version": "4fe27dbfb8e_20",
+                            "summary": "Release validator POP image to be pushed for release"
                         },
                     }
                 }
@@ -106,6 +111,12 @@ if infra:
             "change_type": "Infrastructure"
         },
         "logical_phases": [
+            {
+                "scope": "region",
+                "name": "main",
+                "shepherd_phase": lambda scope: f"prd.{scope.realm.lower()}",
+                "execution_target": lambda scope: f"prd.{scope.realm.lower()}.{scope.region_name.lower()}.cell0"
+            },
             {
                 "scope": "region",
                 "name": "main",
