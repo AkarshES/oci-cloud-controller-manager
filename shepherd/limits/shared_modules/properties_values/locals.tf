@@ -14,6 +14,20 @@ locals {
     "v1.31" : "v1.31-405cad3eb26-4768@sha256:e6ec4e4c031a086188660d52c822abfd4828742b2a6269e66c0f6b034a71f2f7"
   }
 
+  node_cycling_operator_ccm_mapping_override = {
+    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+    "v1.29": "v1.29-9a72942aae3-4951@sha256:f4507562764a8b8f147a71217a90426d62fe542a4864a426da92db2daf98a608",
+    "v1.30": "v1.30-cabaec8b1f6-4945@sha256:49e98a91e183b8d99b32db12a156065950ce1f1df91f3d33ff8fdc79611d55a8",
+    "v1.31": "v1.31-3132c6be241-4955@sha256:10585326c5ca43ed1a63a74416b3d2674c52059b5d97ae644127047f04af3515",
+  }
+
   spectra_ccm_mapping_override_hotfix_override = {
     "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
     "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -62,25 +76,7 @@ locals {
             regions = ["iad", "phx"]
             env = "integ"
             value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafyd4yolgubij6qz7kgxxl5ps2qhqkfoqrvxtjvdccy66ifxmglia"
-          },
-          {
-            regions = ["iad", "phx"]
-            env = "integ"
-            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaj4ymkytn4cwasyktbc5rbqiald2enkoarepdv7pawyuw2tkazisa"
-          },
-          {
-            regions = ["iad", "phx"]
-            env = "prd"
-            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaqeq267dfoqjqjvcfgazlo6tqv7nfnv2rv767dm5ecf2wqlbsh5sa"
-          },
-          {
-            regions = ["iad", "phx"]
-            env = "prd"
-            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaepbccznc477ibxxopf2o3ki4bvfn47ji2zqvdfluqtutcduggn4q"
           },
           {
             regions = ["iad", "phx"]
@@ -111,6 +107,58 @@ locals {
             env = "prd"
             value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaauw2eedsk3udqtclhqpphcsy4xhxfrtr4uiqwa3efx5hzzaaas45a"
+          },
+          /*
+          CPO ccm mapping for node cycling operator Pre-LA - https://jira.oci.oraclecorp.com/browse/OKE-33199
+          */
+          // node cycling operator Pre-LA - omkdevfleet - integ-phx & integ-iad
+          {
+            regions = ["iad", "phx"]
+            env = "integ"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaafyd4yolgubij6qz7kgxxl5ps2qhqkfoqrvxtjvdccy66ifxmglia"
+          },
+          // node cycling operator Pre-LA - omkintegfleet
+          {
+            regions = ["iad", "phx"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaqeq267dfoqjqjvcfgazlo6tqv7nfnv2rv767dm5ecf2wqlbsh5sa"
+          },
+          // node cycling operator Pre-LA - omkintegfleetinternal
+          {
+            regions = ["iad", "phx"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaepbccznc477ibxxopf2o3ki4bvfn47ji2zqvdfluqtutcduggn4q"
+          },
+          // node cycling operator Pre-LA - ODX-MOCKCUSTOMER - integ-phx & integ-iad
+          {
+            regions      = ["iad", "phx"]
+            env          = "integ"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
+          },
+          // node cycling operator Pre-LA - ODX-MOCKCUSTOMER
+          {
+            regions      = ["qro"]
+            env          = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaat37ab62ltpvzgyoydasbfig3gcmccxwzvbi6yoh6ewqiiswps6sq"
+          },
+          // node cycling operator Pre-LA - okecanaryla - integ-phx & integ-iad
+          {
+            regions      = ["iad", "phx"]
+            env          = "integ"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatxzd3axgkv7gybg2dtii3ecaetdg42wwx3x723bi6j55dgi3a7uq"
+          },
+          // node cycling operator Pre-LA - okecanaryla
+          {
+            regions      = ["iad", "phx", "qro"]
+            env          = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaatxzd3axgkv7gybg2dtii3ecaetdg42wwx3x723bi6j55dgi3a7uq"
           }
         ]
       },
@@ -412,6 +460,13 @@ locals {
             env = "prd"
             value = jsonencode(merge(local.ccm_default_mapping.default.all, local.roma_ccm_mapping_override))
             tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaauv7ahg73tey6jj2kx3vhl56qs2anwehvtqluwrk5gitggsqlvt3q"
+          },
+          // CPO ccm mapping for node cycling operator Pre-LA - okecanaryla - https://jira.oci.oraclecorp.com/browse/OKE-33199
+          {
+            regions = ["sgu"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.node_cycling_operator_ccm_mapping_override))
+            tenancy_ocid = "ocid1.tenancy.oc16..aaaaaaaanou7p4mkn5ptoicf5s5cfi2i5rff3qeeqpchwfxdxe7nvqbfokca"
           }
         ]
       }
