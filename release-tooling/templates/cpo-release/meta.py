@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="17280259-14b6-4302-b29e-ce5e93a49490"
+config_id="97cbb765-6f7a-42e6-8a67-dad183d9e8a6"
 
 app_release_template = {
     "alias": "image-push",
@@ -106,6 +106,13 @@ if infra:
             "change_type": "Infrastructure"
         },
         "logical_phases": [
+
+            {
+                "scope": "region",
+                "name": "main",
+                "shepherd_phase": lambda scope: f"prd.{scope.realm.lower()}",
+                "execution_target": lambda scope: f"prd.{scope.realm.lower()}.{scope.region_name.lower()}.cell0"
+            },
             {
                 "scope": "region",
                 "name": "main",

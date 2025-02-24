@@ -11,10 +11,10 @@ locals {
         "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
         "v1.27" : "v1.27-7e9bf7a9189-52@sha256:fd510337e52ef609ffb86953ef080b3f2fa1a19a0647f65dfbd2c1dfbda0df7a",
         "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
-        "v1.29" : "v1.29-0911461af79-92@sha256:ed06eeb4d53c3af81e3caf662c7057922dc1a39400b3a38ef281db0b3707113f",
-        "v1.30" : "v1.30-a67f7b269a7-85@sha256:f0224f684ef8e32ea6435e51cb72dba3a6bd140f6ef8d7190cc1f6d7c669c1b0",
-        "v1.31" : "v1.31-c7e5bd92e29-43@sha256:eff28f23a6c82e1d1539e5f3c4b65efe8fdf8ea615c6f9158592c630fc9f09d1",
-        "v1.32" : "v1.32-c01d1d4113e-11@sha256:a797ab6fd015af36ce0a5570ccd741860672bccdd879b167fa16b1212ab77bc1"
+        "v1.29" : "v1.29-13ef016091f-80@sha256:2c7bf660d548975c3c7cf079153eec6e716a9399e6eb01cde5f56102125ef40b",
+        "v1.30" : "v1.30-424c53e6898-73@sha256:0fde8115356b9654282bf361c7ae55aa9b95c510c34775bec501264bca999648",
+        "v1.31" : "v1.31-46a28c37e3d-32@sha256:64472a97837f58f3f33489077923b0babf8802453f16b195b260b559fbd52b6d",
+        "v1.32" : "v1.32-2eb6e737df9-2@sha256:26c7eb0833c08c69508beadfd0b135d7e312cc3dcceab6e34e8ac6030753ef46"
       }
     }
   }
@@ -808,28 +808,28 @@ locals {
     }
   }
   global_default_values_by_property = {
-  for property_name, property_value in local.global_default_values : property_name => merge(
-    lookup(property_value, "default", {}),
-    lookup(property_value, var.env, {}),
-    lookup(property_value, "${var.env}.${var.realm}", {})
-  )
+    for property_name, property_value in local.global_default_values : property_name => merge(
+      lookup(property_value, "default", {}),
+      lookup(property_value, var.env, {}),
+      lookup(property_value, "${var.env}.${var.realm}", {})
+    )
   }
 
   global_default_values_list = flatten([
-  for property_name, property_value in local.global_default_values_by_property : [
-    {
-      ad     = lookup(property_value, "ad", "all")
-      group  = var.spectre_group_name
-      name   = replace(property_name, "_", "-")
-      region = var.execution_target.additional_locals.limits_region
-      value  = lookup(property_value, var.execution_target.additional_locals.limits_region, lookup(property_value, "all", ""))
-      min    = lookup(property_value, "min", null)
-      max    = lookup(property_value, "max", null)
-    }
-  ] if length(property_value) > 0
+    for property_name, property_value in local.global_default_values_by_property : [
+      {
+        ad     = lookup(property_value, "ad", "all")
+        group  = var.spectre_group_name
+        name   = replace(property_name, "_", "-")
+        region = var.execution_target.additional_locals.limits_region
+        value  = lookup(property_value, var.execution_target.additional_locals.limits_region, lookup(property_value, "all", ""))
+        min    = lookup(property_value, "min", null)
+        max    = lookup(property_value, "max", null)
+      }
+    ] if length(property_value) > 0
   ])
 
   global_default_values_map = {
-  for property in local.global_default_values_list : "${property.group}/${property.name}/${property.region}/${property.ad}" => property
+    for property in local.global_default_values_list : "${property.group}/${property.name}/${property.region}/${property.ad}" => property
   }
 }
