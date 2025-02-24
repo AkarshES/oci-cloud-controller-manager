@@ -11,10 +11,10 @@ locals {
         "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
         "v1.27" : "v1.27-7e9bf7a9189-52@sha256:fd510337e52ef609ffb86953ef080b3f2fa1a19a0647f65dfbd2c1dfbda0df7a",
         "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
-        "v1.29" : "v1.29-0911461af79-92@sha256:ed06eeb4d53c3af81e3caf662c7057922dc1a39400b3a38ef281db0b3707113f",
-        "v1.30" : "v1.30-a67f7b269a7-85@sha256:f0224f684ef8e32ea6435e51cb72dba3a6bd140f6ef8d7190cc1f6d7c669c1b0",
-        "v1.31" : "v1.31-c7e5bd92e29-43@sha256:eff28f23a6c82e1d1539e5f3c4b65efe8fdf8ea615c6f9158592c630fc9f09d1",
-        "v1.32" : "v1.32-c01d1d4113e-11@sha256:a797ab6fd015af36ce0a5570ccd741860672bccdd879b167fa16b1212ab77bc1"
+        "v1.29" : "v1.29-13ef016091f-80@sha256:2c7bf660d548975c3c7cf079153eec6e716a9399e6eb01cde5f56102125ef40b",
+        "v1.30" : "v1.30-424c53e6898-73@sha256:0fde8115356b9654282bf361c7ae55aa9b95c510c34775bec501264bca999648",
+        "v1.31" : "v1.31-46a28c37e3d-32@sha256:64472a97837f58f3f33489077923b0babf8802453f16b195b260b559fbd52b6d",
+        "v1.32" : "v1.32-2eb6e737df9-2@sha256:26c7eb0833c08c69508beadfd0b135d7e312cc3dcceab6e34e8ac6030753ef46"
       }
     }
   }
@@ -118,6 +118,7 @@ locals {
       "dev.oc1" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -129,6 +130,7 @@ locals {
         ))
         "iad" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -140,6 +142,7 @@ locals {
         ))
         "phx" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -151,6 +154,7 @@ locals {
         ))
         "fra" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -165,6 +169,7 @@ locals {
       "integ.oc1" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -176,6 +181,7 @@ locals {
         ))
         "iad" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -187,6 +193,7 @@ locals {
         ))
         "phx" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -198,6 +205,7 @@ locals {
         ))
         "fra" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -216,6 +224,7 @@ locals {
       "prd.oc1" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -230,6 +239,7 @@ locals {
       "prd.oc8" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -244,6 +254,7 @@ locals {
       "prd.oc9" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -258,6 +269,7 @@ locals {
       "prd.oc10" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -273,6 +285,7 @@ locals {
       "prd.oc2" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -287,6 +300,7 @@ locals {
       "prd.oc3" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -302,6 +316,7 @@ locals {
       "prd.oc4" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-1.16-520cc1d-11@sha256:ba64f2c4ebf862d8e00d5c762e510bf41a7c9b735b5bb3a80a5ee33e344da7bf",
             "v1.16" : "oke-1.16-520cc1d-11@sha256:ba64f2c4ebf862d8e00d5c762e510bf41a7c9b735b5bb3a80a5ee33e344da7bf",
             "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -318,6 +333,7 @@ locals {
       "prd.oc5" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.16" : "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.17" : "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.18" : "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
@@ -335,6 +351,7 @@ locals {
       "prd.oc6" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.16" : "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.17" : "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.18" : "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
@@ -352,6 +369,7 @@ locals {
       "prd.oc11" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.18" : "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.19" : "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
             "v1.20" : "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
@@ -367,6 +385,7 @@ locals {
       "prd.oc14" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -375,6 +394,7 @@ locals {
       "prd.oc16" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -383,6 +403,7 @@ locals {
       "prd.oc17" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -391,6 +412,7 @@ locals {
       "prd.oc19" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -399,6 +421,7 @@ locals {
       "prd.oc20" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -407,6 +430,7 @@ locals {
       "prd.oc22" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -415,6 +439,7 @@ locals {
       "prd.oc24" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
           }
         ))
@@ -433,6 +458,7 @@ locals {
       "dev.oc1" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -445,6 +471,7 @@ locals {
         ))
         "iad" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -457,6 +484,7 @@ locals {
         ))
         "phx" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -469,6 +497,7 @@ locals {
         ))
         "fra" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -484,6 +513,7 @@ locals {
       "integ.oc1" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -497,6 +527,7 @@ locals {
         ))
         "iad" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -509,6 +540,7 @@ locals {
         ))
         "phx" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -521,6 +553,7 @@ locals {
         ))
         "fra" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -536,6 +569,7 @@ locals {
       "prd.oc1" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -550,6 +584,7 @@ locals {
       "prd.oc8" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -565,6 +600,7 @@ locals {
       "prd.oc9" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -580,6 +616,7 @@ locals {
       "prd.oc10" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -596,6 +633,7 @@ locals {
       "prd.oc2" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -611,6 +649,7 @@ locals {
       "prd.oc3" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -627,6 +666,7 @@ locals {
       "prd.oc4" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-1.16-520cc1d-11@sha256:ba64f2c4ebf862d8e00d5c762e510bf41a7c9b735b5bb3a80a5ee33e344da7bf",
             "v1.16": "oke-1.16-520cc1d-11@sha256:ba64f2c4ebf862d8e00d5c762e510bf41a7c9b735b5bb3a80a5ee33e344da7bf",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -643,6 +683,7 @@ locals {
       "prd.oc5" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.16": "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.17": "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.18": "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
@@ -658,6 +699,7 @@ locals {
       "prd.oc6" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.16": "oke-1.16-520cc1d-11@sha256:7900589b191fb6a77b77172c3800428e4c435b54605cc033c8ebea4c60ae5df1",
             "v1.17": "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.18": "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
@@ -673,6 +715,7 @@ locals {
       "prd.oc11" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.18": "oke-1.17-40e9a7a-13@sha256:424470ceb13e4b76f0a07e645bf2b37838f9a30709fdfdbce51b79748a6ff364",
             "v1.19": "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
             "v1.20": "oke-1.19-64ab664-255@sha256:fb4144e0480f120c54ea4688f70ef834b9a1fb0c03ffe0f03eca5afe61ae6765",
@@ -686,6 +729,7 @@ locals {
       "prd.oc14" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22": "oke-multiarch-1.22-aa9948e-192@sha256:5bf9fef2c99f2c77fdb8027d8690900c99adef873bde9bcf6cd30db39ce467eb",
             "v1.23": "oke-multiarch-1.23-16022dc-95@sha256:2782b14bc755aa839ca68a86591007cf4dfb2c8419be14a5eae94b24a77f1031",
           }
@@ -695,6 +739,7 @@ locals {
       "prd.oc16" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22": "oke-multiarch-1.22-aa9948e-192@sha256:5bf9fef2c99f2c77fdb8027d8690900c99adef873bde9bcf6cd30db39ce467eb",
             "v1.23": "oke-multiarch-1.23-16022dc-95@sha256:2782b14bc755aa839ca68a86591007cf4dfb2c8419be14a5eae94b24a77f1031",
           }
@@ -704,6 +749,7 @@ locals {
       "prd.oc17" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22": "oke-multiarch-1.22-aa9948e-192@sha256:5bf9fef2c99f2c77fdb8027d8690900c99adef873bde9bcf6cd30db39ce467eb",
             "v1.23": "oke-multiarch-1.23-16022dc-95@sha256:2782b14bc755aa839ca68a86591007cf4dfb2c8419be14a5eae94b24a77f1031",
           }
@@ -713,6 +759,7 @@ locals {
       "prd.oc19" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22": "oke-multiarch-1.22-aa9948e-192@sha256:5bf9fef2c99f2c77fdb8027d8690900c99adef873bde9bcf6cd30db39ce467eb",
             "v1.23": "oke-multiarch-1.23-16022dc-95@sha256:2782b14bc755aa839ca68a86591007cf4dfb2c8419be14a5eae94b24a77f1031",
           }
@@ -722,6 +769,7 @@ locals {
       "prd.oc20" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22": "oke-multiarch-1.22-aa9948e-192@sha256:5bf9fef2c99f2c77fdb8027d8690900c99adef873bde9bcf6cd30db39ce467eb",
             "v1.23": "oke-multiarch-1.23-16022dc-95@sha256:2782b14bc755aa839ca68a86591007cf4dfb2c8419be14a5eae94b24a77f1031",
           }
@@ -731,6 +779,7 @@ locals {
       "prd.oc22" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -745,6 +794,7 @@ locals {
       "prd.oc24" = {
         "all" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
+            "default": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
             "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
             "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
@@ -758,28 +808,28 @@ locals {
     }
   }
   global_default_values_by_property = {
-  for property_name, property_value in local.global_default_values : property_name => merge(
-    lookup(property_value, "default", {}),
-    lookup(property_value, var.env, {}),
-    lookup(property_value, "${var.env}.${var.realm}", {})
-  )
+    for property_name, property_value in local.global_default_values : property_name => merge(
+      lookup(property_value, "default", {}),
+      lookup(property_value, var.env, {}),
+      lookup(property_value, "${var.env}.${var.realm}", {})
+    )
   }
 
   global_default_values_list = flatten([
-  for property_name, property_value in local.global_default_values_by_property : [
-    {
-      ad     = lookup(property_value, "ad", "all")
-      group  = var.spectre_group_name
-      name   = replace(property_name, "_", "-")
-      region = var.execution_target.additional_locals.limits_region
-      value  = lookup(property_value, var.execution_target.additional_locals.limits_region, lookup(property_value, "all", ""))
-      min    = lookup(property_value, "min", null)
-      max    = lookup(property_value, "max", null)
-    }
-  ] if length(property_value) > 0
+    for property_name, property_value in local.global_default_values_by_property : [
+      {
+        ad     = lookup(property_value, "ad", "all")
+        group  = var.spectre_group_name
+        name   = replace(property_name, "_", "-")
+        region = var.execution_target.additional_locals.limits_region
+        value  = lookup(property_value, var.execution_target.additional_locals.limits_region, lookup(property_value, "all", ""))
+        min    = lookup(property_value, "min", null)
+        max    = lookup(property_value, "max", null)
+      }
+    ] if length(property_value) > 0
   ])
 
   global_default_values_map = {
-  for property in local.global_default_values_list : "${property.group}/${property.name}/${property.region}/${property.ad}" => property
+    for property in local.global_default_values_list : "${property.group}/${property.name}/${property.region}/${property.ad}" => property
   }
 }

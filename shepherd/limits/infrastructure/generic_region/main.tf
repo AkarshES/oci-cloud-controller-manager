@@ -80,3 +80,106 @@ module "data" {
 resource "capability_require_capability" "oke_secrets_management" {
   name = "oke_secrets_management"
 }
+
+variable "cpo-image-validation-enabled" {
+  default = true
+}
+
+locals {
+  pop_version = "f12d27156e9_10"
+
+  regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
+  override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
+
+  raw_regional_image_list = [for v in local.regional_values : regexall("[^\"]+@sha256:[^\"]+", v)]
+  raw_override_image_list = [for v in local.override_values : regexall("[^\"]+@sha256:[^\"]+", v)]
+
+  combined_images = tolist(toset(flatten(concat(local.raw_regional_image_list, local.raw_override_image_list))))
+
+  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi[0].applications) > 0)
+}
+
+data "odo_applications" "infra-release-validator-ccm-csi" {
+  count = var.cpo-image-validation-enabled ? 1 : 0
+
+  ad                     = module.ad_map.physical_ad1.name
+  application_name_regex = "infra-release-validator-ccm-csi-${local.execution_target.uniquifier}"
+}
+
+module "ad_map" {
+  source                = "./ad_map"
+  root_compartment_ocid = local.execution_target.tenancy_ocid
+  realm = local.execution_target.region.realm
+}
+
+module "validation_module" {
+  source = "./infra-validation"
+  execution_target   = local.execution_target
+  spectre_group_name = lookup(local.execution_target.additional_locals, "spectre_group_name")
+  env                = lookup(local.execution_target.additional_locals, "env", "")
+  realm              = local.execution_target.region.realm
+}
+
+module "odo_configuration_ccm_csi_image_push" {
+  source = "./shared_modules/odo_configuration"
+  execution_target = local.execution_target
+
+  realm                   = lower(local.execution_target.region.realm)
+  stage                   = local.execution_target.additional_locals.stage
+  artifact_set_identifier = "release-validator-ccm-csi"
+  compartment_id          = local.execution_target.tenancy_ocid
+  pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
+  physical_ad1            = module.ad_map.physical_ad1.name
+  application_alias = "image-release-validator-ccm-csi-${local.execution_target.uniquifier}"
+  env_vars = []
+}
+
+module "odo_configuration_ccm_csi_infra" {
+  source = "./shared_modules/odo_configuration"
+  execution_target = local.execution_target
+
+  realm                   = lower(local.execution_target.region.realm)
+  stage                   = local.execution_target.additional_locals.stage
+  artifact_set_identifier = "release-validator-ccm-csi"
+  compartment_id          = local.execution_target.tenancy_ocid
+  pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
+  physical_ad1            = module.ad_map.physical_ad1.name
+  application_alias = "infra-release-validator-ccm-csi-${local.execution_target.uniquifier}"
+  env_vars = [
+    for index in range(length(local.combined_images)) :
+    {
+      name  = format("image_%d", index + 1)
+      value = local.combined_images[index]
+    }
+  ]
+}
+
+module "odo_deployment_ccm_csi_infra" {
+  count = local.enable_validation ? 1 : 0
+  source = "./odo_deployment"
+
+  artifact_version = {
+    uri = "release-validator-ccm-csi-${local.pop_version}.tar.gz"
+    type = "pop"
+    version = local.pop_version
+  }
+  apps             = [
+    {
+      ad = module.ad_map.physical_ad1.name
+      alias = "infra-release-validator-ccm-csi-${local.execution_target.uniquifier}"
+    }
+  ]
+  depends_on = [module.odo_configuration_ccm_csi_infra]
+}
+
+resource "capability_require_capability" "regional_infra" {
+  name = "oke_deploy_odo"
+}
+
+output "additional_locals" {
+  value = local.execution_target
+}
+
+output "data" {
+  value = data.odo_applications.infra-release-validator-ccm-csi
+}
