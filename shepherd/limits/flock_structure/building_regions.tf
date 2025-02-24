@@ -49,7 +49,12 @@ resource "shepherd_execution_target" "prod_build_region_et" {
   uniquifier                = lookup(module.merged_cell_config.uniquifiers, each.key, "")
   tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
-  additional_locals         = lookup(module.merged_cell_config.additional_locals, each.key, {})
+  additional_locals         = merge({
+    limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
+    manage_regional_values = "true"
+    manage_definitions     = "false"
+    pool_name_regex = "^oke-deploy-prod[0-9]*"
+  }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
   alarms_to_watch {
     compartment_name = "assets"
     # updated compartment name
@@ -57,4 +62,8 @@ resource "shepherd_execution_target" "prod_build_region_et" {
     labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
   }
   ignored_region_build_capabilities = ["grafana_dashboard"]
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }
