@@ -19,7 +19,7 @@ module "oke-cpo-images" {
 }
 
 data "odo_applications" "image-release-validator-ccm-csi" {
-  count = var.cpo-image-validation-enabled ? 1 : 0
+  count = local.image_validator_count
 
   ad                     = module.ad_map.physical_ad1.name
   application_name_regex = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
