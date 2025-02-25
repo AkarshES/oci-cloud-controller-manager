@@ -174,7 +174,6 @@ module "odo_configuration_ccm_csi_infra" {
 }
 
 module "odo_deployment_ccm_csi_infra" {
-  count = var.cpo-image-validation-enabled ? 1 : 0
   source = "./odo_deployment"
 
   artifact_version = {
