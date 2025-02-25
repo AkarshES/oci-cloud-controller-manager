@@ -18,6 +18,6 @@ locals {
     }
   }
 
-  default_ocid = format(local.steward_tenancy_info.default.ocid, local.execution_target.region.realm)
+  default_ocid = format(local.steward_tenancy_info.default.ocid_template, local.execution_target.region.realm)
   steward_tenancy_ocid = lookup(local.steward_tenancy_info, local.execution_target.region.realm, { ocid = local.default_ocid }).ocid
 }
