@@ -20,3 +20,12 @@ resource "shepherd_artifacts" "artifacts" {
     }
   }
 }
+
+resource "shepherd_artifacts" "pop_artifacts" {
+  artifact {
+    name        = "release-validator-ccm-csi"
+    type        = "pop"
+    location    = "release-validator-ccm-csi"
+    description = "POP to validate images exist in OCIR"
+  }
+}
