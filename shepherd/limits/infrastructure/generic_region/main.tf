@@ -111,7 +111,7 @@ data "odo_applications" "infra-release-validator-ccm-csi" {
   count = var.cpo-image-validation-enabled ? 1 : 0
 
   ad                     = module.ad_map.physical_ad1.name
-  application_name_regex = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.env}-${local.execution_target.additional_locals.cell}"
+  application_name_regex = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
 }
 
 module "ad_map" {
@@ -138,7 +138,7 @@ module "odo_configuration_ccm_csi_image_push" {
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
   physical_ad1            = module.ad_map.physical_ad1.name
-  application_alias = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.env}-${local.execution_target.additional_locals.cell}"
+  application_alias = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
   env_vars = []
 }
 
@@ -152,7 +152,7 @@ module "odo_configuration_ccm_csi_infra" {
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
   physical_ad1            = module.ad_map.physical_ad1.name
-  application_alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.env}-${local.execution_target.additional_locals.cell}"
+  application_alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
   env_vars = [
     {
       name = "REGIONAL_IMAGE_LIST_1"
@@ -192,4 +192,8 @@ module "odo_deployment_ccm_csi_infra" {
 
 resource "capability_require_capability" "regional_infra" {
   name = "oke_deploy_odo"
+}
+
+output "additional_locals" {
+  value = local.execution_target.additional_locals
 }
