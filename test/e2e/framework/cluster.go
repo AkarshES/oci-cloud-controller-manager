@@ -471,6 +471,10 @@ func (f *Framework) DeleteCluster(clusterID string, waitForDeleted bool) {
 	cluster := f.GetCluster(clusterID)
 	clusterSummary := f.GetClusterSummary(clusterID)
 	Expect(clusterSummary).ToNot(BeNil())
+	if !strings.HasPrefix(*cluster.Name, "TestCluster") {
+		Logf("Skipping cluster deletion for cluster %v, as its not created by e2e.", *cluster.Name)
+		return
+	}
 	Logf("Deleting cluster '%s', initial LifecycleState: '%s'.", *cluster.Name, cluster.LifecycleState)
 	Logf("Deleting cluster summary '%s', initial LifecycleState: '%s'.", *clusterSummary.Name, clusterSummary.LifecycleState)
 	Expect(fmt.Sprintf("%s", cluster.LifecycleState)).To(Equal(fmt.Sprintf("%s", clusterSummary.LifecycleState)))
