@@ -628,7 +628,21 @@ func (f *Framework) EnableBVMPluginOnNodepool(np *oke.NodePool) {
 				},
 			},
 		}
-		_, err := f.computeClient.UpdateInstance(ctx, request)
+		maxRetries := 5
+		baseDelay  := 2 * time.Second
+
+		var err error
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			_, err = f.computeClient.UpdateInstance(ctx, request)
+			if err == nil {
+				break
+			}
+
+			delay := baseDelay * (1 << attempt) // Exponential backoff
+			fmt.Printf("Retrying in %vs due to error: %v\n", delay, err)
+			time.Sleep(delay)
+		}
+
 		if err != nil {
 			Failf("Error enabling block volume management plugin on node %s: %v", *(node.Id), err)
 		}
