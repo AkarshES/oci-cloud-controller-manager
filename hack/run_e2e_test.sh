@@ -113,6 +113,7 @@ function check_environment () {
         check-env "CLUSTER_TYPE"              $CLUSTER_TYPE
         check-env "CNI_TYPE"                  $CNI_TYPE
         check-env "POD_SUBNET"                $POD_SUBNET
+        check-env "NODEPOOL_SIZE"             $NODEPOOL_SIZE
         check-env-k8s-version-index-exist
         if [ -z "$CLUSTER_KUBECONFIG" ]; then
             CLUSTER_KUBECONFIG="/tmp/clusterkubeconfig"
@@ -173,6 +174,7 @@ function run_e2e_tests() {
                 --lbsubnet2=${LBSUBNET2} \
                 --lbrgnsubnet=${LBRGNSUBNET} \
                 --nodeshape=${NODE_SHAPE} \
+                --nodepoolsize=${NODEPOOL_SIZE} \
                 --subnet1=${OCI_SUBNET1} \
                 --subnet2=${OCI_SUBNET2} \
                 --subnet3=${OCI_SUBNET3} \
@@ -232,6 +234,7 @@ function run_e2e_tests() {
                 --lbsubnet2=${LBSUBNET2} \
                 --lbrgnsubnet=${LBRGNSUBNET} \
                 --nodeshape=${NODE_SHAPE} \
+                --nodepoolsize=${NODEPOOL_SIZE} \
                 --subnet1=${OCI_SUBNET1} \
                 --subnet2=${OCI_SUBNET2} \
                 --subnet3=${OCI_SUBNET3} \
@@ -460,6 +463,7 @@ function declare_setup () {
     echo "LBRGNSUBNET is ${LBRGNSUBNET}"
     echo "OCI_NODESUBNET is ${OCI_NODESUBNET}"
     echo "NODE_SHAPE is ${NODE_SHAPE}"
+    echo "NODEPOOL_SIZE is ${NODEPOOL_SIZE}"
     echo "NSG_OCIDS is ${NSG_OCIDS}"
     echo "BACKEND_NSG_OCIDS is ${BACKEND_NSG_OCIDS}"
     echo "ADLOCATION is ${ADLOCATION}"
@@ -538,6 +542,7 @@ function declare_environment () {
         echo "LBSUBNET2  is  ${LBSUBNET2}"
         echo "LBRGNSUBNET  is  ${LBRGNSUBNET}"
         echo "NODE_SHAPE   is ${NODE_SHAPE}"
+        echo "NODEPOOL_SIZE is ${NODEPOOL_SIZE}"
         echo "OCI_SUBNET1  is ${OCI_SUBNET1}"
         echo "OCI_SUBNET2  is  ${OCI_SUBNET2}"
         echo "OCI_SUBNET3 is  ${OCI_SUBNET3}"

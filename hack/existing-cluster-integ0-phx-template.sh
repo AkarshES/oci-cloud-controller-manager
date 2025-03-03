@@ -102,8 +102,7 @@ export OCI_NODESUBNET_IPV6="ocid1.subnet.oc1.phx.aaaaaaaa6umsjm6bszml73xzll4t2p4
 export OCI_NODESUBNET_DUAL_STACK="ocid1.subnet.oc1.phx.aaaaaaaassdb32w5fq4rkeo3gt2lw6fnhhg4gqrdlehlgpamn42b35hb4w3q"
 export LBRGNSUBNET_IPV6="ocid1.subnet.oc1.phx.aaaaaaaaj54463vrghmqii2g4xlegichxiqgajjwsjhotkj2xl73ckbbaqca"
 export LBRGNSUBNET_DUAL_STACK="ocid1.subnet.oc1.phx.aaaaaaaadbekwkbgmbe6fcfcgj23ibf2jtohissdn6flk3u7vykdovjr3jqa"
-export EXISTING_CLUSTER_OCID="ocid1.clusterinteg.oc1.phx.aaaaaaaatdt277i5t3jzr3fzgxctchkw2q3omrmhrk3dg3zbkcwgpg2l4kpq"
-
+export EXISTING_CLUSTER_OCID="ocid1.clusterinteg.oc1.phx.aaaaaaaa4ycy7lu26vblfiijcwubmpkegq5m7r45kbbovmpgucgce2dm5ioq"
 
 
 export OKE_ENDPOINT=containerengine-integ.us-phoenix-1.oci.oraclecloud.com
@@ -121,5 +120,6 @@ export NODE_SHAPE_AMD="VM.Standard2.1"
 export LBRGNSUBNET="ocid1.subnet.oc1.phx.aaaaaaaadbekwkbgmbe6fcfcgj23ibf2jtohissdn6flk3u7vykdovjr3jqa"
 export OCI_NODESUBNET="ocid1.subnet.oc1.phx.aaaaaaaaegz7agsaqt5d6fdbwhtq2m3vmlzwhiivnuyzyf3b3mz7y6b4qfya"
 
+export NODEPOOL_SIZE="3"
 export E2E_NODE_COUNT=1
 export E2E_BRANCH=private-e2e
