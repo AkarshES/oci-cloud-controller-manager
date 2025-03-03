@@ -113,6 +113,8 @@ export OCI_SUBNET3=dummy
 export NODE_SHAPE_AMD="VM.Standard1.2"
 export NODE_SHAPE_ARM="VM.Standard.A1.Flex"
 
+export NODEPOOL_SIZE="3"
+
 # The secrets to use
 export REGION_SECRETS=dev0-iad
 
