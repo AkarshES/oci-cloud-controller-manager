@@ -1,14 +1,14 @@
 apiVersion: oci.oraclecloud.com/v1beta1
 kind: NodeOperationRule
 metadata:
-  name: bvr
+  name: replace-bvr
 spec:
   actions:
     - replaceBootVolume
-  maxParallelism: 2
+  maxParallelism: 1
   nodeEvictionSettings:
     evictionGracePeriod: 10
     isForceActionAfterGraceDuration: true
   nodeSelector:
     matchTriggerLabel:
-      oke.oraclecloud.com/node_operation: bvr
+      oke.oraclecloud.com/node_operation: replace-bvr

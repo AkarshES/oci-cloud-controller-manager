@@ -58,6 +58,7 @@ run_tests() {
           -e VCN \
           -e OCI_KEY \
           -e NODE_SHAPE \
+          -e NODEPOOL_SIZE \
           -e DELEGATION_GROUP_ID \
           -e SECRETS_LOCAL \
           -e USE_REGIONALSUBNET \
