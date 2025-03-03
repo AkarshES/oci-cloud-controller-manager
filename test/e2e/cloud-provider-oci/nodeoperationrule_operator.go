@@ -11,98 +11,55 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/strings/slices"
 	"time"
 )
 
 const (
-	NodeOperationRuleCRDName          = "nodeoperationrules.oci.oraclecloud.com"
-	NodeOperationLabel                = "oke.oraclecloud.com/node_operation"
-	RebootNodeOperationLabelValue     = "reboot"
-	ReplaceBVRNodeOperationLabelValue = "bvr"
-	RebootCustomResourceYaml          = "nor_operator_reboot.yaml"
-	ReplaceBVRCustomResourceYaml      = "nor_operator_bvr.yaml"
-	RebootNodeCheckInterval           = 400 * time.Second
-	ReplaceBVRCheckInterval           = 900 * time.Second
+	NodeOperationRuleCRDName            = "nodeoperationrules.oci.oraclecloud.com"
+	NodeOperationLabel                  = "oke.oraclecloud.com/node_operation"
+	RebootNodeOperationLabelValue       = "reboot"
+	ReplaceBVRNodeOperationLabelValue   = "replace-bvr"
+	RebootNodeCancelOperationLabelValue = "reboot-cancel"
+	RebootCustomResourceYaml            = "nor_operator_reboot.yaml"
+	ReplaceBVRCustomResourceYaml        = "nor_operator_bvr.yaml"
+	RebootCancelCustomResourceYaml      = "nor_operator_reboot_cancel.yaml"
+	RebootNodeCheckInterval             = 400 * time.Second
+	ReplaceBVRCheckInterval             = 1000 * time.Second
+	RebootCancelCheckInterval           = 120 * time.Second
 )
 
 var _ = Describe("Node operation tests", func() {
 	f := framework.NewDefaultFramework("noroperator")
-	var nodeNames []string
-	BeforeEach(func() {
-		checkNodeOperationRuleCRD(f)
-	})
-	AfterEach(func() {
-		cleanUpCustomResources()
-		cleanUpLabels(nodeNames)
-	})
 	Context("[cloudprovider][ccm][noroperator]", func() {
-		It("Test node operation for reboot action performed successfully", func() {
-			nodeNames = addNodeLabelSelectorsForNodeOperation(f, RebootNodeOperationLabelValue)
-			createCustomResource(RebootCustomResourceYaml)
-			ticker := time.NewTicker(RebootNodeCheckInterval)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ticker.C:
-					isOperationCompleted, _ := checkNORStatus(RebootNodeOperationLabelValue, nodeNames)
-					if isOperationCompleted {
-						framework.Logf("reboot node operations completed within time window")
-						return
-					} else {
-						framework.Failf("reboot node operations didnt complete within time window")
+		tests := []struct {
+			OperationType          string
+			CustomResourceType     string
+			NORStatusCheckInterval time.Duration
+		}{
+			{RebootNodeOperationLabelValue, RebootCustomResourceYaml, RebootNodeCheckInterval},
+			{ReplaceBVRNodeOperationLabelValue, ReplaceBVRCustomResourceYaml, ReplaceBVRCheckInterval},
+			{RebootNodeCancelOperationLabelValue, RebootCancelCustomResourceYaml, RebootCancelCheckInterval},
+		}
+
+		for index, entry := range tests {
+			testName := "Should be able to perform node operation " + entry.OperationType + " successfully"
+			It(testName, func() {
+				checkNodeOperationRuleCRD(f)
+				nodes := getEligibleNodes(f)
+				defer func() {
+					// recover from panic if one occurred.
+					if recover() != nil {
+						Skip("Skipping test " + entry.OperationType + "node operation due to insufficient ready nodes")
 					}
-				}
-			}
-		})
-		It("Test node operation for replace bvr action performed successfully", func() {
-			nodeNames = addNodeLabelSelectorsForNodeOperation(f, ReplaceBVRNodeOperationLabelValue)
-			createCustomResource(ReplaceBVRCustomResourceYaml)
-			ticker := time.NewTicker(ReplaceBVRCheckInterval)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ticker.C:
-					isOperationCompleted, _ := checkNORStatus(ReplaceBVRNodeOperationLabelValue, nodeNames)
-					if isOperationCompleted {
-						framework.Logf("replace bvr node operations completed within time window")
-						return
-					} else {
-						framework.Failf("replace bvr node operations didnt complete within time window")
-					}
-				}
-			}
-		})
-		It("Test node operation for reboot action initiated and cancel the reboot operation in-flight", func() {
-			nodeNames = addNodeLabelSelectorsForNodeOperation(f, RebootNodeOperationLabelValue)
-			createCustomResource(RebootCustomResourceYaml)
-			ticker := time.NewTicker(120 * time.Second)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ticker.C:
-					time.Sleep(30 * time.Second)
-					cleanUpLabels(nodeNames)
-					_, isOperationCancelled := checkNORStatus(RebootNodeOperationLabelValue, nodeNames)
-					if isOperationCancelled {
-						framework.Logf("reboot node operations cancelled within time window")
-						return
-					} else {
-						framework.Failf("reboot node operations didnt cancel within time window")
-					}
-				}
-			}
-		})
+				}()
+				testNodeOperation(f, entry.OperationType, entry.CustomResourceType, entry.NORStatusCheckInterval, nodes[index])
+				cleanUpCustomResources(entry.CustomResourceType)
+				cleanUpLabels(nodes[index].Name)
+			})
+		}
 	})
 })
-
-func checkNodeOperationRuleCRD(f *framework.CloudProviderFramework) {
-	var err error
-	framework.Logf("Checking NodeOperationRule CRD exists")
-	_, err = f.CRDClientSet.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), NodeOperationRuleCRDName, metav1.GetOptions{})
-	if err != nil {
-		Skip("Skipping test because fetching NodeOperationRule CRD encountered an error")
-	}
-}
 
 func getEligibleNodes(f *framework.CloudProviderFramework) []v1.Node {
 	var err error
@@ -126,27 +83,57 @@ func getEligibleNodes(f *framework.CloudProviderFramework) []v1.Node {
 	return eligibleNodes
 }
 
-func addNodeLabelSelectorsForNodeOperation(f *framework.CloudProviderFramework, labelValue string) []string {
+func testNodeOperation(f *framework.CloudProviderFramework, operationType string, customResourceType string, statusCheckInterval time.Duration, node v1.Node) {
+	var nodeName string
+	nodeName = addNodeLabelSelectorsForNodeOperation(f, node, operationType)
+	createCustomResource(customResourceType)
+	ticker := time.NewTicker(statusCheckInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if operationType == RebootNodeCancelOperationLabelValue {
+				time.Sleep(30 * time.Second)
+				cleanUpLabels(nodeName)
+			}
+			isOperationCompleted, isOperationCancelled := checkNORStatus(operationType, nodeName)
+			if isOperationCompleted {
+				framework.Logf("node operation %s completed within time window", operationType)
+				return
+			} else if isOperationCancelled {
+				framework.Logf("node operation %s cancelled within time window", operationType)
+				return
+			} else {
+				framework.Failf("node operation %s didnt complete within time window", operationType)
+			}
+		}
+	}
+}
+
+func checkNodeOperationRuleCRD(f *framework.CloudProviderFramework) {
+	var err error
+	framework.Logf("Checking NodeOperationRule CRD exists")
+	_, err = f.CRDClientSet.ApiextensionsV1().CustomResourceDefinitions().Get(context.TODO(), NodeOperationRuleCRDName, metav1.GetOptions{})
+	if err != nil {
+		Skip("Skipping test because fetching NodeOperationRule CRD encountered an error")
+	}
+}
+
+func addNodeLabelSelectorsForNodeOperation(f *framework.CloudProviderFramework, node v1.Node, labelValue string) string {
 	var err error
 	var nodePatchBytes []byte
 	framework.Logf("Adding node label selectors for node operation")
-	var nodes []v1.Node
-	var nodeNames []string
-	nodes = getEligibleNodes(f)
-	for _, node := range nodes {
-		nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"}}}", NodeOperationLabel, labelValue))
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			_, err := f.ClientSet.CoreV1().Nodes().Patch(context.Background(), node.Name, types.StrategicMergePatchType, nodePatchBytes, metav1.PatchOptions{})
-			return err
-		})
+	nodePatchBytes = []byte(fmt.Sprintf("{\"metadata\": {\"labels\": {\"%s\":\"%s\"}}}", NodeOperationLabel, labelValue))
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		_, err := f.ClientSet.CoreV1().Nodes().Patch(context.Background(), node.Name, types.StrategicMergePatchType, nodePatchBytes, metav1.PatchOptions{})
+		return err
+	})
 
-		if err != nil {
-			framework.Failf("error in applying patch for node %v", err.Error())
-		}
-		nodeNames = append(nodeNames, node.Name)
-		framework.Logf("Successfully added label selectors for node operation on %s", node.Name)
+	if err != nil {
+		framework.Failf("error in applying patch for node %v", err.Error())
 	}
-	return nodeNames
+	framework.Logf("Successfully added label selectors for node operation on %s", node.Name)
+	return node.Name
 }
 
 func validateNodeHasRequiredLabels(node v1.Node) bool {
@@ -164,26 +151,21 @@ func createCustomResource(filename string) {
 	}
 }
 
-func cleanUpCustomResources() {
-	var customResources = []string{RebootCustomResourceYaml, ReplaceBVRCustomResourceYaml}
-	for _, resource := range customResources {
-		_, err := framework.RunKubectl("delete", "-f", "../node-operator-rules/"+resource)
-		if err != nil {
-			framework.Logf("unable to delete nor custom resource or doesnt exist")
-		}
+func cleanUpCustomResources(resourceType string) {
+	_, err := framework.RunKubectl("delete", "-f", "../node-operator-rules/"+resourceType)
+	if err != nil {
+		framework.Logf("unable to delete nor custom resource or doesnt exist")
 	}
 }
 
-func cleanUpLabels(nodeNames []string) {
-	for _, nodeName := range nodeNames {
-		_, err := framework.RunKubectl("label", "node", nodeName, NodeOperationLabel+"-")
-		if err != nil {
-			framework.Logf("unable to delete label on node %s due to %v", nodeName, err)
-		}
+func cleanUpLabels(nodeName string) {
+	_, err := framework.RunKubectl("label", "node", nodeName, NodeOperationLabel+"-")
+	if err != nil {
+		framework.Logf("unable to delete label on node %s due to %v", nodeName, err)
 	}
 }
 
-func checkNORStatus(norName string, nodeNames []string) (bool, bool) {
+func checkNORStatus(norName string, nodeName string) (bool, bool) {
 	response, err := framework.RunKubectl("get", "nor", norName, "-o", "yaml")
 	if err != nil {
 		framework.Logf("unable to fetch nor %s", norName)
@@ -206,27 +188,7 @@ func checkNORStatus(norName string, nodeNames []string) (bool, bool) {
 		cancelledNodes = append(cancelledNodes, cancelledNode.NodeName)
 	}
 	framework.Logf("Cancelled nodes are %s ", cancelledNodes)
-	isNodeOperationSuccessful = sameStringSlice(nodeNames, succeededNodes)
-	isNodeOperationCancelled = sameStringSlice(nodeNames, cancelledNodes)
+	isNodeOperationSuccessful = slices.Contains(succeededNodes, nodeName)
+	isNodeOperationCancelled = slices.Contains(cancelledNodes, nodeName)
 	return isNodeOperationSuccessful, isNodeOperationCancelled
-}
-
-func sameStringSlice(x, y []string) bool {
-	if len(x) != len(y) {
-		return false
-	}
-	diff := make(map[string]int, len(x))
-	for _, _x := range x {
-		diff[_x]++
-	}
-	for _, _y := range y {
-		if _, ok := diff[_y]; !ok {
-			return false
-		}
-		diff[_y]--
-		if diff[_y] == 0 {
-			delete(diff, _y)
-		}
-	}
-	return len(diff) == 0
 }
