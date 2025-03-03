@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/onsi/ginkgo"
@@ -73,7 +74,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 					MemoryInGBs: &memoryInGBs,
 				}
 
-				size := 3
+				size, _ := strconv.Atoi(setupF.NodePoolSize)
 				nodepool := setupF.CreateNodePool(clusterOCID, setupF.Compartment1, "Oracle-Linux-7.6",
 					setupF.NodeShape, size, setupF.OkeNodePoolK8sVersion,
 					[]string{setupF.NodeSubnet, setupF.NodeSubnet, setupF.NodeSubnet},
@@ -88,7 +89,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 					MemoryInGBs: &memoryInGBs,
 				}
 
-				size := 3
+				size, _ := strconv.Atoi(setupF.NodePoolSize)
 
 				nodepool := setupF.CreateNodePool(clusterOCID, setupF.Compartment1, "Oracle-Linux-7.6",
 					setupF.NodeShape, size, setupF.OkeNodePoolK8sVersion,

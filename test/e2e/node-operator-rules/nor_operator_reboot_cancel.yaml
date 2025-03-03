@@ -1,7 +1,7 @@
 apiVersion: oci.oraclecloud.com/v1beta1
 kind: NodeOperationRule
 metadata:
-  name: reboot
+  name: reboot-cancel
 spec:
   actions:
     - reboot
@@ -11,4 +11,4 @@ spec:
     isForceActionAfterGraceDuration: true
   nodeSelector:
     matchTriggerLabel:
-      oke.oraclecloud.com/node_operation: reboot
+      oke.oraclecloud.com/node_operation: reboot-cancel

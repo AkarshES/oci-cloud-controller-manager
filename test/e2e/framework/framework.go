@@ -80,6 +80,7 @@ var (
 	lbsubnet2                     string
 	lbrgnsubnet                   string
 	nodeshape                     string
+	nodepoolsize                  string
 	subnet1                       string
 	subnet2                       string
 	subnet3                       string
@@ -155,6 +156,7 @@ func init() {
 	flag.StringVar(&lbsubnet2, "lbsubnet2", "", "OCID of the 2nd subnet in which to create load balancers.")
 	flag.StringVar(&lbrgnsubnet, "lbrgnsubnet", "", "OCID of the regional subnet in which to create load balancers.")
 	flag.StringVar(&nodeshape, "nodeshape", "VM.Standard1.2", "node shape of the nodepool.")
+	flag.StringVar(&nodepoolsize, "nodepoolsize", "3", "nodepool size")
 	flag.StringVar(&subnet1, "subnet1", "", "OCID of the 1st worker subnet.")
 	flag.StringVar(&subnet2, "subnet2", "", "OCID of the 2nd worker subnet.")
 	flag.StringVar(&subnet3, "subnet3", "", "OCID of the 3rd worker subnet.")
@@ -282,6 +284,8 @@ type Framework struct {
 	Lbrgnsubnet string
 	// NodePool node shape.
 	NodeShape string
+	// NodePool size
+	NodePoolSize string
 	// NodePool subnet 1.
 	Subnet1 string
 	// NodePool subnet 2.
@@ -450,6 +454,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		ExistingClusterOcid:           existingClusterOcid,
 		SkipClusterDeletion:           skipClusterDeletion,
 		NodeShape:                     nodeshape,
+		NodePoolSize:                  nodepoolsize,
 		DelegationTargetServices:      "oke",
 		AdLocation:                    adlocation,
 		MntTargetOcid:                 mntTargetOCID,
@@ -606,6 +611,8 @@ func (f *Framework) Initialize() {
 	Logf("SkipClusterDeletion: %s", f.SkipClusterDeletion)
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
+	f.NodePoolSize = nodepoolsize
+	Logf("Nodepool size: %s", f.NodePoolSize)
 	f.AddOkeSystemTags = addOkeSystemTags
 	Logf("AddOkeSystemTags : %v", f.AddOkeSystemTags)
 	if strings.ToUpper(clusterType) == "ENHANCED_CLUSTER" {
