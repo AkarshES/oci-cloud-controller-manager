@@ -22,7 +22,7 @@ data "odo_applications" "image-release-validator-ccm-csi" {
   count = local.image_validator_count
 
   ad                     = module.ad_map.physical_ad1.name
-  application_name_regex = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
+  application_name_regex = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
 }
 
 module "odo_deployment_ccm_csi" {
