@@ -88,7 +88,7 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 					MemoryInGBs: &memoryInGBs,
 				}
 
-				size := 3
+				size := 6
 
 				nodepool := setupF.CreateNodePool(clusterOCID, setupF.Compartment1, "Oracle-Linux-7.6",
 					setupF.NodeShape, size, setupF.OkeNodePoolK8sVersion,
