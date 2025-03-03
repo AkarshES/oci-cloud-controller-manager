@@ -86,7 +86,7 @@ variable "cpo-image-validation-enabled" {
 }
 
 locals {
-  pop_version = "acd9f6513f3_17"
+  pop_version = "ef54c7644f1_2"
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
   override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
