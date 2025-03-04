@@ -1,49 +1,44 @@
-{% set property = 'ccm-image-version-mapping, csi-image-version-mapping' %}
-{% set k8s_versions = '1.28, 1.29, 1.30, 1.31' %}
-{% set l1_peer_reviewer = '[~yashas.g.g@oracle.com]' %}
+{% set property = 'ccm-image-version-mapping' %}
+{% set k8s_versions = '1.29, 1.30, 1.31, 1.32' %}
+{% set l1_peer_reviewer = '[~pranav.sriram@oracle.com]' %}
 {% set l1_manager_reviewer = '[~rohit.chaware@oracle.com]' %}
-{% set l2_peer_reviewer = '[~jayasheelan.kumar@oracle.com]' %}
+{% set l2_peer_reviewer = '[~akarsh.ellore.sreenath@oracle.com]' %}
 {% set l2_manager_reviewer = '[~sachin.goel@oracle.com]' %}
-{% set changelog = '[CPO Release 1.4.0 changelog|https://confluence.oci.oraclecorp.com/display/OKE/OKE+CPO+release+-+Version+%3A+v1.4.0]' %}
-{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1235/overview]' %}
-{% set e2e_ticket = '[E2E results|https://jira.oci.oraclecorp.com/browse/OKE-33116]' %}
-{% set app_release_name = 'Cicada' %}
-{% set app_flock_config = '[3ff489ef-4e77-4e29-8899-c1c0c6cd1fd9|https://devops.oci.oraclecorp.com/t/CKW5i5]' %}
-{% set infra_release_name = 'Tadpole' %}
-{% set infra_flock_config = '[b0a31d7f-dfe9-415b-94d0-a2d1e99aa301|https://devops.oci.oraclecorp.com/t/CKW5i5]' %}
-{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/9aEbLz' %}
-{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/9aEbLz' %}
-{% set infra_rollback_release_name = 'BetaNocturnal' %}
-{% set infra_rollback_test_link = 'https://devops.oci.oraclecorp.com/t/9aEbLz' %}
-{% set infra_rollback_config = '32a10798-1242-4a4c-8565-f3f354cd9fb1' %}
-{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/t/2a0dHb' %}
-{% set infra_rollback_commit = 'fe62f4da25e' %}
-{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/fe62f4da25ee3d450369f442a32223a3c52bbb8d' %}
+{% set changelog = '[CPO Release 1.8.0 changelog|https://confluence.oraclecorp.com/confluence/display/OCIOKE/OKE+CPO+Release+-+Version+%3A+v1.8.0]' %}
+{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1532]' %}
+{% set e2e_ticket = '[E2E results|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1532/commits]' %}
+{% set app_release_name = 'BetaGorilla' %}
+{% set app_flock_config = '[17280259-14b6-4302-b29e-ce5e93a49490|https://devops.oci.oraclecorp.com/t/1hpD_K]' %}
+{% set infra_release_name = 'GammaAppropriate' %}
+{% set infra_flock_config = '[17280259-14b6-4302-b29e-ce5e93a49490|https://devops.oci.oraclecorp.com/t/1hpD_K]' %}
+{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/23kIfO' %}
+{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/yUkd5U' %}
+{% set infra_rollback_release_name = 'BetaWavy' %}
+{% set infra_rollback_test_link = 'https://devops.oci.oraclecorp.com/t/HOGK_0' %}
+{% set infra_rollback_config = 'cb8e389d-00bd-4cdc-8aa5-84f12f76bb67' %}
+{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/t/-F1M6u' %}
+{% set infra_rollback_commit = '047ecf80dd6' %}
+{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/047ecf80dd6fdff5abcc134eaf779ca62aa2d818' %}
 
 {% macro images_list() %}
-    "oke-public-cloud-provider-oci": "v1.28-fb062bba0df-69",
-    "oke-public-cloud-provider-oci-arm": "v1.28-fb062bba0df-69",
-    "oke-public-cloud-provider-oci": "v1.28-fb062bba0df-69",
-    "oke-public-cloud-provider-oci": "v1.29-593b5de8c7b-66",
-    "oke-public-cloud-provider-oci-arm": "v1.29-593b5de8c7b-66",
-    "oke-public-cloud-provider-oci": "v1.29-593b5de8c7b-66",
-    "oke-public-cloud-provider-oci": "v1.30-e29f5456e73-58",
-    "oke-public-cloud-provider-oci-arm": "v1.30-e29f5456e73-58",
-    "oke-public-cloud-provider-oci": "v1.30-e29f5456e73-58",
+    "oke-public-cloud-provider-oci": "v1.29-0911461af79-92",
+    "oke-public-cloud-provider-oci": "v1.30-a67f7b269a7-85",
+    "oke-public-cloud-provider-oci": "v1.31-c7e5bd92e29-43",
+    "oke-public-cloud-provider-oci": "v1.32-c01d1d4113e-11",
 {%- endmacro %}
 
 {% macro mapping_changes() %}
-    "v1.27" : "v1.27-bff7091ad1d-51@sha256:10555f13db26cbcb35dcd684be88db9897e01ad25bdcd7d65e9cb4bd1c5f386f",
-    "v1.28" : "v1.28-eeb0f8e9df3-57@sha256:ad75627507f482ea8103ba093d336d212babbfcd0fd4934a9f71dcef8cb51c57",
-    "v1.29" : "v1.29-0a03da73b3b-50@sha256:bbdda0aec63d765a2149f15213c20e59df4521c21cb8cba0e100e459c77c2703",
-    "v1.30" : "v1.30-244b8933d7e-43@sha256:6ceb992cb228849f63ea903915bbc18bba379686b146ff967dbc92e2c52a96d0"
+    "v1.29" : "v1.29-0911461af79-92@sha256:ed06eeb4d53c3af81e3caf662c7057922dc1a39400b3a38ef281db0b3707113f",
+    "v1.30" : "v1.30-a67f7b269a7-85@sha256:f0224f684ef8e32ea6435e51cb72dba3a6bd140f6ef8d7190cc1f6d7c669c1b0",
+    "v1.31" : "v1.31-c7e5bd92e29-43@sha256:eff28f23a6c82e1d1539e5f3c4b65efe8fdf8ea615c6f9158592c630fc9f09d1",
+    "v1.32" : "v1.32-c01d1d4113e-11@sha256:a797ab6fd015af36ce0a5570ccd741860672bccdd879b167fa16b1212ab77bc1"
 {%- endmacro %}
 
 {% macro rollback_mapping() %}
-    "1.27" : "v1.27-aa6a9328864-47@sha256:81767ff751e6c532af3af01abea3f1881befcce2a3c1f49ef867f5a44d1c6a06"",
-    "v1.28" : "v1.28-a57505e55b4-52@sha256:2f1aa2dfc755efbe6bd4a4c87a43b1b3750ac9ed404f511b5e531987684f35ab",
-    "v1.29" : "v1.29-a98a9008bb3-45@sha256:9176a8681ba67b10b4713af349edd965da03d9b95ad851dd227f372c34681eaf",
-    "v1.30" : "v1.30-8d91e760223-29@sha256:8baeddc866d35d3933295a06a0708e3b413821df206af7b98b849b2ef27e183a"
+    "v1.29" : "v1.29-9fb67276896-88@sha256:bf72989625783bde02c57668bb45a0b95a4e162e22c33fcc379296544bf24e49",
+    "v1.30" : "v1.30-355fd0c359b-81@sha256:8c5a4e0ba89ef4c6b166e66837509bd633d9c051797a184a832cb5fe50121e21",
+    "v1.31" : "v1.31-ebe76e102e6-39@sha256:64b8ea55494fe1361b6aae7c5256ef9aba8d15837c1edf9f8cd2e07eb89984dd",
+    "v1.32" : "v1.32-01ab1cd7cc9-5@sha256:e7992d6fbf4c61ec8de8b539528cd63b9f3d99948d09ffdafa39fd59949a4f70"
 {%- endmacro %}
 
 {% set change_locations = [

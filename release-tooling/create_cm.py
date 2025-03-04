@@ -39,7 +39,7 @@ subprocess.run(
 )
 
 # Start 'sheepy cm' command and monitor JIRA issue extraction
-command = 'echo y | sheepy cm -d releases/cpo-release/app.json create'
+command = 'echo y | sheepy cm -d releases/cpo-release/app.json create --skip-target-check'
 process = subprocess.Popen(
     command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
 )

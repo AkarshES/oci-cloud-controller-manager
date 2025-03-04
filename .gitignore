@@ -68,3 +68,6 @@ release-tooling/templates/cpo-release/rendered_cm_template.yaml
 
 # pyenv file
 .python-version
+
+# venv
+venv3/
