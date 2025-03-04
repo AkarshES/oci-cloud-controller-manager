@@ -182,7 +182,7 @@ module "odo_deployment_ccm_csi_infra" {
     version = local.pop_version
   }
   apps             = [
-    for i in range(length(data.odo_applications.infra-release-validator-ccm-csi.applications)) : {
+    for i in range(length(data.odo_applications.infra-release-validator-ccm-csi)) : {
       ad    = module.ad_map.physical_ad1.name,
       alias = lookup(data.odo_applications.infra-release-validator-ccm-csi[i].applications[0], "alias", null)
     }
