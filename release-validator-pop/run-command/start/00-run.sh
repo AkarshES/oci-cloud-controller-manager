@@ -3,7 +3,7 @@
 set -e
 set -o pipefail
 
-exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
+#exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
 
 echo "Starting release validation"
 
@@ -16,19 +16,11 @@ JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
-if [ -n "$REGIONAL_IMAGE_LIST_1" ]; then
-  IFS=',' read -r -a regional_image_list_1 <<< "$REGIONAL_IMAGE_LIST_1"
-  IFS=',' read -r -a regional_image_list_2 <<< "$REGIONAL_IMAGE_LIST_2"
-
-  IFS=',' read -r -a overrides_image_list_1 <<< "$OVERRIDES_IMAGE_LIST_1"
-  IFS=',' read -r -a overrides_image_list_2 <<< "$OVERRIDES_IMAGE_LIST_2"
-
-  unset IFS
-
+if [ -n "$image_1" ]; then
   all_image_tags=()
 
-  for array in regional_image_list_1 regional_image_list_2 overrides_image_list_1 overrides_image_list_2; do
-    eval "all_image_tags+=(\"\${$array[@]}\")"
+  for var in $(compgen -v image_); do
+    all_image_tags+=("${!var}")
   done
 
   repo_name="oke-public-cloud-provider-oci"
@@ -38,21 +30,27 @@ if [ -n "$REGIONAL_IMAGE_LIST_1" ]; then
     --region "$REGION" \
     --repository-name "$repo_name" \
     --all \
-    --auth instance_principal \
-    --query 'data.items[*]."display-name"' \
-    --output json | jq -r '.[]' | awk -F':' '{print $2}')
+    --profile oc1 \
+    --query 'data.items[*].[["version"], ["digest"]]' \
+    --output json)
 
   missing_tags=()
 
-  while IFS= read -r tag; do
+  for tag in "${all_image_tags[@]}"; do
+    image_tag=${tag%%@*}
+    digest=${tag#*@}
+
     found=false
-    if grep -q "^${tag}$" <<< "$existing_tags"; then
-      found=true
-    fi
+    for item in $(jq -c '.[]' <<< "$existing_tags"); do
+      if [[ $(jq -r '.[0][0]' <<< "$item") == "$image_tag" && $(jq -r '.[1][0]' <<< "$item") == "$digest" ]]; then
+        found=true
+        break
+      fi
+    done
     if ! $found; then
       missing_tags+=("$tag")
     fi
-  done < <(printf "%s\n" "${all_image_tags[@]}")
+  done
 
   if [ ${#missing_tags[@]} -gt 0 ]; then
     echo "The following images are missing from OCIR:"
@@ -70,7 +68,7 @@ else
         --repository-name "$repo_name" \
         --all \
         --auth instance_principal \
-        --query 'data.items[*]."display-name"' \
+        --query 'data.items[*].[."display-name", ."digest"]' \
         --output json | jq -r '.[]' | awk -F':' '{print $2}'
   }
 
