@@ -26,8 +26,8 @@ data "odo_applications" "image-release-validator-ccm-csi" {
 }
 
 module "odo_deployment_ccm_csi" {
-  count = local.image_validator_count
   source = "./odo_deployment"
+  enable_validation = var.cpo-image-validation-enabled
 
   artifact_version = local.artifact_versions["release-validator-ccm-csi"]
   apps = length(data.odo_applications.image-release-validator-ccm-csi.applications) > 0 ? [
