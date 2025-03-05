@@ -30,7 +30,7 @@ if [ -n "$image_1" ]; then
     --region "$REGION" \
     --repository-name "$repo_name" \
     --all \
-    --profile oc1 \
+    --auth instance_principal \
     --query 'data.items[*].[["version"], ["digest"]]' \
     --output json)
 
