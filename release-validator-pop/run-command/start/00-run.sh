@@ -67,7 +67,7 @@ else
         --region "$REGION" \
         --repository-name "$repo_name" \
         --all \
-        --profile oc1 \
+        --auth instance_principal \
         --query 'data.items[*]."display-name"' \
         --output json | jq -r '.[]' | awk -F':' '{print $2}'
   }
