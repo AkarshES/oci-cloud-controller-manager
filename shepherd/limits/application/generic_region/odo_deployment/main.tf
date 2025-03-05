@@ -1,4 +1,5 @@
 resource "odo_deployment" "deployment" {
+  count = var.enable_validation ? 1 : 0
   ad = var.apps[0].ad
   alias = var.apps[0].alias
   artifact {

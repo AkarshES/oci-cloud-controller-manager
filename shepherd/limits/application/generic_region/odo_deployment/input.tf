@@ -14,3 +14,8 @@ variable apps {
   }))
   description = "ODO apps to use for the deployments"
 }
+
+variable "enable_validation" {
+  type = bool
+  default = true
+}
