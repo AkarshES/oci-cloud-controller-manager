@@ -252,5 +252,8 @@ npn-generate:
 rpm-test:
 	ls -lart
 	pwd
-	echo "Test"
 	find . -print | grep -v "vendor"
+
+.PHONY: extract-multiarch-sha
+extract-multiarch-sha:
+	curl https://artifactory-builds.oci.oraclecorp.com/odo-docker-signed-local/oke-public-cloud-provider-oci/$(IMAGE_TAG)/list.manifest.json?properties

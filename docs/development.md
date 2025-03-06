@@ -27,6 +27,8 @@ the following to run the CCM as a DaemonSet (RBAC optional):
 $ kubectl apply -f dist/oci-cloud-controller-manager.yaml
 $ kubectl apply -f dist/oci-cloud-controller-manager-rbac.yaml
 ```
+## Get the multi-arch manifest
+`make IMAGE_TAG='v1.30-fd9fd08ee7f-5037' extract-multiarch-sha`
 
 ## Running the e2e tests
 See [README.md](../test/e2e/cloud-controller-manager/README.md)
