@@ -252,7 +252,6 @@ npn-generate:
 rpm-test:
 	ls -lart
 	pwd
-	echo "Test"
 	find . -print | grep -v "vendor"
 
 .pl-patched:
@@ -260,3 +259,7 @@ rpm-test:
 	git apply --apply patches/0001-Modify-sidecar-upstream-to-use-versiond-feature-gate.patch
 	echo "Verify patch changes"
 	git diff
+
+.PHONY: extract-multiarch-sha
+extract-multiarch-sha:
+	curl https://artifactory-builds.oci.oraclecorp.com/odo-docker-signed-local/oke-public-cloud-provider-oci/$(IMAGE_TAG)/list.manifest.json?properties
