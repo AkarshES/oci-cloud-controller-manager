@@ -95,13 +95,15 @@ locals {
   raw_override_image_list = [for v in local.override_values : regexall("\"[^\"]+@sha256:[^\"]+\"", v)]
 
   combined_images = distinct(flatten(concat(raw_regional_image_list, raw_override_image_list)))
+
+  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi[0].applications) > 0)
 }
 
 data "odo_applications" "infra-release-validator-ccm-csi" {
   count = var.cpo-image-validation-enabled ? 1 : 0
 
   ad                     = module.ad_map.physical_ad1.name
-  application_name_regex = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
+  application_name_regex = "infra-release-validator-ccm-csi-${local.execution_target.uniquifier}"
 }
 
 module "ad_map" {
@@ -128,7 +130,7 @@ module "odo_configuration_ccm_csi_image_push" {
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
   physical_ad1            = module.ad_map.physical_ad1.name
-  application_alias = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
+  application_alias = "image-release-validator-ccm-csi-${local.execution_target.uniquifier}"
   env_vars = []
 }
 
@@ -142,7 +144,7 @@ module "odo_configuration_ccm_csi_infra" {
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
   physical_ad1            = module.ad_map.physical_ad1.name
-  application_alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
+  application_alias = "infra-release-validator-ccm-csi-${local.execution_target.uniquifier}"
   env_vars = [
     for index, image in local.combined_images :
     {
@@ -153,7 +155,7 @@ module "odo_configuration_ccm_csi_infra" {
 }
 
 module "odo_deployment_ccm_csi_infra" {
-  count = var.cpo-image-validation-enabled ? 1 : 0
+  count = local.enable_validation ? 1 : 0
   source = "./odo_deployment"
 
   artifact_version = {
@@ -161,13 +163,12 @@ module "odo_deployment_ccm_csi_infra" {
     type = "pop"
     version = local.pop_version
   }
-  apps = length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0 ? [
-    for app in data.odo_applications.infra-release-validator-ccm-csi.applications :
+  apps             = [
     {
-      ad    = module.ad_map.physical_ad1.name,
-      alias = lookup(app, "alias", null)
+      ad = module.ad_map.physical_ad1.name
+      alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
     }
-  ] : []
+  ]
   depends_on = [module.odo_configuration_ccm_csi_infra]
 }
 
@@ -176,7 +177,7 @@ resource "capability_require_capability" "regional_infra" {
 }
 
 output "additional_locals" {
-  value = local.execution_target.additional_locals
+  value = local.execution_target
 }
 
 output "data" {

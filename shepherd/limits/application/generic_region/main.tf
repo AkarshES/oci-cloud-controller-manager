@@ -24,18 +24,18 @@ data "odo_applications" "image-release-validator-ccm-csi" {
   count = var.cpo-image-validation-enabled ? 1 : 0
 
   ad                     = module.ad_map.physical_ad1.name
-  application_name_regex = "image-release-validator-ccm-csi-${local.execution_target.additional_locals.env}"
+  application_name_regex = "image-release-validator-ccm-csi-${local.execution_target.uniquifier}"
 }
 
 module "odo_deployment_ccm_csi" {
   source = "./odo_deployment"
-  enable_validation = var.cpo-image-validation-enabled
+  enable_validation = local.enable_validation
 
   artifact_version = local.artifact_versions["release-validator-ccm-csi"]
   apps             = [
-    for i in range(length(data.odo_applications.image-release-validator-ccm-csi)) : {
-      ad    = module.ad_map.physical_ad1.name,
-      alias = lookup(data.odo_applications.image-release-validator-ccm-csi[i].applications[0], "alias", null)
+    {
+      ad = module.ad_map.physical_ad1.name
+      alias = "infra-release-validator-ccm-csi-${local.execution_target.additional_locals.stage}"
     }
   ]
   depends_on            = [module.oke-cpo-images]
