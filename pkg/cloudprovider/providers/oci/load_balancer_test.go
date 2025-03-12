@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"reflect"
 	"strconv"
 	"strings"
@@ -2543,6 +2544,19 @@ func TestLoadBalancerToStatus(t *testing.T) {
 			expectedError:  errors1.Errorf("no ip addresses found for load balancer \"test-lb\""),
 		},
 		{
+			name: "No IP Addresses - LB in Failed state",
+			lb: &client.GenericLoadBalancer{
+				DisplayName:    common.String("test-lb"),
+				Id:             common.String("test-id"),
+				IpAddresses:    []client.GenericIpAddress{},
+				LifecycleState: common.String(string(loadbalancer.LoadBalancerLifecycleStateFailed)),
+			},
+			ipMode:         v1.LoadBalancerIPModeVIP,
+			skipPrivateIp:  false,
+			expectedOutput: &v1.LoadBalancerStatus{},
+			expectedError:  nil,
+		},
+		{
 			name: "Single Public IP Address",
 			lb: &client.GenericLoadBalancer{
 				DisplayName: common.String("test-lb"),
@@ -2640,7 +2654,7 @@ func TestLoadBalancerToStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actualOutput, actualError := loadBalancerToStatus(tc.lb, tc.skipPrivateIp)
+			actualOutput, actualError := loadBalancerToStatus(tc.lb, tc.skipPrivateIp, zap.S())
 			reflect.DeepEqual(tc.expectedOutput, actualOutput)
 			if tc.expectedError != nil {
 				reflect.DeepEqual(tc.expectedError.Error(), actualError.Error())
