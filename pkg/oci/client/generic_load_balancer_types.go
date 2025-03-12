@@ -109,6 +109,9 @@ type GenericCreateLoadBalancerDetails struct {
 	CpgId *string
 
 	RuleSets map[string]loadbalancer.RuleSetDetails
+	// Supported only in NLB
+	AssignedPrivateIpv4 *string
+	AssignedIpv6        *string
 }
 
 type GenericShapeDetails struct {
