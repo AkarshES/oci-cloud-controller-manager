@@ -94,7 +94,7 @@ locals {
   raw_regional_image_list = [for v in local.regional_values : regexall("\"[^\"]+@sha256:[^\"]+\"", v)]
   raw_override_image_list = [for v in local.override_values : regexall("\"[^\"]+@sha256:[^\"]+\"", v)]
 
-  combined_images = distinct(flatten(concat(raw_regional_image_list, raw_override_image_list)))
+  combined_images = tolist(toset(flatten(concat(local.raw_regional_image_list, local.raw_override_image_list))))
 
   enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi[0].applications) > 0)
 }
@@ -146,10 +146,10 @@ module "odo_configuration_ccm_csi_infra" {
   physical_ad1            = module.ad_map.physical_ad1.name
   application_alias = "infra-release-validator-ccm-csi-${local.execution_target.uniquifier}"
   env_vars = [
-    for index, image in local.combined_images :
+    for index in range(length(local.combined_images)) :
     {
       name  = format("image_%d", index + 1)
-      value = image
+      value = local.combined_images[index]
     }
   ]
 }
