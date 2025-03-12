@@ -456,6 +456,8 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 
 	if lbType == NLB {
 		details.CpgId = spec.ClusterPlacementGroupId
+		details.AssignedPrivateIpv4 = spec.AssignedPrivateIpv4
+		details.AssignedIpv6 = spec.AssignedPrivateIpv4
 	}
 
 	serviceUid := fmt.Sprintf("%s", spec.service.UID)

@@ -105,6 +105,10 @@ type GenericCreateLoadBalancerDetails struct {
 
 	// Internal. Only supported by NLB
 	CpgId *string
+
+	// Supported only in NLB
+	AssignedPrivateIpv4 *string
+	AssignedIpv6        *string
 }
 
 type GenericShapeDetails struct {

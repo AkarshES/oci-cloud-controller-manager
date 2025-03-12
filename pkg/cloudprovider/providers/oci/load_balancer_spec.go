@@ -273,6 +273,14 @@ const (
 	// ServiceAnnotationNetworkLoadBalancerClusterPlacementGroupId is a service annotation to provision Network Loadbalancer
 	// with the given Cluster Placement Group resource https://docs.oracle.com/en-us/iaas/Content/cluster-placement-groups/overview.htm
 	ServiceAnnotationNetworkLoadBalancerClusterPlacementGroupId = "oci-network-load-balancer.oraclecloud.com/cluster-placement-group-id"
+
+	// ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4 is s service annotation to provision Network LoadBalancer with an assigned
+	// IPv4 address from the subnet https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
+	ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4 = "oci-network-load-balancer.oraclecloud.com/assign-private-ip-v4"
+
+	// ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV6 is s service annotation to provision Network LoadBalancer with an assigned
+	// IPv6 address from the subnet https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
+	ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV6 = "oci-network-load-balancer.oraclecloud.com/assign-private-ip-v6"
 )
 
 // Virtual Node Annotations
@@ -411,6 +419,8 @@ type LBSpec struct {
 	SystemTags                  map[string]map[string]interface{}
 	Compartment                 string
 	ClusterPlacementGroupId     *string
+	AssignedPrivateIpv4         *string
+	AssignedIpv6                *string
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -501,8 +511,12 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	compartment := getLoadBalancerCompartment(svc, clusterCompartment)
-	
+
 	cpgId := getClusterPlacementGroupId(svc)
+	assignedPrivateIpv4, assignedIpv6, err := getAssignedPrivateIP(svc)
+	if err != nil {
+		return nil, err
+	}
 
 	return &LBSpec{
 		Type:                        lbType,
@@ -530,6 +544,8 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		SystemTags:                  getResourceTrackingSystemTagsFromConfig(logger, initialLBTags),
 		Compartment:                 compartment,
 		ClusterPlacementGroupId:     cpgId,
+		AssignedPrivateIpv4:         assignedPrivateIpv4,
+		AssignedIpv6:                assignedIpv6,
 	}, nil
 }
 
@@ -1943,4 +1959,23 @@ func getClusterPlacementGroupId(svc *v1.Service) *string {
 		return &cpgId
 	}
 	return nil
+}
+
+func getAssignedPrivateIP(svc *v1.Service) (ipV4Adress, ipV6Adress *string, err error) {
+
+	getIpAddress := func(key string) *string {
+		address, exists := svc.Annotations[key]
+		if !exists {
+			return nil
+		}
+		if getLoadBalancerType(svc) != NLB {
+			err = fmt.Errorf("Private IP assignment via annoations %s & %s is supported only in OCI Network Loadbalancer. Set %s to %s",
+				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4,
+				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4,
+				ServiceAnnotationLoadBalancerType,
+				NLB)
+		}
+		return &address
+	}
+	return getIpAddress(ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4), getIpAddress(ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV6), err
 }
