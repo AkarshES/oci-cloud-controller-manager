@@ -86,13 +86,13 @@ variable "cpo-image-validation-enabled" {
 }
 
 locals {
-  pop_version = "abbc15c8a14_4"
+  pop_version = "0ddf73ec371_9"
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
   override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
 
-  raw_regional_image_list = [for v in local.regional_values : regexall("\"[^\"]+@sha256:[^\"]+\"", v)]
-  raw_override_image_list = [for v in local.override_values : regexall("\"[^\"]+@sha256:[^\"]+\"", v)]
+  raw_regional_image_list = [for v in local.regional_values : regexall("[^\"]+@sha256:[^\"]+", v)]
+  raw_override_image_list = [for v in local.override_values : regexall("[^\"]+@sha256:[^\"]+", v)]
 
   combined_images = tolist(toset(flatten(concat(local.raw_regional_image_list, local.raw_override_image_list))))
 
