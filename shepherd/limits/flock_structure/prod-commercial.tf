@@ -124,7 +124,9 @@ resource "shepherd_execution_target" "prod_et" {
   tenancy_name              = lookup(lookup(local.overrides.tenancy_info, split(".", each.key)[0], {}), split(".", each.key)[1], local.overrides.tenancy_info.default)
   snowflake_config_location = lookup(module.merged_cell_config.snowflake_config_locations, each.key, "")
   additional_locals         = merge({
-    stage = "prod"
+    limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
+    manage_regional_values = "true"
+    manage_definitions     = "false"
     pool_name_regex = "^oke-deploy-prod[0-9]*"
   }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
   alarms_to_watch {
@@ -182,7 +184,6 @@ resource "shepherd_execution_target" "region_values" {
     limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
     manage_regional_values = "true"
     manage_definitions     = "false"
-    stage = "prod"
     pool_name_regex = "^oke-deploy-prod[0-9]*"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"])), "spectre_group_name")
   }, lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {}))

@@ -66,7 +66,8 @@ if app:
                     "oke-public-cloud-provider-oci__v1_DOT_29-0911461af79-92",
                     "oke-public-cloud-provider-oci__v1_DOT_30-a67f7b269a7-85",
                     "oke-public-cloud-provider-oci__v1_DOT_31-c7e5bd92e29-43",
-                    "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11"
+                    "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11",
+                    "release-validator-ccm-csi__f12d27156e9_10"
                 },
                 "resolver_params": {
                     "static_versions": {
@@ -85,6 +86,10 @@ if app:
                         "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11": {
                             "version": "v1.32-c01d1d4113e-11",
                             "summary": "CPO image to be pushed for release"
+                        },
+                        "release-validator-ccm-csi__f12d27156e9_10": {
+                            "version": "f12d27156e9_10",
+                            "summary": "Release validator POP image to be pushed for release"
                         },
                     }
                 }
