@@ -116,11 +116,3 @@ locals {
 
   all_values = merge(local.global_default_values_map, local.default_values_map, local.regional_values_map_overrides)
 }
-
-output "regional_values" {
-  value = local.all_values
-}
-
-output "override_values" {
-  value = local.tenancy_overrides_final
-}

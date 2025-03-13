@@ -16,11 +16,11 @@ JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
-if [ -n "$image_1" ]; then
-  all_image_tags=()
+if [ -n "$cpo_image_1" ]; then
+  all_images=()
 
-  for var in $(compgen -v image_); do
-    all_image_tags+=("${!var}")
+  for var in $(compgen -v cpo_image_); do
+    all_images+=("${!var}")
   done
 
   repo_name="oke-public-cloud-provider-oci"
@@ -36,7 +36,7 @@ if [ -n "$image_1" ]; then
 
   missing_tags=()
 
-  for tag in "${all_image_tags[@]}"; do
+  for tag in "${all_images[@]}"; do
     image_tag=${tag%%@*}
     digest=${tag#*@}
 

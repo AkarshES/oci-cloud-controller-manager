@@ -86,7 +86,6 @@ variable "cpo-image-validation-enabled" {
 }
 
 locals {
-  pop_version = "f12d27156e9_10"
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
   override_values = [for mapping in module.validation_module.override_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
@@ -148,7 +147,7 @@ module "odo_configuration_ccm_csi_infra" {
   env_vars = [
     for index in range(length(local.combined_images)) :
     {
-      name  = format("image_%d", index + 1)
+      name  = format("cpo_image_%d", index + 1)
       value = local.combined_images[index]
     }
   ]
@@ -156,12 +155,12 @@ module "odo_configuration_ccm_csi_infra" {
 
 module "odo_deployment_ccm_csi_infra" {
   count = local.enable_validation ? 1 : 0
-  source = "./odo_deployment"
+  source = "./shared_modules/odo_deployment"
 
   artifact_version = {
-    uri = "release-validator-ccm-csi-${local.pop_version}.tar.gz"
+    uri = "release-validator-ccm-csi-${module.validation_module.pop_version}.tar.gz"
     type = "pop"
-    version = local.pop_version
+    version = module.validation_module.pop_version
   }
   apps             = [
     {
@@ -174,12 +173,4 @@ module "odo_deployment_ccm_csi_infra" {
 
 resource "capability_require_capability" "regional_infra" {
   name = "oke_deploy_odo"
-}
-
-output "additional_locals" {
-  value = local.execution_target
-}
-
-output "data" {
-  value = data.odo_applications.infra-release-validator-ccm-csi
 }

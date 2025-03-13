@@ -11,5 +11,5 @@ excluded_locations_module = importlib.util.module_from_spec(excluded_locations_p
 excluded_locations_path.loader.exec_module(excluded_locations_module)
 
 # Assigning the release schedule and excluded locations
-oke_common_release_schedule = release_schedule_module.oke_common_release_schedule_cell_based
+oke_common_release_schedule = release_schedule_module.oke_common_release_schedule_non_cell_based
 excluded_locations = excluded_locations_module.excluded_locations
