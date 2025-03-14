@@ -124,7 +124,7 @@ module "odo_configuration_ccm_csi_image_push" {
   execution_target = local.execution_target
 
   realm                   = lower(local.execution_target.region.realm)
-  stage                   = local.execution_target.additional_locals.stage
+  stage                   = local.execution_target.additional_locals.env
   artifact_set_identifier = "release-validator-ccm-csi"
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
@@ -138,7 +138,7 @@ module "odo_configuration_ccm_csi_infra" {
   execution_target = local.execution_target
 
   realm                   = lower(local.execution_target.region.realm)
-  stage                   = local.execution_target.additional_locals.stage
+  stage                   = local.execution_target.additional_locals.env
   artifact_set_identifier = "release-validator-ccm-csi"
   compartment_id          = local.execution_target.tenancy_ocid
   pool_name_regex         = local.execution_target.additional_locals.pool_name_regex
