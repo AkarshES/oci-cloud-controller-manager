@@ -455,12 +455,14 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 	}
 
 	if lbType == NLB {
+		logger.Infof("OKE-35575: LB is of type NLB")
 		details.CpgId = spec.ClusterPlacementGroupId
 		details.AssignedPrivateIpv4 = spec.AssignedPrivateIpv4
 		details.AssignedIpv6 = spec.AssignedPrivateIpv4
 	}
 
 	serviceUid := fmt.Sprintf("%s", spec.service.UID)
+	logger.Info("OKE-35575: Final create details %v", details)
 	wrID, err := clb.lbClient.CreateLoadBalancer(ctx, &details, &serviceUid)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "creating load balancer")
