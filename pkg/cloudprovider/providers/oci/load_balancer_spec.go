@@ -513,7 +513,14 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	compartment := getLoadBalancerCompartment(svc, clusterCompartment)
 
 	cpgId := getClusterPlacementGroupId(svc)
-	assignedPrivateIpv4, assignedIpv6, err := getAssignedPrivateIP(svc)
+
+	assignedPrivateIpv4, assignedIpv6, err := getAssignedPrivateIP(svc, logger)
+	if assignedPrivateIpv4 != nil {
+		logger.Infof("OKE-35575: Final IPv4 to be assigned %s", *assignedPrivateIpv4)
+	}
+	if assignedIpv6 != nil {
+		logger.Infof("OKE-35575: Final IPv6 to be assigned %s", *assignedIpv6)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1961,8 +1968,8 @@ func getClusterPlacementGroupId(svc *v1.Service) *string {
 	return nil
 }
 
-func getAssignedPrivateIP(svc *v1.Service) (ipV4Adress, ipV6Adress *string, err error) {
-
+func getAssignedPrivateIP(svc *v1.Service, logger *zap.SugaredLogger) (ipV4Adress, ipV6Adress *string, err error) {
+	logger.Infof("OKE-35575: fetching private IPs for NLB")
 	getIpAddress := func(key string) *string {
 		address, exists := svc.Annotations[key]
 		if !exists {
@@ -1971,10 +1978,11 @@ func getAssignedPrivateIP(svc *v1.Service) (ipV4Adress, ipV6Adress *string, err 
 		if getLoadBalancerType(svc) != NLB {
 			err = fmt.Errorf("Private IP assignment via annoations %s & %s is supported only in OCI Network Loadbalancer. Set %s to %s",
 				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4,
-				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4,
+				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV6,
 				ServiceAnnotationLoadBalancerType,
 				NLB)
 		}
+		logger.Infof("OKE-35575: fetched IP: %s", address)
 		return &address
 	}
 	return getIpAddress(ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4), getIpAddress(ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV6), err
