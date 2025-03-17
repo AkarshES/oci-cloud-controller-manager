@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="97cbb765-6f7a-42e6-8a67-dad183d9e8a6"
+config_id="6a6abdc6-c48e-4524-a039-b841231caba9"
 
 app_release_template = {
     "alias": "image-push",
@@ -87,8 +87,8 @@ if app:
                             "version": "v1.32-c01d1d4113e-11",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "release-validator-ccm-csi__f12d27156e9_10": {
-                            "version": "f12d27156e9_10",
+                        "release-validator-ccm-csi__4fe27dbfb8e_20": {
+                            "version": "4fe27dbfb8e_20",
                             "summary": "Release validator POP image to be pushed for release"
                         },
                     }
@@ -111,7 +111,6 @@ if infra:
             "change_type": "Infrastructure"
         },
         "logical_phases": [
-
             {
                 "scope": "region",
                 "name": "main",
