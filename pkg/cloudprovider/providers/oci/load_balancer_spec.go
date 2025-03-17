@@ -514,8 +514,10 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 
 	cpgId := getClusterPlacementGroupId(svc)
 
-	assignedPrivateIpv4, assignedIpv6, err := getAssignedPrivateIP(svc, nil)
-	logger.Infof("OKE-35575: Final IPs to be assigned %s & %s", *assignedPrivateIpv4, *assignedIpv6)
+	assignedPrivateIpv4, assignedIpv6, err := getAssignedPrivateIP(svc, logger)
+	if assignedPrivateIpv4 != nil && assignedIpv6 != nil {
+		logger.Infof("OKE-35575: Final IPs to be assigned %s & %s", *assignedPrivateIpv4, *assignedIpv6)
+	}
 	if err != nil {
 		return nil, err
 	}
