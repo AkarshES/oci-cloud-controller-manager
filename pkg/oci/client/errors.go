@@ -97,8 +97,13 @@ func RateLimitError(isWrite bool, opName string) error {
 	return errors.Errorf("rate limited(%s) for operation: %s", opType, opName)
 }
 
+//func newRetryPolicy() *common.RetryPolicy {
+//	return NewRetryPolicyWithMaxAttempts(uint(2))
+//}
+
 func newRetryPolicy() *common.RetryPolicy {
-	return NewRetryPolicyWithMaxAttempts(uint(2))
+	policy := common.DefaultRetryPolicy()
+	return &policy
 }
 
 // NewRetryPolicyWithMaxAttempts returns a RetryPolicy with the specified max retryAttempts
