@@ -3,9 +3,11 @@ package client
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 )
@@ -166,6 +168,115 @@ func TestIsSystemTagNotFoundOrNotAuthorisedError(t *testing.T) {
 			actualResult := IsSystemTagNotFoundOrNotAuthorisedError(zap.S(), test.wrappedError)
 			if actualResult != test.expectIsTagError {
 				t.Errorf("expected %t but got %t", actualResult, test.expectIsTagError)
+			}
+		})
+	}
+}
+
+// testing resource for mocking responses
+type mockedResponse struct {
+	RawResponse *http.Response
+}
+
+// HTTPResponse implements the OCIResponse interface
+func (response mockedResponse) HTTPResponse() *http.Response {
+	return response.RawResponse
+}
+
+func mockedOCIOperationResponse(statusCode int, attemptNumber uint) common.OCIOperationResponse {
+	httpResponse := http.Response{
+		Header:     http.Header{},
+		StatusCode: statusCode,
+	}
+	response := mockedResponse{
+		RawResponse: &httpResponse,
+	}
+	now := time.Now().Round(0)
+	return common.NewOCIOperationResponseExtended(response, nil, attemptNumber, &now, 1.0, now)
+}
+
+func mockOCIOperationResponseWithError(status int, statusCode string) common.OCIOperationResponse {
+	return mockOCIOperationResponseWithErrorFull(status, statusCode, (*time.Time)(nil), 1.0)
+}
+
+func mockOCIOperationResponseWithErrorFull(status int, statusCode string, endOfWindowTime *time.Time, backoffScalingFactor float64) common.OCIOperationResponse {
+	httpResponse := http.Response{
+		Header:     http.Header{},
+		StatusCode: status,
+	}
+	response := mockedResponse{
+		RawResponse: &httpResponse,
+	}
+
+	err := mockServiceError{
+		StatusCode: status,
+		Code:       statusCode,
+	}
+
+	return common.NewOCIOperationResponseExtended(response, err, uint(1), endOfWindowTime, backoffScalingFactor, time.Now().Round(0))
+}
+
+func TestNewRetryPolicy(t *testing.T) {
+	tests := []struct {
+		name        string
+		responses   []common.OCIOperationResponse
+		shouldRetry bool
+	}{
+		{
+			name: "testRetryPolicyWantRetry",
+			responses: []common.OCIOperationResponse{
+				mockOCIOperationResponseWithError(409, "IncorrectState"),
+				mockOCIOperationResponseWithError(429, "TooManyRequests"),
+				mockOCIOperationResponseWithError(500, "InternalServiceError"),
+				mockOCIOperationResponseWithError(500, "OutOfCapacity"),
+				mockOCIOperationResponseWithError(503, "ServiceUnavailable"),
+				// the below are not retired by default
+				mockOCIOperationResponseWithError(400, "InvalidParameter"),
+				mockOCIOperationResponseWithError(409, "NotAuthorizedOrResourceAlreadyExists"),
+				mockOCIOperationResponseWithError(400, "RelatedResourceNotAuthorizedOrNotFound"),
+				mockOCIOperationResponseWithError(404, "NotAuthorizedOrNotFound"),
+				mockOCIOperationResponseWithError(401, "NotAuthenticated"),
+			},
+			shouldRetry: true,
+		},
+		{
+			name: "testRetryPolicyNoRetry",
+			responses: []common.OCIOperationResponse{
+				mockOCIOperationResponseWithError(400, "CannotParseRequest"),
+
+				mockOCIOperationResponseWithError(400, "MissingParameter"),
+				mockOCIOperationResponseWithError(400, "QuotaExceeded"),
+				mockOCIOperationResponseWithError(400, "LimitExceeded"),
+
+				mockOCIOperationResponseWithError(400, "InsufficientServicePermissions"),
+
+				mockOCIOperationResponseWithError(403, "SignUpRequired"),
+				mockOCIOperationResponseWithError(403, "NotAllowed"),
+				mockOCIOperationResponseWithError(403, "NotAuthorized"),
+				mockOCIOperationResponseWithError(404, "NotFound"),
+				mockOCIOperationResponseWithError(404, "InvalidParameter"),
+
+				mockOCIOperationResponseWithError(405, "MethodNotAllowed"),
+
+				mockOCIOperationResponseWithError(409, "InvalidatedRetryToken"),
+				mockOCIOperationResponseWithError(412, "NoEtagMatch"),
+				mockOCIOperationResponseWithError(413, "PayloadTooLarge"),
+				mockOCIOperationResponseWithError(422, "UnprocessableEntity"),
+				mockOCIOperationResponseWithError(431, "RequestHeaderFieldsTooLarge"),
+				mockOCIOperationResponseWithError(501, "MethodNotImplemented"),
+				mockOCIOperationResponseWithError(599, "Unknown 500 Error"),
+				mockedOCIOperationResponse(200, 1),
+			},
+			shouldRetry: false,
+		},
+	}
+
+	policy := newRetryPolicyWithCustomRetryOperation()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, res := range tt.responses {
+				assert.True(t, policy.ShouldRetryOperation(res) == tt.shouldRetry)
 			}
 		})
 	}

@@ -43,6 +43,7 @@ const (
 	HTTP409NotAuthorizedOrResourceAlreadyExistsCode   = "NotAuthorizedOrResourceAlreadyExists"
 	HTTP429TooManyRequestsCode                        = "TooManyRequests"
 	HTTP500InternalServerErrorCode                    = "InternalServerError"
+	HTTP400InvalidParameter                           = "InvalidParameter"
 )
 
 // IsNotFound returns true if the given error indicates that a resource could
@@ -85,8 +86,17 @@ func isRetryableServiceError(serviceErr common.ServiceError) bool {
 		((serviceErr.GetHTTPStatusCode() == http.StatusConflict) && (serviceErr.GetCode() == HTTP409IncorrectStateCode)) ||
 		((serviceErr.GetHTTPStatusCode() == http.StatusConflict) && (serviceErr.GetCode() == HTTP409NotAuthorizedOrResourceAlreadyExistsCode)) ||
 		((serviceErr.GetHTTPStatusCode() == http.StatusTooManyRequests) && (serviceErr.GetCode() == HTTP429TooManyRequestsCode)) ||
-		((serviceErr.GetHTTPStatusCode() == http.StatusInternalServerError) && (serviceErr.GetCode() == HTTP500InternalServerErrorCode))
+		((serviceErr.GetHTTPStatusCode() == http.StatusInternalServerError) && (serviceErr.GetCode() == HTTP500InternalServerErrorCode)) ||
+		((serviceErr.GetHTTPStatusCode() == http.StatusBadRequest) && (serviceErr.GetCode() == HTTP400InvalidParameter))
 }
+
+//var(
+//defaultRetryStatusCodeMap = map[common.StatErrCode]bool{
+//{409, "IncorrectState"}:  true,
+//{429, "TooManyRequests"}: true,
+//
+//{501, "MethodNotImplemented"}: false,}
+//)
 
 // RateLimitError produces an Errorf for rate limiting.
 func RateLimitError(isWrite bool, opName string) error {
@@ -97,8 +107,28 @@ func RateLimitError(isWrite bool, opName string) error {
 	return errors.Errorf("rate limited(%s) for operation: %s", opType, opName)
 }
 
+//func newRetryPolicy() *common.RetryPolicy {
+//	return NewRetryPolicyWithMaxAttempts(uint(2))
+//}
+
 func newRetryPolicy() *common.RetryPolicy {
-	return NewRetryPolicyWithMaxAttempts(uint(2))
+	policy := common.DefaultRetryPolicy()
+	return &policy
+}
+
+func newRetryPolicyWithCustomRetryOperation() *common.RetryPolicy {
+
+	policy := common.DefaultRetryPolicy()
+	policy.ShouldRetryOperation = shouldRetryOperation
+	return &policy
+}
+
+func shouldRetryOperation(r common.OCIOperationResponse) bool {
+	if r.Error == nil && 199 < r.Response.HTTPResponse().StatusCode && r.Response.HTTPResponse().StatusCode < 300 {
+		// success
+		return false
+	}
+	return common.IsErrorRetryableByDefault(r.Error) || isRetryableServiceError(r.Error.(common.ServiceError))
 }
 
 // NewRetryPolicyWithMaxAttempts returns a RetryPolicy with the specified max retryAttempts

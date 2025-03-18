@@ -362,7 +362,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 	}
 
 	requestMetadata := common.RequestMetadata{
-		RetryPolicy: newRetryPolicy(),
+		RetryPolicy: newRetryPolicyWithCustomRetryOperation(),
 	}
 
 	loadbalancer := loadbalancerClientStruct{
@@ -620,7 +620,7 @@ func getDefaultRequestMetadata(existingRequestMetadata common.RequestMetadata) c
 		return existingRequestMetadata
 	}
 	requestMetadata := common.RequestMetadata{
-		RetryPolicy: newRetryPolicy(),
+		RetryPolicy: newRetryPolicyWithCustomRetryOperation(),
 	}
 	return requestMetadata
 }
