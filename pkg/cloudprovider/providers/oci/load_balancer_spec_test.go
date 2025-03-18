@@ -7031,7 +7031,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 			},
 			expectedErrMsg: fmt.Sprintf("Private IP assignment via annoations %s & %s is supported only in OCI Network Loadbalancer. Set %s to %s",
 				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4,
-				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV4,
+				ServiceAnnotationNetworkLoadBalancerAssignPrivateIpV6,
 				ServiceAnnotationLoadBalancerType,
 				NLB),
 		},
