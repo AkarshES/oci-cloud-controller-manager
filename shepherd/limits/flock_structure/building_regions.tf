@@ -62,4 +62,8 @@ resource "shepherd_execution_target" "prod_build_region_et" {
     labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
   }
   ignored_region_build_capabilities = ["grafana_dashboard"]
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }

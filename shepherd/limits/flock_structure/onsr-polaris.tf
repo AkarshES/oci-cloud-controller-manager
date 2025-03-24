@@ -62,6 +62,10 @@ resource "shepherd_execution_target" "polaris_onsr_et" {
     labels           = [format(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "watch_mp_release_label_format"), split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1])]
   }
   ignored_region_build_capabilities = ["grafana_dashboard"]
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }
 
 resource "shepherd_execution_target" "polaris_onsr_env_setup_et" {

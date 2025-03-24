@@ -72,6 +72,10 @@ resource "shepherd_execution_target" "herds_et" {
   labels = {
     herd = "993ddcbe-99c5-49ac-a791-889537ecb67a"
   }
+  provider_override {
+    name = "null"
+    constraint = ">= 0.1"
+  }
 }
 
 resource "shepherd_execution_target" "herds_env_setup_et" {
