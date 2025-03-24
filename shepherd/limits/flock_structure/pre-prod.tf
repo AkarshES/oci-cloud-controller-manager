@@ -93,7 +93,7 @@ resource "shepherd_execution_target" "preprod_et" {
     limits_region          = lower(lookup(local.region_by_name_all_regions, split(".", each.key)[2]).airport_code)
     manage_regional_values = "true"
     manage_definitions     = "false"
-    pool_name_regex = "^oke-deploy-dev[0-9]*"
+    pool_name_regex = split(".", each.key)[0] == "dev" ? "^oke-deploy-dev[0-9]*" : "^oke-deploy-integ[0-9]*"
   }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
   alarms_to_watch {
     compartment_name = "assets"
@@ -155,7 +155,7 @@ resource "shepherd_execution_target" "preprod_region_values" {
     manage_regional_values = "true"
     manage_definitions     = "false"
     stage = "preprod"
-    pool_name_regex = "^oke-deploy-dev[0-9]*"
+    pool_name_regex = split(".", each.key)[0] == "dev" ? "^oke-deploy-dev[0-9]*" : "^oke-deploy-integ[0-9]*"
     spectre_group_name     = lookup(lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"])), "spectre_group_name")
     },
     lookup(module.merged_cell_config.additional_locals, join(".", [each.key, "cell0"]), {})
