@@ -17,6 +17,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"net"
 	"strings"
 
@@ -96,6 +97,13 @@ func (c *client) GetSubnet(ctx context.Context, id string) (*core.Subnet, error)
 	if !c.rateLimiter.Reader.TryAccept() {
 		return nil, RateLimitError(false, "GetSubnet")
 	}
+
+	logger := zap.L().Sugar()
+	logger = logger.With(
+		"loadBalancerType", "lb",
+	)
+
+	logger.Infof("retryPolicy being used is: %s", c.requestMetadata.RetryPolicy.String())
 
 	resp, err := c.network.GetSubnet(ctx, core.GetSubnetRequest{
 		SubnetId:        &id,
