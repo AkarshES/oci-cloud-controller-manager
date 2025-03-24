@@ -16,6 +16,8 @@ JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
+export OCI_CLI_USE_INSTANCE_METADATA_SERVICE=true
+
 if [ -n "$cpo_image_1" ]; then
   all_images=()
 

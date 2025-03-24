@@ -17,7 +17,7 @@ locals {
 
 module "oke-cpo-images" {
   source                   = "./shared_modules"
-  service_artifact_version = local.artifact_versions
+  service_artifact_version = {for key, val in local.artifact_versions : key => val if val.type == "ocir"}
 }
 
 data "odo_applications" "image-release-validator-ccm-csi" {
