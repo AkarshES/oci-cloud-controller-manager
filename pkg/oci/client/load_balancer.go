@@ -148,6 +148,13 @@ func (c *loadbalancerClientStruct) CreateLoadBalancer(ctx context.Context, detai
 
 	}
 
+	logger := zap.L().Sugar()
+	logger = logger.With(
+		"loadBalancerType", "lb",
+	)
+
+	logger.Infof("retryPolicy being used is: %s", c.requestMetadata.RetryPolicy.String())
+
 	resp, err := c.loadbalancer.CreateLoadBalancer(ctx, loadbalancer.CreateLoadBalancerRequest{
 		CreateLoadBalancerDetails: createLoadBalancerDetails,
 		RequestMetadata:           c.requestMetadata,

@@ -17,6 +17,8 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/oracle/oci-go-sdk/v65/common"
+	"go.uber.org/zap"
 	"net"
 	"strings"
 
@@ -97,10 +99,19 @@ func (c *client) GetSubnet(ctx context.Context, id string) (*core.Subnet, error)
 		return nil, RateLimitError(false, "GetSubnet")
 	}
 
+	logger := zap.L().Sugar()
+	logger = logger.With(
+		"loadBalancerType", "lb",
+	)
+
+	logger.Infof("retryPolicy being used is: %s", c.requestMetadata.RetryPolicy.String())
+
 	resp, err := c.network.GetSubnet(ctx, core.GetSubnetRequest{
 		SubnetId:        &id,
 		RequestMetadata: c.requestMetadata,
 	})
+	e, ok := err.(common.ServiceError)
+	logger.Infof("Error isServerError: %v, Status is: %s, SatatusCodeString is: %s", ok, resp.HTTPResponse().Status, e.GetCode())
 	if resp.OpcRequestId != nil {
 		c.logger.With("service", "Networking", "verb", getVerb).
 			With("OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
