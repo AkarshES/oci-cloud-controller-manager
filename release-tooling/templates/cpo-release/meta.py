@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="985d26c8-0d3d-4001-8f9c-5efffe9d8bb3"
+config_id="2677e532-bae1-4c9a-be81-34c5dbf9ee53"
 
 app_release_template = {
     "alias": "image-push",
