@@ -31,8 +31,6 @@ fi
 
 awk -F, '{gsub(/^ *| *$/,"",$1); gsub(/^ *| *$/,"",$2); print "{\""$1"\": \""$2"\"}"}' "$input_csv" | jq -s '. | {images: .}' > "$output_json"
 
-echo "JSON file created: $output_json"
-
 json_images=($(jq -r '.images[] | to_entries[] | .key + "," + .value' $output_json))
 
 cat $input_csv | while IFS=, read -r image_name image_version; do
