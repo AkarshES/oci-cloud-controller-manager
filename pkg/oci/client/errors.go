@@ -116,20 +116,37 @@ func newRetryPolicy() *common.RetryPolicy {
 	return &policy
 }
 
-func newRetryPolicyWithCustomRetryOperation() *common.RetryPolicy {
+func newRetryPolicyWithCustomRetryOperation(log *zap.SugaredLogger) *common.RetryPolicy {
 
+	shouldRetryOperation := func(r common.OCIOperationResponse) bool {
+		srt := false
+		if r.Error == nil && 199 < r.Response.HTTPResponse().StatusCode && r.Response.HTTPResponse().StatusCode < 300 {
+			// success
+			return false
+
+		}
+
+		srt = common.IsErrorRetryableByDefault(r.Error) || isRetryableServiceError(r.Error.(common.ServiceError))
+		if srt {
+			log.Infof("Attempting request retry after attempt number: %d due to status code: %d", r.AttemptNumber, r.Response.HTTPResponse().StatusCode)
+		}
+		return srt
+	}
 	policy := common.DefaultRetryPolicy()
 	policy.ShouldRetryOperation = shouldRetryOperation
 	return &policy
 }
 
-func shouldRetryOperation(r common.OCIOperationResponse) bool {
-	if r.Error == nil && 199 < r.Response.HTTPResponse().StatusCode && r.Response.HTTPResponse().StatusCode < 300 {
-		// success
-		return false
-	}
-	return common.IsErrorRetryableByDefault(r.Error) || isRetryableServiceError(r.Error.(common.ServiceError))
-}
+//func shouldRetryOperation(r common.OCIOperationResponse) bool {
+//	if r.Error == nil && 199 < r.Response.HTTPResponse().StatusCode && r.Response.HTTPResponse().StatusCode < 300 {
+//		// success
+//		return false
+//	}
+//
+//	logRetries()
+//
+//	return common.IsErrorRetryableByDefault(r.Error) || isRetryableServiceError(r.Error.(common.ServiceError))
+//}
 
 // NewRetryPolicyWithMaxAttempts returns a RetryPolicy with the specified max retryAttempts
 func NewRetryPolicyWithMaxAttempts(retryAttempts uint) *common.RetryPolicy {
