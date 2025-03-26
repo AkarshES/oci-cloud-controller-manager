@@ -201,6 +201,10 @@ type MockBlockStorageClient struct {
 	bs util.MockOCIBlockStorageClient
 }
 
+func (c *MockBlockStorageClient) GetBootVolume(ctx context.Context, id string) (*core.BootVolume, error) {
+	return nil, nil
+}
+
 // AwaitVolumeCloneAvailableOrTimeout implements client.BlockStorageInterface.
 func (c *MockBlockStorageClient) AwaitVolumeCloneAvailableOrTimeout(ctx context.Context, id string) (*core.Volume, error) {
 	var volClone *core.Volume
