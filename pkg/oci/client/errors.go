@@ -98,7 +98,30 @@ func RateLimitError(isWrite bool, opName string) error {
 }
 
 func newRetryPolicy() *common.RetryPolicy {
-	return NewRetryPolicyWithMaxAttempts(uint(2))
+	//return NewRetryPolicyWithMaxAttempts(uint(2))
+	logger := zap.L().Sugar()
+	policy := common.DefaultRetryPolicyWithoutEventualConsistency()
+
+	shouldRetryOperation := func(r common.OCIOperationResponse) bool {
+		srt := false
+		if r.Error == nil && 199 < r.Response.HTTPResponse().StatusCode && r.Response.HTTPResponse().StatusCode < 300 {
+			// success
+			return false
+
+		}
+
+		servErr, ok := r.Error.(common.ServiceError)
+		if !ok {
+			logger.Infof("retruned error is not a service error so will not attempt to retry")
+			return false
+		}
+
+		srt = common.IsErrorRetryableByDefault(r.Error) || isRetryableServiceError(servErr)
+		logger.Infof("Attempting request retry after attempt number: %d due to status code: %d, code is: %s", r.AttemptNumber, r.Response.HTTPResponse().StatusCode, r.Error.(common.ServiceError).GetCode())
+		return srt
+	}
+	policy.ShouldRetryOperation = shouldRetryOperation
+	return &policy
 }
 
 // NewRetryPolicyWithMaxAttempts returns a RetryPolicy with the specified max retryAttempts
