@@ -575,10 +575,11 @@ func TestValidateNOR(t *testing.T) {
 
 func TestCalculateParallelism(t *testing.T) {
 	testCases := []struct {
-		name           string
-		maxParallelism int
-		nodeCandidates []*v1.Node
-		expected       int
+		name                string
+		maxParallelism      int
+		inProgressNodesSize int
+		nodeCandidates      []*v1.Node
+		expected            int
 	}{
 		{
 			name:     "nodeCandidates is nil",
@@ -608,8 +609,9 @@ func TestCalculateParallelism(t *testing.T) {
 					Status: v1.NodeStatus{},
 				},
 			},
-			maxParallelism: 1,
-			expected:       1,
+			maxParallelism:      1,
+			inProgressNodesSize: 0,
+			expected:            1,
 		},
 		{
 			name: "nodeCandidates size is less than maxParallelism",
@@ -623,8 +625,9 @@ func TestCalculateParallelism(t *testing.T) {
 					Status: v1.NodeStatus{},
 				},
 			},
-			maxParallelism: 3,
-			expected:       1,
+			maxParallelism:      3,
+			inProgressNodesSize: 0,
+			expected:            1,
 		},
 		{
 			name: "nodeCandidates size is equal to maxParallelism",
@@ -646,14 +649,31 @@ func TestCalculateParallelism(t *testing.T) {
 					Status: v1.NodeStatus{},
 				},
 			},
-			maxParallelism: 2,
-			expected:       2,
+			maxParallelism:      2,
+			inProgressNodesSize: 0,
+			expected:            2,
+		},
+		{
+			name: "nodeCandidates size is equal to maxParallelism",
+			nodeCandidates: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			maxParallelism:      1,
+			inProgressNodesSize: 1,
+			expected:            0,
 		},
 	}
 	t.Parallel()
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			parallelism := calculateParallelism(testCase.maxParallelism, testCase.nodeCandidates)
+			parallelism := calculateParallelism(testCase.maxParallelism, testCase.inProgressNodesSize, testCase.nodeCandidates)
 			if !reflect.DeepEqual(testCase.expected, parallelism) {
 				t.Errorf("expected: %+v, but actual calculateParallelism => %+v", testCase.expected, parallelism)
 				t.FailNow()
@@ -2835,6 +2855,446 @@ func TestInvalidParameterErrorNeedsAlarm(t *testing.T) {
 				t.FailNow()
 			} else {
 				t.Logf("expected: %+v, and actual invalidParameterErrorNeedsAlarm => %+v", testCase.expected, actual)
+			}
+		})
+	}
+}
+
+func TestAddNodeToPendingNodesDueToMaxParallelism(t *testing.T) {
+	testCases := []struct {
+		name                string
+		parallelism         int
+		candidates          []*v1.Node
+		currentPendingNodes []string
+		expected            []string
+	}{
+		{
+			name: "candidates is nil and currentPendingNodes is nil so updated PendingNodes should keep same",
+		},
+		{
+			name:                "candidates is nil and currentPendingNodes is nil so updated PendingNodes should keep same",
+			currentPendingNodes: []string{"10.0.10.122"},
+			expected:            []string{"10.0.10.122"},
+		},
+		{
+			name:        "[candidate size is greater than parallelism] 1 candidate: 10.0.10.122 needs to be triggered and parallelism is as 0, so 10.0.10.122 needs to be added to pendingNodes",
+			parallelism: 0,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: make([]string, 0),
+			expected:            []string{"10.0.10.121"},
+		},
+		{
+			name:        "[candidate size is greater than parallelism] candidates have 2 nodes need to be triggered, parallelism is 1, 1 candidate needs to be added to pendingNodes",
+			parallelism: 1,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: make([]string, 0),
+			expected:            []string{"10.0.10.122"},
+		},
+		{
+			name:        "[candidate size is greater than parallelism] candidates have 3 nodes need to be triggered, parallelism is 2, 1 candidate needs to be added to pendingNodes",
+			parallelism: 2,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: make([]string, 0),
+			expected:            []string{"10.0.10.123"},
+		},
+		{
+			name:        "[candidate size is greater than parallelism] candidates have 5 nodes need to be triggered, parallelism is 1, 4 candidate needs to be added to pendingNodes",
+			parallelism: 1,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.124",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId4",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.125",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId5",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: make([]string, 0),
+			expected:            []string{"10.0.10.122", "10.0.10.123", "10.0.10.124", "10.0.10.125"},
+		},
+		{
+			name:        "[candidate size is greater than parallelism] candidates have 5 nodes need to be triggered, parallelism is 3, 2 candidate needs to be added to pendingNodes",
+			parallelism: 3,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.124",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId4",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.125",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId5",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: make([]string, 0),
+			expected:            []string{"10.0.10.124", "10.0.10.125"},
+		},
+		{
+			name:        "[candidate size is greater than parallelism] candidates have 5 nodes need to be triggered, parallelism is 3, 2 candidate needs to be added to pendingNodes and current pendingNodes have nodes",
+			parallelism: 3,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.124",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId4",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.125",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId5",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: []string{"10.0.10.124", "10.0.10.126"},
+			expected:            []string{"10.0.10.124", "10.0.10.126", "10.0.10.125"},
+		},
+		{
+			name:        "[candidate size is equal to parallelism] candidates have 3 nodes need to be triggered, parallelism is 3, no candidate needs to be added to pendingNodes",
+			parallelism: 3,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: []string{},
+			expected:            []string{},
+		},
+		{
+			name:        "[candidate size is equal to parallelism] candidates have 3 nodes need to be triggered, parallelism is 3, no candidate needs to be added to pendingNodes and current pendingNodes have nodes",
+			parallelism: 3,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: []string{"10.0.10.126"},
+			expected:            []string{"10.0.10.126"},
+		},
+		{
+			name:        "[candidate size is less than parallelism] candidates have 3 nodes need to be triggered, parallelism is 3, no candidate needs to be added to pendingNodes",
+			parallelism: 4,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: []string{},
+			expected:            []string{},
+		}, {
+			name:        "[candidate size is less than parallelism] candidates have 3 nodes need to be triggered, parallelism is 3, no candidate needs to be added to pendingNodes and current pendingNodes have nodes",
+			parallelism: 3,
+			candidates: []*v1.Node{
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.121",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId1",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.122",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId2",
+					},
+					Status: v1.NodeStatus{},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "10.0.10.123",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "fakeInstanceId3",
+					},
+					Status: v1.NodeStatus{},
+				},
+			},
+			currentPendingNodes: []string{"10.0.10.121"},
+			expected:            []string{"10.0.10.121"},
+		},
+	}
+	t.Parallel()
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := addNodesToPendingNodesDueToParallelism(testCase.parallelism, testCase.candidates, testCase.currentPendingNodes)
+			if !reflect.DeepEqual(testCase.expected, actual) {
+				t.Errorf("expected: %+v, but actual addNodesToPendingNodesDueToParallelism => %+v", testCase.expected, actual)
+				t.FailNow()
+			} else {
+				t.Logf("expected: %+v, and actual addNodesToPendingNodesDueToParallelism => %+v", testCase.expected, actual)
 			}
 		})
 	}

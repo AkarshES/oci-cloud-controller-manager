@@ -516,15 +516,11 @@ func (r *NodeOperationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	// calculate how many requests could be sent in parallel in this round
-	parallelism := calculateParallelism(nor.Spec.MaxParallelism-len(updatedInProgressNodes), candidates)
+	// parallelism is how many requests could be sent in this round
+	parallelism := calculateParallelism(nor.Spec.MaxParallelism, len(updatedInProgressNodes), candidates)
 	log.Info(fmt.Sprint("the parallelism of nor ", nor.Name, " is calculated as ", strconv.Itoa(parallelism)))
 
-	// not all the node candidates could be triggered with operation in the current round due to parallelism
-	if parallelism < len(candidates) {
-		leftOverCandidates := candidates[len(candidates)-parallelism:]
-		updatedPendingNodes = addToListIfNotExist(getNodeNames(leftOverCandidates), updatedPendingNodes)
-	}
+	updatedPendingNodes = addNodesToPendingNodesDueToParallelism(parallelism, candidates, updatedPendingNodes)
 
 	for index := 0; index < parallelism; index++ {
 		node := candidates[index]
@@ -746,8 +742,10 @@ func (r *NodeOperationRuleReconciler) validateNorFormat(ctx context.Context, nor
 }
 
 // calculateParallelism calculates the parallelism of triggering node operation API requests
-// The calculation is based on the maxUnavailable configured in NOR and the size of nodes are qualified with operation
-func calculateParallelism(currentQuota int, nodeCandidates []*v1.Node) int {
+// currentQuota is the diff between value of MaxParallelism in NOR and the size of nodes that have in-progress work request
+// The calculation is min value between the currentQuota and the size of nodes are qualified with operation
+func calculateParallelism(maxParallelism int, inProgressNodesSize int, nodeCandidates []*v1.Node) int {
+	currentQuota := maxParallelism - inProgressNodesSize
 	if nodeCandidates == nil || len(nodeCandidates) == 0 {
 		return 0
 	}
@@ -1391,6 +1389,16 @@ func isNorStale(currentVersion string, latestVersion string) bool {
 		return true
 	}
 	return currentVersionInt < latestVersionInt
+}
+
+// addNodesToPendingNodesDueToParallelism: not all the node candidates could be triggered with operation in the current round due to parallelism
+// so add all the leftOver candidates to the pending nodes
+func addNodesToPendingNodesDueToParallelism(parallelism int, candidates []*v1.Node, currentPendingNodes []string) []string {
+	if parallelism < len(candidates) {
+		leftOverCandidates := candidates[parallelism:]
+		return addToListIfNotExist(getNodeNames(leftOverCandidates), currentPendingNodes)
+	}
+	return currentPendingNodes
 }
 
 // sendMetricsWithTenancy is to send metrics with Tenancy ID which is more used to tracking customer habit
