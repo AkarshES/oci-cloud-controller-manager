@@ -17,7 +17,7 @@
 ```
 3. The above command will update these 2 files with information about the images to be pushed - `images.auto.tfvars.json` and `image_versions.json`.
 4. Create a PR from the release branch to `internal` branch. Once the PR is created, a new build for `release-validator-ccm-csi` will be triggered. Navigate to [release-validator-build-page][1] Create App releases from this commit as was done previously and provide the artifact tag for `release-validator-ccm-csi` corresponding to the new build triggered for the PR.
-5. Now Copy and paste the new artifact tag to pop_version in `shared_modules/properties_values/default_values.tf`. Commit and push this change. Create infra releases to both `<env>.<realm>.<region>.cell0` and `spectre.values.<env>.<realm>.<region>` targets.
+5. Now Copy and paste the new artifact tag to locals.pop_version (line #3) in `shared_modules/properties_values/default_values.tf`. Commit and push this change. Create infra releases to both `<env>.<realm>.<region>.cell0` and `spectre.values.<env>.<realm>.<region>` targets.
 
 ### Ways to disable image validation
 
