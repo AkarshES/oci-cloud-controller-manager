@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -2658,6 +2659,161 @@ func TestLoadBalancerToStatus(t *testing.T) {
 			reflect.DeepEqual(tc.expectedOutput, actualOutput)
 			if tc.expectedError != nil {
 				reflect.DeepEqual(tc.expectedError.Error(), actualError.Error())
+			}
+		})
+	}
+}
+
+func TestGetNsgsForNodes(t *testing.T) {
+	testCases := map[string]struct {
+		nodes                []*v1.Node
+		expectedNSGIDs       []string
+		expectedErrorMsgPart string // Substring of expected error, or "" if no error
+	}{
+		// --- Happy Path Tests ---
+		"single node, single vnic, single tagged nsg": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-inst1", Annotations: map[string]string{CompartmentIDAnnotation: "compartment1"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.instance1"},
+				},
+			},
+			expectedNSGIDs: []string{"nsg-tagged-1"},
+		},
+		"single node, multiple vnics, multiple tagged nsgs": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-inst1-multi", Annotations: map[string]string{CompartmentIDAnnotation: "compartment1"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.instance1-multi"},
+				},
+			},
+			expectedNSGIDs: []string{"nsg-tagged-1", "nsg-tagged-2"},
+		},
+		"multiple nodes, deduplication": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-inst1", Annotations: map[string]string{CompartmentIDAnnotation: "compartment1"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.instance1"},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-basic", Annotations: map[string]string{CompartmentIDAnnotation: "default"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.basic-complete"},
+				},
+			},
+			expectedNSGIDs: []string{"nsg-tagged-1", "nsg-tagged-2"},
+		},
+
+		// --- Edge Cases ---
+		"no nodes": {
+			nodes:          []*v1.Node{},
+			expectedNSGIDs: []string{},
+		},
+		"node with no attachments": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-noattach", Annotations: map[string]string{CompartmentIDAnnotation: "default"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.no-external-ip"},
+				},
+			},
+			expectedNSGIDs: []string{},
+		},
+		"vnic with no nsgs": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-vnic-no-nsgs", Annotations: map[string]string{CompartmentIDAnnotation: "default"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.no-internal-ip"},
+				},
+			},
+			expectedNSGIDs: []string{},
+		},
+		"nsg without required tag": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-nsg-no-tag", Annotations: map[string]string{CompartmentIDAnnotation: "default"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.invalid-internal-ip"},
+				},
+			},
+			expectedNSGIDs: []string{},
+		},
+
+		// --- Error Cases ---
+		"error: missing providerID": {
+			nodes: []*v1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "node-no-providerid", Annotations: map[string]string{CompartmentIDAnnotation: "default"}}},
+			},
+			expectedErrorMsgPart: ".spec.providerID was not present",
+		},
+		"error: invalid providerID format": {
+			nodes: []*v1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "node-invalid-providerid", Annotations: map[string]string{CompartmentIDAnnotation: "default"}}, Spec: v1.NodeSpec{ProviderID: "invalid-format"}},
+			},
+			expectedErrorMsgPart: "provider ID 'invalid-format' is not valid", // Match real func error
+		},
+		"error: missing compartment annotation": {
+			nodes: []*v1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "node-no-annot"}, Spec: v1.NodeSpec{ProviderID: "ocid1.instance1"}},
+			},
+			expectedErrorMsgPart: "annotation not present",
+		},
+		"error: ListVnicAttachments fails": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-list-attach-err", Annotations: map[string]string{CompartmentIDAnnotation: "comp-a"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.instance-list-attach-error"},
+				},
+			},
+			expectedErrorMsgPart: "listing VNIC attachments",
+		},
+		"error: GetVnic fails": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-getvnic-err", Annotations: map[string]string{CompartmentIDAnnotation: "comp-a"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.ipv6-instance"},
+				},
+			},
+			expectedErrorMsgPart: "getting VNIC",
+		},
+		"error: GetNetworkSecurityGroup fails": {
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "node-getnsg-err", Annotations: map[string]string{CompartmentIDAnnotation: "comp-a"}},
+					Spec:       v1.NodeSpec{ProviderID: "ocid1.ipv6-instance-ula"},
+				},
+			},
+			expectedErrorMsgPart: "getting NSG",
+		},
+	}
+
+	mockClient := &MockOCIClient{}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			nsgIds, err := getNsgsForNodes(context.Background(), tc.nodes, mockClient)
+
+			if tc.expectedErrorMsgPart != "" {
+				if err == nil {
+					t.Errorf("Test %q: Expected error containing %q, but got nil error", name, tc.expectedErrorMsgPart)
+				} else if !strings.Contains(err.Error(), tc.expectedErrorMsgPart) {
+					t.Errorf("Test %q: Expected error containing %q, but got: %v", name, tc.expectedErrorMsgPart, err)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Test %q: Expected no error, but got: %v", name, err)
+				}
+
+				// Compare slices ignoring order
+				expectedSorted := make([]string, len(tc.expectedNSGIDs))
+				copy(expectedSorted, tc.expectedNSGIDs)
+				actualSorted := make([]string, len(nsgIds))
+				copy(actualSorted, nsgIds)
+
+				sort.Strings(expectedSorted)
+				sort.Strings(actualSorted)
+
+				if !reflect.DeepEqual(expectedSorted, actualSorted) {
+					t.Errorf("Test %q: Expected NSG IDs %v (sorted %v), but got %v (sorted %v)",
+						name, tc.expectedNSGIDs, expectedSorted, nsgIds, actualSorted)
+				}
 			}
 		})
 	}

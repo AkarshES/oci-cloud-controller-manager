@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	kubeAPI "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
@@ -535,6 +536,22 @@ func (c *MockVirtualNetworkClient) GetPublicIpByIpAddress(ctx context.Context, i
 // Networking mocks client VirtualNetwork implementation.
 func (p *MockProvisionerClient) Networking(ociClientConfig *client.OCIClientConfig) client.NetworkingInterface {
 	return &MockVirtualNetworkClient{}
+}
+
+func (c *MockVirtualNetworkClient) GetNodeNsgsFromCacheByNodeOcid(nodeOcid string) ([]string, bool, error) {
+	return []string{}, false, nil
+}
+
+func (c *MockVirtualNetworkClient) AddNodeNsgsToCacheByNodeOcid(nodeOcid string, nsgIDs []string) error {
+	return nil
+}
+
+func (c *MockVirtualNetworkClient) GetServiceNsgSetFromCache(serviceKey string) (sets.String, bool, error) {
+	return sets.NewString(), false, nil
+}
+
+func (c *MockVirtualNetworkClient) AddServiceNsgSetToCache(serviceKey string, nsgSet sets.String) error {
+	return nil
 }
 
 type MockLoadBalancerClient struct{}
