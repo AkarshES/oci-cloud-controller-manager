@@ -111,14 +111,6 @@ func (c *MockVirtualNetworkClient) UpdateNetworkSecurityGroup(ctx context.Contex
 	return nil, nil
 }
 
-func (c *MockVirtualNetworkClient) GetNetworkSecurityGroup(ctx context.Context, id string) (*core.NetworkSecurityGroup, *string, error) {
-	nsg := core.NetworkSecurityGroup{
-		Id:             &id,
-		LifecycleState: "ACTIVE",
-	}
-	return &nsg, common.String("etag"), nil
-}
-
 func (c *MockVirtualNetworkClient) ListNetworkSecurityGroups(ctx context.Context, displayName, compartmentId, vcnId string) ([]core.NetworkSecurityGroup, error) {
 	return []core.NetworkSecurityGroup{}, nil
 }

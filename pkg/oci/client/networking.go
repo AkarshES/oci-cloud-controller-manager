@@ -23,6 +23,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 )
 
@@ -58,11 +59,26 @@ type NetworkingInterface interface {
 	RemoveNetworkSecurityGroupSecurityRules(ctx context.Context, id string, details core.RemoveNetworkSecurityGroupSecurityRulesDetails) (*core.RemoveNetworkSecurityGroupSecurityRulesResponse, error)
 	ListNetworkSecurityGroupSecurityRules(ctx context.Context, id string, direction core.ListNetworkSecurityGroupSecurityRulesDirectionEnum) ([]core.SecurityRule, error)
 	UpdateNetworkSecurityGroupSecurityRules(ctx context.Context, id string, details core.UpdateNetworkSecurityGroupSecurityRulesDetails) (*core.UpdateNetworkSecurityGroupSecurityRulesResponse, error)
+
+	GetNodeNsgsFromCacheByNodeOcid(nodeOcid string) ([]string, bool, error)
+	AddNodeNsgsToCacheByNodeOcid(nodeOcid string, nsgIDs []string) error
+	GetServiceNsgSetFromCache(serviceKey string) (sets.String, bool, error)
+	AddServiceNsgSetToCache(serviceKey string, nsgSet sets.String) error
 }
 
 type IpAddresses struct {
 	V4 string
 	V6 string
+}
+
+type nodeNsgCacheEntry struct {
+	NodeOcid string
+	NsgIDs   []string
+}
+
+type serviceNsgSetCacheEntry struct {
+	ServiceKey string
+	NsgSet     sets.Set[string]
 }
 
 func (c *client) GetVNIC(ctx context.Context, id string) (*core.Vnic, error) {
@@ -597,4 +613,92 @@ func (c *client) UpdateNetworkSecurityGroupSecurityRules(ctx context.Context, id
 		return &resp, errors.WithStack(err)
 	}
 	return &resp, nil
+}
+func nodeNsgCacheKeyFn(obj interface{}) (string, error) {
+	entry, ok := obj.(*nodeNsgCacheEntry)
+	if !ok {
+		key, okStr := obj.(string)
+		if okStr {
+			return key, nil
+		}
+		return "", fmt.Errorf("invalid type for nodeNsgCache: %T", obj)
+	}
+	if entry.NodeOcid == "" {
+		return "", fmt.Errorf("empty NodeOcid in nodeNsgCacheEntry")
+	}
+	return entry.NodeOcid, nil
+}
+
+func serviceNsgSetCacheKeyFn(obj interface{}) (string, error) {
+	entry, ok := obj.(*serviceNsgSetCacheEntry)
+	if !ok {
+		key, okStr := obj.(string)
+		if okStr {
+			return key, nil
+		}
+		return "", fmt.Errorf("invalid type for serviceNsgSetCache: %T", obj)
+	}
+	if entry.ServiceKey == "" {
+		return "", fmt.Errorf("empty ServiceKey in serviceNsgSetCacheEntry")
+	}
+	return entry.ServiceKey, nil
+}
+
+func (c *client) GetNodeNsgsFromCacheByNodeOcid(nodeOcid string) ([]string, bool, error) {
+	item, exists, err := c.nodeNsgCache.GetByKey(nodeOcid)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "get node NSGs cache %q", nodeOcid)
+	}
+	if !exists {
+		return nil, false, nil
+	}
+	entry, ok := item.(*nodeNsgCacheEntry)
+	if !ok {
+		return nil, false, fmt.Errorf("invalid item type %T in nodeNsgCache %q", item, nodeOcid)
+	}
+	nsgIDsCopy := make([]string, len(entry.NsgIDs))
+	copy(nsgIDsCopy, entry.NsgIDs)
+	return nsgIDsCopy, true, nil
+}
+
+func (c *client) AddNodeNsgsToCacheByNodeOcid(nodeOcid string, nsgIDs []string) error {
+	nsgIDsCopy := make([]string, len(nsgIDs))
+	copy(nsgIDsCopy, nsgIDs)
+	entry := &nodeNsgCacheEntry{
+		NodeOcid: nodeOcid,
+		NsgIDs:   nsgIDsCopy,
+	}
+	err := c.nodeNsgCache.Add(entry)
+	if err != nil {
+		return errors.Wrapf(err, "add node NSGs cache %q", nodeOcid)
+	}
+	return nil
+}
+
+func (c *client) GetServiceNsgSetFromCache(serviceKey string) (sets.String, bool, error) {
+	item, exists, err := c.serviceNsgSetCache.GetByKey(serviceKey)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "get service NSG set cache %q", serviceKey)
+	}
+	if !exists {
+		return nil, false, nil
+	}
+	entry, ok := item.(*serviceNsgSetCacheEntry)
+	if !ok {
+		return nil, false, fmt.Errorf("invalid item type %T in serviceNsgSetCache %q", item, serviceKey)
+	}
+	return sets.NewString(entry.NsgSet.Clone().UnsortedList()...), true, nil
+}
+
+func (c *client) AddServiceNsgSetToCache(serviceKey string, nsgSet sets.String) error {
+	nsgSetCopy := nsgSet.Clone()
+	entry := &serviceNsgSetCacheEntry{
+		ServiceKey: serviceKey,
+		NsgSet:     sets.Set[string](nsgSetCopy),
+	}
+	err := c.serviceNsgSetCache.Add(entry)
+	if err != nil {
+		return errors.Wrapf(err, "add service NSG set cache %q", serviceKey)
+	}
+	return nil
 }
