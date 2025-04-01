@@ -359,8 +359,11 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		}
 	}
 
-	if f.BackendNsgOcid != "" {
-		nodeConfigDetails.NsgIds = strings.Split(f.BackendNsgOcid, ",")
+	var backendNsgIds []string
+	if f.BackendNsgOcid != "" || f.BackendNsgDiscoveryOcid != "" {
+		backendNsgIds = append(backendNsgIds, strings.Split(f.BackendNsgOcid, ",")...)
+		backendNsgIds = append(backendNsgIds, strings.Split(f.BackendNsgDiscoveryOcid, ",")...)
+		nodeConfigDetails.NsgIds = backendNsgIds
 	}
 
 	if cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative {
@@ -629,7 +632,7 @@ func (f *Framework) EnableBVMPluginOnNodepool(np *oke.NodePool) {
 			},
 		}
 		maxRetries := 5
-		baseDelay  := 2 * time.Second
+		baseDelay := 2 * time.Second
 
 		var err error
 		for attempt := 0; attempt < maxRetries; attempt++ {
