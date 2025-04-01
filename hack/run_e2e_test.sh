@@ -11,13 +11,13 @@ function check-env () {
 # Here we would check the index is set or not. If not, would use -1
 function check-env-k8s-version-index-exist () {
     if [ -z $OKE_CLUSTER_K8S_VERSION_INDEX ]; then
-        export OKE_CLUSTER_K8S_VERSION_INDEX=-1 
-        echo "OKE_CLUSTER_K8S_VERSION_INDEX is not set. set -1 by default"       
-    fi     
+        export OKE_CLUSTER_K8S_VERSION_INDEX=-1
+        echo "OKE_CLUSTER_K8S_VERSION_INDEX is not set. set -1 by default"
+    fi
 
     if [ -z $OKE_NODEPOOL_K8S_VERSION_INDEX ]; then
-        export OKE_NODEPOOL_K8S_VERSION_INDEX=-1        
-        echo "OKE_NODEPOOL_K8S_VERSION_INDEX is not set. set -1 by default"       
+        export OKE_NODEPOOL_K8S_VERSION_INDEX=-1
+        echo "OKE_NODEPOOL_K8S_VERSION_INDEX is not set. set -1 by default"
     fi
 }
 
@@ -202,6 +202,7 @@ function run_e2e_tests() {
                 --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --backend-nsg-discovery-ocids=${BACKEND_NSG_DISCOVERY_OCIDS} \
                 --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                 --reserved-ip=${RESERVED_IP} \
                 --architecture=${ARCHITECTURE} \
@@ -262,6 +263,7 @@ function run_e2e_tests() {
                 --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --backend-nsg-discovery-ocids=${BACKEND_NSG_DISCOVERY_OCIDS} \
                 --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                 --reserved-ip=${RESERVED_IP} \
                 --architecture=${ARCHITECTURE} \
@@ -305,6 +307,7 @@ function run_e2e_tests_existing_cluster() {
                 --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                --backend-nsg-discovery-ocids=${BACKEND_NSG_DISCOVERY_OCIDS} \
                 --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                 --reserved-ip=${RESERVED_IP} \
                 --architecture=${ARCHITECTURE} \
@@ -337,6 +340,7 @@ function run_e2e_tests_existing_cluster() {
                         --mnt-target-compartment-id=${MNT_TARGET_COMPARTMENT_ID} \
                         --nsg-ocids=${NSG_OCIDS} \
                         --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
+                        --backend-nsg-discovery-ocids=${BACKEND_NSG_DISCOVERY_OCIDS} \
                         --single-stack-ipv6-lb-subnet=${LBRGNSUBNET_IPV6} \
                         --reserved-ip=${RESERVED_IP} \
                         --architecture=${ARCHITECTURE} \
@@ -466,6 +470,7 @@ function declare_setup () {
     echo "NODEPOOL_SIZE is ${NODEPOOL_SIZE}"
     echo "NSG_OCIDS is ${NSG_OCIDS}"
     echo "BACKEND_NSG_OCIDS is ${BACKEND_NSG_OCIDS}"
+    echo "BACKEND_NSG_DISCOVERY_OCIDS is ${BACKEND_NSG_DISCOVERY_OCIDS}"
     echo "ADLOCATION is ${ADLOCATION}"
     echo "MNT_TARGET_ID is ${MNT_TARGET_ID}"
     echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"

@@ -20,6 +20,7 @@ import (
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
@@ -29,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	v1discoverylisters "k8s.io/client-go/listers/discovery/v1"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -53,12 +55,14 @@ var (
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("instance1"),
 			SubnetId:      common.String("subnetwithdnslabel"),
+			NsgIds:        []string{"nsg-tagged-1", "nsg-untagged-beta"},
 		},
 		"ocid1.basic-complete": {
 			PrivateIp:     common.String("10.0.0.1"),
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("basic-complete"),
 			SubnetId:      common.String("subnetwithdnslabel"),
+			NsgIds:        []string{"nsg-tagged-1", "nsg-tagged-2"},
 		},
 		"ocid1.no-external-ip": {
 			PrivateIp:     common.String("10.0.0.1"),
@@ -69,11 +73,13 @@ var (
 			PublicIp:      common.String("0.0.0.1"),
 			HostnameLabel: common.String("no-internal-ip"),
 			SubnetId:      common.String("subnetwithdnslabel"),
+			NsgIds:        nil,
 		},
 		"ocid1.invalid-internal-ip": {
 			PrivateIp:     common.String("10.0.0."),
 			HostnameLabel: common.String("no-internal-ip"),
 			SubnetId:      common.String("subnetwithdnslabel"),
+			NsgIds:        []string{"nsg-no-tag-delta", "nsg-untagged-beta"},
 		},
 		"ocid1.invalid-external-ip": {
 			PublicIp:      common.String("0.0.0."),
@@ -137,6 +143,27 @@ var (
 			HostnameLabel: common.String("no-vcn-dns-label"),
 			SubnetId:      common.String("ipv6-gua-ipv4-instance"),
 			Ipv6Addresses: []string{"2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
+		},
+		"ocid1.ipv6-instance-getvnic-error": {
+			Id: common.String("ocid1.ipv6-instance-getvnic-error"),
+		},
+		"ocid1.ipv6-instance-ula-getnsg-error": {
+			Id:     common.String("ocid1.ipv6-instance-ula-getnsg-error"),
+			NsgIds: []string{"nsg-get-error"}, // Contains the NSG that will cause GetNetworkSecurityGroup to fail
+		},
+		"ocid1.instance1-multi": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("instance1-multi"),
+			SubnetId:      common.String("subnetwithdnslabel"),
+			NsgIds:        []string{"nsg-tagged-1", "nsg-untagged-beta"},
+		},
+		"ocid1.instance1-secondary": {
+			PrivateIp:     common.String("10.0.0.1"),
+			PublicIp:      common.String("0.0.0.1"),
+			HostnameLabel: common.String("instance1-multi"),
+			SubnetId:      common.String("subnetwithdnslabel"),
+			NsgIds:        []string{"nsg-tagged-2", "nsg-untagged-beta"},
 		},
 	}
 
@@ -844,6 +871,70 @@ var (
 			IpAddresses: []client.GenericIpAddress{},
 		},
 	}
+
+	vnicAttachments = map[string][]core.VnicAttachment{
+		// Instance used for single NSG tests
+		"ocid1.instance1": {
+			{Id: common.String("attachment-for-instance1"), VnicId: common.String("ocid1.instance1")},
+		},
+		// Instance used for multi NSG tests
+		"ocid1.instance1-multi": {
+			{Id: common.String("attachment-for-instance1"), VnicId: common.String("ocid1.instance1-multi")},
+			{Id: common.String("attachment-for-instance1-secondary"), VnicId: common.String("ocid1.instance1-secondary")},
+		},
+		// Instance used for deduplication tests (along with instance1)
+		"ocid1.basic-complete": {
+			{Id: common.String("attachment-for-basic"), VnicId: common.String("ocid1.basic-complete")},
+		},
+		// Instance for "no attachments" test
+		"ocid1.no-external-ip": {},
+		// Instance for "vnic with no nsgs" test
+		"ocid1.no-internal-ip": {
+			{Id: common.String("attachment-for-no-internal-ip"), VnicId: common.String("ocid1.no-internal-ip")},
+		},
+		// Instance for "nsg without required tag" test
+		"ocid1.invalid-internal-ip": {
+			{Id: common.String("attachment-for-invalid-internal-ip"), VnicId: common.String("ocid1.invalid-internal-ip")},
+		},
+		// Instance used in error tests if ListVnicAttachments needs to succeed first.
+		// Vnic with suffix getvnic-error is used to simulate error
+		"ocid1.ipv6-instance": {
+			{Id: common.String("attachment-for-ipv6-instance"), VnicId: common.String("ocid1.ipv6-instance-getvnic-error")},
+		},
+		// Instance used in error tests if GetNsg fails
+		// Vnic with suffix getnsg-error is used to simulate error
+		"ocid1.ipv6-instance-ula": {
+			{Id: common.String("attachment-for-ipv6-instance-ula"), VnicId: common.String("ocid1.ipv6-instance-ula-getnsg-error")}, // Use a specific VNIC ID
+		},
+	}
+
+	nsgs = map[string]core.NetworkSecurityGroup{
+		"nsg-tagged-1": { // Tagged
+			Id:           common.String("nsg-tagged-1"),
+			DisplayName:  common.String("NSG-Tagged-Alpha"),
+			FreeformTags: map[string]string{nsgDiscoveryTag: "true"},
+		},
+		"nsg-untagged-beta": { // Not tagged correctly
+			Id:           common.String("nsg-untagged-beta"),
+			DisplayName:  common.String("NSG-Untagged-Beta"),
+			FreeformTags: map[string]string{"other": "val", nsgDiscoveryTag: "false"}, // Example explicit false tag
+		},
+		"nsg-tagged-2": { // Tagged
+			Id:           common.String("nsg-tagged-2"),
+			DisplayName:  common.String("NSG-Tagged-Gamma"),
+			FreeformTags: map[string]string{nsgDiscoveryTag: "true"},
+		},
+		"nsg-no-tag-delta": { // No relevant tag at all
+			Id:           common.String("nsg-no-tag-delta"),
+			DisplayName:  common.String("NSG-No-Tag-Delta"),
+			FreeformTags: map[string]string{"unrelated": "info"},
+		},
+		// NSG used only in GetNSG error simulation (content may not matter)
+		"nsg-get-error": {
+			Id:          common.String("nsg-get-error"),
+			DisplayName: common.String("NSG-Causes-Get-Error"),
+		},
+	}
 )
 
 type MockSecurityListManager struct{}
@@ -929,7 +1020,15 @@ func (MockComputeClient) GetPrimaryVNICForInstance(ctx context.Context, compartm
 }
 
 func (c *MockComputeClient) ListVnicAttachments(ctx context.Context, compartmentID, instanceID string) ([]core.VnicAttachment, error) {
-	return nil, nil
+	if strings.HasSuffix(instanceID, "attach-error") {
+		return nil, errors.New("error listing VNIC attachments")
+	}
+
+	if vnicAttachmentsList, ok := vnicAttachments[instanceID]; ok {
+		return vnicAttachmentsList, nil
+	}
+
+	return []core.VnicAttachment{}, nil
 }
 
 func (c *MockComputeClient) GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error) {
@@ -1041,6 +1140,14 @@ func (c *MockVirtualNetworkClient) GetVcn(ctx context.Context, id string) (*core
 }
 
 func (c *MockVirtualNetworkClient) GetVNIC(ctx context.Context, id string) (*core.Vnic, error) {
+	if strings.HasSuffix(id, "getvnic-error") {
+		return nil, errors.New("GetVnic error")
+	}
+
+	if vnic, ok := instanceVnics[id]; ok {
+		return vnic, nil
+	}
+
 	return &core.Vnic{}, nil
 }
 
@@ -1058,6 +1165,41 @@ func (c *MockVirtualNetworkClient) UpdateSecurityList(ctx context.Context, id st
 
 func (c *MockVirtualNetworkClient) GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error) {
 	return nil, nil
+}
+
+func (c *MockVirtualNetworkClient) GetNetworkSecurityGroup(ctx context.Context, id string) (*core.NetworkSecurityGroup, *string, error) {
+	if strings.HasSuffix(id, "get-error") {
+		return nil, nil, errors.New("GetNetworkSecurityGroup error")
+	}
+
+	if nsg, ok := nsgs[id]; ok {
+		// Return the NSG and a dummy etag
+		etag := "etag"
+		return &nsg, &etag, nil
+	}
+
+	// Return a dummy NSG if no test mapping found
+	nsg := core.NetworkSecurityGroup{
+		Id:             &id,
+		LifecycleState: "ACTIVE",
+	}
+	return &nsg, common.String("etag"), nil
+}
+
+func (c *MockVirtualNetworkClient) GetNodeNsgsFromCacheByNodeOcid(nodeOcid string) ([]string, bool, error) {
+	return []string{}, false, nil
+}
+
+func (c *MockVirtualNetworkClient) AddNodeNsgsToCacheByNodeOcid(nodeOcid string, nsgIDs []string) error {
+	return nil
+}
+
+func (c *MockVirtualNetworkClient) GetServiceNsgSetFromCache(serviceKey string) (sets.String, bool, error) {
+	return sets.NewString(), false, nil
+}
+
+func (c *MockVirtualNetworkClient) AddServiceNsgSetToCache(serviceKey string, nsgSet sets.String) error {
+	return nil
 }
 
 // MockLoadBalancerClient mocks LoadBalancer client implementation.
