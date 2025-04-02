@@ -32,7 +32,7 @@ if [ -n "$cpo_image_1" ]; then
     --region "$REGION" \
     --repository-name "$repo_name" \
     --all \
-    --auth instance_principal \
+    --auth security_token \
     --query 'data.items[*].[["version"], ["digest"]]' \
     --output json)
 
@@ -69,7 +69,7 @@ else
         --region "$REGION" \
         --repository-name "$repo_name" \
         --all \
-        --auth instance_principal \
+        --auth security_token \
         --query 'data.items[*]."display-name"' \
         --output json | jq -r '.[]' | awk -F':' '{print $2}'
   }
@@ -93,4 +93,6 @@ else
   done
 
   echo "All images found in OCIR."
+  echo "  The following image is not present in OCIR: $tag"
+  exit 1
 fi
