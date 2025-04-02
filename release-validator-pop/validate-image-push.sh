@@ -93,4 +93,6 @@ else
   done
 
   echo "All images found in OCIR."
+  echo "  The following image is not present in OCIR: $tag"
+  exit 1
 fi
