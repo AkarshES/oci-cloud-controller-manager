@@ -5,8 +5,38 @@ set -o pipefail
 
 #exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
 
-echo "Starting release validation"
-source "${ODO_APPLICATION_ROOT}/run-command/image-push-validation/validate.sh"
+if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
+  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
+  exit 1
+fi
+
+if [ -z "${VALIDATION_STAGE}" ]; then
+    echo "Error: VALIDATION_STAGE is not set. Please check application configuration."
+    exit 1
+fi
+
+# Check value and call appropriate script
+if [ "${VALIDATION_STAGE}" = "IMAGE_PUSH_CHECK" ]; then
+    echo "Starting VALIDATION_STAGE is IMAGE_PUSH_CHECK"
+    source "${ODO_APPLICATION_ROOT}/run-command/image-push-validation/validate.sh"
+elif [ "${VALIDATION_STAGE}" = "BINARY_ARTIFACT_CHECK" ]; then
+    echo "Starting VALIDATION_STAGE is BINARY_ARTIFACT_CHECK"
+elif [ "${VALIDATION_STAGE}" = "MAPPING_IMAGE_CHECK" ]; then
+    echo "Starting VALIDATION_STAGE is MAPPING_IMAGE_CHECK"
+else
+    echo "Error: Unknown VALIDATION_STAGE value: ${VALIDATION_STAGE}"
+    exit 1
+fi
+
+# Check execution status
+if [ $? -eq 0 ]; then
+    echo "Validations completed."
+else
+    echo "Script execution failed"
+    exit 1
+fi
+
+
 #
 #if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
 #  echo "No ODO_APPLICATION_ROOT defined, cannot continue"

@@ -7,11 +7,6 @@ set -o pipefail
 
 echo "Starting image push release validation"
 
-if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
-  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
-  exit 1
-fi
-
 JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
