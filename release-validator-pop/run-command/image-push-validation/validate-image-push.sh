@@ -18,50 +18,7 @@ COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
 export OCI_CLI_USE_INSTANCE_METADATA_SERVICE=true
 
-if [ -n "$cpo_image_1" ]; then
-  all_images=()
 
-  for var in $(compgen -v cpo_image_); do
-    all_images+=("${!var}")
-  done
-
-  repo_name="oke-public-kube-proxy"
-
-  existing_tags=$(oci artifacts container image list \
-    --compartment-id "$COMPARTMENT_OCID" \
-    --region "$REGION" \
-    --repository-name "$repo_name" \
-    --all \
-    --auth security_token \
-    --query 'data.items[*].[["version"], ["digest"]]' \
-    --output json)
-
-  missing_tags=()
-
-  for tag in "${all_images[@]}"; do
-    image_tag=${tag%%@*}
-    digest=${tag#*@}
-
-    found=false
-    for item in $(jq -c '.[]' <<< "$existing_tags"); do
-      if [[ $(jq -r '.[0][0]' <<< "$item") == "$image_tag" && $(jq -r '.[1][0]' <<< "$item") == "$digest" ]]; then
-        found=true
-        break
-      fi
-    done
-    if ! $found; then
-      missing_tags+=("$tag")
-    fi
-  done
-
-  if [ ${#missing_tags[@]} -gt 0 ]; then
-    echo "The following images are missing from OCIR:"
-    printf '%s\n' "${missing_tags[@]}"
-    exit 1
-  else
-    echo "All images are present in OCIR."
-  fi
-else
   fetch_repository_tags() {
     local repo_name=$1
     oci artifacts container image list \
@@ -69,7 +26,7 @@ else
         --region "$REGION" \
         --repository-name "$repo_name" \
         --all \
-        --auth security_token \
+        --auth instance_principal \
         --query 'data.items[*]."display-name"' \
         --output json | jq -r '.[]' | awk -F':' '{print $2}'
   }
@@ -93,4 +50,3 @@ else
   done
 
   echo "All images found in OCIR."
-fi
