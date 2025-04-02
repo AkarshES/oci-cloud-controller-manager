@@ -6,7 +6,7 @@ set -o pipefail
 #exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
 
 echo "Starting release validation"
-source "${ODO_APPLICATION_ROOT}/run-command/image-push-validation/validate-image-push.sh"
+source "${ODO_APPLICATION_ROOT}/run-command/image-push-validation/validate.sh"
 #
 #if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
 #  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
