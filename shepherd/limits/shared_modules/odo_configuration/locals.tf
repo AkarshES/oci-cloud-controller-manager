@@ -1,6 +1,9 @@
 locals {
   execution_target = var.execution_target
   steward_tenancy_info = {
+    region1 = {
+      ocid = "ocid1.tenancy.region1..aaaaaaaad74wznrnar2var53t6kghhpa3xkial2cfmize7tujsq6fxz73sza"
+    }
     oc1 = {
       ocid = "ocid1.tenancy.oc1..aaaaaaaafslvxmi2x2p2tgzxv3fgyzogwfzjjpypfvp2zvck2wk6t3bocnqa"
     }

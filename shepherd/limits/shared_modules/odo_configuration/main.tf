@@ -21,7 +21,7 @@ resource "odo_application" "applications" {
       deploy_sequentially = true
       fault_domain_deploy_sequentially = true
       ttl_seconds_pull_image           = 240
-      ttl_seconds_start_instance       = 240
+      ttl_seconds_start_instance       = 360
       ttl_seconds_stop_instance        = 300
       ttl_seconds_validation           = 240
     }
