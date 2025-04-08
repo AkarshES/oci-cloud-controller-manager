@@ -3,7 +3,7 @@
 set -e
 set -o pipefail
 
-#exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
+exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
 
 echo "Starting release validation"
 
@@ -50,16 +50,33 @@ if [ -n "$cpo_image_1" ]; then
       fi
     done
     if ! $found; then
-      missing_tags+=("$tag")
+      missing_tags+=("$image_tag")
     fi
   done
 
-  if [ ${#missing_tags[@]} -gt 0 ]; then
-    echo "The following images are missing from OCIR:"
-    printf '%s\n' "${missing_tags[@]}"
+  missing_tags_with_error=()
+
+  for tag in "${missing_tags[@]}"; do
+    if [[ $tag =~ oke-multiarch ]]; then
+      echo "Warning: Missing image: $tag"
+    elif [[ $tag =~ ^v([0-9]+)\.([0-9]+)- ]]; then
+      major_version=${BASH_REMATCH[1]}
+      minor_version=${BASH_REMATCH[2]}
+
+      if (( $major_version < 1 || ($major_version == 1 && $minor_version < 28) )); then
+        echo "Warning: Missing image: $tag"
+      else
+        echo "Error: Missing image: $tag"
+        missing_tags_with_error+=("$tag")
+      fi
+    else
+      echo "Error: Unknown tag format: $tag"
+      missing_tags_with_error+=("$tag")
+    fi
+  done
+
+  if (( ${#missing_tags_with_error[@]} > 0 )); then
     exit 1
-  else
-    echo "All images are present in OCIR."
   fi
 else
   fetch_repository_tags() {
