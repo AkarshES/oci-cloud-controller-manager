@@ -6,16 +6,16 @@ locals {
   ccm_default_mapping = {
     "default" = {
       "all" : {
-        "default" : "oke-multiarch-1.23-526d1e6-17@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
+        "default" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
         "v1.23" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
         "v1.24" : "v1.24-32be19ef595-4@sha256:3eda1610412ce5a3f6009b1d1a9219b3fdcc59009a8e3077a83f2b82142a586e",
         "v1.25" : "v1.25-d0b59914251-38@sha256:ffa44cb1e6bc5793859a1ebf7762bcd1731ec0dea426034c44bc77ffb12ece48",
         "v1.26" : "v1.26-8744a6c9ccd-42@sha256:bc20c825c5e3b5f40b56467e3b931597a6edef41cd0ab0cb20524b4cd8e603a0",
-        "v1.27" : "v1.27-7e9bf7a9189-5@sha256:fd510337e52ef609ffb86953ef080b3f2fa1a19a0647f65dfbd2c1dfbda0df7a",
-        "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+        "v1.27" : "v1.27-7e9bf7a9189-52@sha256:fd510337e52ef609ffb86953ef080b3f2fa1a19a0647f65dfbd2c1dfbda0df7a",
+        "v1.28" : "v1.28-cb1635cc6c7-8@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
         "v1.29" : "v1.29-a054d4ca408-101@sha256:4fcf670f079bbb74679d209de870d50affb2fca067cbe968d61f5b8e9e135c43",
         "v1.30" : "v1.30-a28e3ce70e0-91@sha256:af0ee707407f589edb981620b16a380b378c4465f60e6dfd53986c8fc5d8e59a",
-        "v1.31" : "v1.31-4bdd29a5174-49@sha256:548dbf8e949e2ea98e3bcb8ae77c2f461166fd2feb59639a88a7d3fdfa7a7804",
+        "v1.31" : "v1.31-4bdd29a5174-4@sha256:548dbf8e949e2ea98e3bcb8ae77c2f461166fd2feb59639a88a7d3fdfa7a7804",
         "v1.32" : "v1.32-2d4eeeba188-19@sha256:be85cfeaf32cccf62de22839ded4b7a2607c87fb6be1ee94b2101d315071248b"
       }
     }
