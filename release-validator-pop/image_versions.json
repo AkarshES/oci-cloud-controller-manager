@@ -130,16 +130,16 @@
       "oke-public-cloud-provider-oci": "v1.32-c01d1d4113e-11"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.2-a054d4ca408-101"
+      "oke-public-cloud-provider-oci": "v1.29-a054d4ca408-101"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.30-a28e3ce70e0-1"
+      "oke-public-cloud-provider-oci": "v1.30-a28e3ce70e0-91"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.31-4bdd29a5174-4"
+      "oke-public-cloud-provider-oci": "v1.31-4bdd29a5174-49"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.32-2d4eeeba188-1"
+      "oke-public-cloud-provider-oci": "v1.32-2d4eeeba188-19"
     }
   ]
 }
