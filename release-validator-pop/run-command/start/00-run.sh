@@ -3,14 +3,14 @@
 set -e
 set -o pipefail
 
-exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
+#exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
 
 echo "Starting release validation"
 
-if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
-  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
-  exit 1
-fi
+#if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
+#  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
+#  exit 1
+#fi
 
 JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
 
@@ -26,43 +26,44 @@ if [ -n "$cpo_image_1" ]; then
   done
 
   repo_name="oke-public-cloud-provider-oci"
-
+  # Get existing tags
   existing_tags=$(oci artifacts container image list \
     --compartment-id "$COMPARTMENT_OCID" \
     --region "$REGION" \
     --repository-name "$repo_name" \
     --all \
-    --auth instance_principal \
+    --profile oc1 \
     --query 'data.items[*].[["version"], ["digest"]]' \
     --output json)
 
+  # Create associative array for efficient lookups
+  declare -A existing_tags_map
+  while IFS= read -r item; do
+    image_tag=$(jq -r '.[0][0]' <<< "$item")
+    digest=$(jq -r '.[1][0]' <<< "$item")
+    existing_tags_map["$image_tag-$digest"]=true
+  done < <(jq -c '.[]' <<< "$existing_tags")
+
   missing_tags=()
 
+  # Find missing tags
   for tag in "${all_images[@]}"; do
     image_tag=${tag%%@*}
     digest=${tag#*@}
-
-    found=false
-    for item in $(jq -c '.[]' <<< "$existing_tags"); do
-      if [[ $(jq -r '.[0][0]' <<< "$item") == "$image_tag" && $(jq -r '.[1][0]' <<< "$item") == "$digest" ]]; then
-        found=true
-        break
-      fi
-    done
-    if ! $found; then
+    if [[ ! ${existing_tags_map["$image_tag-$digest"]} ]]; then
       missing_tags+=("$image_tag")
     fi
   done
 
   missing_tags_with_error=()
 
+  # Process missing tags
   for tag in "${missing_tags[@]}"; do
     if [[ $tag =~ oke-multiarch ]]; then
       echo "Warning: Missing image: $tag"
     elif [[ $tag =~ ^v([0-9]+)\.([0-9]+)- ]]; then
       major_version=${BASH_REMATCH[1]}
       minor_version=${BASH_REMATCH[2]}
-
       if (( $major_version < 1 || ($major_version == 1 && $minor_version < 28) )); then
         echo "Warning: Missing image: $tag"
       else
@@ -74,6 +75,10 @@ if [ -n "$cpo_image_1" ]; then
       missing_tags_with_error+=("$tag")
     fi
   done
+
+  if (( ${#missing_tags_with_error[@]} > 0 )); then
+    exit 1
+  fi
 
   if (( ${#missing_tags_with_error[@]} > 0 )); then
     exit 1
