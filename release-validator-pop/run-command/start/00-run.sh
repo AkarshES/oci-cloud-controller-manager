@@ -27,15 +27,17 @@ if [ -n "$cpo_image_1" ]; then
 
   repo_name="oke-public-cloud-provider-oci"
 
+  echo "Querying OCIR"
   existing_tags=$(oci artifacts container image list \
     --compartment-id "$COMPARTMENT_OCID" \
     --region "$REGION" \
     --repository-name "$repo_name" \
     --all \
-    --profile oc1 \
+    --auth instance_principal \
     --query 'data.items[*].[["version"], ["digest"]]' \
     --output json)
 
+  echo "Creating Map"
   declare -A existing_tags_map
   while IFS= read -r item; do
     image_tag=$(jq -r '.[0][0]' <<< "$item")
@@ -45,6 +47,7 @@ if [ -n "$cpo_image_1" ]; then
 
   missing_tags=()
 
+  echo "Processing tags"
   for tag in "${all_images[@]}"; do
     image_tag=${tag%%@*}
     digest=${tag#*@}
