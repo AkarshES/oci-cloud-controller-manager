@@ -1,6 +1,6 @@
 locals {
   // Update the pop version corresponding to the pop build for app release
-  pop_version = "6e66a0bf580_15"
+  pop_version = "6c900ccf55b_49"
 
   // Update the ccm image sha value here for updating CCM versions for respective k8s versions across all realms
   ccm_default_mapping = {
