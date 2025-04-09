@@ -1,22 +1,22 @@
 {
   "images": [
     {
-      "oke-public-cloud-provider-oci": "oke-multiarch-1.23-4c65264-146"
+      "oke-public-cloud-provider-oci": "oke-multiarch-1.23-4c65264-16"
     },
     {
       "oke-public-cloud-provider-oci": "oke-1.23-526d1e6-171"
     },
     {
-      "oke-public-cloud-provider-oci-arm": "oke-1.23-526d1e6-171"
+      "oke-public-cloud-provider-oci-arm": "oke-1.23-526d1e6-1"
     },
     {
       "oke-public-cloud-provider-oci": "oke-multiarch-1.23-526d1e6-171"
     },
     {
-      "oke-public-cloud-provider-oci-linux_x86_64": "v1.24-32be19ef595-4"
+      "oke-public-cloud-provider-oci-linux_x86_64": "v1.24-32be19ef595-40"
     },
     {
-      "oke-public-cloud-provider-oci-linux_arm64_v8": "v1.24-32be19ef595-4"
+      "oke-public-cloud-provider-oci-linux_arm64_v8": "v1.24-32be19ef595-40"
     },
     {
       "oke-public-cloud-provider-oci": "v1.24-32be19ef595-4"
@@ -130,16 +130,16 @@
       "oke-public-cloud-provider-oci": "v1.32-c01d1d4113e-11"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.29-a054d4ca408-101"
+      "oke-public-cloud-provider-oci": "v1.29-a054d4ca408-10"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.30-a28e3ce70e0-91"
+      "oke-public-cloud-provider-oci": "v1.30-a28e3ce70e0-9"
     },
     {
       "oke-public-cloud-provider-oci": "v1.31-4bdd29a5174-49"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.32-2d4eeeba188-19"
+      "oke-public-cloud-provider-oci": "v1.32-2d4eeeba188-1"
     }
   ]
 }

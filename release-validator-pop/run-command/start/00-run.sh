@@ -125,14 +125,9 @@ else
         missing_tags+=("$repo_name:$tag")
       fi
     done
-    echo
   done < "$expected_repos"
 
   rm "$expected_repos"
-
-  for missing_tag in "${missing_tags[@]}"; do
-    echo "  $missing_tag"
-  done
 
   if [ -n "${missing_tags[*]}" ]; then
     echo "The following images are not present in OCIR:"
