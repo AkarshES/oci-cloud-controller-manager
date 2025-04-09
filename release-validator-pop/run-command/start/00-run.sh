@@ -32,24 +32,23 @@ if [ -n "$cpo_image_1" ]; then
     --region "$REGION" \
     --repository-name "$repo_name" \
     --all \
-    --auth instance_principal \
+    --profile oc1 \
     --query 'data.items[*].[["version"], ["digest"]]' \
     --output json)
+
+  declare -A existing_tags_map
+  while IFS= read -r item; do
+    image_tag=$(jq -r '.[0][0]' <<< "$item")
+    digest=$(jq -r '.[1][0]' <<< "$item")
+    existing_tags_map["$image_tag-$digest"]=true
+  done < <(jq -c '.[]' <<< "$existing_tags")
 
   missing_tags=()
 
   for tag in "${all_images[@]}"; do
     image_tag=${tag%%@*}
     digest=${tag#*@}
-
-    found=false
-    for item in $(jq -c '.[]' <<< "$existing_tags"); do
-      if [[ $(jq -r '.[0][0]' <<< "$item") == "$image_tag" && $(jq -r '.[1][0]' <<< "$item") == "$digest" ]]; then
-        found=true
-        break
-      fi
-    done
-    if ! $found; then
+    if [[ ! ${existing_tags_map["$image_tag-$digest"]} ]]; then
       missing_tags+=("$image_tag")
     fi
   done
@@ -62,7 +61,6 @@ if [ -n "$cpo_image_1" ]; then
     elif [[ $tag =~ ^v([0-9]+)\.([0-9]+)- ]]; then
       major_version=${BASH_REMATCH[1]}
       minor_version=${BASH_REMATCH[2]}
-
       if (( $major_version < 1 || ($major_version == 1 && $minor_version < 28) )); then
         echo "Warning: Missing image: $tag"
       else
@@ -74,6 +72,10 @@ if [ -n "$cpo_image_1" ]; then
       missing_tags_with_error+=("$tag")
     fi
   done
+
+  if (( ${#missing_tags_with_error[@]} > 0 )); then
+    exit 1
+  fi
 
   if (( ${#missing_tags_with_error[@]} > 0 )); then
     exit 1
