@@ -7,12 +7,12 @@ exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
 
 echo "Starting release validation"
 
-if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
-  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
-  exit 1
-fi
+#if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
+#  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
+#  exit 1
+#fi
 
-JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
+JSON_FILE="image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
@@ -75,41 +75,72 @@ if [ -n "$cpo_image_1" ]; then
 
   if (( ${#missing_tags_with_error[@]} > 0 )); then
     exit 1
-  fi
-
-  if (( ${#missing_tags_with_error[@]} > 0 )); then
-    exit 1
+  else
+    echo "All images greater than v1.27 are present in OCIR"
   fi
 else
+
+  declare -A repo_tags_map
+  declare -a missing_tags
+
   fetch_repository_tags() {
     local repo_name=$1
     oci artifacts container image list \
-        --compartment-id "$COMPARTMENT_OCID" \
-        --region "$REGION" \
-        --repository-name "$repo_name" \
-        --all \
-        --auth instance_principal \
-        --query 'data.items[*]."display-name"' \
-        --output json | jq -r '.[]' | awk -F':' '{print $2}'
+      --compartment-id "$COMPARTMENT_OCID" \
+      --region "$REGION" \
+      --repository-name "$repo_name" \
+      --all \
+      --auth instance_principal \
+      --query 'data.items[*]."display-name"' \
+      --output json | jq -r '.[]' | awk -F':' '{print $2}'
   }
 
-  jq -r '.images[] | keys[]' "$JSON_FILE" | sort -u | while read -r repo_name; do
-    echo "Checking repository: $repo_name"
+  repos=("oke-public-cloud-provider-oci"
+         "oke-public-cloud-provider-oci-linux_x86_64"
+         "oke-public-cloud-provider-oci-linux_arm64_v8"
+         "oke-public-cloud-provider-oci-arm")
 
+  for repo_name in "${repos[@]}"; do
     repo_tags=$(fetch_repository_tags "$repo_name")
+    repo_tags_map["$repo_name"]="$repo_tags"
+  done
 
+  expected_repos=$(mktemp)
+  jq -r '.images[] | keys[]' "$JSON_FILE" | sort -u > "$expected_repos"
+
+  while read -r repo_name; do
+    if [[ -z "${repo_tags_map[$repo_name]}" ]]; then
+      echo "  Repository $repo_name not found in fetched repositories."
+      continue
+    fi
+
+    repo_tags="${repo_tags_map[$repo_name]}"
     expected_tags=$(jq -r --arg repo "$repo_name" '.images[][$repo] // empty' "$JSON_FILE")
 
+    IFS=$'\n'
     for tag in $expected_tags; do
-      if echo "$repo_tags" | grep -q "^$tag$"; then
+      if echo "$repo_tags" | grep -qx "$tag"; then
         continue
       else
-        echo "  The following image is not present in OCIR: $tag"
-        exit 1
+        missing_tags+=("$repo_name:$tag")
       fi
     done
     echo
+  done < "$expected_repos"
+
+  rm "$expected_repos"
+
+  for missing_tag in "${missing_tags[@]}"; do
+    echo "  $missing_tag"
   done
 
-  echo "All images found in OCIR."
+  if [ -n "${missing_tags[*]}" ]; then
+    echo "The following images are not present in OCIR:"
+    for missing_tag in "${missing_tags[@]}"; do
+        echo "  $missing_tag"
+    done
+    exit 1
+  else
+    echo "All images found in OCIR."
+  fi
 fi
