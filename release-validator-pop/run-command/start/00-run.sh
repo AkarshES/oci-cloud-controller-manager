@@ -2,17 +2,17 @@
 
 set -e
 set -o pipefail
+#
+#exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
+#
+#echo "Starting release validation"
+#
+#if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
+#  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
+#  exit 1
+#fi
 
-exec &> >(tee -a "${ODO_APPLICATION_ROOT}/var/start.log")
-
-echo "Starting release validation"
-
-if [[ -z "$ODO_APPLICATION_ROOT" ]]; then
-  echo "No ODO_APPLICATION_ROOT defined, cannot continue"
-  exit 1
-fi
-
-JSON_FILE="${ODO_APPLICATION_ROOT}/image_versions.json"
+JSON_FILE="image_versions.json"
 
 COMPARTMENT_OCID=$STEWARD_TENANCY_OCID
 
@@ -90,29 +90,17 @@ else
       --region "$REGION" \
       --repository-name "$repo_name" \
       --all \
-      --auth instance_principal \
+      --profile oc1 \
       --query 'data.items[*]."display-name"' \
       --output json | jq -r '.[]' | awk -F':' '{print $2}'
   }
-
-  repos=("oke-public-cloud-provider-oci"
-         "oke-public-cloud-provider-oci-linux_x86_64"
-         "oke-public-cloud-provider-oci-linux_arm64_v8"
-         "oke-public-cloud-provider-oci-arm")
-
-  for repo_name in "${repos[@]}"; do
-    repo_tags=$(fetch_repository_tags "$repo_name")
-    repo_tags_map["$repo_name"]="$repo_tags"
-  done
 
   expected_repos=$(mktemp)
   jq -r '.images[] | keys[]' "$JSON_FILE" | sort -u > "$expected_repos"
 
   while read -r repo_name; do
-    if [[ -z "${repo_tags_map[$repo_name]}" ]]; then
-      echo "  Repository $repo_name not found in fetched repositories."
-      continue
-    fi
+    repo_tags=$(fetch_repository_tags "$repo_name")
+    repo_tags_map["$repo_name"]="$repo_tags"
 
     repo_tags="${repo_tags_map[$repo_name]}"
     expected_tags=$(jq -r --arg repo "$repo_name" '.images[][$repo] // empty' "$JSON_FILE")
