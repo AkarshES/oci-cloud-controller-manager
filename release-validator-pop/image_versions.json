@@ -140,6 +140,18 @@
     },
     {
       "oke-public-cloud-provider-oci": "v1.32-2d4eeeba188-19"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.29-3bb00d037cf-104"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.30-78abb08c06c-94"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.31-2c36f42f5aa-52"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.32-78e6d79de3c-22"
     }
   ]
 }
