@@ -1,0 +1,60 @@
+version: 0.1
+component: general-purpose
+timeoutInSeconds: 18000
+failImmediatelyOnError: true
+shell: bash
+
+env:
+
+steps:
+  - type: Command
+    name: Auth setup
+    command: |
+      bitbucket login --access-key-secret-id ${BITBUCKET_SSH_KEY_SECRET_ID}
+
+  - type: Command
+    name: Sync Stampede with latest Manifest.csv
+    command: |
+      source oit_http_proxy
+      oit_http_proxy activate
+      oit_http_proxy show        
+      yum install jq
+      
+      git clone --depth 1 --single-branch --branch ${CCM_CSI_INTERNAL_BRANCH} \
+      ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
+      "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager" || exit      
+
+      git clone --depth 1 --single-branch --branch ${HERDS_BASE_BRANCH} \
+      ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oke-herds-stampede.git \
+      "${OCI_WORKSPACE_DIR}/oke-herds-stampede" || exit      
+      
+      cd ${OCI_WORKSPACE_DIR}/oke-herds-stampede
+      
+      formatted_date=$(date +"%-d-%b-%y")
+      echo $formatted_date
+      HERDS_WORKING_BRANCH="ccm-csi-stampede-$formatted_date-$OCI_PIPELINE_RUN_NUMBER"
+      
+      git checkout -b "$HERDS_WORKING_BRANCH"
+      
+      cd ${OCI_WORKSPACE_DIR}
+      ls -lart
+      
+      MANIFEST_PATH="${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/MANIFEST.csv"
+      STAMPEDE_SPECS_PATH="${OCI_WORKSPACE_DIR}/oke-herds-stampede/stampede-specs.json"
+      TF_DEFAULT_VALUES_PATH="${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/shepherd/limits/shared_modules/properties_values/default_values.tf"
+      bash ${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/stampede/update_stampede_spec.sh \
+        -m $MANIFEST_PATH -s $STAMPEDE_SPECS_PATH -t ${TF_DEFAULT_VALUES_PATH}
+      
+      cd ${OCI_WORKSPACE_DIR}/oke-herds-stampede
+
+      # Stage all changes
+      git add .
+      echo "=== Committing Changes ==="
+      # Check if anything is staged for commit
+      if ! git diff --cached --quiet; then
+      echo "✅ Changes detected — committing and pushing"
+      git commit -m "Sync ccm-csi Application artifacts on ${formatted_date} Run #${OCI_PIPELINE_RUN_NUMBER}"
+      git push origin HEAD
+      else
+      echo ">> No changes to commit — skipping push"
+      fi
