@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2025, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -17,7 +17,7 @@ type DeleteReverseConnectionNatIpRequest struct {
 	// The customer's IP address that corresponds to the reverse connection NAT IP address.
 	ReverseConnectionCustomerIp *string `mandatory:"true" contributesTo:"path" name:"reverseConnectionCustomerIp"`
 
-	// The private endpoint's OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
+	// The private endpoint's OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm).
 	PrivateEndpointId *string `mandatory:"true" contributesTo:"path" name:"privateEndpointId"`
 
 	// Unique identifier for the request.

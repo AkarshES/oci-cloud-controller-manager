@@ -1929,11 +1929,12 @@ func Test_checkIfSubnetIPv6Compatible(t *testing.T) {
 
 func Test_getLbEndpointVersion(t *testing.T) {
 	var tests = map[string]struct {
-		ipFamilies        []string
-		ipFamilyPolicy    string
-		subnets           []*core.Subnet
-		lbEndpointVersion string
-		wantErr           error
+		ipFamilies           []string
+		ipFamilyPolicy       string
+		subnets              []*core.Subnet
+		lbEndpointVersion    string
+		isTranslationEnabled bool
+		wantErr              error
 	}{
 		"SingleStack IPv4": {
 			ipFamilies:     []string{IPv4},
@@ -2031,6 +2032,59 @@ func Test_getLbEndpointVersion(t *testing.T) {
 			lbEndpointVersion: IPv4AndIPv6,
 			wantErr:           nil,
 		},
+		"PreferDualStack IPv4 - translation enabled": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion:    IPv4AndIPv6,
+			isTranslationEnabled: true,
+			wantErr:              nil,
+		},
+		"PreferDualStack IPv4 - translation enabled - incompatible subnet": {
+			ipFamilies:     []string{IPv4},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion:    "",
+			isTranslationEnabled: true,
+			wantErr:              errors.New("IP version translation is enabled but subnet is compatible for dual stack"),
+		},
+		"PreferDualStack IPv6 - translation enabled - incompatible subnet": {
+			ipFamilies:     []string{IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock: common.String("10.0.1.0/24"),
+				},
+			},
+			lbEndpointVersion:    "",
+			isTranslationEnabled: true,
+			wantErr:              errors.New("IP version translation is enabled but subnet is compatible for dual stack"),
+		},
+		"PreferDualStack IPv4/IPv6 - translation enabled - incompatible subnet": {
+			ipFamilies:     []string{IPv4, IPv6},
+			ipFamilyPolicy: string(v1.IPFamilyPolicyPreferDualStack),
+			subnets: []*core.Subnet{
+				{
+					CidrBlock:      common.String("10.0.1.0/24"),
+					Ipv6CidrBlock:  common.String("2001:0000:130F:0000:0000:09C0:876A:130B"),
+					Ipv6CidrBlocks: []string{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+				},
+			},
+			lbEndpointVersion:    IPv4AndIPv6,
+			isTranslationEnabled: true,
+			wantErr:              errors.New("IP version translation is enabled but subnet is compatible for dual stack"),
+		},
 	}
 	clb := &CloudLoadBalancerProvider{
 		client: MockOCIClient{},
@@ -2038,7 +2092,7 @@ func Test_getLbEndpointVersion(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			lbEndpointVersion, err := clb.getLbEndpointIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.subnets)
+			lbEndpointVersion, err := clb.getLbEndpointIpVersion(tt.ipFamilies, tt.ipFamilyPolicy, tt.subnets, tt.isTranslationEnabled)
 			if lbEndpointVersion != tt.lbEndpointVersion {
 				t.Errorf("Expected lbEndpointVersion = %s, but got %s", tt.lbEndpointVersion, lbEndpointVersion)
 			}
