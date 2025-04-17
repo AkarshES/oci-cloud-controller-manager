@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2025, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -6,11 +6,11 @@
 //
 // Use the Core Services API to manage resources such as virtual cloud networks (VCNs),
 // compute instances, and block storage volumes. For more information, see the console
-// documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
-// Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
-// Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// documentation for the Networking (https://docs.oracle.com/iaas/Content/Network/Concepts/overview.htm),
+// Compute (https://docs.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
+// Block Volume (https://docs.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
 // The required permissions are documented in the
-// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
+// Details for the Core Services (https://docs.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -41,6 +41,7 @@ type CreatePrivateIpNextHopDetails struct {
 	// DEFAULT: Default behavior where packets are flow hashed to a range of ports.
 	// SKIP_PORT_SHARDING: Packets will skip port sharding.
 	// SKIP_PORT_SHARDING_WITH_WILDCARD_LISTENER: Packets will skip port sharding and a wildcard listener will be used.
+	// RCE_PROXY: Packets will be forwarded to RCE
 	NextHopForwardingConfig CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum `mandatory:"false" json:"nextHopForwardingConfig,omitempty"`
 }
 
@@ -71,18 +72,21 @@ const (
 	CreatePrivateIpNextHopDetailsNextHopForwardingConfigDefault                              CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum = "DEFAULT"
 	CreatePrivateIpNextHopDetailsNextHopForwardingConfigSkipPortSharding                     CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum = "SKIP_PORT_SHARDING"
 	CreatePrivateIpNextHopDetailsNextHopForwardingConfigSkipPortShardingWithWildcardListener CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum = "SKIP_PORT_SHARDING_WITH_WILDCARD_LISTENER"
+	CreatePrivateIpNextHopDetailsNextHopForwardingConfigRceProxy                             CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum = "RCE_PROXY"
 )
 
 var mappingCreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum = map[string]CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum{
 	"DEFAULT":            CreatePrivateIpNextHopDetailsNextHopForwardingConfigDefault,
 	"SKIP_PORT_SHARDING": CreatePrivateIpNextHopDetailsNextHopForwardingConfigSkipPortSharding,
 	"SKIP_PORT_SHARDING_WITH_WILDCARD_LISTENER": CreatePrivateIpNextHopDetailsNextHopForwardingConfigSkipPortShardingWithWildcardListener,
+	"RCE_PROXY": CreatePrivateIpNextHopDetailsNextHopForwardingConfigRceProxy,
 }
 
 var mappingCreatePrivateIpNextHopDetailsNextHopForwardingConfigEnumLowerCase = map[string]CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum{
 	"default":            CreatePrivateIpNextHopDetailsNextHopForwardingConfigDefault,
 	"skip_port_sharding": CreatePrivateIpNextHopDetailsNextHopForwardingConfigSkipPortSharding,
 	"skip_port_sharding_with_wildcard_listener": CreatePrivateIpNextHopDetailsNextHopForwardingConfigSkipPortShardingWithWildcardListener,
+	"rce_proxy": CreatePrivateIpNextHopDetailsNextHopForwardingConfigRceProxy,
 }
 
 // GetCreatePrivateIpNextHopDetailsNextHopForwardingConfigEnumValues Enumerates the set of values for CreatePrivateIpNextHopDetailsNextHopForwardingConfigEnum
@@ -100,6 +104,7 @@ func GetCreatePrivateIpNextHopDetailsNextHopForwardingConfigEnumStringValues() [
 		"DEFAULT",
 		"SKIP_PORT_SHARDING",
 		"SKIP_PORT_SHARDING_WITH_WILDCARD_LISTENER",
+		"RCE_PROXY",
 	}
 }
 

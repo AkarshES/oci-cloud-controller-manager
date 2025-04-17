@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"go.uber.org/zap"
 	"golang.org/x/exp/maps"
 	v1 "k8s.io/api/core/v1"
@@ -36,6 +35,8 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/common"
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
+	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
 	"github.com/pkg/errors"
 	helper "k8s.io/cloud-provider/service/helpers"
 	net2 "k8s.io/utils/net"
@@ -52,6 +53,8 @@ const (
 	IPv4                      = string(client.GenericIPv4)
 	IPv6                      = string(client.GenericIPv6)
 	IPv4AndIPv6               = string("IPv4_AND_IPv6")
+	NAT46                     = networkloadbalancer.NetworkLoadBalancerIpVersionTranslationNat46
+	DISABLED                  = networkloadbalancer.NetworkLoadBalancerIpVersionTranslationDisabled
 )
 
 const (
@@ -295,6 +298,14 @@ const (
 	// ServiceAnnotationNetworkLoadBalancerAssignedIpV6 is s service annotation to provision Network LoadBalancer with an assigned
 	// IPv6 address from the subnet https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
 	ServiceAnnotationNetworkLoadBalancerAssignedIpV6 = "oci-network-load-balancer.oraclecloud.com/assigned-ipv6"
+
+	// ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode is s service annotation to configure IP translation mode
+	// Accepted values are "DISABLED", "NAT46"
+	ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode = "oci-network-load-balancer.oraclecloud.com/ip-version-translation-mode"
+
+	// ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix is a service annotation to specify NAT46 CIDR prefix
+	// Optional field for NAT46 use case. If specified, the CIDR of length /80 will be derived internally and used for NATing. ex: fd42:9baf:1e77:0011:0000:0000:0000:0000/80
+	ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix = "oci-network-load-balancer.oraclecloud.com/nat46-ipv6-cidr-prefix"
 )
 
 // Virtual Node Annotations
@@ -437,15 +448,14 @@ type LBSpec struct {
 	RuleSets                    map[string]loadbalancer.RuleSetDetails
 	AssignedPrivateIpv4         *string
 	AssignedIpv6                *string
+	IpVersionTranslationConfig  *client.IpVersionTranslationConfig
 
 	service *v1.Service
 	nodes   []*v1.Node
 }
 
 // NewLBSpec creates a LB Spec from a Kubernetes service and a slice of nodes.
-func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, subnets []string,
-	sslConfig *SSLConfig, secListFactory securityListManagerFactory, versions *IpVersions, initialLBTags *config.InitialTags,
-	existingLB *client.GenericLoadBalancer, clusterCompartment string) (*LBSpec, error) {
+func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, subnets []string, sslConfig *SSLConfig, secListFactory securityListManagerFactory, versions *IpVersions, initialLBTags *config.InitialTags, existingLB *client.GenericLoadBalancer, clusterCompartment string, ipAddressToOcidMap map[string]string) (*LBSpec, error) {
 	if err := validateService(svc); err != nil {
 		return nil, errors.Wrap(err, "invalid service")
 	}
@@ -488,7 +498,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
-	backendSets, err := getBackendSets(logger, svc, provisionedNodes, managedPods, virtualPods, sslConfig, isPreserveSource, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
+	backendSets, err := getBackendSets(logger, svc, provisionedNodes, managedPods, virtualPods, sslConfig, isPreserveSource, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion), ipAddressToOcidMap)
 	if err != nil {
 		return nil, err
 	}
@@ -545,6 +555,11 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
+	ipVersionTranslationConfig, err := getIpVersionTranslationConfig(svc)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LBSpec{
 		Type:                        lbType,
 		Name:                        GetLoadBalancerName(svc),
@@ -575,6 +590,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		RuleSets:                    ruleSets,
 		AssignedPrivateIpv4:         assignedPrivateIpv4,
 		AssignedIpv6:                assignedIpv6,
+		IpVersionTranslationConfig:  ipVersionTranslationConfig,
 	}, nil
 }
 
@@ -840,7 +856,7 @@ func getPorts(svc *v1.Service, listenerBackendIpVersion []string, managedPods []
 	return ports, nil
 }
 
-func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, servicePort *v1.ServicePort, isManagedPodsAsBackends bool) ([]client.GenericBackend, []client.GenericBackend) {
+func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, managedPods, virtualPods []*v1.Pod, servicePort *v1.ServicePort, isManagedPodsAsBackends bool, ipAddressToOcidMap map[string]string, isNAT46Enabled bool) ([]client.GenericBackend, []client.GenericBackend) {
 	IPv4Backends := make([]client.GenericBackend, 0)
 	IPv6Backends := make([]client.GenericBackend, 0)
 	// Check if service required managed pods as backends and the cluster is NPN.
@@ -876,6 +892,12 @@ func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, managed
 				// IPv6 IP
 				genericBackend.IpAddress = nodeAddressStringV6
 				genericBackend.TargetId = nil
+				ipv6Id, exists := ipAddressToOcidMap[*nodeAddressStringV6]
+
+				if exists {
+					logger.Infof("svc is enabled for NAT46. get id for %s from the IP cache map", *nodeAddressStringV6)
+					genericBackend.TargetId = &ipv6Id
+				}
 				IPv6Backends = append(IPv6Backends, genericBackend)
 			}
 			if net2.IsIPv4String(*nodeAddressStringV4) {
@@ -959,8 +981,9 @@ func getBackends(logger *zap.SugaredLogger, provisionedNodes []*v1.Node, managed
 	return IPv4Backends, IPv6Backends
 }
 
-func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, sslCfg *SSLConfig, isPreserveSource bool, listenerBackendIpVersion []string) (map[string]client.GenericBackendSetDetails, error) {
+func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, sslCfg *SSLConfig, isPreserveSource bool, listenerBackendIpVersion []string, ipAddressToOcidMap map[string]string) (map[string]client.GenericBackendSetDetails, error) {
 	backendSets := make(map[string]client.GenericBackendSetDetails)
+	nat46Enabled := isNat46Enabled(svc)
 	loadbalancerPolicy, err := getLoadBalancerPolicy(svc)
 	if err != nil {
 		return nil, err
@@ -982,13 +1005,27 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 		if err != nil {
 			return nil, err
 		}
-		backendsIPv4, backendsIPv6 := getBackends(logger, provisionedNodes, managedPods, virtualPods, &servicePort, isPodsAsBackendsMode(svc))
-		genericBackendSetDetails := client.GenericBackendSetDetails{
+		backendsIPv4, backendsIPv6 := getBackends(logger, provisionedNodes, managedPods, virtualPods, &servicePort, isPodsAsBackendsMode(svc), ipAddressToOcidMap, nat46Enabled)
+
+		var genericBackendSetDetails client.GenericBackendSetDetails
+		// create only v6 BackendSet when NAT46 is enabled.
+		// skip creating Backend Set with other versions.
+		genericBackendSetDetails = client.GenericBackendSetDetails{
 			Name:             common.String(backendSetName),
 			Policy:           &loadbalancerPolicy,
 			HealthChecker:    healthChecker,
 			IsPreserveSource: &isPreserveSource,
 			SslConfiguration: sslConfiguration,
+		}
+		if nat46Enabled {
+			if strings.Contains(backendSetName, IPv6) && contains(listenerBackendIpVersion, IPv6) {
+				genericBackendSetDetails.IpVersion = GenericIpVersion(client.GenericIPv6)
+				genericBackendSetDetails.Backends = backendsIPv6
+				backendSets[backendSetName] = genericBackendSetDetails
+				continue
+			} else if !strings.Contains(backendSetName, IPv6) && contains(listenerBackendIpVersion, IPv4) {
+				continue
+			}
 		}
 
 		if strings.Contains(backendSetName, IPv6) && contains(listenerBackendIpVersion, IPv6) {
@@ -1001,6 +1038,7 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 			backendSets[backendSetName] = genericBackendSetDetails
 		}
 	}
+	logger.Infof("Final backend sets in spec %+v", backendSets)
 	return backendSets, nil
 }
 
@@ -1530,6 +1568,23 @@ func getListenersNetworkLoadBalancer(svc *v1.Service, listenerBackendIpVersion [
 			Port:          &port,
 			IsPpv2Enabled: enablePpv2,
 		}
+
+		// create one v4 Listener with v6 Backend when NAT46 enabled. skip other IP versions.
+		// create v4 listener only when v6 is required in backendSet
+		if isNat46Enabled(svc) {
+			if !requireIPv6 {
+				return nil, fmt.Errorf("v6 BackendSet is required when IP version translation NAT46 is enabled")
+			}
+
+			listenerNameNat46 := listenerName + "-" + string(NAT46)
+			genericListener.Name = common.String(listenerNameNat46)
+			genericListener.IpVersion = GenericIpVersion(client.GenericIPv4)
+			backendSetNameIPv6 := fmt.Sprintf(backendSetName + "-" + IPv6)
+			genericListener.DefaultBackendSetName = common.String(backendSetNameIPv6)
+			listeners[listenerNameNat46] = genericListener
+			continue
+		}
+
 		if requireIPv4 {
 			genericListener.Name = common.String(listenerName)
 			genericListener.IpVersion = GenericIpVersion(client.GenericIPv4)
@@ -2052,4 +2107,46 @@ func getAssignedPrivateIP(logger *zap.SugaredLogger, svc *v1.Service) (ipV4Adres
 		return &address
 	}
 	return getIpAddress(ServiceAnnotationNetworkLoadBalancerAssignedPrivateIpV4), getIpAddress(ServiceAnnotationNetworkLoadBalancerAssignedIpV6), err
+}
+
+func getIpVersionTranslationConfig(svc *v1.Service) (*client.IpVersionTranslationConfig, error) {
+	ipVersionTranslationMode, exists := svc.Annotations[ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode]
+	if !exists {
+		return nil, nil
+	}
+
+	ipVersionTranslationConfig := client.IpVersionTranslationConfig{}
+
+	switch ipVersionTranslationMode {
+	case string(NAT46):
+		ipVersionTranslationConfig.IpVersionTranslationMode = NAT46
+	case string(DISABLED):
+		ipVersionTranslationConfig.IpVersionTranslationMode = DISABLED
+	default:
+		return nil, fmt.Errorf("An invalid value is given for %s. Accepted values are %v & %v", ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode, NAT46, DISABLED)
+	}
+
+	// nat46Ipv6CidrPrefix is only relevant when IP translation is mode is specified
+	if nat46Ipv6CidrPrefix, exists := svc.Annotations[ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix]; exists {
+		if nat46Ipv6CidrPrefix == "" {
+			return nil, fmt.Errorf("%s can not be empty", ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix)
+		}
+		ipVersionTranslationConfig.Nat46Ipv6CidrPrefix = &nat46Ipv6CidrPrefix
+	}
+	return &ipVersionTranslationConfig, nil
+}
+
+func isNat46Enabled(svc *v1.Service) bool {
+	if getLoadBalancerType(svc) != NLB {
+		return false
+	}
+	if ipVersionTranslationMode, exists := svc.Annotations[ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode]; exists {
+		switch ipVersionTranslationMode {
+		case string(NAT46):
+			return true
+		case string(DISABLED):
+			return false
+		}
+	}
+	return false
 }

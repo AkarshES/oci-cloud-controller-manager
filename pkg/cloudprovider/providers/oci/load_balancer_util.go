@@ -31,6 +31,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
+	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
 )
 
 const (
@@ -670,7 +671,7 @@ func getSanitizedName(name string) string {
 		name = fmt.Sprintf(strings.Join(fields, "-"))
 	}
 	if len(fields) > 2 {
-		if contains(fields, IPv6) {
+		if contains(fields, IPv6) || contains(fields, string(NAT46)) {
 			return fmt.Sprintf(strings.Join(fields[:3], "-"))
 		}
 		return fmt.Sprintf(strings.Join(fields[:2], "-"))
@@ -917,4 +918,44 @@ func convertOciIpVersionsToOciIpFamilies(ipVersions []client.GenericIpVersion) [
 		}
 	}
 	return k8sIpFamily
+}
+
+// shouldUpdateIpVersionTranslation checks for criteria if IPVersionTranslation should be updated
+// for enabled only NAT4-6 translation mode is supported.
+func shouldUpdateIpVersionTranslation(lb *client.GenericLoadBalancer, spec *LBSpec, checkForMode networkloadbalancer.NetworkLoadBalancerIpVersionTranslationEnum) bool {
+	/*
+		* TO ENABLE
+			* Should be NLB
+			* Diff in state & status of translation mode
+			* service is dual stack
+			* mode in state is NOT DISABLED
+	*/
+
+	/*
+		* To DISABLE
+			* Should be NLB
+			* Diff in state & status of translation mode
+			* IP Family is irrelevant
+			* mode in state is DISABLED
+	*/
+	if spec.Type != NLB || spec.IpVersionTranslationConfig == nil {
+		return false
+	}
+
+	var isLbDualStack bool
+	if spec.IpVersions.LbEndpointIpVersion != nil {
+		isLbDualStack = *spec.IpVersions.LbEndpointIpVersion == client.GenericIPv4AndIPv6
+	}
+
+	hasTranslationChanged := !reflect.DeepEqual(lb.IpVersionTranslationConfig, spec.IpVersionTranslationConfig)
+
+	desiredMode := spec.IpVersionTranslationConfig.IpVersionTranslationMode
+
+	switch checkForMode {
+	case NAT46:
+		return hasTranslationChanged && isLbDualStack && (desiredMode == NAT46)
+	case DISABLED:
+		return hasTranslationChanged && (desiredMode == DISABLED)
+	}
+	return false
 }

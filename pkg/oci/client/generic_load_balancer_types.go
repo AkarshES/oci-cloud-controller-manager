@@ -1,6 +1,9 @@
 package client
 
-import "github.com/oracle/oci-go-sdk/v65/loadbalancer"
+import (
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
+	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
+)
 
 const (
 	GenericIPv4        GenericIpVersion = "IPv4"
@@ -112,6 +115,7 @@ type GenericCreateLoadBalancerDetails struct {
 	// Supported only in NLB
 	AssignedPrivateIpv4 *string
 	AssignedIpv6        *string
+	*IpVersionTranslationConfig
 }
 
 type GenericShapeDetails struct {
@@ -162,6 +166,14 @@ type GenericLoadBalancer struct {
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}
 	SystemTags   map[string]map[string]interface{}
+
+	// Supported only in NLB
+	*IpVersionTranslationConfig
+}
+
+type IpVersionTranslationConfig struct {
+	IpVersionTranslationMode networkloadbalancer.NetworkLoadBalancerIpVersionTranslationEnum
+	Nat46Ipv6CidrPrefix      *string
 }
 
 type GenericWorkRequest struct {
@@ -191,4 +203,5 @@ type GenericUpdateLoadBalancerDetails struct {
 	IpVersion    *GenericIpVersion
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}
+	*IpVersionTranslationConfig
 }
