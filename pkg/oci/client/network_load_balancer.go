@@ -165,6 +165,11 @@ func (c *networkLoadbalancer) CreateLoadBalancer(ctx context.Context, details *G
 		}
 	}
 
+	if details.IpVersionTranslationConfig != nil {
+		createNetworkLoadBalancerDetails.IpVersionTranslation = details.IpVersionTranslationMode
+		createNetworkLoadBalancerDetails.Nat46Ipv6CidrPrefix = details.Nat46Ipv6CidrPrefix
+	}
+
 	resp, err := c.networkloadbalancer.CreateNetworkLoadBalancer(ctx, networkloadbalancer.CreateNetworkLoadBalancerRequest{
 		CreateNetworkLoadBalancerDetails: createNetworkLoadBalancerDetails,
 		RequestMetadata:                  c.requestMetadata,
@@ -545,6 +550,10 @@ func (c *networkLoadbalancer) UpdateLoadBalancer(ctx context.Context, lbID strin
 			updateNetworkLoadbalancerDetails.NlbIpVersion = networkloadbalancer.NlbIpVersionIpv4AndIpv6
 		}
 	}
+	if details.IpVersionTranslationConfig != nil {
+		updateNetworkLoadbalancerDetails.IpVersionTranslation = details.IpVersionTranslationConfig.IpVersionTranslationMode
+		updateNetworkLoadbalancerDetails.Nat46Ipv6CidrPrefix = details.IpVersionTranslationConfig.Nat46Ipv6CidrPrefix
+	}
 	resp, err := c.networkloadbalancer.UpdateNetworkLoadBalancer(ctx, networkloadbalancer.UpdateNetworkLoadBalancerRequest{
 		UpdateNetworkLoadBalancerDetails: updateNetworkLoadbalancerDetails,
 		NetworkLoadBalancerId:            &lbID,
@@ -606,6 +615,10 @@ func (c *networkLoadbalancer) networkLoadbalancerToGenericLoadbalancer(nlb *netw
 		FreeformTags:            nlb.FreeformTags,
 		DefinedTags:             nlb.DefinedTags,
 		SystemTags:              nlb.SystemTags,
+		IpVersionTranslationConfig: &IpVersionTranslationConfig{
+			IpVersionTranslationMode: nlb.IpVersionTranslation,
+			Nat46Ipv6CidrPrefix:      nlb.Nat46Ipv6CidrPrefix,
+		},
 	}
 }
 
@@ -627,6 +640,10 @@ func (c *networkLoadbalancer) networkLoadbalancerSummaryToGenericLoadbalancer(nl
 		FreeformTags:            nlb.FreeformTags,
 		DefinedTags:             nlb.DefinedTags,
 		SystemTags:              nlb.SystemTags,
+		IpVersionTranslationConfig: &IpVersionTranslationConfig{
+			IpVersionTranslationMode: nlb.IpVersionTranslation,
+			Nat46Ipv6CidrPrefix:      nlb.Nat46Ipv6CidrPrefix,
+		},
 	}
 }
 

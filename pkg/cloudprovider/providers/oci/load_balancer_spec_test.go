@@ -22,7 +22,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -33,13 +32,15 @@ import (
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
+	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 )
 
 var (
-	backendSecret  = "backendsecret"
-	listenerSecret = "listenersecret"
-	testNodeString = "ocid1.testNodeTargetID"
-	testCpgId      = "ocid1.clusterplacementgroup.aaa.."
+	backendSecret                = "backendsecret"
+	listenerSecret               = "listenersecret"
+	testNodeString               = "ocid1.testNodeTargetID"
+	testCpgId                    = "ocid1.clusterplacementgroup.aaa.."
+	testIpv6CidrPrefixOfLenght80 = "2603:fe07:3121::/80"
 )
 
 var (
@@ -5176,6 +5177,106 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				},
 			},
 		},
+		"NAT46 is ENABLED on NLB": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      testIpv6CidrPrefixOfLenght80,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			expected: &LBSpec{
+				Name:                        "kube-system/testservice/test-uid",
+				Type:                        NLB,
+				Shape:                       flexibleShape,
+				Internal:                    false,
+				Subnets:                     []string{"one"},
+				NetworkSecurityGroupIds:     []string{},
+				SourceCIDRs:                 []string{"0.0.0.0/0"},
+				securityListManager:         newSecurityListManagerNOOP(),
+				Listeners:                   map[string]client.GenericListener{},
+				BackendSets:                 map[string]client.GenericBackendSetDetails{},
+				IsPreserveSource:            common.Bool(false),
+				Ports:                       map[string]portSpec{},
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+					Nat46Ipv6CidrPrefix:      &testIpv6CidrPrefixOfLenght80,
+				},
+			},
+		},
+		"NAT46 is DISABLED on NLB": {
+			defaultSubnetOne: "one",
+			defaultSubnetTwo: "two",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "DISABLED",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      testIpv6CidrPrefixOfLenght80,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			expected: &LBSpec{
+				Name:                        "kube-system/testservice/test-uid",
+				Type:                        NLB,
+				Shape:                       flexibleShape,
+				Internal:                    false,
+				Subnets:                     []string{"one"},
+				NetworkSecurityGroupIds:     []string{},
+				SourceCIDRs:                 []string{"0.0.0.0/0"},
+				securityListManager:         newSecurityListManagerNOOP(),
+				Listeners:                   map[string]client.GenericListener{},
+				BackendSets:                 map[string]client.GenericBackendSetDetails{},
+				IsPreserveSource:            common.Bool(false),
+				Ports:                       map[string]portSpec{},
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+					Nat46Ipv6CidrPrefix:      &testIpv6CidrPrefixOfLenght80,
+				},
+			},
+		},
 	}
 
 	cp := &CloudLoadBalancerProvider{
@@ -5203,7 +5304,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6529,7 +6630,7 @@ func TestNewLBSpecForTags(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -6714,7 +6815,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -7256,7 +7357,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 				slManagerFactory := func(mode string) securityListManager {
 					return newSecurityListManagerNOOP()
 				}
-				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID)
+				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
 			}
 			if err == nil || err.Error() != tc.expectedErrMsg {
 				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)
@@ -8092,7 +8193,7 @@ func Test_getBackends(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := zap.L()
-			gotIpv4, gotIpv6 := getBackends(logger.Sugar(), tt.args.nodes, tt.args.managedPods, tt.args.virtualPods, tt.args.servicePort, false)
+			gotIpv4, gotIpv6 := getBackends(logger.Sugar(), tt.args.nodes, tt.args.managedPods, tt.args.virtualPods, tt.args.servicePort, false, nil, false)
 			if !reflect.DeepEqual(gotIpv4, tt.want) {
 				t.Errorf("getBackends() = %+v, want %+v", gotIpv4, tt.want)
 			}
@@ -9834,6 +9935,7 @@ func Test_validateService(t *testing.T) {
 }
 
 func Test_getListenersNetworkLoadBalancer(t *testing.T) {
+	// TODO: Clean the test variable names
 	testOneListenerName := "TCP_AND_UDP-67"
 	testOneBackendSetName := "TCP_AND_UDP-67"
 	testOneProtocol := "TCP_AND_UDP"
@@ -9863,6 +9965,11 @@ func Test_getListenersNetworkLoadBalancer(t *testing.T) {
 	IPFamilyPolicySingleStack := v1.IPFamilyPolicySingleStack
 	testThreeListenerNameIPv6 := "TCP-67-IPv6"
 	testThreeBackendSetNameIPv6 := "TCP-67-IPv6"
+
+	testNat46ListenerName := "TCP-67-NAT46"
+	testNat46BackendSetName := "TCP-67-IPv6"
+	testNat46Port := 67
+	testNat46Protocol := "TCP"
 
 	testCases := map[string]struct {
 		service                  *v1.Service
@@ -10103,7 +10210,6 @@ func Test_getListenersNetworkLoadBalancer(t *testing.T) {
 			},
 			err: nil,
 		},
-
 		"NLB_with_Ppv2_Disabled": {
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
@@ -10144,6 +10250,126 @@ func Test_getListenersNetworkLoadBalancer(t *testing.T) {
 				},
 			},
 			err: nil,
+		},
+		"NLB_with_NAT46_Enabled": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "NLB",
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2603:430e::/80",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+						},
+					},
+				},
+			},
+			listenerBackendIpVersion: []string{IPv4, IPv6},
+			wantListeners: map[string]client.GenericListener{
+				"TCP-67-NAT46": {
+					Name:                  &testNat46ListenerName,
+					DefaultBackendSetName: &testNat46BackendSetName,
+					Protocol:              &testNat46Protocol,
+					Port:                  &testNat46Port,
+				},
+			},
+		},
+		"NLB_with_NAT46_Disabled": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "NLB",
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "DISABLED",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2603:430e::/80",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+						},
+					},
+				},
+			},
+			listenerBackendIpVersion: []string{IPv4, IPv6},
+			wantListeners: map[string]client.GenericListener{
+				"TCP-67": {
+					Name:                  &testTwoListenerNameOne,
+					DefaultBackendSetName: &testTwoBackendSetNameOne,
+					Protocol:              &testTwoProtocolOne,
+					Port:                  &testTwoPortOne,
+				},
+				"TCP-67-IPv6": {
+					Name:                  &testThreeListenerNameIPv6,
+					DefaultBackendSetName: &testNat46BackendSetName,
+					Protocol:              &testTwoProtocolOne,
+					Port:                  &testTwoPortOne,
+				},
+			},
+		},
+		"NLB_with_NAT46_Enabled_ipv4_single_stack": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "NLB",
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2603:430e::/80",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+						},
+					},
+				},
+			},
+			listenerBackendIpVersion: []string{IPv4},
+			wantListeners:            nil,
+			err:                      errors.New("v6 BackendSet is required when IP version translation NAT46 is enabled"),
+		},
+		"NLB_with_NAT46_Enabled_ipv6_single_stack": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "NLB",
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2603:430e::/80",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv6)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+						},
+					},
+				},
+			},
+			listenerBackendIpVersion: []string{IPv6},
+			wantListeners: map[string]client.GenericListener{
+				"TCP-67-NAT46": {
+					Name:                  &testNat46ListenerName,
+					DefaultBackendSetName: &testNat46BackendSetName,
+					Protocol:              &testNat46Protocol,
+					Port:                  &testNat46Port,
+				},
+			},
 		},
 	}
 	for name, tc := range testCases {
@@ -11131,6 +11357,9 @@ func Test_getRequireIpVersions(t *testing.T) {
 func Test_getBackendSets(t *testing.T) {
 	testThreeBackendSetNameIPv6 := "TCP-67-IPv6"
 	testThreeBackendSetNameIPv4 := "TCP-67"
+	testIpv6Address := "2001:0000:130F:0000:0000:09C0:876A:130B"
+	testIpv6Address2 := "2001:0000:130F:0000:0000:09C0:876A:1300"
+	ipAddressToOcidMap := map[string]string{testIpv6Address: "ocid1.ipv6.oc1....", testIpv6Address2: "ocid1.ipv6.oc1.aa..."}
 
 	testCases := map[string]struct {
 		service                  *v1.Service
@@ -11582,8 +11811,8 @@ func Test_getBackendSets(t *testing.T) {
 						ReturnCode:       common.Int(http.StatusOK),
 					},
 					Backends: []client.GenericBackend{
-						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1)},
-						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(36667), Weight: common.Int(1)},
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1....")},
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1.aa...")},
 					},
 					SessionPersistenceConfiguration: nil,
 					SslConfiguration:                nil,
@@ -11754,8 +11983,8 @@ func Test_getBackendSets(t *testing.T) {
 						ReturnCode:       common.Int(http.StatusOK),
 					},
 					Backends: []client.GenericBackend{
-						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1)},
-						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(36667), Weight: common.Int(1)},
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1....")},
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1.aa...")},
 					},
 					SessionPersistenceConfiguration: nil,
 					SslConfiguration:                nil,
@@ -11904,8 +12133,8 @@ func Test_getBackendSets(t *testing.T) {
 						ReturnCode:       common.Int(http.StatusOK),
 					},
 					Backends: []client.GenericBackend{
-						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1)},
-						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(36667), Weight: common.Int(1)},
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1....")},
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1.aa...")},
 					},
 					SessionPersistenceConfiguration: nil,
 					SslConfiguration:                nil,
@@ -12237,11 +12466,184 @@ func Test_getBackendSets(t *testing.T) {
 			},
 			err: nil,
 		},
+		"NLB is NAT46 Enabled": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+							NodePort: 36667,
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "NLB",
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2603:fe03::/80",
+					},
+				},
+			},
+			provisionedNodes: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:130B",
+								Type:    "ExternalIP",
+							},
+							{
+								Address: "10.1.1.2",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+			},
+			virtualPods:              []*v1.Pod{},
+			sslCfg:                   nil,
+			listenerBackendIpVersion: []string{IPv4, IPv6},
+			wantBackendSets: map[string]client.GenericBackendSetDetails{
+				"TCP-67-IPv6": {
+					Name:   &testThreeBackendSetNameIPv6,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1....")},
+					},
+					IpVersion:        GenericIpVersion(client.GenericIPv6),
+					IsPreserveSource: common.Bool(false),
+				},
+			},
+		},
+		"NLB is NAT46 Disabled": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+							NodePort: 36667,
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "NLB",
+						ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "DISABLED",
+						ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2603:fe03::/80",
+					},
+				},
+			},
+			provisionedNodes: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:130B",
+								Type:    "ExternalIP",
+							},
+							{
+								Address: "10.1.1.2",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+			},
+			virtualPods:              []*v1.Pod{},
+			sslCfg:                   nil,
+			listenerBackendIpVersion: []string{IPv4, IPv6},
+			wantBackendSets: map[string]client.GenericBackendSetDetails{
+				"TCP-67": {
+					Name:   &testThreeBackendSetNameIPv4,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("10.1.1.2"), Port: common.Int(36667), TargetId: &testNodeString, Weight: common.Int(1)},
+					},
+					IpVersion:        GenericIpVersion(client.GenericIPv4),
+					IsPreserveSource: common.Bool(false),
+				},
+				"TCP-67-IPv6": {
+					Name:   &testThreeBackendSetNameIPv6,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:130B"), Port: common.Int(36667), Weight: common.Int(1), TargetId: common.String("ocid1.ipv6.oc1....")},
+					},
+					IpVersion:        GenericIpVersion(client.GenericIPv6),
+					IsPreserveSource: common.Bool(false),
+				},
+			},
+		},
 	}
 	for name, tc := range testCases {
 		logger := zap.L()
 		t.Run(name, func(t *testing.T) {
-			gotBackendSets, err := getBackendSets(logger.Sugar(), tc.service, tc.provisionedNodes, tc.managedPods, tc.virtualPods, tc.sslCfg, tc.isPreserveSource, tc.listenerBackendIpVersion)
+			gotBackendSets, err := getBackendSets(logger.Sugar(), tc.service, tc.provisionedNodes, tc.managedPods, tc.virtualPods, tc.sslCfg, tc.isPreserveSource, tc.listenerBackendIpVersion, ipAddressToOcidMap)
 			if tc.err != nil && err == nil {
 				t.Errorf("Expected  \n%+v\nbut got\n%+v", tc.err, err)
 			}
@@ -12664,4 +13066,146 @@ func TestIsSkipPrivateIP_NLB(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetIpVersionTranslationConfig(t *testing.T) {
+	tests := []struct {
+		name               string
+		serviceAnnotations map[string]string
+		expectedConfig     *client.IpVersionTranslationConfig
+		expectErr          bool
+	}{
+		{
+			name:               "no serviceAnnotations",
+			serviceAnnotations: map[string]string{},
+			expectedConfig:     nil,
+			expectErr:          false,
+		},
+		{
+			name: "unsupported translation mode",
+			serviceAnnotations: map[string]string{
+				ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "INVALID",
+			},
+			expectedConfig: nil,
+			expectErr:      true,
+		},
+		{
+			name: "NAT46 mode without CIDR",
+			serviceAnnotations: map[string]string{
+				ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+			},
+			expectedConfig: &client.IpVersionTranslationConfig{
+				IpVersionTranslationMode: NAT46,
+			},
+			expectErr: false,
+		},
+		{
+			name: "NAT46 mode with CIDR",
+			serviceAnnotations: map[string]string{
+				ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+				ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "2001:db8::/96",
+			},
+			expectedConfig: &client.IpVersionTranslationConfig{
+				IpVersionTranslationMode: NAT46,
+				Nat46Ipv6CidrPrefix:      common.String("2001:db8::/96"),
+			},
+			expectErr: false,
+		},
+		{
+			name: "NAT46 mode with empty CIDR",
+			serviceAnnotations: map[string]string{
+				ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46",
+				ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix:      "",
+			},
+			expectedConfig: nil,
+			expectErr:      true,
+		},
+		{
+			name: "DISABLED mode",
+			serviceAnnotations: map[string]string{
+				ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "DISABLED",
+			},
+			expectedConfig: &client.IpVersionTranslationConfig{
+				IpVersionTranslationMode: DISABLED,
+			},
+			expectErr: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: tc.serviceAnnotations,
+				},
+			}
+
+			result, err := getIpVersionTranslationConfig(&svc)
+
+			if err == nil && tc.expectErr {
+				t.Errorf("Expcted an err but didn't get any")
+			}
+
+			if !reflect.DeepEqual(tc.expectedConfig, result) {
+				t.Errorf("Expcted IpVersionTranslationConfig as %v\n but got %v", tc.expectedConfig, result)
+			}
+		})
+	}
+
+}
+
+func TestIsNat46Enabled(t *testing.T) {
+	tests := []struct {
+		name              string
+		lbType            string
+		annotations       map[string]string
+		expectedNat46Mode bool
+	}{
+		{
+			name:              "Not NLB - NAT46 mode is passed",
+			lbType:            LB,
+			annotations:       map[string]string{ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46"},
+			expectedNat46Mode: false,
+		},
+		{
+			name:              "NAT46 is enabled",
+			lbType:            NLB,
+			annotations:       map[string]string{ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "NAT46"},
+			expectedNat46Mode: true,
+		},
+		{
+			name:              "NAT46 is DISABLED",
+			lbType:            NLB,
+			annotations:       map[string]string{ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "DISABLED"},
+			expectedNat46Mode: false,
+		},
+		{
+			name:              "Unknown IP translation mode",
+			lbType:            NLB,
+			annotations:       map[string]string{ServiceAnnotationNetworkLoadBalancerIpVersionTranslationMode: "UNKNOWN"},
+			expectedNat46Mode: false,
+		},
+		{
+			name:              "No annotation",
+			lbType:            NLB,
+			annotations:       map[string]string{},
+			expectedNat46Mode: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.annotations[ServiceAnnotationLoadBalancerType] = tc.lbType
+			svc := v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: tc.annotations,
+				},
+			}
+			//lbtype = tc.lbType
+			result := isNat46Enabled(&svc)
+
+			if tc.expectedNat46Mode != result {
+				t.Errorf("Expected %t but got %t", tc.expectedNat46Mode, result)
+			}
+		})
+	}
+
 }

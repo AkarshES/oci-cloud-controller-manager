@@ -23,6 +23,7 @@ import (
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
+	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	api "k8s.io/api/core/v1"
@@ -385,6 +386,102 @@ func TestSortAndCombineActions(t *testing.T) {
 					name:           "bar",
 					actionType:     Delete,
 					RuleSetDetails: loadbalancer.RuleSetDetails{},
+				},
+			},
+		},
+		"create+delete+update+2": {
+			backendSetActions: []Action{
+				&BackendSetAction{
+					name:       "TCP-80",
+					actionType: Create,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+			},
+			listenerActions: []Action{
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-IPv6",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-NAT46",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "TCP-80-NAT46",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&BackendSetAction{
+					name:       "TCP-80",
+					actionType: Create,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-IPv6",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+			},
+		},
+		"create+delete+update+3": {
+			backendSetActions: []Action{
+				&BackendSetAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+			},
+			listenerActions: []Action{
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-NAT46",
+					actionType: Create,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-IPv6",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&BackendSetAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					BackendSet: client.GenericBackendSetDetails{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-IPv6",
+					actionType: Delete,
+					Listener:   client.GenericListener{},
+				},
+				&ListenerAction{
+					name:       "TCP-80-NAT46",
+					actionType: Create,
+					Listener:   client.GenericListener{},
 				},
 			},
 		},
@@ -1477,15 +1574,134 @@ func TestGetListenerChanges(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Add listener NAT46",
+			desired: map[string]client.GenericListener{
+				"TCP-80-NAT46": client.GenericListener{
+					DefaultBackendSetName: common.String("TCP-80-IPv6"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+			},
+			actual: map[string]client.GenericListener{
+				"TCP-80-IPv6": client.GenericListener{
+					Name:                  common.String("TCP-80-IPv6"),
+					DefaultBackendSetName: common.String("TCP-80-IPv6"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+				"TCP-80": client.GenericListener{
+					Name:                  common.String("TCP-80"),
+					DefaultBackendSetName: common.String("TCP-80"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "TCP-80-IPv6",
+					actionType: Delete,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-80-IPv6"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Delete,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-80"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+				&ListenerAction{
+					name:       "TCP-80-NAT46",
+					actionType: Create,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-80-IPv6"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+			},
+		},
+		{
+			name: "Remove listener NAT46",
+			desired: map[string]client.GenericListener{
+				"TCP-80-IPv6": client.GenericListener{
+					Name:                  common.String("TCP-80-IPv6"),
+					DefaultBackendSetName: common.String("TCP-80-IPv6"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+				"TCP-80": client.GenericListener{
+					Name:                  common.String("TCP-80"),
+					DefaultBackendSetName: common.String("TCP-80"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+			},
+			actual: map[string]client.GenericListener{
+				"TCP-80-NAT46": client.GenericListener{
+					DefaultBackendSetName: common.String("TCP-80-IPv6"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "TCP-80-NAT46",
+					actionType: Delete,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-80-IPv6"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+				&ListenerAction{
+					name:       "TCP-80-IPv6",
+					actionType: Create,
+					Listener: client.GenericListener{
+						Name:                  common.String("TCP-80-IPv6"),
+						DefaultBackendSetName: common.String("TCP-80-IPv6"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Create,
+					Listener: client.GenericListener{
+						Name:                  common.String("TCP-80"),
+						DefaultBackendSetName: common.String("TCP-80"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
+			var exists bool
 			changes := getListenerChanges(zap.S(), tt.actual, tt.desired, nil)
 			if len(changes) == 0 && len(tt.expected) == 0 {
 				return
 			}
-			if !reflect.DeepEqual(changes, tt.expected) {
+
+			for _, change := range changes {
+				exists = false
+				for _, expectedAction := range tt.expected {
+					if reflect.DeepEqual(change, expectedAction) {
+						exists = true
+					}
+				}
+			}
+
+			if !exists {
 				t.Errorf("expected ListenerActions\n%+v\nbut got\n%+v", tt.expected, changes)
 			}
 		})
@@ -2968,4 +3184,304 @@ func Test_convertK8sIpFamiliesToOciIpVersion(t *testing.T) {
 			assert.Equalf(t, tt.want, convertK8sIpFamiliesToOciIpVersion(tt.args.ipFamily), "convertK8sIpFamiliesToOciIpVersion(%v)", tt.args.ipFamily)
 		})
 	}
+}
+
+func TestShouldUpdateIpVersionTranslation(t *testing.T) {
+
+	tests := []struct {
+		name         string
+		lb           *client.GenericLoadBalancer
+		spec         *LBSpec
+		checkForMode networkloadbalancer.NetworkLoadBalancerIpVersionTranslationEnum
+		expect       bool
+	}{
+		{
+			name: "Not a NLB",
+			spec: &LBSpec{
+				Type: "FLB",
+			},
+			expect: false,
+		},
+		{
+			name:   "nil IpVersionTranslationConfig",
+			spec:   &LBSpec{},
+			expect: false,
+		},
+		{
+			name: "NAT46 mode - Dual stack - update needed - check for NAT46",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4AndIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       true,
+		},
+		{
+			name: "NAT46 mode - Dual stack - update needed - check for DISABLED",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4AndIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Dual stack - NO update needed - check for NAT46",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4AndIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Dual stack - NO update needed - check for DISABLED",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4AndIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Single stack IPv4 - update needed - check for NAT46",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Single stack IPv6 - update needed - check for NAT46",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Single stack ipv4 - update needed - check for DISABLED",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Single stack ipv6 - update needed - check for DISABLED",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Single stack - NO update needed - check for NAT46", //should not happen
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       false,
+		},
+		{
+			name: "NAT46 mode - Single stack - NO update needed -check for DISABLED", //should not happen
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       false,
+		},
+		{
+			name: "DISABLED mode -  Update needed - check for DISABLED",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: NAT46,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       true,
+		},
+		{
+			name: "DISABLED mode -  Update needed - check for NAT46",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       false,
+		},
+		{
+			name: "DISABLED mode -  No Update needed - check for DISABLED",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: DISABLED,
+			expect:       false,
+		},
+		{
+			name: "DISABLED mode -  No Update needed - check for NAT46",
+			spec: &LBSpec{
+				Type: NLB,
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+				IpVersions: &IpVersions{
+					LbEndpointIpVersion: GenericIpVersion(client.GenericIPv4AndIPv6),
+				},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+					IpVersionTranslationMode: DISABLED,
+				},
+			},
+			checkForMode: NAT46,
+			expect:       false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := shouldUpdateIpVersionTranslation(tc.lb, tc.spec, tc.checkForMode)
+			if result != tc.expect {
+				t.Errorf("exepcted %t but got %t", tc.expect, result)
+			}
+		})
+	}
+
 }

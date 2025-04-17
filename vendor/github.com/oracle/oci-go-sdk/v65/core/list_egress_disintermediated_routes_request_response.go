@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2025, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -14,9 +14,6 @@ import (
 // ListEgressDisintermediatedRoutesRequest wrapper for the ListEgressDisintermediatedRoutes operation
 type ListEgressDisintermediatedRoutesRequest struct {
 
-	// The OCID (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the DRG route table.
-	DrgRouteTableId *string `mandatory:"true" contributesTo:"path" name:"drgRouteTableId"`
-
 	// Route table label
 	Label *int `mandatory:"true" contributesTo:"query" name:"label"`
 
@@ -26,19 +23,22 @@ type ListEgressDisintermediatedRoutesRequest struct {
 	// shard id
 	ShardId *int `mandatory:"true" contributesTo:"query" name:"shardId"`
 
+	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the DRG route table assigned to the DRG attachment.
+	DrgRouteTableId *string `mandatory:"false" contributesTo:"query" name:"drgRouteTableId"`
+
 	// Unique identifier for the request.
 	// If you need to contact Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
 
 	// For list pagination. The maximum number of results per page, or items to return in a paginated
 	// "List" call. For important details about how pagination works, see
-	// List Pagination (https://docs.cloud.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
+	// List Pagination (https://docs.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
 	// Example: `50`
 	Limit *int `mandatory:"false" contributesTo:"query" name:"limit"`
 
 	// For list pagination. The value of the `opc-next-page` response header from the previous "List"
 	// call. For important details about how pagination works, see
-	// List Pagination (https://docs.cloud.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
+	// List Pagination (https://docs.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
 	Page *string `mandatory:"false" contributesTo:"query" name:"page"`
 
 	// Metadata about the request. This information will not be transmitted to the service, but
@@ -70,16 +70,6 @@ func (request ListEgressDisintermediatedRoutesRequest) BinaryRequestBody() (*com
 // ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
 // Not all services are supporting this feature and this method will be a no-op for those services.
 func (request ListEgressDisintermediatedRoutesRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
-	if mandatoryParamMap["drgRouteTableId"] != nil {
-		templateParam := mandatoryParamMap["drgRouteTableId"]
-		for _, template := range templateParam {
-			replacementParam := *request.DrgRouteTableId
-			if template.EndsWithDot {
-				replacementParam = replacementParam + "."
-			}
-			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
-		}
-	}
 }
 
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
@@ -116,7 +106,7 @@ type ListEgressDisintermediatedRoutesResponse struct {
 
 	// For list pagination. When this header appears in the response, additional pages
 	// of results remain. For important details about how pagination works, see
-	// List Pagination (https://docs.cloud.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
+	// List Pagination (https://docs.oracle.com/iaas/Content/API/Concepts/usingapi.htm#nine).
 	OpcNextPage *string `presentIn:"header" name:"opc-next-page"`
 }
 

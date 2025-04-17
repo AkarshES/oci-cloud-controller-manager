@@ -415,3 +415,27 @@ func (cp *CloudProvider) virtualNodeExistsByResourceID(ctx context.Context, reso
 
 	return !client.IsVirtualNodeInTerminalState(virtualNode), nil
 }
+
+func (cp *CloudProvider) getIPv6IdByAddress(ctx context.Context, ipv6Address, nodeId string) (string, error) {
+
+	nodeCompartmentId, err := cp.getCompartmentIDByInstanceID(nodeId)
+	if err != nil {
+		return "", err
+	}
+	primaryVnic, err := cp.client.Compute().GetPrimaryVNICForInstance(ctx, nodeCompartmentId, nodeId)
+	if err != nil {
+		return "", err
+	}
+
+	// an instance has to have a primary vnic. primaryVnic is non-nil when err is nil
+	ipv6Addresses, err := cp.client.Networking(nil).ListIpv6s(ctx, *primaryVnic.Id)
+	if err != nil {
+		return "", err
+	}
+	for _, address := range ipv6Addresses {
+		if ipv6Address == *address.IpAddress {
+			return *address.Id, nil
+		}
+	}
+	return "", fmt.Errorf("id is not found for the ipv6 address %s on the node %s", ipv6Address, nodeId)
+}

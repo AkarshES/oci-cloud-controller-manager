@@ -559,7 +559,7 @@ github.com/opencontainers/image-spec/specs-go/v1
 ## explicit; go 1.19
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/pkg/pwalkdir
-# github.com/oracle/oci-go-sdk/v65 v65.78.1-p => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p
+# github.com/oracle/oci-go-sdk/v65 v65.89.3-p
 ## explicit; go 1.13
 github.com/oracle/oci-go-sdk/v65/common
 github.com/oracle/oci-go-sdk/v65/common/auth
@@ -668,6 +668,9 @@ github.com/xeipuuv/gojsonschema
 # github.com/xlab/treeprint v1.2.0
 ## explicit; go 1.13
 github.com/xlab/treeprint
+# github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78
+## explicit; go 1.17
+github.com/youmark/pkcs8
 # go.etcd.io/etcd/api/v3 v3.5.17
 ## explicit; go 1.22
 go.etcd.io/etcd/api/v3/authpb
@@ -2175,7 +2178,6 @@ sigs.k8s.io/yaml/goyaml.v2
 sigs.k8s.io/yaml/goyaml.v3
 # github.com/docker/distribution => github.com/docker/distribution v2.8.3+incompatible
 # github.com/docker/docker => github.com/docker/docker v25.0.6+incompatible
-# github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p
 # k8s.io/api => k8s.io/api v0.32.1
 # k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.32.1
 # k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
