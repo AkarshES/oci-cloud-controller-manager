@@ -459,6 +459,13 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 		details.CpgId = spec.ClusterPlacementGroupId
 		details.AssignedPrivateIpv4 = spec.AssignedPrivateIpv4
 		details.AssignedIpv6 = spec.AssignedIpv6
+
+		if spec.IpVersionTranslationConfig != nil {
+			details.IpVersionTranslationConfig = &client.IpVersionTranslationConfig{
+				IpVersionTranslationMode: spec.IpVersionTranslationConfig.IpVersionTranslationMode,
+				Nat46Ipv6CidrPrefix:      spec.IpVersionTranslationConfig.Nat46Ipv6CidrPrefix,
+			}
+		}
 	}
 
 	serviceUid := fmt.Sprintf("%s", spec.service.UID)
@@ -701,7 +708,11 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		return nil, err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
+	ipAddressToOcidMap, err := cp.getIpAddressOcidMap(ctx, provisionedSvcNodes)
+	if err != nil {
+		return nil, err
+	}
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID, ipAddressToOcidMap)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -1074,6 +1085,18 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 		}
 	}
 
+	// Enablement of NAT46 translation mode can be done to Dual stack NLB
+	if shouldUpdateIpVersionTranslation(lb, spec, NAT46) {
+		logger.Info("IPVersionTranslation needs to be NAT46")
+		details := &client.GenericUpdateLoadBalancerDetails{
+			IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+				IpVersionTranslationMode: spec.IpVersionTranslationConfig.IpVersionTranslationMode,
+				Nat46Ipv6CidrPrefix:      spec.IpVersionTranslationConfig.Nat46Ipv6CidrPrefix,
+			},
+		}
+		err = clb.updateLoadbalancerIpVersionTranslation(ctx, lb, details)
+	}
+
 	var ruleSetActions []Action
 	if spec.RuleSets != nil {
 		ruleSetActions = getRuleSetChanges(lb.RuleSets, spec.RuleSets)
@@ -1151,6 +1174,19 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 				return err
 			}
 		}
+	}
+
+	// IP Version Translation is set to DISABLED after reconciling Listener and BackendSet, irrelevant of IPFamily
+	// IP Version should be DISABLED after Listener Backend actions
+	if shouldUpdateIpVersionTranslation(lb, spec, DISABLED) {
+		logger.Info("IPVersionTranslation needs to be disabled")
+		details := &client.GenericUpdateLoadBalancerDetails{
+			IpVersionTranslationConfig: &client.IpVersionTranslationConfig{
+				IpVersionTranslationMode: spec.IpVersionTranslationConfig.IpVersionTranslationMode,
+				Nat46Ipv6CidrPrefix:      spec.IpVersionTranslationConfig.Nat46Ipv6CidrPrefix,
+			},
+		}
+		err = clb.updateLoadbalancerIpVersionTranslation(ctx, lb, details)
 	}
 
 	// Conversion from DualStack to SingleStack needs to happen after the IPv6 listeners & Backendsets are removed
@@ -1436,6 +1472,10 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	if err != nil {
 		return err
 	}
+	ipAddressToOcidMap, err := cp.getIpAddressOcidMap(ctx, provisionedSvcNodes)
+	if err != nil {
+		return err
+	}
 	// Since len(managedPods) = 0 even when it is a Flannel cluster. We cant find out if customer decided to use managed Pods on NP through this log line.
 	logger.With("provisionedNodes", len(provisionedSvcNodes), "virtualPods", len(virtualPods), "managedPods", len(managedPods)).Info("Updating load balancer backends")
 
@@ -1548,7 +1588,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		return err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID)
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID, ipAddressToOcidMap)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -2078,6 +2118,20 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancerIpVersion(ctx context.Co
 	return nil
 }
 
+func (clb *CloudLoadBalancerProvider) updateLoadbalancerIpVersionTranslation(ctx context.Context, lb *client.GenericLoadBalancer, details *client.GenericUpdateLoadBalancerDetails) error {
+	wrID, err := clb.lbClient.UpdateLoadBalancer(ctx, *lb.Id, details)
+	if err != nil {
+		return errors.Wrap(err, "failed to create UpdateLoadBalancer request")
+	}
+	clb.logger.Info("Awaiting UpdateLoadBalancer workrequest to update IP version translation mode from %s to %s", lb.IpVersionTranslationMode, details.IpVersionTranslationMode)
+	_, err = clb.lbClient.AwaitWorkRequest(ctx, wrID)
+	if err != nil {
+		return errors.Wrap(err, "failed to await UpdateLoadBalancer workrequest")
+	}
+	clb.logger.Infof("UpdateLoadBalancer workrequest to update %s IP version translation mode completed successfully", *lb.Id)
+	return nil
+}
+
 // Given an OCI load balancer, return a LoadBalancerStatus
 func loadBalancerToStatus(lb *client.GenericLoadBalancer, ipMode *v1.LoadBalancerIPMode, skipPrivateIp bool, logger *zap.SugaredLogger) (*v1.LoadBalancerStatus, error) {
 	// NLB created with an intent to assign an IP address which is already consumed goes into FAILED state
@@ -2375,7 +2429,7 @@ func (cp *CloudProvider) checkForNetworkPartition(logger *zap.SugaredLogger, nod
 	return
 }
 
-func (clb *CloudLoadBalancerProvider) getLbEndpointIpVersion(ipFamilies []string, ipFamilyPolicy string, lbSubnets []*core.Subnet) (string, error) {
+func (clb *CloudLoadBalancerProvider) getLbEndpointIpVersion(ipFamilies []string, ipFamilyPolicy string, lbSubnets []*core.Subnet, isTranslationEnabled bool) (string, error) {
 	lbEndpointVersion := ""
 	errIPv6Subnet := checkSubnetIpFamilyCompatibility(lbSubnets, IPv6)
 	errIPv4Subnet := checkSubnetIpFamilyCompatibility(lbSubnets, IPv4)
@@ -2409,6 +2463,12 @@ func (clb *CloudLoadBalancerProvider) getLbEndpointIpVersion(ipFamilies []string
 		if errIPv4Subnet != nil && errIPv6Subnet != nil {
 			// This should never happen
 			return "", errors.New("subnet does not have IPv4 or IPv6 cidr, can't create loadbalancer")
+		}
+		// make a hard check on subnet compatibility for dual stack even incase it is preferred.
+		if isTranslationEnabled {
+			if errIPv6Subnet != nil || errIPv4Subnet != nil {
+				return "", errors.New("IP version translation is enabled but subnet is compatible for dual stack")
+			}
 		}
 		if errIPv6Subnet != nil {
 			clb.logger.Warn("subnet provided does not have IPv6 subnet CIDR block, creating LB with only IPv4 endpoint")
@@ -2480,7 +2540,7 @@ func (clb *CloudLoadBalancerProvider) getOciIpVersions(lbSubnets, nodeSubnets []
 	ipFamilies := getIpFamilies(service)
 	ipFamilyPolicy := getIpFamilyPolicy(service)
 
-	lbEndpointVersion, err := clb.getLbEndpointIpVersion(ipFamilies, ipFamilyPolicy, lbSubnets)
+	lbEndpointVersion, err := clb.getLbEndpointIpVersion(ipFamilies, ipFamilyPolicy, lbSubnets, isNat46Enabled(service))
 	if err != nil {
 		return nil, err
 	}
@@ -2525,4 +2585,38 @@ func hasCustomNodePorts(service *v1.Service) bool {
 		}
 	}
 	return false
+}
+
+// getIpAddressOcidMap returns a map of IP address <-> ocid of IP address, for all the IPs on the primary vnics of the nodes
+// used to construct backends for the managed Nodes.
+// TODO: the method should handle for virtualNodes, ManagedPods ..
+func (cp *CloudProvider) getIpAddressOcidMap(ctx context.Context, provisionedSvcNodes []*v1.Node) (map[string]string, error) {
+	ipAddressOcidMap := make(map[string]string)
+	var addresses []v1.NodeAddress
+	for _, node := range provisionedSvcNodes {
+		id, err := MapProviderIDToResourceID(node.Spec.ProviderID)
+		if err != nil {
+			return ipAddressOcidMap, err
+		}
+
+		addresses = node.Status.Addresses
+		if addresses == nil {
+			addresses, err = cp.NodeAddressesByProviderID(ctx, id)
+		}
+
+		for _, address := range addresses {
+			if net.IsIPv4String(address.Address) {
+				ipAddressOcidMap[address.Address] = id
+			}
+			if net.IsIPv6String(address.Address) {
+				ipv6Id, err := cp.getIPv6IdByAddress(ctx, address.Address, id)
+				if err != nil {
+					return nil, err
+				}
+				ipAddressOcidMap[address.Address] = ipv6Id
+			}
+		}
+	}
+	cp.logger.Infof("debug-nat46: constructed ipAddressOcidMap: %v", ipAddressOcidMap)
+	return ipAddressOcidMap, nil
 }
