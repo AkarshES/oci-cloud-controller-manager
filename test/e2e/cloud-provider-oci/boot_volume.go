@@ -15,10 +15,12 @@
 package e2e
 
 import (
-	. "github.com/onsi/ginkgo"
-	"github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
-	v1 "k8s.io/api/core/v1"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	v1 "k8s.io/api/core/v1"
+
+	"github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
 )
 
 var _ = Describe("Boot volume tests", func() {

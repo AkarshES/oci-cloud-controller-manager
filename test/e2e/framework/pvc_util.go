@@ -16,12 +16,15 @@ package framework
 
 import (
 	"fmt"
-	"github.com/oracle/oci-go-sdk/v65/common"
-	"github.com/pkg/errors"
 	"strings"
 	"time"
 
 	snapclientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/oracle/oci-go-sdk/v65/common"
+	ocicore "github.com/oracle/oci-go-sdk/v65/core"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	v1 "k8s.io/api/core/v1"
@@ -35,10 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	ocicore "github.com/oracle/oci-go-sdk/v65/core"
 
 	csi_util "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/csi/driver"
