@@ -95,7 +95,7 @@ locals {
 
   combined_images = tolist(toset(flatten(concat(local.raw_regional_image_list, local.raw_override_image_list))))
 
-  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0)
+  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0) && local.execution_target.region.state != "Building"
 }
 
 data "odo_applications" "infra-release-validator-ccm-csi" {
