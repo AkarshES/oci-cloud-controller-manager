@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -26,6 +27,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"k8s.io/kubernetes/pkg/apis/core"
+	"k8s.io/utils/net"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
@@ -257,39 +260,76 @@ func (p *PodReadinessController) sync(key string) error {
 		// Having managed pods as backends is only supported for NPN Clusters.
 		isManagedPodsAsBackends := isPodsAsBackendsMode(service)
 
+		requireIpv4, requireIpv6 := getRequireIpVersions(getIpFamilies(service))
 		for _, pod := range pods {
 			if !hasReadinessGate(pod, podReadinessCondition) {
 				continue
 			}
-
-			if _, ok := backendsMap[pod.Status.PodIP]; !ok {
-				node, err := p.nodeLister.Get(pod.Spec.NodeName)
-				if err != nil {
-					logger.Error("could not retrieve node %s", pod.Spec.NodeName)
-					continue
+			ipv4PodIP, ipv6PodIP := pod.Status.PodIP, pod.Status.PodIP
+			for _, ip := range pod.Status.PodIPs {
+				if net.IsIPv4String(ip.IP) {
+					ipv4PodIP = ip.IP
 				}
-
-				// Check if virtual pod
-				if IsVirtualNode(node) {
-					// Pod has not been added to the backend set yet
-					logger.Debugf("pod has not been added yet:%s", pod.Status.PodIP)
-					continue
-				} else if isManagedPodsAsBackends {
-					// Pod has not been added to the backend set yet
-					logger.Debugf("pod has not been added yet:%s", pod.Status.PodIP)
-					continue
+			}
+			for _, ip := range pod.Status.PodIPs {
+				if net.IsIPv6String(ip.IP) {
+					ipv6PodIP = ip.IP
 				}
 			}
 
-			backendName := fmt.Sprintf("%s:%d", pod.Status.PodIP, servicePort.NodePort)
-			if isPodsAsBackendsMode(service) {
-				backendName = fmt.Sprintf("%s:%d", pod.Status.PodIP, getTargetPortOfPod(&servicePort, pod))
+			// IPv4 Backendset (no "-IPv6" suffix), requires IPv4 backends and Pod has IPv4 IP
+			if requireIpv4 && !strings.Contains(backendSetName, "-"+string(core.IPv6Protocol)) {
+				if _, ok := backendsMap[ipv4PodIP]; !ok {
+					node, err := p.nodeLister.Get(pod.Spec.NodeName)
+					if err != nil {
+						logger.Error("could not retrieve node %s", pod.Spec.NodeName)
+						continue
+					}
+
+					// Check if virtual pod or direct load balancer backend pod
+					if IsVirtualNode(node) || isManagedPodsAsBackends {
+						// Pod has not been added to the backend set yet
+						logger.Debugf("pod has not been added yet:%s", ipv4PodIP)
+						continue
+					}
+				}
+				backendName := fmt.Sprintf("%s:%d", ipv4PodIP, servicePort.NodePort)
+				if isPodsAsBackendsMode(service) {
+					backendName = fmt.Sprintf("%s:%d", ipv4PodIP, getTargetPortOfPod(&servicePort, pod))
+				}
+				if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
+					logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
+					dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
+					metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
+					return err
+				}
 			}
-			if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
-				logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
-				dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
-				metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
-				return err
+			// IPv6 Backendset, requires IPv6 backends and Pod has IPv6 IP
+			if requireIpv6 && strings.Contains(backendSetName, "-"+string(core.IPv6Protocol)) {
+				if _, ok := backendsMap[ipv6PodIP]; !ok {
+					node, err := p.nodeLister.Get(pod.Spec.NodeName)
+					if err != nil {
+						logger.Error("could not retrieve node %s", pod.Spec.NodeName)
+						continue
+					}
+
+					// Check if virtual pod or direct load balancer backend pod
+					if IsVirtualNode(node) || isManagedPodsAsBackends {
+						// Pod has not been added to the backend set yet
+						logger.Debugf("pod has not been added yet:%s", ipv6PodIP)
+						continue
+					}
+				}
+				backendName := fmt.Sprintf("%s:%d", ipv6PodIP, servicePort.NodePort)
+				if isPodsAsBackendsMode(service) {
+					backendName = fmt.Sprintf("%s:%d", ipv6PodIP, getTargetPortOfPod(&servicePort, pod))
+				}
+				if err := p.ensurePodReadinessCondition(logger, unhealthyBackendMap, backendName, pod, podReadinessCondition); err != nil {
+					logger.With(zap.Error(err)).Errorf("failed to ensure pod readiness condition for pod %s", pod.Name)
+					dimensionsMap[metrics.ComponentDimension] = util.GetMetricDimensionForComponent(util.GetError(err), util.LoadBalancerType)
+					metrics.SendMetricData(p.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
+					return err
+				}
 			}
 		}
 	}
