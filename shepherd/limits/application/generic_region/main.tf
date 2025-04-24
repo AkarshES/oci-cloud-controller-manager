@@ -12,7 +12,7 @@ locals {
   physical_ad1                     = module.ad_map.physical_ad1
   image_validator_count            = var.cpo-image-validation-enabled ? 1 : 0
 
-  enable_validation = var.cpo-image-validation-enabled  && (length(data.odo_applications.image-release-validator-ccm-csi.applications) > 0) && (local.artifact_versions["release-validator-ccm-csi"].version != "skip") && local.execution_target.region.state != "Building" && local.execution_target.additional_locals.env != "rbaas"
+  enable_validation = var.cpo-image-validation-enabled  && (length(data.odo_applications.image-release-validator-ccm-csi.applications) > 0) && (local.artifact_versions["release-validator-ccm-csi"].version != "skip")
 }
 
 module "oke-cpo-images" {

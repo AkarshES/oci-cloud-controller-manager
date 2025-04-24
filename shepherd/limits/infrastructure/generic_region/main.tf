@@ -85,6 +85,10 @@ variable "cpo-image-validation-enabled" {
   default = true
 }
 
+data "capability" "oke_ccm_csi" {
+  name = "oke_ccm_csi"
+}
+
 locals {
 
   regional_values = [for mapping in module.validation_module.regional_values: mapping.value if mapping.region == local.execution_target.additional_locals.limits_region]
@@ -95,7 +99,7 @@ locals {
 
   combined_images = tolist(toset(flatten(concat(local.raw_regional_image_list, local.raw_override_image_list))))
 
-  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0) && local.execution_target.region.state != "Building" && local.execution_target.additional_locals.env != "rbaas"
+  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0) && data.capability.oke_ccm_csi.is_available
 }
 
 data "odo_applications" "infra-release-validator-ccm-csi" {
