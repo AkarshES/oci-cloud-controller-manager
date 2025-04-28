@@ -1,0 +1,18 @@
+version: 0.1
+component: general-purpose
+timeoutInSeconds: 18000
+failImmediatelyOnError: true
+shell: bash
+
+env:
+  variables:
+
+
+steps:
+  - type: Command
+    name: Auth setup
+    command: |
+      echo "Authenticating with Bitbucket"
+
+    timeoutInSeconds: 6000
+    failImmediatelyOnError: false
