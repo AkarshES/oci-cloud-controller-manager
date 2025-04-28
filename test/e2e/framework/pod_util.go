@@ -511,7 +511,7 @@ func (j *PVCTestJig) GetNodeNameFromPod(podName, namespace string) string {
 	return pod.Spec.NodeName
 }
 
-func (j *PVCTestJig) GetCSIPodNameRunningOnNode( nodeName string) (string) {
+func (j *PVCTestJig) GetCSIPodNameRunningOnNode(nodeName string) string {
 
 	// List all pods in the kube-system namespace
 	pods, err := j.KubeClient.CoreV1().Pods("kube-system").List(context.Background(), metav1.ListOptions{})
@@ -571,7 +571,6 @@ func (j *PVCTestJig) getPodEvents(ns, podName string) ([]*v1.Event, error) {
 	return podEvents, nil
 }
 
-
 func (j *PVCTestJig) logPodDetails(ns string, pod *v1.Pod) {
 	fmt.Printf("Pod Description:\n")
 	fmt.Printf("Name: %s\n", pod.Name)
@@ -600,7 +599,6 @@ func (j *PVCTestJig) logPodDetails(ns string, pod *v1.Pod) {
 	fmt.Println()
 }
 
-
 func logPVCDetails(pvc *v1.PersistentVolumeClaim) {
 	fmt.Printf("PVC Description:\n")
 	fmt.Printf("Name: %s\n", pvc.Name)
@@ -608,7 +606,7 @@ func logPVCDetails(pvc *v1.PersistentVolumeClaim) {
 	fmt.Printf("Access Modes: %v\n", pvc.Spec.AccessModes)
 	fmt.Printf("Volume: %s\n", pvc.Spec.VolumeName)
 	if pvc.Spec.StorageClassName != nil {
-		fmt.Printf("Storage Class: %s\n", *pvc.Spec.StorageClassName)  // Dereferencing the pointer
+		fmt.Printf("Storage Class: %s\n", *pvc.Spec.StorageClassName) // Dereferencing the pointer
 	} else {
 		fmt.Println("Storage Class: Not set")
 	}
@@ -632,7 +630,6 @@ func (j *PVCTestJig) getPVCEvents(ns, pvcName string) ([]*v1.Event, error) {
 	}
 	return pvcEvents, nil
 }
-
 
 func (j *PVCTestJig) logPVCEvents(ns, pvcName string) {
 	pvcEvents, err := j.getPVCEvents(ns, pvcName)

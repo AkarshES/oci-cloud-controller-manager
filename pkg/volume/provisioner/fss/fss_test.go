@@ -16,9 +16,10 @@ package fss
 
 import (
 	"context"
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"testing"
 	"time"
+
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	v1 "k8s.io/api/core/v1"
@@ -258,15 +259,15 @@ func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetID
 	return core.VnicAttachment{}, nil
 }
 
-func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmentID, volumeID string) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmentID, volumeID string, instanceID *string) (core.VolumeAttachment, error) {
 	return nil, nil
 }
 
-func (c *MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool, isShareable bool) (core.VolumeAttachment, error) {
 	return nil, nil
 }
 
-func (c *MockComputeClient) AttachVolume(ctx context.Context, instanceID, volumeID string) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) AttachVolume(ctx context.Context, instanceID, volumeID string, isShareable bool) (core.VolumeAttachment, error) {
 	return nil, nil
 }
 
@@ -274,13 +275,15 @@ func (c *MockComputeClient) WaitForVolumeAttached(ctx context.Context, attachmen
 	return nil, nil
 }
 
-func (c *MockComputeClient) DetachVolume(ctx context.Context, id string) error { return nil }
+func (c *MockComputeClient) DetachVolume(ctx context.Context, id string) error {
+	return nil
+}
 
 func (c *MockComputeClient) WaitForVolumeDetached(ctx context.Context, attachmentID string) error {
 	return nil
 }
 
-func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, compartmentID, volumeID string) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) ListVolumeAttachments(ctx context.Context, compartmentID, volumeID string) ([]core.VolumeAttachment, error) {
 	return nil, nil
 }
 
