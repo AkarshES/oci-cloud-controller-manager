@@ -3,12 +3,13 @@ package driver
 import (
 	"context"
 	"fmt"
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -51,6 +52,11 @@ var (
 			},
 		},
 		"sample-provider-id": {
+			LaunchOptions: &core.LaunchOptions{
+				IsPvEncryptionInTransitEnabled: &inTransitEncryptionDisabled,
+			},
+		},
+		"sample-provider-id-2": {
 			LaunchOptions: &core.LaunchOptions{
 				IsPvEncryptionInTransitEnabled: &inTransitEncryptionDisabled,
 			},
@@ -135,6 +141,7 @@ var (
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
 			Id:                 common.String("volume-attachment-stuck-in-detaching-state"),
 			InstanceId:         common.String("sample-instance-id"),
+			IsShareable:        common.Bool(false),
 		},
 		"volume-attachment-stuck-in-attaching-state": {
 			DisplayName:        common.String("volume-attachment-stuck-in-attaching-state"),
@@ -142,6 +149,7 @@ var (
 			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
 			Id:                 common.String("volume-attachment-stuck-in-attaching-state"),
 			InstanceId:         common.String("sample-provider-id"),
+			IsShareable:        common.Bool(false),
 		},
 		"uhp-volume-attachment-stuck-in-logged-in-state": {
 			DisplayName:        common.String("uhp-volume-attachment-stuck-in-logged-in-state"),
@@ -151,6 +159,15 @@ var (
 			InstanceId:         common.String("sample-provider-id"),
 			IscsiLoginState:    core.VolumeAttachmentIscsiLoginStateLoginSucceeded,
 			IsMultipath:        common.Bool(true),
+			IsShareable:        common.Bool(false),
+		},
+		"shareable-volume-with-nonshareable-attachments": {
+			DisplayName:        common.String("shareable-volume-with-nonshareable-attachments"),
+			LifecycleState:     core.VolumeAttachmentLifecycleStateAttached,
+			AvailabilityDomain: common.String("NWuj:PHX-AD-2"),
+			Id:                 common.String("shareable-volume-with-nonshareable-attachments"),
+			InstanceId:         common.String("sample-provider-id-2"),
+			IsShareable:        common.Bool(false),
 		},
 	}
 
@@ -670,7 +687,7 @@ func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetID
 	return core.VnicAttachment{}, nil
 }
 
-func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmentID, volumeID string) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmentID, volumeID string, instanceID *string) (core.VolumeAttachment, error) {
 	var page *string
 	var requestMetadata common.RequestMetadata
 	for {
@@ -706,10 +723,13 @@ func (c *MockComputeClient) FindVolumeAttachment(ctx context.Context, compartmen
 	return nil, nil
 }
 
-func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, compartmentID, volumeID string) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) ListVolumeAttachments(ctx context.Context, compartmentID, volumeID string) ([]core.VolumeAttachment, error) {
+	var (
+		page            *string
+		attachments     []core.VolumeAttachment
+		requestMetadata common.RequestMetadata
+	)
 	if volumeID == "find-active-volume-attachment-timeout-volume" {
-		var page *string
-		var requestMetadata common.RequestMetadata
 		for {
 			resp, err := c.compute.ListVolumeAttachments(ctx, core.ListVolumeAttachmentsRequest{
 				CompartmentId:   &compartmentID,
@@ -727,7 +747,7 @@ func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, comp
 				if state == core.VolumeAttachmentLifecycleStateAttaching ||
 					state == core.VolumeAttachmentLifecycleStateAttached ||
 					state == core.VolumeAttachmentLifecycleStateDetaching {
-					return attachment, nil
+					attachments = append(attachments, attachment)
 				}
 			}
 
@@ -737,16 +757,16 @@ func (c *MockComputeClient) FindActiveVolumeAttachment(ctx context.Context, comp
 		}
 	}
 	if volume_attachments[volumeID] != nil {
-		return volume_attachments[volumeID], nil
+		attachments = append(attachments, volume_attachments[volumeID])
 	}
+	return attachments, nil
+}
+
+func (c *MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool, isShareable bool) (core.VolumeAttachment, error) {
 	return nil, nil
 }
 
-func (c *MockComputeClient) AttachParavirtualizedVolume(ctx context.Context, instanceID, volumeID string, isPvEncryptionInTransitEnabled bool) (core.VolumeAttachment, error) {
-	return nil, nil
-}
-
-func (c *MockComputeClient) AttachVolume(ctx context.Context, instanceID, volumeID string) (core.VolumeAttachment, error) {
+func (c *MockComputeClient) AttachVolume(ctx context.Context, instanceID, volumeID string, isShareable bool) (core.VolumeAttachment, error) {
 	return nil, nil
 }
 
@@ -884,7 +904,7 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 			wantErr: errors.New("CreateVolume Name must be provided"),
 		},
 		{
-			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_MULTI_WRITER provided in CreateVolumeRequest",
+			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_MULTI_WRITER with Mount provided in CreateVolumeRequest",
 			fields: fields{},
 			args: args{
 				ctx: nil,
@@ -894,11 +914,14 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 						AccessMode: &csi.VolumeCapability_AccessMode{
 							Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER,
 						},
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{},
+						},
 					}},
 				},
 			},
 			want:    nil,
-			wantErr: errors.New("invalid volume capabilities requested. Only SINGLE_NODE_WRITER is supported ('accessModes.ReadWriteOnce' on Kubernetes)"),
+			wantErr: errors.New("invalid volume capabilities requested"),
 		},
 		{
 			name:   "Error for no VolumeCapabilities provided in CreateVolumeRequest",
@@ -914,7 +937,7 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 			wantErr: errors.New("VolumeCapabilities must be provided in CreateVolumeRequest"),
 		},
 		{
-			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_READER_ONLY provided in CreateVolumeRequest",
+			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_READER_ONLY with Mount provided in CreateVolumeRequest",
 			fields: fields{},
 			args: args{
 				ctx: nil,
@@ -924,14 +947,17 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 						AccessMode: &csi.VolumeCapability_AccessMode{
 							Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_READER_ONLY,
 						},
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{},
+						},
 					}},
 				},
 			},
 			want:    nil,
-			wantErr: errors.New("invalid volume capabilities requested. Only SINGLE_NODE_WRITER is supported ('accessModes.ReadWriteOnce' on Kubernetes)"),
+			wantErr: errors.New("invalid volume capabilities requested"),
 		},
 		{
-			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_SINGLE_WRITER provided in CreateVolumeRequest",
+			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_SINGLE_WRITER with Mount provided in CreateVolumeRequest",
 			fields: fields{},
 			args: args{
 				ctx: nil,
@@ -941,11 +967,34 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 						AccessMode: &csi.VolumeCapability_AccessMode{
 							Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER,
 						},
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{},
+						},
 					}},
 				},
 			},
 			want:    nil,
-			wantErr: errors.New("invalid volume capabilities requested. Only SINGLE_NODE_WRITER is supported ('accessModes.ReadWriteOnce' on Kubernetes)"),
+			wantErr: errors.New("invalid volume capabilities requested"),
+		},
+		{
+			name:   "Error for unsupported VolumeCapabilities: MULTI_NODE_SINGLE_WRITER with Block provided in CreateVolumeRequest",
+			fields: fields{},
+			args: args{
+				ctx: nil,
+				req: &csi.CreateVolumeRequest{
+					Name: "ut-volume",
+					VolumeCapabilities: []*csi.VolumeCapability{{
+						AccessMode: &csi.VolumeCapability_AccessMode{
+							Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_SINGLE_WRITER,
+						},
+						AccessType: &csi.VolumeCapability_Block{
+							Block: &csi.VolumeCapability_BlockVolume{},
+						},
+					}},
+				},
+			},
+			want:    nil,
+			wantErr: errors.New("invalid volume capabilities requested"),
 		},
 		{
 			name:   "Error for exceeding capacity range",
@@ -957,6 +1006,9 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 					VolumeCapabilities: []*csi.VolumeCapability{{
 						AccessMode: &csi.VolumeCapability_AccessMode{
 							Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+						},
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{},
 						},
 					}},
 					CapacityRange: &csi.CapacityRange{
@@ -979,6 +1031,9 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 						{
 							AccessMode: &csi.VolumeCapability_AccessMode{
 								Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+							},
+							AccessType: &csi.VolumeCapability_Mount{
+								Mount: &csi.VolumeCapability_MountVolume{},
 							},
 						}},
 					CapacityRange: &csi.CapacityRange{
@@ -1005,6 +1060,69 @@ func TestControllerDriver_CreateVolume(t *testing.T) {
 						{
 							AccessMode: &csi.VolumeCapability_AccessMode{
 								Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+							},
+							AccessType: &csi.VolumeCapability_Block{
+								Block: &csi.VolumeCapability_BlockVolume{},
+							},
+						},
+					},
+					Parameters: map[string]string{
+						"vpusPerGB": "10",
+					},
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: int64(50000),
+					},
+					AccessibilityRequirements: &csi.TopologyRequirement{
+						Requisite: []*csi.Topology{
+							{
+								Segments: map[string]string{
+									kubeAPI.LabelZoneFailureDomain: "PHX-AD-2",
+								},
+							}, {
+								Segments: map[string]string{
+									kubeAPI.LabelZoneFailureDomain: "PHX-AD-2",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &csi.CreateVolumeResponse{
+				Volume: &csi.Volume{
+					VolumeId:      "volume-in-available-state",
+					CapacityBytes: int64(52428800000),
+					AccessibleTopology: []*csi.Topology{
+						{
+							Segments: map[string]string{
+								kubeAPI.LabelTopologyZone: "PHX-AD-2",
+							},
+						},
+						{
+							Segments: map[string]string{
+								kubeAPI.LabelZoneFailureDomain: "PHX-AD-2",
+							},
+						},
+					},
+					VolumeContext: map[string]string{
+						"needResize":      "false",
+						"newSize":         "",
+						"vpusPerGB":       "10",
+						"attachment-type": "",
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "No error when a volume is created in block mode with MULTI_NODE_MULTI_WRITER",
+			args: args{
+				ctx: context.TODO(),
+				req: &csi.CreateVolumeRequest{
+					Name: "volume-in-available-state",
+					VolumeCapabilities: []*csi.VolumeCapability{
+						{
+							AccessMode: &csi.VolumeCapability_AccessMode{
+								Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER,
 							},
 							AccessType: &csi.VolumeCapability_Block{
 								Block: &csi.VolumeCapability_BlockVolume{},
@@ -1267,6 +1385,37 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: errors.New("Failed to attach volume to the node: timed out waiting for the condition"),
+		},
+		{
+			name: "WaitForShareableVolumeAttached times out",
+			args: args{
+				req: &csi.ControllerPublishVolumeRequest{
+					VolumeId: "volume-attachment-stuck-in-attaching-state",
+					NodeId:   "sample-provider-id",
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Block{Block: &csi.VolumeCapability_BlockVolume{}},
+						AccessMode: &csi.VolumeCapability_AccessMode{Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: errors.New("Failed to attach volume to the node: timed out waiting for the condition"),
+		},
+		{
+			name: "isShareable, but not all attachments are shareable",
+			args: args{
+				req: &csi.ControllerPublishVolumeRequest{
+					VolumeId: "shareable-volume-with-nonshareable-attachments",
+					NodeId:   "sample-provider-id",
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Block{Block: &csi.VolumeCapability_BlockVolume{}},
+						AccessMode: &csi.VolumeCapability_AccessMode{Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER},
+					},
+				},
+			},
+			want: nil,
+			wantErr: errors.New("Failed to attach volume to node. " +
+				"The volume already has a non-shareable attachment."),
 		},
 	}
 	for _, tt := range tests {
@@ -2012,15 +2161,20 @@ func TestGetAttachmentOptions(t *testing.T) {
 	tests := map[string]struct {
 		attachmentType         string
 		instanceID             string
+		isShareable            bool
 		volumeAttachmentOption VolumeAttachmentOption
 		wantErr                bool
 	}{
 		"PV attachment with instance in-transit encryption enabled": {
 			attachmentType: attachmentTypeParavirtualized,
 			instanceID:     "inTransitEnabled",
+			isShareable:    false,
 			volumeAttachmentOption: VolumeAttachmentOption{
 				enableInTransitEncryption:    true,
 				useParavirtualizedAttachment: true,
+				isShareable:                  false,
+				enforceLimit:                 true,
+				maxVolumeAttachments:         1,
 			},
 			wantErr: false,
 		},
@@ -2028,35 +2182,64 @@ func TestGetAttachmentOptions(t *testing.T) {
 		"PV attachment with instance in-transit encryption disabled": {
 			attachmentType: attachmentTypeParavirtualized,
 			instanceID:     "inTransitDisabled",
+			isShareable:    false,
 			volumeAttachmentOption: VolumeAttachmentOption{
 				enableInTransitEncryption:    false,
 				useParavirtualizedAttachment: true,
+				isShareable:                  false,
+				enforceLimit:                 true,
+				maxVolumeAttachments:         1,
 			},
 			wantErr: false,
 		},
 		"ISCSI attachment with instance in-transit encryption enabled": {
 			attachmentType: attachmentTypeISCSI,
 			instanceID:     "inTransitEnabled",
+			isShareable:    false,
 			volumeAttachmentOption: VolumeAttachmentOption{
 				enableInTransitEncryption:    true,
 				useParavirtualizedAttachment: false,
+				isShareable:                  false,
+				enforceLimit:                 true,
+				maxVolumeAttachments:         1,
 			},
 			wantErr: false,
 		},
 		"ISCSI attachment with instance in-transit encryption disabled": {
 			attachmentType: attachmentTypeISCSI,
 			instanceID:     "inTransitDisabled",
+			isShareable:    false,
 			volumeAttachmentOption: VolumeAttachmentOption{
 				enableInTransitEncryption:    false,
 				useParavirtualizedAttachment: false,
+				isShareable:                  false,
+				enforceLimit:                 true,
+				maxVolumeAttachments:         1,
+			},
+			wantErr: false,
+		},
+		"shareable ISCSI attachment with instance in-transit encryption disabled": {
+			attachmentType: attachmentTypeISCSI,
+			instanceID:     "inTransitDisabled",
+			isShareable:    true,
+			volumeAttachmentOption: VolumeAttachmentOption{
+				enableInTransitEncryption:    false,
+				useParavirtualizedAttachment: false,
+				isShareable:                  true,
+				enforceLimit:                 false,
+				maxVolumeAttachments:         32,
 			},
 			wantErr: false,
 		},
 		"API error": {
-			attachmentType:         attachmentTypeISCSI,
-			instanceID:             "foo",
-			volumeAttachmentOption: VolumeAttachmentOption{},
-			wantErr:                true,
+			attachmentType: attachmentTypeISCSI,
+			instanceID:     "foo",
+			isShareable:    false,
+			volumeAttachmentOption: VolumeAttachmentOption{
+				enforceLimit:         true,
+				maxVolumeAttachments: 1,
+			},
+			wantErr: true,
 		},
 	}
 
@@ -2065,7 +2248,7 @@ func TestGetAttachmentOptions(t *testing.T) {
 	for name, tt := range tests {
 
 		t.Run(name, func(t *testing.T) {
-			volumeAttachmentOption, err := getAttachmentOptions(context.Background(), computeClient, tt.attachmentType, tt.instanceID)
+			volumeAttachmentOption, err := getAttachmentOptions(context.Background(), computeClient, tt.attachmentType, tt.instanceID, tt.isShareable)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getAttachmentOptions() error = %v, wantErr %v", err, tt.wantErr)
 				return
