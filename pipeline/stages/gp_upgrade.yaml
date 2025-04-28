@@ -1,0 +1,171 @@
+version: 0.1
+component: general-purpose
+timeoutInSeconds: 18000
+failImmediatelyOnError: true
+shell: bash
+
+env:
+
+steps:
+  - type: Command
+    name: Auth setup
+    command: |
+      echo "Authenticating with Bitbucket"
+      bitbucket login --access-key-secret-id ${BITBUCKET_SSH_KEY_SECRET_ID}
+      echo "Authentication complete"
+
+  - type: Command
+    name: Clone CCM Repo
+    command: |
+      set -euxo pipefail
+      echo "Cloning oci-cloud-controller-manager from branch ${UPGRADE_WORKFLOW_BRANCH}"
+      git clone --depth 1 --single-branch --branch "${UPGRADE_WORKFLOW_BRANCH}" \
+        ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
+        "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager"
+
+  - type: Command
+    name: Clone Target Repo
+    command: |
+      set -euxo pipefail
+      echo "Cloning target CCM repo for release-${CURR_VERSION}"
+      git clone --depth 1 --branch "release-${CURR_VERSION}" \
+        ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
+        ${OCI_WORKSPACE_DIR}/target-ccm
+
+  - type: Command
+    name: Setup Go
+    command: |
+      echo "Setting up Go environment"
+      source oit_http_proxy
+      oit_http_proxy activate
+      oit_http_proxy show
+      bash "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/pipeline/stages/scripts/setup_go.sh" 1.24
+      echo "Go setup script completed"
+
+  - type: Command
+    name: Install Upgrader
+    command: |
+      echo "Installing upgrader binary"
+      source oit_http_proxy
+      oit_http_proxy activate
+      oit_http_proxy show
+
+      source /tmp/go_env_setup.sh
+
+      echo "Go version: $(go version)"
+      echo "Go path: $(which go)"
+
+      cd ${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/pipeline/upgrader
+      go install ${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/pipeline/upgrader/cmd/ccm-csi-upgrader
+
+      echo "Installed binaries:"
+      ls -lart $(go env GOPATH)/bin
+
+      echo "Running upgrader help"
+      ccm-csi-upgrader --help || echo "Unable to run upgrader binary"
+      
+  - type: Command
+    name: Get current K8s version from go.mod
+    command: |
+      echo "Extracting current Kubernetes version from go.mod"
+
+      GO_MOD_FILE="${OCI_WORKSPACE_DIR}/target-ccm/go.mod"
+
+      if [ ! -f "$GO_MOD_FILE" ]; then
+        echo "go.mod not found at: $GO_MOD_FILE"
+        exit 1
+      fi
+
+      # Extract from 'replace' block
+      CURRENT_K8S_VERSION=$(awk '/replace \(/,/\)/ { if ($1 == "k8s.io/kubernetes" && $2 == "=>") print $4 }' "$GO_MOD_FILE")
+
+      if [ -z "$CURRENT_K8S_VERSION" ]; then
+        echo "Error: Could not find k8s.io/kubernetes version in replace block"
+        exit 1
+      fi
+
+      # Strip leading 'v' (e.g., v1.32.1 -> 1.32.1)
+      CURRENT_K8S_VERSION=${CURRENT_K8S_VERSION#v}
+
+      echo "Current Kubernetes version: $CURRENT_K8S_VERSION"
+      echo "CURRENT_K8S_VERSION=$CURRENT_K8S_VERSION" >> /tmp/k8s.env
+
+  - type: Command
+    name: Analyze dependencies
+    command: |
+      source oit_http_proxy
+      oit_http_proxy activate
+      oit_http_proxy show
+      echo "Running dependency analysis for CCM"
+
+      source /tmp/k8s.env
+      source /tmp/go_env_setup.sh
+
+      ANALYSIS_RESULT=$(ccm-csi-upgrader analyze \
+        --target-k8s-version=${TARGET_K8S_VERSION} \
+        --current-k8s-version=${CURRENT_K8S_VERSION} \
+        --code-dir=${OCI_WORKSPACE_DIR}/target-ccm)
+
+      echo "Dependency analysis output:"
+      echo "$ANALYSIS_RESULT"
+      echo "$ANALYSIS_RESULT" | jq . > /tmp/analysis.json
+      echo "Saved formatted analysis result to /tmp/analysis.json"
+
+  - type: Command
+    name: Log Dependency analysis
+    command: |
+      echo "Loading analysis result from /tmp/analysis.json"
+      cat /tmp/analysis.json
+
+  - type: Command
+    name: Create upgrade branch in target-ccm
+    command: |
+      echo "Creating upgrade branch in target-ccm repo"
+
+      cd ${OCI_WORKSPACE_DIR}/target-ccm
+
+      BRANCH_NAME="auto-upgrade/${OCI_PIPELINE_RUN_NUMBER}_$(date +%Y%m%d)"
+      git checkout -b "$BRANCH_NAME"
+
+      echo "Checked out to new branch: $BRANCH_NAME"
+      echo "UPGRADE_BRANCH=$BRANCH_NAME" >> /tmp/ccm-upgrade.env
+
+  - type: Command
+    name: Run upgrade using analysis JSON
+    command: |
+      echo "Running ccm-csi-upgrader upgrade using analysis json"
+      
+      source /tmp/go_env_setup.sh
+      source /tmp/ccm-upgrade.env
+      
+      ccm-csi-upgrader upgrade \
+        --analysis-json="$(< /tmp/analysis.json)" \
+        --target-project-dir="${OCI_WORKSPACE_DIR}/target-ccm"
+    
+      echo "Code Upgrade completed on branch: $UPGRADE_BRANCH"
+      cd "${OCI_WORKSPACE_DIR}/target-ccm"
+
+  - type: Command
+    name: Commit and push upgrade changes
+    command: |
+      echo "Checking for modifications in git working tree"
+
+      cd ${OCI_WORKSPACE_DIR}/target-ccm
+      source /tmp/ccm-upgrade.env
+      source /tmp/k8s.env
+    
+
+      if [ -n "$(git status --porcelain)" ]; then
+        echo "Changes detected. Committing..."
+        git status --porcelain
+        git add .
+        git commit -m "Automated upgrade #${OCI_PIPELINE_RUN_NUMBER}: Performed CCM upgrade from v${CURR_VERSION} to v${TARGET_K8S_VERSION}"
+        git push origin "$UPGRADE_BRANCH"
+
+        echo "Changes pushed to origin/$UPGRADE_BRANCH"
+      else
+        echo "No changes detected. Skipping commit & push."
+      fi
+
+    timeoutInSeconds: 6000
+    failImmediatelyOnError: false

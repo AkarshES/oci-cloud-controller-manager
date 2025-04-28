@@ -1,0 +1,164 @@
+version: 0.1
+component: general-purpose
+timeoutInSeconds: 18000
+failImmediatelyOnError: true
+shell: bash
+
+env:
+  variables:
+    WORKFLOW_CODE_BRANCH: ${WORKFLOW_CODE_BRANCH}
+    CCM_WORKFLOW_CODE_REPO_PATH: "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager"
+    TARGET_CCM_CODE_REPO_PATH: "${OCI_WORKSPACE_DIR}/target-ccm"
+    FLOCK_BASE_BRANCH: ${FLOCK_BASE_BRANCH}
+    FLOCK_ACTION_BRANCH: ${FLOCK_ACTION_BRANCH}
+    CLOUD_PROVIDER_IMAGE_NAME: ${CLOUD_PROVIDER_IMAGE_NAME}
+    CCM_ARTIFACT_VERSION: ${CCM_ARTIFACT_VERSION}
+    VALIDATOR_POP_ARTIFACT_VERSION: ${VALIDATOR_POP_ARTIFACT_VERSION}
+
+steps:
+  - type: Command
+    name: Auth setup
+    command: |
+      echo "Authenticating with Bitbucket"
+      bitbucket login --access-key-secret-id ${BITBUCKET_SSH_KEY_SECRET_ID}
+      echo "Authentication complete"
+
+  - type: Command
+    name: Clone CCM - ${WORKFLOW_CODE_BRANCH}
+    command: |
+      set -euxo pipefail
+      echo "Cloning oci-cloud-controller-manager from branch ${WORKFLOW_CODE_BRANCH}"
+      git clone --depth 1 --single-branch --branch "${WORKFLOW_CODE_BRANCH}" \
+        ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
+        "${CCM_WORKFLOW_CODE_REPO_PATH}"
+
+  - type: Command
+    name: Clone CCM Flock Base Branch
+    command: |
+      set -euxo pipefail
+      echo "Cloning target CCM repo from branch ${FLOCK_BASE_BRANCH}"
+      git clone --depth 1 --branch "${FLOCK_BASE_BRANCH}" \
+        ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
+        "${TARGET_CCM_CODE_REPO_PATH}"
+
+  - type: Command
+    name: Setup Go
+    command: |
+      echo "Setting up Go environment"
+      source oit_http_proxy
+      oit_http_proxy activate
+      oit_http_proxy show
+      bash "${CCM_WORKFLOW_CODE_REPO_PATH}/pipeline/stages/scripts/setup_go.sh" 1.24
+      echo "Go setup script completed"
+
+  - type: Command
+    name: Install Valet Binary
+    command: |
+      set -euo pipefail
+      
+      echo "Installing Valet binary..."
+      
+      # Set up proxy
+      source oit_http_proxy
+      oit_http_proxy activate
+      oit_http_proxy show
+      
+      # Set up Go environment
+      source /tmp/go_env_setup.sh
+      
+      # Display Go environment information
+      echo "Go version: $(go version)"
+      echo "Go path: $(command -v go)"
+      
+      echo "Navigating to valet source directory..."
+      cd "${CCM_WORKFLOW_CODE_REPO_PATH}/pipeline/valet"
+      
+      echo "Listing valet files:"
+      ls -lart
+      
+      echo "Installing valet binary..."
+      go install ./cmd/valet
+      
+      # Confirm installation
+      echo "Installed binaries:"
+      ls -lart "$(go env GOPATH)/bin"
+      
+      echo "Verifying valet installation..."
+      if valet --help > /dev/null 2>&1; then
+        echo "Valet binary installed and verified successfully."
+      else
+        echo "Warning: Unable to execute valet binary." >&2
+      fi
+
+  - type: Command
+    name: Create flock branch in target CCM repo
+    command: |
+      echo "Creating flock action branch in target CCM repo"
+      
+      cd "${TARGET_CCM_CODE_REPO_PATH}"
+      git checkout -b "${FLOCK_ACTION_BRANCH}"
+      echo "Checked out to flock action branch: ${FLOCK_ACTION_BRANCH}"
+
+  - type: Command
+    name: Updating flock and version-set
+    command: |
+      set -euxo pipefail
+      source /tmp/go_env_setup.sh
+      
+      echo "valet getting ready to make flock changes..."
+      echo "Executing valet update-manifest command..."
+      
+      MANIFEST_CSV_PATH="${TARGET_CCM_CODE_REPO_PATH}/MANIFEST.csv"
+      MANIFEST_ARCHIVE_PATH="${TARGET_CCM_CODE_REPO_PATH}/MANIFEST_ARCHIVE.csv"
+      
+      echo "Archiving MANIFEST.csv into MANIFEST_ARCHIVE.csv..."
+      cat "${MANIFEST_CSV_PATH}" >> "${MANIFEST_ARCHIVE_PATH}"
+      
+      echo "Resetting MANIFEST.csv..."
+      : > "${MANIFEST_CSV_PATH}"
+      
+      echo "Valet is updating manifest and jsons..."      
+      valet update-manifest \
+        --image-name="${CLOUD_PROVIDER_IMAGE_NAME}" \
+        --file="${MANIFEST_CSV_PATH}" \
+        --image-tag="${CCM_ARTIFACT_VERSION}" \
+        --image-auto-tf-vars-json-path="${TARGET_CCM_CODE_REPO_PATH}/shepherd/limits/flock_structure/images.auto.tfvars.json" \
+        --pop-img-version-path="${TARGET_CCM_CODE_REPO_PATH}/release-validator-pop/image_versions.json"
+
+      echo "Valet is adding override for mapping for oc-cnp-dev tenancy"
+      valet add-mapping-override \
+        --file="${TARGET_CCM_CODE_REPO_PATH}/shepherd/limits/shared_modules/properties_values/locals.tf" \
+        --image-tag="${CCM_ARTIFACT_VERSION}"
+      echo "Valet has added an override mapping"
+      
+      echo "Valet is creating a version set"
+      valet gen-version-set \
+        --image-tags="${CCM_ARTIFACT_VERSION}" \
+        --pop-version="${VALIDATOR_POP_ARTIFACT_VERSION}" \
+        --flock-branch=${FLOCK_ACTION_BRANCH} \
+        --template="${CCM_WORKFLOW_CODE_REPO_PATH}/pipeline/valet/pkg/templates/version-set.yaml.tmpl" \
+        --vs-output-path=${TARGET_CCM_CODE_REPO_PATH}/pipeline/versionset/version-set.yaml
+
+  - type: Command
+    name: Commit and push valet flock changes
+    command: |
+      echo "Checking for modifications in git working tree"
+
+      source /tmp/ccm-upgrade.env
+      source /tmp/k8s.env
+      
+      cd ${TARGET_CCM_CODE_REPO_PATH}
+      if [ -n "$(git status --porcelain)" ]; then
+        echo "Changes detected. Committing..."
+        git status --porcelain
+        git add .
+        git commit -m "[Automated deployment #${OCI_PIPELINE_RUN_NUMBER}] Adding flock commit to push image ${CCM_ARTIFACT_VERSION} and override its mapping to oci-cnp-dev tenancy"
+        git push -f origin "$FLOCK_ACTION_BRANCH"
+
+        echo "Changes pushed to origin/$FLOCK_ACTION_BRANCH"
+      else
+        echo "No changes detected. Skipping commit & push."
+      fi
+
+    timeoutInSeconds: 6000
+    failImmediatelyOnError: false
