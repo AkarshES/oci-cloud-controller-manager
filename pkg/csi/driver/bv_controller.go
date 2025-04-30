@@ -602,7 +602,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 	}
 
 	bootVolume := false
-	if client.IsBootVolume(id) {
+	if client.IsBootVolume(req.VolumeId) {
 		if err := d.validateBootVolumeCapabilities(req.VolumeCapability); err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
