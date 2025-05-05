@@ -1,10 +1,30 @@
 locals {
+  telesis_emarld_overrides = {
+    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.16": "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+    "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+    "v1.19": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.20": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.21": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+    "v1.22": "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+    "v1.30": "v1.30-17d3efdad19-5442@sha256:a38c03656f6c759be1e4e95ab192c3e0e34dce3ed6a8e786c1139775bd0a1bde",
+  }
 
   tenancy_property_overrides = {
     "oc1" = {
       "ccm-image-version-mapping" = {
         overrides = [
-          // Hurray, no snowflakes
+          /*
+          Telesis Emarld overrides to support NAT46 in LA to
+          * faceuemerald
+           */
+          {
+            regions = ["iad"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_emarld_overrides))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaddv5fzlx2vfbfadytf5gjw2h3zkdmm7ed3vqkqnjbhnygjsoxgfq"
+          }
         ]
       },
       "csi-image-version-mapping" = {
