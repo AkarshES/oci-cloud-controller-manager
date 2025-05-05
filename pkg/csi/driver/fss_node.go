@@ -325,7 +325,7 @@ func (d FSSNodeDriver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnp
 	logger.Info("Unmount started")
 	if err := mounter.Unmount(targetPath); err != nil {
 		logger.With(zap.Error(err)).Error("failed to unmount target path.")
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	logger.With("UnmountTime", time.Since(startTime).Milliseconds()).With("TargetPath", targetPath).
 		Info("Unmounting volume completed")
@@ -435,7 +435,7 @@ func (d FSSNodeDriver) unmountAndCleanup(logger *zap.SugaredLogger, targetPath s
 	}
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to unmount StagingTargetPath")
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Errorf(codes.Internal, "%v", err.Error())
 	}
 	return nil
 }
@@ -460,7 +460,7 @@ func (d FSSNodeDriver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGet
 // NodeGetInfo returns the supported capabilities of the node server.
 // The result of this function will be used by the CO in ControllerPublishVolume.
 func (d FSSNodeDriver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	ad, _ , err := d.util.LookupNodeAvailableDomain(d.KubeClient, d.nodeID)
+	ad, _, err := d.util.LookupNodeAvailableDomain(d.KubeClient, d.nodeID)
 
 	if err != nil {
 		d.logger.With(zap.Error(err)).With("nodeId", d.nodeID, "availabilityDomain", ad).Error("Failed to get availability domain of node from kube api server.")

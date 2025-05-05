@@ -15,8 +15,10 @@
 package main
 
 import (
+	"crypto/fips140"
 	goflag "flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"runtime"
@@ -37,8 +39,6 @@ import (
 	_ "k8s.io/component-base/metrics/prometheus/restclient" // for client metric registration
 	_ "k8s.io/component-base/metrics/prometheus/version"    // for version metric registration
 	"k8s.io/klog/v2"
-
-	"bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips"
 )
 
 var version string
@@ -47,9 +47,10 @@ var build string
 func main() {
 	// Ensure AMD service is FIPS Compliant
 	if runtime.GOARCH == "amd64" {
-		go_ensurefips.Compliant()
+		if !fips140.Enabled() {
+			log.Fatalf("FIPS compliance check failed")
+		}
 	}
-
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	logger := logging.Logger()

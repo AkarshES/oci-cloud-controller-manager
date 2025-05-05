@@ -2,12 +2,14 @@ module github.com/oracle/oci-cloud-controller-manager
 
 go 1.24.0
 
+toolchain go1.24.2
+
 replace (
 	github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
 	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p
 	k8s.io/api => k8s.io/api v0.33.0
+	k8s.io/apibccblltdblrtktdkenimachinery => k8s.io/apimachinery v0.33.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.33.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.33.0
 	k8s.io/apiserver => k8s.io/apiserver v0.33.0
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.33.0
 	k8s.io/client-go => k8s.io/client-go v0.33.0
@@ -88,7 +90,6 @@ require (
 )
 
 require (
-	bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19
 	github.com/go-logr/logr v1.4.2
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
