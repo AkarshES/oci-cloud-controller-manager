@@ -71,7 +71,6 @@ const (
 	RawBlockStagingFile = "mountfile"
 
 	AvailabilityDomainLabel = "csi-ipv6-full-ad-name"
-
 )
 
 // Util interface
@@ -103,9 +102,8 @@ type CSIConfig struct {
 
 // DriverConfig represents driver-specific configurations.
 type DriverConfig struct {
-	SkipNodeUnstage bool `yaml:"skipNodeUnstage"`
+	SkipNodeUnstage      bool `yaml:"skipNodeUnstage"`
 	SkipLustreParameters bool `yaml:"skipLustreParameters"`
-
 }
 
 func (u *Util) LookupNodeID(k kubernetes.Interface, nodeName string) (string, error) {
@@ -126,7 +124,7 @@ func (u *Util) LookupNodeAvailableDomain(k kubernetes.Interface, nodeID string) 
 	n, err := k.CoreV1().Nodes().Get(context.Background(), nodeID, metav1.GetOptions{})
 	if err != nil {
 		u.Logger.With(zap.Error(err)).With("nodeId", nodeID).Error("Failed to get Node by name.")
-		return "", "",fmt.Errorf("failed to get node %s", nodeID)
+		return "", "", fmt.Errorf("failed to get node %s", nodeID)
 	}
 	if n.Labels != nil {
 		ad, ok := n.Labels[kubeAPI.LabelTopologyZone]
@@ -140,7 +138,7 @@ func (u *Util) LookupNodeAvailableDomain(k kubernetes.Interface, nodeID string) 
 	}
 	errMsg := fmt.Sprintf("Did not find the label for the fault domain. Checked Topology Labels: %s, %s", kubeAPI.LabelTopologyZone, kubeAPI.LabelZoneFailureDomain)
 	u.Logger.With("nodeId", nodeID).Error(errMsg)
-	return "","", fmt.Errorf(errMsg)
+	return "", "", fmt.Errorf("%v", errMsg)
 }
 
 // waitForPathToExist waits for for a given filesystem path to exist.
@@ -602,7 +600,7 @@ func IsIpv6SingleStackNode(nodeIpFamily *NodeIpFamily) bool {
 	return nodeIpFamily.Ipv6Enabled == true && nodeIpFamily.Ipv4Enabled == false
 }
 
-func LoadCSIConfigFromConfigMap(k kubernetes.Interface, configMapName string, logger *zap.SugaredLogger) (*CSIConfig) {
+func LoadCSIConfigFromConfigMap(k kubernetes.Interface, configMapName string, logger *zap.SugaredLogger) *CSIConfig {
 	// Get the ConfigMap
 	// Parse the configuration for each driver
 	config := &CSIConfig{}
@@ -614,7 +612,7 @@ func LoadCSIConfigFromConfigMap(k kubernetes.Interface, configMapName string, lo
 
 	if lustreConfig, exists := cm.Data["lustre"]; exists {
 		if err := yaml.Unmarshal([]byte(lustreConfig), &config.Lustre); err != nil {
-			logger.Debugf("Failed to parse lustre key in config map %v. Error: %v",configMapName,  err)
+			logger.Debugf("Failed to parse lustre key in config map %v. Error: %v", configMapName, err)
 			return config
 		}
 		logger.Infof("Successfully loaded ConfigMap %v. Using customized configuration for csi driver.", configMapName)
