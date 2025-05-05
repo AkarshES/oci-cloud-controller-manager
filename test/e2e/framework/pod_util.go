@@ -406,7 +406,7 @@ func (j *PVCTestJig) CreateAndAwaitNginxPodOrFail(ns string, pvc *v1.PersistentV
 	}
 
 	// Waiting for pod to be running
-	err = j.waitTimeoutForPodRunningInNamespace(pod.Name, ns, slowPodStartTimeout)
+	err = j.WaitTimeoutForPodRunningInNamespace(pod.Name, ns, slowPodStartTimeout)
 	if err != nil {
 		Logf("Pod failed to come up, logging debug info\n")
 		j.logPodDebugInfo(namespace, pod.Name)
@@ -425,7 +425,7 @@ func (j *PVCTestJig) waitTimeoutForPodNotFoundInNamespace(podName, namespace str
 
 // WaitTimeoutForPodRunningInNamespace waits default amount of time (PodStartTimeout) for the specified pod to become running.
 // Returns an error if timeout occurs first, or pod goes in to failed state.
-func (j *PVCTestJig) waitTimeoutForPodRunningInNamespace(podName, namespace string, timeout time.Duration) error {
+func (j *PVCTestJig) WaitTimeoutForPodRunningInNamespace(podName, namespace string, timeout time.Duration) error {
 	return wait.PollImmediate(Poll, timeout, j.podRunning(podName, namespace))
 }
 
