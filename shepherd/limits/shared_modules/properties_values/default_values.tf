@@ -16,8 +16,7 @@ locals {
         "v1.29" : "v1.29-e259bc56402-106@sha256:8f0e0e655672311396a631d19688fbaf4cf473ce991b72791586dce8ced607b8",
         "v1.30" : "v1.30-c1f46fdfd72-96@sha256:96c29df6e94d0dbcb2956d99f08de612f866eff2cca6263a33ab90470f633afa",
         "v1.31" : "v1.31-5712723a30a-54@sha256:78bec501d421ae30f133b754956b60da57493f1f2adcdd79ea18d9da15d84b3b",
-        "v1.32" : "v1.32-78e6d79de3c-22@sha256:f832a34c0c8c887e564d405243d69284ec777f94144a0b26313b4e8460bf3e35",
-        "v1.33" : "v1.32-78e6d79de3c-22@sha256:f832a34c0c8c887e564d405243d69284ec777f94144a0b26313b4e8460bf3e35"
+        "v1.32" : "v1.32-78e6d79de3c-22@sha256:f832a34c0c8c887e564d405243d69284ec777f94144a0b26313b4e8460bf3e35"
       }
     }
   }
@@ -35,24 +34,7 @@ locals {
         "v1.29" : "v1.29-0911461af79-92@sha256:ed06eeb4d53c3af81e3caf662c7057922dc1a39400b3a38ef281db0b3707113f",
         "v1.30" : "v1.30-a67f7b269a7-85@sha256:f0224f684ef8e32ea6435e51cb72dba3a6bd140f6ef8d7190cc1f6d7c669c1b0",
         "v1.31" : "v1.31-c7e5bd92e29-43@sha256:eff28f23a6c82e1d1539e5f3c4b65efe8fdf8ea615c6f9158592c630fc9f09d1",
-        "v1.32" : "v1.32-c01d1d4113e-11@sha256:a797ab6fd015af36ce0a5570ccd741860672bccdd879b167fa16b1212ab77bc1",
-        "v1.33" : "v1.32-c01d1d4113e-11@sha256:a797ab6fd015af36ce0a5570ccd741860672bccdd879b167fa16b1212ab77bc1"
-
-      }
-    }
-  }
-
-  // Test any upstream version
-  ccm_upstream_k8s_new_version_test = {
-    "default" = {
-      "all" : {
-      }
-    }
-  }
-
-  csi_upstream_k8s_new_version_test = {
-    "default" = {
-      "all" : {
+        "v1.32" : "v1.32-c01d1d4113e-11@sha256:a797ab6fd015af36ce0a5570ccd741860672bccdd879b167fa16b1212ab77bc1"
       }
     }
   }
@@ -221,8 +203,7 @@ locals {
             "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-          },
-          local.ccm_upstream_k8s_new_version_test.default.all
+          }
         ))
         "fra" : jsonencode(merge(local.ccm_default_mapping.default.all,
           {
@@ -240,6 +221,7 @@ locals {
       // To override property values for an environment declare a key
       // by environment name. To override values for a qualified realm, declare
       // a key with qualified realm name
+
       // https://developer.hashicorp.com/terraform/language/functions/merge
       "prd.oc1" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
@@ -494,6 +476,7 @@ locals {
           }
         ))
       }
+
     }
 
     // CSI Image Mappings
@@ -514,7 +497,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2"
           }
         ))
         "iad" : jsonencode(merge(local.csi_default_mapping.default.all,
@@ -526,7 +510,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2",
           }
         ))
         "phx" : jsonencode(merge(local.csi_default_mapping.default.all,
@@ -538,7 +523,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2",
           }
         ))
         "fra" : jsonencode(merge(local.csi_default_mapping.default.all,
@@ -550,7 +536,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2"
           }
         ))
       }
@@ -565,7 +552,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2"
 
           }
         ))
@@ -578,7 +566,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2"
           }
         ))
         "phx" : jsonencode(merge(local.csi_default_mapping.default.all,
@@ -590,9 +579,9 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
-          },
-          local.csi_upstream_k8s_new_version_test.default.all
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2",
+          }
         ))
         "fra" : jsonencode(merge(local.csi_default_mapping.default.all,
           {
@@ -603,7 +592,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.32" : "v1.32-fef3de1bc29-34@sha256:6c3464154b74dcf1d054ed7e52225edf35966a3d9f7e18f8b8e61bfe92a787e2"
           }
         ))
       }
