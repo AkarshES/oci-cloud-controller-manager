@@ -24,6 +24,16 @@ locals {
             env = "prd"
             value = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_emarld_overrides))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaddv5fzlx2vfbfadytf5gjw2h3zkdmm7ed3vqkqnjbhnygjsoxgfq"
+          },
+          /*
+          Telesis Emarld overrides to support NAT46 in LA to
+          * faceuemeraldgateway
+          */
+          {
+            regions = ["iad"]
+            env = "prd"
+            value = jsonencode(merge(local.ccm_default_mapping.default.all, local.telesis_emarld_overrides))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa3owbkj5sk32wfrsgrxjr7oxxev2orsulef55744k5lqnthkafs7q"
           }
         ]
       },
