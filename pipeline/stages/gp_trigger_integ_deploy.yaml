@@ -1,0 +1,45 @@
+version: 0.1
+component: general-purpose
+timeoutInSeconds: 10000
+failImmediatelyOnError: true
+
+env:
+  variables:
+    CCM_ARTIFACT_VERSION: ${CCM_ARTIFACT_VERSION}
+
+steps:
+  - type: Command
+    name: Trigger Integ Deploy
+    shell: bash
+    command: |
+      set -euxo pipefail
+      pipeline_id="ocid1.devopsbuildpipeline.oc1.phx.amaaaaaa7aeocuiadl4lfbd3btwvy7b4ys724pbwkpw7c7u3thy4brdoptzq"
+      
+      JSON_STRING='{
+        "buildPipelineId": "%s",
+        "buildRunArguments": {
+          "items": [
+            {
+              "name": "CCM_ARTIFACT_VERSION",
+              "value": "%s"
+            }
+          ]
+        },
+        "displayName": "Integ Deploy CPO-%s"
+      }'
+      
+      printf "$JSON_STRING" "$pipeline_id" "$CCM_ARTIFACT_VERSION" "$CCM_ARTIFACT_VERSION" > build_run_params.json
+      cat build_run_params.json
+      pwd
+      ls -lrt
+
+      response=$(oci devops build-run create --from-json file://./build_run_params.json)
+      echo $response
+      test_run_id=$(echo "$response" | jq -r '.data.id')
+
+      if [ -z "$test_run_id" ]; then
+        echo "Error: Failed to extract CCM E2E Test run ID."
+        exit 1
+      fi
+
+      echo "CCM E2E Test run ID: $test_run_id"
