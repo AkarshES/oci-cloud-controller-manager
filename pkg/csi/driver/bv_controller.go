@@ -128,7 +128,7 @@ func extractVolumeParameters(log *zap.SugaredLogger, parameters map[string]strin
 		case attachmentType:
 			attachmentTypeLower := strings.ToLower(v)
 			if attachmentTypeLower != attachmentTypeISCSI && attachmentTypeLower != attachmentTypeParavirtualized {
-				return p, status.Errorf(codes.InvalidArgument, fmt.Sprintf("invalid attachment-type: %s provided "+
+				return p, status.Errorf(codes.InvalidArgument, "%s", fmt.Sprintf("invalid attachment-type: %s provided "+
 					"for storageclass. supported attachment-types are %s and %s", v, attachmentTypeISCSI, attachmentTypeParavirtualized))
 			}
 			p.attachmentParameter[attachmentType] = attachmentTypeLower
@@ -182,7 +182,7 @@ func extractSnapshotParameters(parameters map[string]string) (SnapshotParameters
 			} else if backupTypeLower == backupTypeFull {
 				p.backupType = core.CreateVolumeBackupDetailsTypeFull
 			} else {
-				return p, status.Errorf(codes.InvalidArgument, fmt.Sprintf("invalid backupType: %s provided "+
+				return p, status.Errorf(codes.InvalidArgument, "%s", fmt.Sprintf("invalid backupType: %s provided "+
 					"in volumesnapshotclass. supported backupType are %s and %s", v, backupTypeIncremental, backupTypeFull))
 			}
 		case backupFreeformTags:
@@ -1047,7 +1047,6 @@ func (d *BlockVolumeControllerDriver) ValidateVolumeCapabilities(ctx context.Con
 			return nil, status.Errorf(codes.NotFound, "Volume ID not found.")
 		}
 		found = *volume.Id == volumeID
-		supportedVolumeCapabilities = supportedVolumeCapabilities
 	}
 
 	if !found {

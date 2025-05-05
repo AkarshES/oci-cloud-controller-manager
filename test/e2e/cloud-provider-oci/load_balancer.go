@@ -1443,7 +1443,7 @@ var _ = Describe("BackendSet only enabled TLS - NodePool Scaling", func() {
 				if *loadBalancer.Listeners[backendSetName].Port == sslEnabledPorts[0] {
 					expectedSSL, err := cloudprovider.GetSSLConfiguration(sslConfig, sslConfig.BackendSetSSLSecretName, sslEnabledPorts[0], backendSslConfigAnnotation)
 					if err != nil {
-						sharedfw.Failf(err.Error())
+						sharedfw.Failf("%v", err)
 					}
 					sharedfw.Logf("Actual SSL Config for ", sslEnabledPorts[0], ":", backendSet.SslConfiguration.CertificateName)
 					sharedfw.Logf("Expected SSL Config for ", sslEnabledPorts[0], ":", expectedSSL.CertificateName)

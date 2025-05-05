@@ -1,7 +1,5 @@
 bitbucket.oci.oraclecorp.com/GOPLEX/tagging v0.0.0-20190321202046-20a2e48911da h1:nZa2pDAMXjXO8lzZaFi49NLvZF6LZ1hZuOXpdDlx6rs=
 bitbucket.oci.oraclecorp.com/GOPLEX/tagging v0.0.0-20190321202046-20a2e48911da/go.mod h1:zViK3CanICeUISIJLcmXLu8vV5gWZ78c+12hsmb9i58=
-bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19 h1:1lU3boCbKoHdx8TqaNpYBTk6IxNio0SltnKLkd2DlW8=
-bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19/go.mod h1:x60JFX/U5PG3vAYPbGZ9Lvco7wKTNYGooy44RCsgn5M=
 bitbucket.oci.oraclecorp.com/faas/ocimtls v1.2.0/go.mod h1:uIRAMkVfNv4425VQIBIFruCryoRGNjeqZscoLCT0wPU=
 bitbucket.oci.oraclecorp.com/goiam/httpiam v0.0.0-20190319165730-973dbb679788/go.mod h1:64T+eIS2DcOl0TKiafrDTBKiU6dLMAhZPhJ/ABAavFU=
 bitbucket.oci.oraclecorp.com/goiam/httpsigner v0.0.0-20190320175442-e8cb27ebf440 h1:kyDncMt7uPz4SJ91k3tmivOVYIfEvuMwHRfkZWbb3j8=

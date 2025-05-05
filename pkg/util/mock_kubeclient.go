@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/kubernetes/typed/resource/v1beta2"
 
 	api "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,6 +70,11 @@ import (
 
 type MockKubeClient struct {
 	CoreClient *MockCoreClient
+}
+
+func (m MockKubeClient) ResourceV1beta2() v1beta2.ResourceV1beta2Interface {
+	//TODO implement me
+	return nil
 }
 
 func (m MockKubeClient) CoordinationV1alpha2() v1alpha14.CoordinationV1alpha2Interface {
