@@ -6,24 +6,25 @@ function createOCIConfig() {
     # Create config directory.
     mkdir -p ${OCI_CONFIG_DIR}
     if [ $? -ne 0 ]; then
-         echo "Could not create oci config directory at ${OCI_CONFIG_DIR}"
+         echo "[OCI_CONFIG] Could not create oci config directory at ${OCI_CONFIG_DIR}"
          exit 1
     fi
-    echo "Created OCI config directory at ${OCI_CONFIG_DIR}"
+    echo "[OCI_CONFIG] Created OCI config directory at ${OCI_CONFIG_DIR}"
 
     # Create OCI key (PEM) file.
     KEY_PEM_FILE=${OCI_CONFIG_DIR}/oci_api_key.pem
 
     echo $OCI_KEY | base64 -d > $KEY_PEM_FILE
-    echo "Created oci key file at $KEY_PEM_FILE"
+    echo "[OCI_CONFIG] Created oci key file at $KEY_PEM_FILE"
     oci setup repair-file-permissions --file ${KEY_PEM_FILE}
+    echo "Key file: $(cat "$KEY_PEM_FILE")"
 
     # Create OCI config file.
     CONFIG_FILE=${OCI_CONFIG_DIR}/config
     CONFIG_CONTENT="[DEFAULT]\nuser=$OCI_USER\nfingerprint=$OCI_FINGERPRINT\nkey_file=$KEY_PEM_FILE\ntenancy=$OCI_TENANCY\nregion=$OCI_REGION\n"
     echo -e $CONFIG_CONTENT > $CONFIG_FILE
     echo "Created oci config file at $CONFIG_FILE"
-    export export CONFIG_FILE
+    echo "Config file: $(cat "$CONFIG_FILE")"
     oci setup repair-file-permissions --file ${CONFIG_FILE}
 
 }

@@ -478,10 +478,10 @@ function declare_environment () {
 
     if [[ $LOCAL_RUN != 1 ]]; then
         if [[ ! -z $TC_BUILD ]]; then
-        # kubeconfig v2 requres oci cli and an oci config
-        # The docker image installs these already
-        install_dependencies
-        install_oci_cli
+            # kubeconfig v2 requres oci cli and an oci config
+            # The docker image installs these already
+            install_dependencies
+            install_oci_cli
         fi
         createOCIConfig
         # uncomment this to verify authentication if needed
