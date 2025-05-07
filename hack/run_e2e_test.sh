@@ -40,10 +40,13 @@ function install_dependencies () {
 # install the oci cli - needed by kubeconfig v2
 function install_oci_cli () {
     # consider where to save the install.sh, and where to install the oci binary
+    set +x
+    echo "Start oci-cli-install"
     mkdir oci-cli-install
     curl -L "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh" > oci-cli-install/install.sh
     chmod u+x ./oci-cli-install/install.sh
     ./oci-cli-install/install.sh --install-dir /usr/local/oci --accept-all-defaults
+    set -x
 }
 
 # create the oci config file for authenticating the cli calls
@@ -478,10 +481,10 @@ function declare_environment () {
 
     if [[ $LOCAL_RUN != 1 ]]; then
         if [[ ! -z $TC_BUILD ]]; then
-        # kubeconfig v2 requres oci cli and an oci config
-        # The docker image installs these already
-        install_dependencies
-        install_oci_cli
+            # kubeconfig v2 requres oci cli and an oci config
+            # The docker image installs these already
+            install_dependencies
+            install_oci_cli
         fi
         createOCIConfig
         # uncomment this to verify authentication if needed
