@@ -142,6 +142,9 @@
       "oke-public-cloud-provider-oci": "v1.32-2d4eeeba188-19"
     },
     {
+      "oke-public-cloud-provider-oci": "v1.32-78e6d79de3c-22"
+    },
+    {
       "oke-public-cloud-provider-oci": "v1.29-e259bc56402-106"
     },
     {
@@ -151,7 +154,13 @@
       "oke-public-cloud-provider-oci": "v1.31-5712723a30a-54"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.32-78e6d79de3c-22"
+      "oke-public-cloud-provider-oci": "v1.30-17d3efdad19-5442"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.31-41e1a997c09-5474"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.32-e428a4653e6-5465"
     }
   ]
 }

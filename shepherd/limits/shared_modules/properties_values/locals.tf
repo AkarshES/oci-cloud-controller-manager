@@ -1,13 +1,8 @@
 locals {
   telesis_emarld_overrides = {
-    "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
-    "v1.17": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.18": "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
-    "v1.19": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.20": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.21": "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
-    "v1.22": "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
     "v1.30": "v1.30-17d3efdad19-5442@sha256:a38c03656f6c759be1e4e95ab192c3e0e34dce3ed6a8e786c1139775bd0a1bde",
+    "v1.31": "v1.31-41e1a997c09-5474@sha256:c378ff544851675d1ae5dee827a7d1f3030af87610a8568db05ada6b2d989f07",
+    "v1.32": "v1.32-e428a4653e6-5465@sha256:82a9f3e86ddb81b835bfe72f341c8b6daf55edf452cb6c7832aef2424207469d",
   }
 
   tenancy_property_overrides = {
