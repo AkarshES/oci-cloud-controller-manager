@@ -24,7 +24,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -368,22 +367,6 @@ func (c *MockVirtualNetworkClient) UpdateSecurityList(ctx context.Context, id st
 
 func (c *MockVirtualNetworkClient) GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error) {
 	return nil, nil
-}
-
-func (c *MockVirtualNetworkClient) GetNodeNsgsFromCacheByNodeOcid(nodeOcid string) ([]string, bool, error) {
-	return []string{}, false, nil
-}
-
-func (c *MockVirtualNetworkClient) AddNodeNsgsToCacheByNodeOcid(nodeOcid string, nsgIDs []string) error {
-	return nil
-}
-
-func (c *MockVirtualNetworkClient) GetServiceNsgSetFromCache(serviceKey string) (sets.String, bool, error) {
-	return sets.NewString(), false, nil
-}
-
-func (c *MockVirtualNetworkClient) AddServiceNsgSetToCache(serviceKey string, nsgSet sets.String) error {
-	return nil
 }
 
 // MockIdentityClient mocks identity client structure
