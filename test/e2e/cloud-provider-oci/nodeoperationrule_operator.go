@@ -3,9 +3,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"slices"
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	"github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
@@ -14,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/strings/slices"
+	"time"
 )
 
 const (
