@@ -49,10 +49,11 @@ function install_oci_cli () {
 # create the oci config file for authenticating the cli calls
 function createOCIConfig() {
     # OCI_CONFIG_DIR="$HOME/e2e/oci"
+    echo "Current user: $(whoami); HOME Loc: ${HOME}"
     OCI_CONFIG_DIR="$HOME/.oci"
 
     # Create config directory.
-    mkdir -p ${OCI_CONFIG_DIR}
+    mkdir -p "${OCI_CONFIG_DIR}" || exit
     if [ $? -ne 0 ]; then
          echo "Could not create oci config directory at ${OCI_CONFIG_DIR}"
          exit 1
@@ -62,7 +63,7 @@ function createOCIConfig() {
     # Create OCI key (PEM) file.
     KEY_PEM_FILE=${OCI_CONFIG_DIR}/oci_api_key.pem
 
-    echo $OCI_KEY | sed 's/ //g' | openssl enc -base64 -d -A > $KEY_PEM_FILE
+    echo "$OCI_KEY" | base64 -d > "$KEY_PEM_FILE" || exit
     echo "Created oci key file at $KEY_PEM_FILE"
     oci setup repair-file-permissions --file ${KEY_PEM_FILE}
 
@@ -71,7 +72,7 @@ function createOCIConfig() {
     CONFIG_CONTENT="[DEFAULT]\nuser=$OCI_USER\nfingerprint=$OCI_FINGERPRINT\nkey_file=$KEY_PEM_FILE\ntenancy=$OCI_TENANCY\nregion=$OCI_REGION\n"
     echo -e $CONFIG_CONTENT > $CONFIG_FILE
     echo "Created oci config file at $CONFIG_FILE"
-    export export CONFIG_FILE
+    export CONFIG_FILE
     oci setup repair-file-permissions --file ${CONFIG_FILE}
 
 }
@@ -79,8 +80,7 @@ function createOCIConfig() {
 # test that the cli can authenticate
 function test_oci () {
     echo "testing oci cli"
-    echo oci ce cluster list --compartment-id ocid1.compartment.oc1..aaaaaaaar5p4lkcp2tvva547lmorv6mb7e67iwy3z3mmb3lml73jtwi6quvq
-    oci ce cluster list --compartment-id ocid1.compartment.oc1..aaaaaaaar5p4lkcp2tvva547lmorv6mb7e67iwy3z3mmb3lml73jtwi6quvq
+    set -x && oci ce cluster list -c "$COMPARTMENT" && set +x
 }
 
 function check_environment () {
@@ -140,7 +140,7 @@ function set_image_pull_repo_and_delete_namespace_flag () {
 
 function run_e2e_tests() {
     export OCI_KEY_FILE=$(mktemp /tmp/ocikey.XXXXXXXXXX) || { echo "Failed to create temp file"; exit 1; }
-    echo $OCI_KEY | sed 's/ //g' | openssl enc -base64 -d -A >> $OCI_KEY_FILE
+    echo "$OCI_KEY" | base64 -d >> "$OCI_KEY_FILE"
 
     # These environment variables are used by the oci-go-sdk lib
     # For more information, you can look at the file:
@@ -156,6 +156,9 @@ function run_e2e_tests() {
 
 	if [[ -z "${E2E_NODE_COUNT}" ]]; then
 	  E2E_NODE_COUNT=1
+	fi
+	if [[ -z "${OKE_PROVIDERS_K8S_VERSION}" ]]; then
+	  OKE_PROVIDERS_K8S_VERSION=""
 	fi
 
     if [ "$ENABLE_PARALLEL_RUN" == "true" ] || [ "$ENABLE_PARALLEL_RUN" == "TRUE" ]; then
@@ -183,7 +186,8 @@ function run_e2e_tests() {
                 --clusterIPFamily=${CLUSTER_IP_FAMILY} \
                 --npImageOS=${NP_IMAGE_OS} \
                 --existingClusterOcid=${EXISTING_CLUSTER_OCID} \
-                --skipClusterDeletion=${SKIP_CLUSTER_DELETION}\
+                --skipClusterDeletion=${SKIP_CLUSTER_DELETION} \
+                --okeProvidersK8sVersion=${OKE_PROVIDERS_K8S_VERSION} \
                 --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
                 --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
                 --pubsshkey="${PUB_SSHKEY}" \
@@ -245,7 +249,8 @@ function run_e2e_tests() {
                 --clusterIPFamily=${CLUSTER_IP_FAMILY} \
                 --npImageOS=${NP_IMAGE_OS} \
                 --existingClusterOcid=${EXISTING_CLUSTER_OCID} \
-                --skipClusterDeletion=${SKIP_CLUSTER_DELETION}\
+                --skipClusterDeletion=${SKIP_CLUSTER_DELETION} \
+                --okeProvidersK8sVersion=${OKE_PROVIDERS_K8S_VERSION} \
                 --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
                 --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
                 --pubsshkey="${PUB_SSHKEY}" \
@@ -284,7 +289,7 @@ function run_e2e_tests() {
                 --maxpodspernode=${MAX_PODS_PER_NODE}
     fi
     retval=$?
-    rm -f $OCI_KEY_FILE
+    rm -f "$OCI_KEY_FILE"
     return $retval
 }
 
@@ -491,7 +496,7 @@ function declare_setup () {
 }
 
 function set_focus () {
-    # The FOCUS environment variable can be set with a regex to tun selected tests
+    # The FOCUS environment variable can be set with a regex to run selected tests
     # e.g. export FOCUS="\[cloudprovider\]"
     # e.g. export FILES="true" && export FOCUS="\[fss_\]" would run E2Es from both fss_dynamic.go and fss_static.go (FOCUS used for file regex instead)
     # e.g. export FOCUS="\[cloudprovider\]" && export FOCUS_SKIP="\[node-update\]" would run all E2Es except ones that have "\[node-update\]" FOCUS.
@@ -585,15 +590,16 @@ function declare_environment () {
 
     if [[ $LOCAL_RUN != 1 ]]; then
         if [[ ! -z $TC_BUILD ]]; then
-        # kubeconfig v2 requres oci cli and an oci config
-        # The docker image installs these already
-        install_dependencies
-        install_oci_cli
-        createOCIConfig
+            # kubeconfig v2 requres oci cli and an oci config
+            # The docker image installs these already
+            install_dependencies
+            install_oci_cli
         fi
-
-    # uncomment this to verify authentication if needed
-    # test_oci
+        if [[ "$OCI_TENANCY" == "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq" ]]; then
+            createOCIConfig
+            # uncomment this to verify authentication if needed
+            test_oci
+        fi
     fi
 }
 
@@ -682,4 +688,5 @@ function run_tests () {
     fi
 }
 
+echo "Start run_e2e_tests"
 run_tests

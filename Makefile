@@ -204,7 +204,8 @@ test-local: build-dirs
 
 .PHONY: run-ccm-e2e-tests-local
 run-ccm-e2e-tests-local:
-	./hack/run_e2e_test.sh
+	echo "Start run-ccm-e2e-tests-local"
+	set -x && ./hack/run_e2e_test.sh
 
 # make temporary depenancy base dir
 create-deps-dir:

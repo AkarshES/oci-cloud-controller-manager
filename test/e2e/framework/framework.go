@@ -89,6 +89,7 @@ var (
 	npImageOS                     string
 	existingClusterOcid           string
 	skipClusterDeletion           string
+	okeProvidersK8sVersion        string
 	okeClusterK8sVersionIndex     int
 	okeNodePoolK8sVersionIndex    int
 	pubsshkey                     string
@@ -167,6 +168,7 @@ func init() {
 	flag.StringVar(&npImageOS, "npImageOS", "", "Node Pool OS Version to be used for testing.")
 	flag.StringVar(&existingClusterOcid, "existingClusterOcid", "", "OCID of existing cluster to run e2es on")
 	flag.StringVar(&skipClusterDeletion, "skipClusterDeletion", "false", "Flag to control cluster deletion post e2e run, useful to debug cluster in case of issues by skipping deletion.")
+	flag.StringVar(&okeProvidersK8sVersion, "okeProvidersK8sVersion", "", "The exact k8s version provided by providers pipeline")
 	flag.IntVar(&okeClusterK8sVersionIndex, "okeClusterK8sVersionIndex", -1, "The index of k8s versionList (0 means the 1st version, 1 means the 2nd version. -1 means the latest version. versionList is like ['1.10.11', 1.11.8', '1.12.6']) used when create cluster")
 	flag.IntVar(&okeNodePoolK8sVersionIndex, "okeNodePoolK8sVersionIndex", -1, "The index of k8s versionList (0 means the 1st version, 1 means the 2nd version. -1 means the latest version. versionList is like ['1.10.11', 1.11.8', '1.12.6']) used when create nodepool")
 	flag.StringVar(&pubsshkey, "pubsshkey", "", "Public SSH Key for node access.")
@@ -728,7 +730,13 @@ func (f *Framework) Initialize() {
 		// Determine which cluster k8s versions are supported for this OKE Release
 		clusterOptions := f.GetClusterOptions("all")
 		versions := filterVersionsToLatestMinor(clusterOptions.KubernetesVersions)
-		f.OkeClusterK8sVersion = getK8sVersionValue(versions, okeClusterK8sVersionIndex)
+		if okeProvidersK8sVersion != "" {
+			Logf("okeProvidersK8sVersion is provided and not empty=%v", okeProvidersK8sVersion)
+			f.OkeClusterK8sVersion = okeProvidersK8sVersion
+		} else {
+			f.OkeClusterK8sVersion = getK8sVersionValue(versions, okeClusterK8sVersionIndex)
+		}
+		// f.OkeClusterK8sVersion = getK8sVersionValue(versions, okeClusterK8sVersionIndex)
 		//below K8sVersion* would be deprecated if OkeClusterK8sVersion is used in test code
 		numVersions := len(versions)
 		if numVersions < 2 {
@@ -745,7 +753,13 @@ func (f *Framework) Initialize() {
 		// Determine which cluster k8s versions are supported for this OKE Release
 		nodePoolOptions := f.GetNodePoolOptions("all")
 		nodePoolVersions := filterVersionsToLatestMinor(nodePoolOptions.KubernetesVersions)
-		f.OkeNodePoolK8sVersion = getK8sVersionValue(nodePoolVersions, okeNodePoolK8sVersionIndex)
+		if okeProvidersK8sVersion != "" {
+			Logf("okeProvidersK8sVersion is provided and not empty, hence setting nodepool version as =%v", okeProvidersK8sVersion)
+			f.OkeNodePoolK8sVersion = okeProvidersK8sVersion
+		} else {
+			f.OkeNodePoolK8sVersion = getK8sVersionValue(nodePoolVersions, okeNodePoolK8sVersionIndex)
+		}
+		//f.OkeNodePoolK8sVersion = getK8sVersionValue(nodePoolVersions, okeNodePoolK8sVersionIndex)
 
 		Logf("OkeClusterK8sVersion=%v", f.OkeClusterK8sVersion)
 		Logf("OkeNodePoolK8sVersion=%v", f.OkeNodePoolK8sVersion)
