@@ -256,7 +256,9 @@ rpm-test:
 
 .pl-patched:
 	echo "Executing Patch to fix upstream changes"
+	git apply --apply patches/0001-Modify-sidecar-upstream-to-use-versiond-feature-gate.patch
 	echo "Verify patch changes"
+	git diff
 
 .PHONY: extract-multiarch-sha
 extract-multiarch-sha:
