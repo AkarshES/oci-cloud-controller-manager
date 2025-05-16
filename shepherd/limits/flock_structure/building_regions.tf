@@ -33,12 +33,14 @@ resource "shepherd_execution_target" "prod_build_spectre_region_et" {
     name = "null"
     constraint = ">= 0.1"
   }
-  alarms_to_watch {
-    compartment_name = "assets"
-    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+  dynamic "alarms_to_watch" {
+    for_each = contains(keys(local.build_region_to_realm), split(".", each.key)[2]) ? [] : [1]
+    content {
+      compartment_name = "assets"
+      labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+    }
   }
 }
-
 resource "shepherd_execution_target" "prod_build_region_et" {
   for_each                  = local.build_region_cell_overrides
   name                      = each.key
@@ -55,12 +57,15 @@ resource "shepherd_execution_target" "prod_build_region_et" {
     manage_definitions     = "false"
     pool_name_regex = "^oke-deploy-prod[0-9]*"
   }, lookup(module.merged_cell_config.additional_locals, each.key, {}))
-  alarms_to_watch {
-    compartment_name = "assets"
+  dynamic "alarms_to_watch" {
+    for_each = contains(keys(local.build_region_to_realm), split(".", each.key)[2]) ? [] : [1]
+    content {
+      compartment_name = "assets"
     # updated compartment name
     #compartment_name = format("cell%d:cell%d.mp:cell%d.mp.orchestration", split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1], split(lookup(lookup(module.merged_cell_config.additional_locals, each.key, {}), "cell_name_prefix"), each.key)[1]) # This is a compartment in the tenancy above
-    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
-  }
+      labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+    }
+  }  
   ignored_region_build_capabilities = ["grafana_dashboard"]
   provider_override {
     name = "null"

@@ -65,11 +65,14 @@ resource "shepherd_execution_target" "build_env_setup_et" {
   snowflake_config_location         = "generic_tenancy"
   additional_locals                 = merge(each.value.additional_locals, { cell_count : each.value.cell_count })
   ignored_region_build_capabilities = ["grafana_dashboard"]
-  alarms_to_watch {
-    compartment_name = "assets"
-    labels = [ for idx in range(each.value.cell_count) : format("oke-mp-release-cells%s",idx)]
+  dynamic "alarms_to_watch" {
+    for_each = contains(keys(local.build_realm_by_name), split(".", each.key)[1]) ? [] : [1]
+    content {
+      compartment_name = "assets"
+      labels = [ for idx in range(each.value.cell_count) : format("oke-mp-release-cells%s",idx)]
+    }
   }
-}
+}  
 
 resource "shepherd_execution_target" "build_spectre_setup_et" {
   for_each                          = local.build_spectre_setup_ets
@@ -82,8 +85,11 @@ resource "shepherd_execution_target" "build_spectre_setup_et" {
   snowflake_config_location         = "spectre_region"
   additional_locals                 = each.value.additional_locals
   ignored_region_build_capabilities = ["grafana_dashboard"]
-  alarms_to_watch {
-    compartment_name = "assets"
-    labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+  dynamic "alarms_to_watch" {
+    for_each = contains(keys(local.build_realm_by_name), split(".", each.key)[1]) ? [] : [1]
+    content {
+      compartment_name = "assets"
+      labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+    }
   }
-}
+}  
