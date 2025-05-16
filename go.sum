@@ -443,8 +443,8 @@ github.com/kubernetes-csi/external-attacher v0.0.0-20250226125434-edc3ddc185aa h
 github.com/kubernetes-csi/external-attacher v0.0.0-20250226125434-edc3ddc185aa/go.mod h1:DjSb7WZdlSoR7gGC//+XEyjm12dC9HpuxmfXOQshqFQ=
 github.com/kubernetes-csi/external-provisioner/v5 v5.2.0 h1:wlYp2a2pzrmzIuw9O1ll4P/YGD2YB378nP3wC3BAzAY=
 github.com/kubernetes-csi/external-provisioner/v5 v5.2.0/go.mod h1:DLAnMYEFgrSgw0bvMA4qq3Opmg2+WKA455IPZ1kHtMI=
-github.com/kubernetes-csi/external-resizer v1.13.1 h1:MapaOxNIKOELjaTBWACGwa8e0WV67wH0WXuw22SFnog=
-github.com/kubernetes-csi/external-resizer v1.13.1/go.mod h1:wmt4NS/oEXxHMuVtEaiUU94tVlEO5tlrrNd+3Y7hzcc=
+github.com/kubernetes-csi/external-resizer v1.13.2 h1:ooiNWed/pGEt93Kz83Be4GmZYAcg7S94rxyqHWeDqPU=
+github.com/kubernetes-csi/external-resizer v1.13.2/go.mod h1:rYlYr41ogtrEeoYwAimsTYa692flBzdrGrpT/3tNbJU=
 github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0 h1:qS4r4ljINLWKJ9m9Ge3Q3sGZ/eIoDVDT2RhAdQFHb1k=
 github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0/go.mod h1:oGXx2XTEzs9ikW2V6IC1dD8trgjRsS/Mvc2JRiC618Y=
 github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0 h1:Q3jQ1NkFqv5o+F8dMmHd8SfEmlcwNeo1immFApntEwE=
