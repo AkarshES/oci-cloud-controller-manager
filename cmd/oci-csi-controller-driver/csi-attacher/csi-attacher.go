@@ -17,6 +17,8 @@ package csiattacher
 import (
 	"context"
 	"fmt"
+	"k8s.io/component-base/metrics/legacyregistry"
+	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
 	"net/http"
 	"os"
 	"time"
@@ -26,6 +28,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
+	_ "k8s.io/component-base/metrics/prometheus/workqueue" // register work queues in the default legacy registry
 	"k8s.io/klog/v2"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -116,6 +119,12 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	logger := klog.LoggerWithValues(klog.Background(), "driver", csiAttacher)
 	klog.V(2).Infof("CSI driver name: %q", csiAttacher)
 
+	// Add default legacy registry so that metrics manager serves Go runtime and process metrics.
+
+	// Also registers the `k8s.io/component-base/` work queue and leader election metrics we anonymously import.
+
+	metricsManager.WithAdditionalRegistry(legacyregistry.DefaultGatherer)
+
 	mux := http.NewServeMux()
 	addr := csioptions.MetricsAddress
 	// Start HTTP server for metrics + leader election healthz
@@ -178,7 +187,6 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	if err != nil {
 		klog.Errorf("Failed to check if driver supports ListVolumesPublishedNodes, assuming it does not: %v", err)
 	}
-
 
 	ctrl := controller.NewCSIAttachController(
 		logger,

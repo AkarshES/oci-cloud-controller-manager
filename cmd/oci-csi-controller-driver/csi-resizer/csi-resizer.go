@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"k8s.io/component-base/metrics/legacyregistry"
 	"net/http"
 	"os"
 	"time"
@@ -32,6 +33,8 @@ import (
 	"github.com/kubernetes-csi/external-resizer/pkg/resizer"
 	"github.com/kubernetes-csi/external-resizer/pkg/util"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
+	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
+	_ "k8s.io/component-base/metrics/prometheus/workqueue"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -48,8 +51,7 @@ var (
 	kubeAPIBurst = flag.Int("kube-api-burst", 10, "Burst to use while communicating with the kubernetes apiserver. Defaults to 10.")
 
 	handleVolumeInUseError = flag.Bool("handle-volume-inuse-error", true, "Flag to turn on/off capability to handle volume in use error in resizer controller. Defaults to true if not set.")
-	extraModifyMetadata = flag.Bool("extra-modify-metadata", false, "If set, add pv/pvc metadata to plugin modify requests as parameters.")
-
+	extraModifyMetadata    = flag.Bool("extra-modify-metadata", false, "If set, add pv/pvc metadata to plugin modify requests as parameters.")
 
 	version = "unknown"
 )
@@ -114,6 +116,10 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	}
 	klog.V(2).InfoS("CSI driver name", "driverName", driverName)
 
+	// Add default legacy registry so that metrics manager serves Go runtime and process metrics.
+	// Also registers the `k8s.io/component-base/` work queue and leader election metrics we anonymously import.
+	metricsManager.WithAdditionalRegistry(legacyregistry.DefaultGatherer)
+
 	csiResizer, err := resizer.NewResizerFromClient(
 		csiClient,
 		csioptions.Timeout,
@@ -158,7 +164,7 @@ func StartCSIResizer(csioptions csioptions.CSIOptions) {
 	var mc modifycontroller.ModifyController
 	// Add modify controller only if the feature gate is enabled
 	if utilfeature.DefaultFeatureGate.Enabled(features.VolumeAttributesClass) {
-		mc = modifycontroller.NewModifyController(modifierName, csiModifier, kubeClient, csioptions.Resync,csioptions.RetryIntervalMax,*extraModifyMetadata, informerFactory,
+		mc = modifycontroller.NewModifyController(modifierName, csiModifier, kubeClient, csioptions.Resync, csioptions.RetryIntervalMax, *extraModifyMetadata, informerFactory,
 			workqueue.NewTypedItemExponentialFailureRateLimiter[string](csioptions.RetryIntervalStart, csioptions.RetryIntervalMax))
 	}
 
