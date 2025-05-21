@@ -18,7 +18,6 @@ import (
 	"crypto/fips140"
 	"flag"
 	"log"
-	"runtime"
 
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csi-controller"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
@@ -27,10 +26,8 @@ import (
 
 func main() {
 	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		if !fips140.Enabled() {
-			log.Fatalf("FIPS compliance check failed")
-		}
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 
 	csioptions := csioptions.NewCSIOptions()

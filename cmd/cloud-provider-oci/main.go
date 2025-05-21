@@ -19,7 +19,6 @@ import (
 	goflag "flag"
 	"log"
 	"math/rand"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -37,10 +36,8 @@ var build string
 
 func main() {
 
-	if runtime.GOARCH == "amd64" {
-		if !fips140.Enabled() {
-			log.Fatalf("FIPS compliance check failed")
-		}
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 
 	viper.AutomaticEnv()

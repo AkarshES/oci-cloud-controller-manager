@@ -18,7 +18,6 @@ import (
 	"crypto/fips140"
 	"flag"
 	"log"
-	"runtime"
 	"syscall"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
@@ -33,10 +32,8 @@ var build string
 
 func main() {
 	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		if !fips140.Enabled() {
-			log.Fatalf("FIPS compliance check failed")
-		}
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 
 	syscall.Umask(0)

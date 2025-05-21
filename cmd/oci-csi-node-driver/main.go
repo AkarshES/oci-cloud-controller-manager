@@ -19,7 +19,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -35,10 +34,8 @@ import (
 
 func main() {
 	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		if !fips140.Enabled() {
-			log.Fatalf("FIPS compliance check failed")
-		}
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 	nodecsioptions := nodedriveroptions.NodeCSIOptions{}
 

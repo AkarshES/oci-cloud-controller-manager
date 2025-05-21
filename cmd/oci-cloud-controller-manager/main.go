@@ -21,7 +21,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci"
@@ -46,10 +45,8 @@ var build string
 
 func main() {
 	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		if !fips140.Enabled() {
-			log.Fatalf("FIPS compliance check failed")
-		}
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 	rand.Seed(time.Now().UTC().UnixNano())
 
