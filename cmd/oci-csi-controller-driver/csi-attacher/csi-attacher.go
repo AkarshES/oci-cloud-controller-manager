@@ -17,8 +17,6 @@ package csiattacher
 import (
 	"context"
 	"fmt"
-	"k8s.io/component-base/metrics/legacyregistry"
-	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
 	"net/http"
 	"os"
 	"time"
@@ -28,7 +26,10 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
-	_ "k8s.io/component-base/metrics/prometheus/workqueue" // register work queues in the default legacy registry
+	"k8s.io/component-base/metrics/legacyregistry"
+	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
+	_ "k8s.io/component-base/metrics/prometheus/workqueue"               // register work queues in the default legacy registry
+	csitranslationlib "k8s.io/csi-translation-lib"
 	"k8s.io/klog/v2"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -40,7 +41,6 @@ import (
 	"github.com/kubernetes-csi/external-attacher/pkg/controller"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 	"google.golang.org/grpc"
-	csitranslationlib "k8s.io/csi-translation-lib"
 )
 
 const (

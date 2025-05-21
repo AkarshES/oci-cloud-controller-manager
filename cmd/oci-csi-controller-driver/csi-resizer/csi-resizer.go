@@ -18,7 +18,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"k8s.io/component-base/metrics/legacyregistry"
 	"net/http"
 	"os"
 	"time"
@@ -33,8 +32,6 @@ import (
 	"github.com/kubernetes-csi/external-resizer/pkg/resizer"
 	"github.com/kubernetes-csi/external-resizer/pkg/util"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
-	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
-	_ "k8s.io/component-base/metrics/prometheus/workqueue"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -43,6 +40,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/component-base/metrics/legacyregistry"
+	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
+	_ "k8s.io/component-base/metrics/prometheus/workqueue"
 	"k8s.io/klog/v2"
 )
 

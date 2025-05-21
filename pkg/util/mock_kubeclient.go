@@ -3,7 +3,6 @@ package util
 import (
 	"context"
 	"fmt"
-	"k8s.io/client-go/kubernetes/typed/resource/v1beta2"
 
 	api "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,6 +57,7 @@ import (
 	v1beta115 "k8s.io/client-go/kubernetes/typed/rbac/v1beta1"
 	"k8s.io/client-go/kubernetes/typed/resource/v1alpha3"
 	"k8s.io/client-go/kubernetes/typed/resource/v1beta1"
+	"k8s.io/client-go/kubernetes/typed/resource/v1beta2"
 	v116 "k8s.io/client-go/kubernetes/typed/scheduling/v1"
 	v1alpha19 "k8s.io/client-go/kubernetes/typed/scheduling/v1alpha1"
 	v1beta116 "k8s.io/client-go/kubernetes/typed/scheduling/v1beta1"
