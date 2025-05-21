@@ -15,9 +15,10 @@
 package main
 
 import (
+	"crypto/fips140"
 	"flag"
+	"log"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -29,16 +30,13 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-node-driver/nodedriverregistrar"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/csi/driver"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util/signals"
-
-	"bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips"
 )
 
 func main() {
 	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		go_ensurefips.Compliant()
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
-
 	nodecsioptions := nodedriveroptions.NodeCSIOptions{}
 
 	flag.StringVar(&nodecsioptions.Endpoint, "endpoint", "unix://tmp/csi.sock", "Block Volume CSI endpoint")

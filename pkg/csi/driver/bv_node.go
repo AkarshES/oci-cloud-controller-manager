@@ -651,7 +651,7 @@ func (d BlockVolumeNodeDriver) NodeUnpublishVolume(ctx context.Context, req *csi
 
 	if rbvCheckErr != nil {
 		logger.With(zap.Error(rbvCheckErr)).Error("failed to check if it is a device file")
-		return nil, status.Errorf(codes.Internal, rbvCheckErr.Error())
+		return nil, status.Errorf(codes.Internal, "%v", rbvCheckErr.Error())
 	}
 
 	if acquired := d.volumeLocks.TryAcquire(req.VolumeId); !acquired {
@@ -767,9 +767,9 @@ func (d BlockVolumeNodeDriver) NodeGetInfo(ctx context.Context, req *csi.NodeGet
 		return nil, status.Error(codes.Internal, "Failed to get availability domain of node from kube api server.")
 	}
 
-	segments := map[string]string {
-		kubeAPI.LabelZoneFailureDomain:   ad,
-		kubeAPI.LabelTopologyZone:        ad,
+	segments := map[string]string{
+		kubeAPI.LabelZoneFailureDomain: ad,
+		kubeAPI.LabelTopologyZone:      ad,
 	}
 
 	//set full ad name in segments only for IPv6 single stack
@@ -778,7 +778,7 @@ func (d BlockVolumeNodeDriver) NodeGetInfo(ctx context.Context, req *csi.NodeGet
 			d.logger.With(zap.Error(err)).With("nodeId", d.nodeID, "fullAvailabilityDomainName", fullAvailabilityDomainName).Error("Failed to get full availability domain name of IPv6 single stack node from node labels.")
 			return nil, status.Error(codes.Internal, "Failed to get full availability domain name of IPv6 single stack node from node labels.")
 		}
-		
+
 		segments[csi_util.AvailabilityDomainLabel] = fullAvailabilityDomainName
 	}
 
