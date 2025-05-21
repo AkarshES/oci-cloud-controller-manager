@@ -26,6 +26,10 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/component-base/metrics/legacyregistry"
+	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
+	_ "k8s.io/component-base/metrics/prometheus/workqueue"               // register work queues in the default legacy registry
+	csitranslationlib "k8s.io/csi-translation-lib"
 	"k8s.io/klog/v2"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -37,7 +41,6 @@ import (
 	"github.com/kubernetes-csi/external-attacher/pkg/controller"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 	"google.golang.org/grpc"
-	csitranslationlib "k8s.io/csi-translation-lib"
 )
 
 const (
@@ -116,6 +119,12 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	logger := klog.LoggerWithValues(klog.Background(), "driver", csiAttacher)
 	klog.V(2).Infof("CSI driver name: %q", csiAttacher)
 
+	// Add default legacy registry so that metrics manager serves Go runtime and process metrics.
+
+	// Also registers the `k8s.io/component-base/` work queue and leader election metrics we anonymously import.
+
+	metricsManager.WithAdditionalRegistry(legacyregistry.DefaultGatherer)
+
 	mux := http.NewServeMux()
 	addr := csioptions.MetricsAddress
 	// Start HTTP server for metrics + leader election healthz
@@ -178,7 +187,6 @@ func StartCSIAttacher(csioptions csioptions.CSIOptions) {
 	if err != nil {
 		klog.Errorf("Failed to check if driver supports ListVolumesPublishedNodes, assuming it does not: %v", err)
 	}
-
 
 	ctrl := controller.NewCSIAttachController(
 		logger,

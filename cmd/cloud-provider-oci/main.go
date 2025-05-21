@@ -15,9 +15,10 @@
 package main
 
 import (
+	"crypto/fips140"
 	goflag "flag"
+	"log"
 	"math/rand"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -28,17 +29,15 @@ import (
 	"go.uber.org/zap"
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
-
-	"bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips"
 )
 
 var version string
 var build string
 
 func main() {
-	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		go_ensurefips.Compliant()
+
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 
 	viper.AutomaticEnv()

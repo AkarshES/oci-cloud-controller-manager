@@ -230,7 +230,7 @@ func UnmountWithForce(targetPath string) error {
 		if strings.Contains(string(output), errNotMounted) {
 			return nil
 		}
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Errorf(codes.Internal, "%v", err)
 	}
 	return nil
 }

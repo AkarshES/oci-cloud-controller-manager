@@ -1648,7 +1648,7 @@ func (j *PVCTestJig) CheckVolumeCapacity(expected string, name string, namespace
 	actual := pv.Spec.Capacity[v1.ResourceStorage]
 
 	if actual.String() != expected {
-		Failf("Expected volume to be %s but got %s", expected, actual)
+		Failf("Expected volume to be %s but got %v", expected, actual)
 	}
 }
 
