@@ -1144,7 +1144,7 @@ func removeResultFromList(nodeName string, list []norv1beta1.NodeOperationResult
 	}) {
 		return list
 	}
-	slices.DeleteFunc(list, func(item norv1beta1.NodeOperationResult) bool {
+	_ = slices.DeleteFunc(list, func(item norv1beta1.NodeOperationResult) bool {
 		return item.NodeName == nodeName
 	})
 	list = list[0 : len(list)-1]

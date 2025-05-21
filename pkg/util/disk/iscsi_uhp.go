@@ -238,7 +238,7 @@ func ReadLink(symbolicLink string, logger *zap.SugaredLogger) (string, error) {
 	if len(files) == 0 {
 		logger.With("symbolicLink", symbolicLink).Error("Error finding linked path for multipath device consistent path")
 		errMsg := fmt.Sprintf("The linked path for symbolic link %s is not found", symbolicLink)
-		return "", fmt.Errorf(errMsg)
+		return "", fmt.Errorf("%v ", errMsg)
 	}
 
 	linkedPath, err := os.Readlink(files[0])

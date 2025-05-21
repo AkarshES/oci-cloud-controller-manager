@@ -15,16 +15,15 @@
 package main
 
 import (
+	"crypto/fips140"
 	"flag"
-	"runtime"
+	"log"
 	"syscall"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util/signals"
 	provisioner "github.com/oracle/oci-cloud-controller-manager/pkg/volume/provisioner/core"
 	"go.uber.org/zap"
-
-	"bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips"
 )
 
 // version/build is set at build time to the version of the provisioner being built.
@@ -33,8 +32,8 @@ var build string
 
 func main() {
 	// Ensure AMD service is FIPS Compliant
-	if runtime.GOARCH == "amd64" {
-		go_ensurefips.Compliant()
+	if !fips140.Enabled() {
+		log.Fatalf("FIPS compliance check failed")
 	}
 
 	syscall.Umask(0)

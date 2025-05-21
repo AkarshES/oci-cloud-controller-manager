@@ -1,15 +1,15 @@
-From 9d2b337795eb03390aeac31417ae0b1d71dcd1e4 Mon Sep 17 00:00:00 2001
-From: Anish Chaube <anish.chaube@oracle.com>
-Date: Tue, 25 Feb 2025 15:54:23 +0530
-Subject: [PATCH] Modify sidecar upstream to use versiond feature gate
+From b59e13f5547c244649ead8187ead0ba6ad65ce86 Mon Sep 17 00:00:00 2001
+From: unepatel <uneet.patel@oracle.com>
+Date: Wed, 14 May 2025 15:01:44 +0530
+Subject: [PATCH] [Patch] Remove Honorpolicy patch override
 
 ---
- .../v5/pkg/features/features.go               | 19 ++++++++++++++++---
- .../external-resizer/pkg/features/features.go | 14 ++++++++++++--
- 2 files changed, 28 insertions(+), 5 deletions(-)
+ .../v5/pkg/features/features.go               | 24 +++++++++----------
+ .../external-resizer/pkg/features/features.go | 14 +++++++++--
+ 2 files changed, 24 insertions(+), 14 deletions(-)
 
 diff --git a/vendor/github.com/kubernetes-csi/external-provisioner/v5/pkg/features/features.go b/vendor/github.com/kubernetes-csi/external-provisioner/v5/pkg/features/features.go
-index 0ec921655..061390b5b 100644
+index 0ec921655..f421c8561 100644
 --- a/vendor/github.com/kubernetes-csi/external-provisioner/v5/pkg/features/features.go
 +++ b/vendor/github.com/kubernetes-csi/external-provisioner/v5/pkg/features/features.go
 @@ -19,6 +19,7 @@ package features
@@ -20,7 +20,23 @@ index 0ec921655..061390b5b 100644
  )
  
  const (
-@@ -54,13 +55,25 @@ const (
+@@ -27,15 +28,6 @@ const (
+ 	// beta: v1.2
+ 	Topology featuregate.Feature = "Topology"
+ 
+-	// owner: @deepakkinni @xing-yang
+-	// kep: http://kep.k8s.io/2680
+-	// alpha: v1.23
+-	// beta: v1.31
+-	//
+-	// Honor Persistent Volume Reclaim Policy when it is "Delete" irrespective of PV-PVC
+-	// deletion ordering.
+-	HonorPVReclaimPolicy featuregate.Feature = "HonorPVReclaimPolicy"
+-
+ 	// owner: @ttakahashi21 @mkimuram
+ 	// kep: http://kep.k8s.io/3294
+ 	// alpha: v1.26
+@@ -54,13 +46,21 @@ const (
  
  func init() {
  	feature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates)
@@ -37,10 +53,6 @@ index 0ec921655..061390b5b 100644
 +}
 +
 +var defaultKubernetesVersionedFeatureGates = map[featuregate.Feature]featuregate.VersionedSpecs{
-+	HonorPVReclaimPolicy: {
-+		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Alpha},
-+		{Version: version.MustParse("1.31"), Default: true, PreRelease: featuregate.Beta},
-+	},
 +	CrossNamespaceVolumeDataSource: {
 +		{Version: version.MustParse("1.26"), Default: false, PreRelease: featuregate.Alpha},
 +	},

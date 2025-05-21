@@ -553,7 +553,7 @@ var (
 			Status: v1.PodStatus{
 				PodIP: "0.0.0.10",
 				PodIPs: []v1.PodIP{
-					{"0.0.0.10"},
+					{IP: "0.0.0.10"},
 				},
 			},
 		},
