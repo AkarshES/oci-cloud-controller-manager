@@ -361,8 +361,14 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 
 	var backendNsgIds []string
 	if f.BackendNsgOcid != "" || f.BackendNsgDiscoveryOcid != "" {
-		backendNsgIds = append(backendNsgIds, strings.Split(f.BackendNsgOcid, ",")...)
-		backendNsgIds = append(backendNsgIds, strings.Split(f.BackendNsgDiscoveryOcid, ",")...)
+		for _, ocid := range append(
+			strings.Split(f.BackendNsgOcid, ","),
+			strings.Split(f.BackendNsgDiscoveryOcid, ",")...,
+		) {
+			if ocid = strings.TrimSpace(ocid); ocid != "" {
+				backendNsgIds = append(backendNsgIds, ocid)
+			}
+		}
 		nodeConfigDetails.NsgIds = backendNsgIds
 	}
 

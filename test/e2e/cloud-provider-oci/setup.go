@@ -102,6 +102,10 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 				time.Sleep(10 * time.Minute)
 			}
 			setupF.CrossValidateCluster(clusterOCID, setupF.ValidateChildResources)
+			if setupF.CustomDriverHandle != "" {
+				sharedfw.Logf("Installing custom driver using helm")
+				sharedfw.InstallCustomDriver(setupF.ClusterKubeconfigPath, setupF.CustomDriverHandle, setupF.Compartment1, setupF.Vcn)
+			}
 		}
 	} else {
 		sharedfw.Logf("Cluster creation skipped. Running tests with existing cluster.")
