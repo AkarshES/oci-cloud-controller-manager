@@ -5,10 +5,23 @@ locals {
     "v1.32": "v1.32-e428a4653e6-5465@sha256:82a9f3e86ddb81b835bfe72f341c8b6daf55edf452cb6c7832aef2424207469d",
   }
 
+  // !!! Do not play with fire, only used by ci-cd pipeline
+  oci_cnp_dev_override = {
+  }
+
   tenancy_property_overrides = {
     "oc1" = {
       "ccm-image-version-mapping" = {
         overrides = [
+          /*
+            oci-cnp-dev tenancy override. Not to be removed as it is used by pipelines
+          */
+          {
+            regions      = ["phx"]
+            env          = "integ"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.oci_cnp_dev_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
+          },
           /*
           Telesis Emarld overrides to support NAT46 in LA to
           * faceuemerald
@@ -72,7 +85,15 @@ locals {
       },
       "csi-image-version-mapping" = {
         overrides = [
-          // Hurray, no snowflakes
+          /*
+            oci-cnp-dev tenancy override. Not to be removed as it is used by pipelines
+          */
+          {
+            regions      = ["phx"]
+            env          = "integ"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.oci_cnp_dev_override))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
+          },
         ]
       },
       "lustre-csi-driver-enabled" = {
