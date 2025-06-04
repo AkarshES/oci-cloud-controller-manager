@@ -5,6 +5,11 @@ locals {
     "v1.32": "v1.32-e428a4653e6-5465@sha256:82a9f3e86ddb81b835bfe72f341c8b6daf55edf452cb6c7832aef2424207469d",
   }
 
+  tally_csi_overrides = {
+    "v1.31" : "v1.31-24e7f30e8ad-63@sha256:e9167c192889afd6c67676e8a2bad97d018ad74a87c0c7bd016cbe3f16639843",
+    "v1.32" : "v1.32-24f8c0ea437-29@sha256:4b88a3476780400f2b318317406236dd1ba86350e054b5248185bd917d563511"
+  }
+
   // !!! Do not play with fire, only used by ci-cd pipeline
   oci_cnp_dev_override = {
   }
@@ -93,6 +98,33 @@ locals {
             env          = "integ"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.oci_cnp_dev_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
+          },
+          /*
+            Tally Prod CSI Pin Override
+          */
+          {
+            regions      = ["bom"]
+            env          = "prd"
+            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.tally_csi_overrides))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaosp7wej2fqrvacexolafmu3kw3euc2k5lwuirycvwzhspoleqrsq"
+          },
+          /*
+            Tally QA CSI Pin Override
+          */
+          {
+            regions      = ["bom"]
+            env          = "prd"
+            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.tally_csi_overrides))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxtpwu4jog5czcjmawmwptkuqjfimnc57iij6asca4xwjx3wkf3pq"
+          },
+          /*
+            Tally DEV CSI Pin Override
+          */
+          {
+            regions      = ["bom"]
+            env          = "prd"
+            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.tally_csi_overrides))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaacihe4hnurwedhwfbgvexk2uemvwpyoq37vywgl6yh5n3a7wpopca"
           },
         ]
       },
