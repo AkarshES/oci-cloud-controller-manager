@@ -1,0 +1,24 @@
+artifacts:
+  - name: "CCM CSI Flock commit"
+    type: "flock_commit"
+    location: "ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git"
+    description: "Config to be used for deploying ccm csi flock"
+    version: "latest"
+    branch: "internal-pipeline-integ-phx"
+
+  - name: "release-validator-ccm-csi"
+    type: "pop"
+    location: "https://artifactory-builds.oci.oraclecorp.com:443/odo-artifacts-signed-generic-local/release-validator-ccm-csi-462627232d7_72.tar.gz"
+    description: "release validator for cmm-csi"
+    artifactSource: "EXTERNAL"
+    version: 462627232d7_72
+
+
+  - name: "oke-public-cloud-provider-oci__v1_DOT_33-bcbbb03fc32-9"
+    type: "docker"
+    location: "odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke-public-cloud-provider-oci"
+    description: "The docker image for oke-control-plane API artifact"
+    artifactSource: "EXTERNAL"
+    version: "v1.33-bcbbb03fc32-9"
+
+
