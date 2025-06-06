@@ -56,7 +56,6 @@ const (
 	ClassOCIExt3       = "oci-ext3"
 	ClassOCIXfs        = "oci-xfs"
 	ClassFssDynamic    = "oci-file-storage-test"
-	FssProvisionerType = "fss.csi.oraclecloud.com"
 	ClassSnapshot      = "oci-snapshot-sc"
 	MinVolumeBlock     = "50Gi"
 	MaxVolumeBlock     = "100Gi"
@@ -126,6 +125,7 @@ var (
 	lustreVolumeHandle            string // The Lustre mount volume handle
 	lustreSubnetCidr              string // The Lustre Subnet Cidr
 	staticSnapshotCompartmentOCID string // Compartment ID for cross compartment snapshot test
+	customDriverHandle		      string // Custom driver handle for custom CSI driver installation
 	createUhpNodepool             bool   // Creates UHP nodepool instead of normal nodepool
 	namespace                     string // Namespace for pre-upgrade and post-upgrade testing
 	isPreUpgradeBool              bool
@@ -207,6 +207,7 @@ func init() {
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
 
 	flag.StringVar(&staticSnapshotCompartmentOCID, "static-snapshot-compartment-id", "", "Compartment ID for cross compartment snapshot test")
+	flag.StringVar(&customDriverHandle, "custom-driver-handle", "", "Custom driver handle for custom CSI driver installation")
 	flag.BoolVar(&createUhpNodepool, "create-uhp-nodepool", false, "Creates UHP nodepool instead of normal nodepool")
 
 	flag.StringVar(&isPreUpgradeString, "pre-upgrade", "", "If true pre upgrade testing will be done.")
@@ -380,6 +381,9 @@ type Framework struct {
 
 	// Compartment ID for cross compartment snapshot test
 	StaticSnapshotCompartmentOcid string
+	CustomDriverHandle			  string
+	BlockProvisionerName		  string
+	FSSProvisionerName		      string
 	CreateUhpNodepool             bool
 
 	UpgradeTestingNamespace string
@@ -473,6 +477,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		LustreVolumeHandle:            lustreVolumeHandle,
 		LustreSubnetCidr:              lustreSubnetCidr,
 		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
+		CustomDriverHandle: 		   customDriverHandle,
 		CreateUhpNodepool:             createUhpNodepool,
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
@@ -563,6 +568,12 @@ func (f *Framework) Initialize() {
 	Logf("Lustre Subnet CIDR is : %s", f.LustreSubnetCidr)
 	f.StaticSnapshotCompartmentOcid = staticSnapshotCompartmentOCID
 	Logf("Static Snapshot Compartment OCID: %s", f.StaticSnapshotCompartmentOcid)
+	f.CustomDriverHandle = customDriverHandle
+	Logf("Custom CSI Driver Handle: %s", f.CustomDriverHandle)
+	f.BlockProvisionerName = getBlockProvisionerName(customDriverHandle)
+	Logf("Block Provisioner name: %s", f.BlockProvisionerName)
+	f.FSSProvisionerName = getFSSProvisionerName(customDriverHandle)
+	Logf("FSS Provisioner name: %s", f.FSSProvisionerName)
 	f.CreateUhpNodepool = createUhpNodepool
 	Logf("Create Uhp Nodepool: %v", f.CreateUhpNodepool)
 	f.CMEKKMSKey = cmekKMSKey
@@ -1019,4 +1030,20 @@ func (f *CloudProviderFramework) GetCompartmentId(setupF Framework) string {
 		Failf("Compartment Id undefined.")
 	}
 	return compartmentId
+}
+
+func getBlockProvisionerName(handle string) string {
+	provisioner := "blockvolume.csi.oraclecloud.com"
+	if handle != "" {
+		return handle + "." + provisioner
+	}
+	return provisioner
+}
+
+func getFSSProvisionerName(handle string) string {
+	provisioner := "fss.csi.oraclecloud.com"
+	if handle != "" {
+		return handle + "." + provisioner
+	}
+	return provisioner
 }
