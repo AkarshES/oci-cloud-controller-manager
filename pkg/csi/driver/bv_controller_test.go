@@ -224,7 +224,7 @@ func (c *MockBlockStorageClient) GetBootVolume(ctx context.Context, id string) (
 }
 
 // AwaitVolumeCloneAvailableOrTimeout implements client.BlockStorageInterface.
-func (c *MockBlockStorageClient) AwaitVolumeCloneAvailableOrTimeout(ctx context.Context, id string) (*core.Volume, error) {
+func (c *MockBlockStorageClient) AwaitVolumeHydratedOrTimeout(ctx context.Context, id string) (*core.Volume, error) {
 	var volClone *core.Volume
 	if err := wait.PollImmediateUntil(testPollInterval, func() (bool, error) {
 		var err error
