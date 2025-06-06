@@ -29,7 +29,10 @@ var _ = Describe("Static FSS Tests", func() {
 		It("[encrypt] Static FSS tests", func() {
 			By("Running test: Create PVC and POD for CSI-FSS - Basic static FSS test")
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-e2e-test")
-			pv := pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteMany", "", []string{})
+			opts := framework.Options{
+				FSSProvisionerName: setupF.FSSProvisionerName,
+			}
+			pv := pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteMany", "", []string{}, opts)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailStaticFSS(f.Namespace.Name, pv.Name, "50Gi", nil)
 			f.VolumeIds = append(f.VolumeIds, pvc.Spec.VolumeName)
 			podName, readPodName := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
@@ -46,7 +49,7 @@ var _ = Describe("Static FSS Tests", func() {
 			By("Running test: Create PV PVC and POD for CSI-FSS with mount options")
 			pvcJig = framework.NewPVCTestJig(f.ClientSet, "csi-fss-e2e-test")
 			mountOptions := []string{"sync", "hard", "noac", "nolock"}
-			pv = pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteMany", "", mountOptions)
+			pv = pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteMany", "", mountOptions, opts)
 			pvc = pvcJig.CreateAndAwaitPVCOrFailStaticFSS(f.Namespace.Name, pv.Name, "50Gi", nil)
 			f.VolumeIds = append(f.VolumeIds, pvc.Spec.VolumeName)
 			podName, readPodName = pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, mountOptions)
@@ -62,7 +65,7 @@ var _ = Describe("Static FSS Tests", func() {
 
 			By("Running test: Verify volume group ownership change for RWO volume when fsType and fsGroup are defined")
 			pvcJig = framework.NewPVCTestJig(f.ClientSet, "csi-rwo-fss-e2e-test")
-			pv = pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteOnce", "nfs", []string{})
+			pv = pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteOnce", "nfs", []string{}, opts)
 			pvc = pvcJig.CreateAndAwaitPVCOrFailStaticFSS(f.Namespace.Name, pv.Name, "50Gi", func(pvc *v1.PersistentVolumeClaim) {
 				pvc.Spec.AccessModes = []v1.PersistentVolumeAccessMode{"ReadWriteOnce"}
 			})
@@ -77,7 +80,7 @@ var _ = Describe("Static FSS Tests", func() {
 
 			By("Running test: Multiple Pods should be able to read write same file")
 			pvcJig = framework.NewPVCTestJig(f.ClientSet, "csi-fss-e2e-test")
-			pv = pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteMany", "", []string{})
+			pv = pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "false", "ReadWriteMany", "", []string{}, opts)
 			pvc = pvcJig.CreateAndAwaitPVCOrFailStaticFSS(f.Namespace.Name, pv.Name, "50Gi", nil)
 			f.VolumeIds = append(f.VolumeIds, pvc.Spec.VolumeName)
 			pvcJig.CheckMultiplePodReadWrite(f.Namespace.Name, pvc.Name, false)
@@ -112,7 +115,10 @@ var _ = Describe("Mount Options Static FSS test", func() {
 
 func TestEncryptionType(f *framework.CloudProviderFramework, mountOptions []string) {
 	pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-e2e-test-intransit")
-	pv := pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "true", "ReadWriteMany", "", mountOptions)
+	opts := framework.Options{
+		FSSProvisionerName: setupF.FSSProvisionerName,
+	}
+	pv := pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "true", "ReadWriteMany", "", mountOptions, opts)
 	pvc := pvcJig.CreateAndAwaitPVCOrFailStaticFSS(f.Namespace.Name, pv.Name, "50Gi", nil)
 	f.VolumeIds = append(f.VolumeIds, pvc.Spec.VolumeName)
 	pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, true, mountOptions)
@@ -124,7 +130,10 @@ var _ = Describe("Multiple Pods Static FSS test", func() {
 		It("Multiple Pods should be able to read write same file with InTransit encryption enabled", func() {
 			checkNodeAvailability(f)
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-e2e-test")
-			pv := pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "true", "ReadWriteMany", "", []string{})
+			opts := framework.Options{
+				FSSProvisionerName: setupF.FSSProvisionerName,
+			}
+			pv := pvcJig.CreatePVorFailFSS(f.Namespace.Name, setupF.VolumeHandle, "true", "ReadWriteMany", "", []string{}, opts)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailStaticFSS(f.Namespace.Name, pv.Name, "50Gi", nil)
 			f.VolumeIds = append(f.VolumeIds, pvc.Spec.VolumeName)
 			pvcJig.CheckMultiplePodReadWrite(f.Namespace.Name, pvc.Name, true)
