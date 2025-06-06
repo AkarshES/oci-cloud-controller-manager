@@ -3,6 +3,10 @@ variable "spectre_group_name" {}
 variable "env" {}
 variable "realm" {}
 
+data "property_definitions" "existing_defs" {
+  group_name = var.spectre_group_name
+}
+
 locals {
   default_properties_values = [
     for filename in fileset(path.module, "${var.realm}/*.json") : jsondecode(file("${path.module}/${filename}"))
@@ -115,4 +119,5 @@ locals {
   //regional_overrides = length(local.regional_snowflake_values_map) > 0 ? merge(local.regional_values_map, local.regional_snowflake_values_map) : local.regional_values_map
 
   all_values = merge(local.global_default_values_map, local.default_values_map, local.regional_values_map_overrides)
+  created_definitions = { for def in data.property_definitions.existing_defs.definitions : def.name => def }
 }

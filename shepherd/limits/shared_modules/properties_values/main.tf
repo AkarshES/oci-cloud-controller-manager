@@ -17,7 +17,7 @@ module "overrides_validation" {
 }
 
 resource "property_value" "values" {
-  for_each = local.all_values
+  for_each = { for k, v in local.all_values : k => v if(contains(keys(local.created_definitions),  v.name)) }
 
   group  = each.value.group
   name   = each.value.name
@@ -29,7 +29,7 @@ resource "property_value" "values" {
 }
 
 resource "property_override" "overrides" {
-  for_each = local.tenancy_overrides_final
+  for_each = { for k, v in local.tenancy_overrides_final : k => v if contains(keys(local.created_definitions), v.name) }
 
   group  = each.value.group
   name   = each.value.name
