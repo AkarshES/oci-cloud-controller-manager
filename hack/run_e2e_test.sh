@@ -209,6 +209,7 @@ function run_e2e_tests() {
                 --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
                 --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
                 --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                --custom-driver-handle=${CUSTOM_DRIVER_HANDLE} \
                 --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
                 --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
                 --namespace=${NAMESPACE} \
@@ -270,6 +271,7 @@ function run_e2e_tests() {
                 --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
                 --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
                 --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                --custom-driver-handle=${CUSTOM_DRIVER_HANDLE} \
                 --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
                 --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
                 --namespace=${NAMESPACE} \
@@ -314,6 +316,7 @@ function run_e2e_tests_existing_cluster() {
                 --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
                 --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
                 --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                --custom-driver-handle=${CUSTOM_DRIVER_HANDLE} \
                 --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
                 --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
                 --namespace=${NAMESPACE} \
@@ -347,6 +350,7 @@ function run_e2e_tests_existing_cluster() {
                         --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
                         --lustre-subnet-cidr=${LUSTRE_SUBNET_CIDR} \
                         --static-snapshot-compartment-id=${STATIC_SNAPSHOT_COMPARTMENT_ID} \
+                        --custom-driver-handle=${CUSTOM_DRIVER_HANDLE} \
                         --create-uhp-nodepool=${CREATE_UHP_NODEPOOL} \
                         --enable-parallel-run=${ENABLE_PARALLEL_RUN} \
                         --namespace=${NAMESPACE} \
@@ -397,6 +401,7 @@ function setup_arm() {
         export MNT_TARGET_SUBNET_ID=$MNT_TARGET_SUBNET_ID
         export MNT_TARGET_COMPARTMENT_ID=$MNT_TARGET_COMPARTMENT_ID
         export STATIC_SNAPSHOT_COMPARTMENT_ID=$STATIC_SNAPSHOT_COMPARTMENT_ID
+        export CUSTOM_DRIVER_HANDLE=$CUSTOM_DRIVER_HANDLE
         export CREATE_UHP_NODEPOOL=$CREATE_UHP_NODEPOOL
         export ENABLE_PARALLEL_RUN=$ENABLE_PARALLEL_RUN
         declare_setup "CREATE"
@@ -475,6 +480,7 @@ function declare_setup () {
     echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
     echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
     echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
+    echo "CUSTOM_DRIVER_HANDLE is ${CUSTOM_DRIVER_HANDLE}"
     echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
     echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
     echo "CLUSTER_TYPE is ${CLUSTER_TYPE}"
@@ -564,6 +570,7 @@ function declare_environment () {
         echo "MNT_TARGET_SUBNET_ID is ${MNT_TARGET_SUBNET_ID}"
         echo "MNT_TARGET_COMPARTMENT_ID is ${MNT_TARGET_COMPARTMENT_ID}"
         echo "STATIC_SNAPSHOT_COMPARTMENT_ID is ${STATIC_SNAPSHOT_COMPARTMENT_ID}"
+        echo "CUSTOM_DRIVER_HANDLE is ${CUSTOM_DRIVER_HANDLE}"
         echo "CREATE_UHP_NODEPOOL is ${CREATE_UHP_NODEPOOL}"
         echo "ENABLE_PARALLEL_RUN is ${ENABLE_PARALLEL_RUN}"
     else
