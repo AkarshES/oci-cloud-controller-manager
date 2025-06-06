@@ -479,8 +479,8 @@ func (d *BlockVolumeControllerDriver) CreateVolume(ctx context.Context, req *csi
 	}
 	log.Info("Waiting for volume to become available.")
 
-	if srcVolumeId != "" {
-		_, err = d.client.BlockStorage().AwaitVolumeCloneAvailableOrTimeout(ctx, *provisionedVolume.Id)
+	if srcVolumeId != "" || srcSnapshotId != "" {
+		_, err = d.client.BlockStorage().AwaitVolumeHydratedOrTimeout(ctx, *provisionedVolume.Id)
 	} else {
 		_, err = d.client.BlockStorage().AwaitVolumeAvailableORTimeout(ctx, *provisionedVolume.Id)
 	}
