@@ -6,8 +6,8 @@ locals {
   }
 
   tally_csi_overrides = {
-    "v1.31" : "v1.31-24e7f30e8ad-63@sha256:e9167c192889afd6c67676e8a2bad97d018ad74a87c0c7bd016cbe3f16639843",
-    "v1.32" : "v1.32-24f8c0ea437-29@sha256:4b88a3476780400f2b318317406236dd1ba86350e054b5248185bd917d563511"
+    "v1.31" : "v1.31-d02f08265e8-67@sha256:4d0b75d5875307be05859d157e9d647b0703f878100e49a6a0df38b53d2dcaa3",
+    "v1.32" : "v1.32-bf20a443646-33@sha256:6ca6fd685627f329769e110f34c4d48d78621859539ce64aa2de4fa868ed10a0"
   }
 
   // !!! Do not play with fire, only used by ci-cd pipeline
