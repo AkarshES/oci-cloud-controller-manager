@@ -535,7 +535,9 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.31" : "v1.31-d02f08265e8-67@sha256:4d0b75d5875307be05859d157e9d647b0703f878100e49a6a0df38b53d2dcaa3",
+            "v1.32" : "v1.32-bf20a443646-33@sha256:6ca6fd685627f329769e110f34c4d48d78621859539ce64aa2de4fa868ed10a0",
           },
           local.csi_upstream_k8s_new_version_test.default.all
         ))
