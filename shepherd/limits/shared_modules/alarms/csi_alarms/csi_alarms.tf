@@ -47,7 +47,7 @@ resource "telemetry_alarm" "csi_block_volume_attaching_timeout" {
   query = "OKE.CPO.PV_ATTACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>2).grouping().count().filter(x=>x>7)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvMultipleAttachDetachTimeout"
+  dedupe_key = "BvAttachDetachStuck"
   pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - More than 7 persistent volumes are timing out on attach consistently
@@ -73,7 +73,7 @@ resource "telemetry_alarm" "csi_block_volume_detaching_timeout" {
   query = "OKE.CPO.PV_DETACH[15m]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>2).grouping().count().filter(x=>x>7)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvMultipleAttachDetachTimeout"
+  dedupe_key = "BvAttachDetachStuck"
   pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - More than 7 persistent volumes are timing out on detach
@@ -99,7 +99,7 @@ resource "telemetry_alarm" "csi_block_volume_stuck_detaching" {
   query = "OKE.CPO.PV_DETACH[2h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>25)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvSingleAttachDetachStuck"
+  dedupe_key = "BvAttachDetachStuck"
   pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_DETACH - Block volumes are stuck detaching for 2 hrs
@@ -125,7 +125,7 @@ resource "telemetry_alarm" "csi_block_volume_stuck_attaching" {
   query = "OKE.CPO.PV_ATTACH[2h]{component=\"CSI_CTX_TIMEOUT\"}.groupBy(resourceOCID).count().filter(x=>x>25)"
   severity = var.severity_2
   is_enabled = var.enabled
-  dedupe_key = "BvSingleAttachDetachStuck"
+  dedupe_key = "BvAttachDetachStuck"
   pending_duration = "PT5M"
   body = <<EOT
 OKE.CPO.PV_ATTACH - Block volumes are stuck attaching for 2 hrs
