@@ -5,36 +5,36 @@ go 1.24.0
 replace (
 	github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
 	github.com/oracle/oci-go-sdk/v65 => bitbucket.oci.oraclecorp.com/sdk/oci-go-sdk/v65 v65.80.0-p
-	k8s.io/api => k8s.io/api v0.33.1
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.33.1
-	k8s.io/apimachinery => k8s.io/apimachinery v0.33.1
-	k8s.io/apiserver => k8s.io/apiserver v0.33.1
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.33.1
-	k8s.io/client-go => k8s.io/client-go v0.33.1
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.33.1
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.33.1
-	k8s.io/code-generator => k8s.io/code-generator v0.33.1
-	k8s.io/component-base => k8s.io/component-base v0.33.1
-	k8s.io/component-helpers => k8s.io/component-helpers v0.33.1
-	k8s.io/controller-manager => k8s.io/controller-manager v0.33.1
-	k8s.io/cri-api => k8s.io/cri-api v0.33.1
-	k8s.io/cri-client => k8s.io/cri-client v0.33.1
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.33.1
-	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.33.1
-	k8s.io/endpointslice => k8s.io/kubernetes/staging/src/k8s.io/endpointslice v0.33.1
-	k8s.io/kms => k8s.io/kms v0.33.1
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.33.1
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.33.1
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.33.1
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.33.1
-	k8s.io/kubectl => k8s.io/kubectl v0.33.1
-	k8s.io/kubelet => k8s.io/kubelet v0.33.1
-	k8s.io/kubernetes => k8s.io/kubernetes v1.33.0
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.33.1
-	k8s.io/metrics => k8s.io/metrics v0.33.1
+	k8s.io/api => k8s.io/api v0.34.0-alpha.1
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.34.0-alpha.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.34.0-alpha.1
+	k8s.io/apiserver => k8s.io/apiserver v0.34.0-alpha.1
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.34.0-alpha.1
+	k8s.io/client-go => k8s.io/client-go v0.34.0-alpha.1
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.34.0-alpha.1
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.34.0-alpha.1
+	k8s.io/code-generator => k8s.io/code-generator v0.34.0-alpha.1
+	k8s.io/component-base => k8s.io/component-base v0.34.0-alpha.1
+	k8s.io/component-helpers => k8s.io/component-helpers v0.34.0-alpha.1
+	k8s.io/controller-manager => k8s.io/controller-manager v0.34.0-alpha.1
+	k8s.io/cri-api => k8s.io/cri-api v0.34.0-alpha.1
+	k8s.io/cri-client => k8s.io/cri-client v0.34.0-alpha.1
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.34.0-alpha.1
+	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.34.0-alpha.1
+	k8s.io/endpointslice => k8s.io/kubernetes/staging/src/k8s.io/endpointslice v0.34.0-alpha.1
+	k8s.io/kms => k8s.io/kms v0.34.0-alpha.1
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.34.0-alpha.1
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.34.0-alpha.1
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.34.0-alpha.1
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.34.0-alpha.1
+	k8s.io/kubectl => k8s.io/kubectl v0.34.0-alpha.1
+	k8s.io/kubelet => k8s.io/kubelet v0.34.0-alpha.1
+	k8s.io/kubernetes => k8s.io/kubernetes v1.34.0-alpha.1
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.34.0-alpha.1
+	k8s.io/metrics => k8s.io/metrics v0.34.0-alpha.1
 	k8s.io/mount-utils => k8s.io/mount-utils v0.33.1
-	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.33.1
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.33.1
+	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.34.0-alpha.1
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.34.0-alpha.1
 	oracle.com/oci/httpiam => bitbucket.oci.oraclecorp.com/goiam/httpiam v0.0.0-20190319165730-973dbb679788
 	oracle.com/oci/httpsigner => bitbucket.oci.oraclecorp.com/goiam/httpsigner v0.0.0-20190320175442-e8cb27ebf440
 	oracle.com/oci/ociauthz => bitbucket.oci.oraclecorp.com/goiam/ociauthz v0.0.0-20200515161105-5b1e37d2dc95
@@ -69,18 +69,18 @@ require (
 	google.golang.org/grpc v1.72.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.33.1
-	k8s.io/apimachinery v0.33.1
-	k8s.io/apiserver v0.33.1
-	k8s.io/cloud-provider v0.33.1
-	k8s.io/component-base v0.33.1
-	k8s.io/component-helpers v0.33.1
-	k8s.io/controller-manager v0.33.1
-	k8s.io/csi-translation-lib v0.33.1
+	k8s.io/api v0.34.0-alpha.1
+	k8s.io/apimachinery v0.34.0-alpha.1
+	k8s.io/apiserver v0.34.0-alpha.1
+	k8s.io/cloud-provider v0.34.0-alpha.1
+	k8s.io/component-base v0.34.0-alpha.1
+	k8s.io/component-helpers v0.34.0-alpha.1
+	k8s.io/controller-manager v0.34.0-alpha.1
+	k8s.io/csi-translation-lib v0.34.0-alpha.1
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubelet v0.33.1
-	k8s.io/kubernetes v1.33.1
+	k8s.io/kubelet v0.34.0-alpha.1
+	k8s.io/kubernetes v1.34.0-alpha.1
 	k8s.io/mount-utils v0.33.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.19.4
@@ -97,8 +97,8 @@ require (
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.2
-	k8s.io/apiextensions-apiserver v0.33.1
-	k8s.io/client-go v1.5.2
+	k8s.io/apiextensions-apiserver v0.34.0-alpha.1
+	k8s.io/client-go v0.34.0-alpha.1
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1
 )

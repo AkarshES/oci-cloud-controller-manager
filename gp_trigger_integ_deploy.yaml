@@ -1,0 +1,20 @@
+version: 0.1
+component: general-purpose
+timeoutInSeconds: 10000
+failImmediatelyOnError: true
+
+env:
+  variables:
+    CCM_ARTIFACT_VERSION: ${CCM_ARTIFACT_VERSION}
+
+steps:
+  - type: TriggerPipeline
+    name: Trigger Deploy Integ PHX
+    timeoutInSeconds: 3000
+    pipelineTriggerInfo:
+      pipelineId: ocid1.devopsbuildpipeline.oc1.phx.amaaaaaa7aeocuiadl4lfbd3btwvy7b4ys724pbwkpw7c7u3thy4brdoptzq
+      pipelineParameter:
+        - name: "CCM_ARTIFACT_VERSION"
+          value: ${CCM_ARTIFACT_VERSION}
+        - name: "TRIGGER_E2E_ENABLED"
+          value: "true"
