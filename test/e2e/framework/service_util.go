@@ -1530,7 +1530,7 @@ func ValidateSSLConfiguration(tcpService *v1.Service, loadBalancer *client.Gener
 		if *loadBalancer.Listeners[backendSetName].Port == sslEnabledPorts[0] {
 			expectedSSL, err := cloudprovider.GetSSLConfiguration(sslConfig, sslConfig.BackendSetSSLSecretName, sslEnabledPorts[0], backendSslConfigAnnotation)
 			if err != nil {
-				return false, fmt.Errorf(err.Error())
+				return false, fmt.Errorf("%v", err.Error())
 			}
 			fmt.Println("BackendSet Actual SSL Config for ", sslEnabledPorts[0], ":", *backendSet.SslConfiguration.CertificateName)
 			fmt.Println("BackendSet Expected SSL Config for ", sslEnabledPorts[0], ":", *expectedSSL.CertificateName)

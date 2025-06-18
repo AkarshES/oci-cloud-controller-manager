@@ -8,13 +8,42 @@ env:
     CCM_ARTIFACT_VERSION: ${CCM_ARTIFACT_VERSION}
 
 steps:
-  - type: TriggerPipeline
-    name: Trigger Deploy Integ PHX
-    timeoutInSeconds: 3000
-    pipelineTriggerInfo:
-      pipelineId: ocid1.devopsbuildpipeline.oc1.phx.amaaaaaa7aeocuiadl4lfbd3btwvy7b4ys724pbwkpw7c7u3thy4brdoptzq
-      pipelineParameter:
-        - name: "CCM_ARTIFACT_VERSION"
-          value: ${CCM_ARTIFACT_VERSION}
-        - name: "TRIGGER_E2E_ENABLED"
-          value: "true"
+  - type: Command
+    name: Trigger Deploy Integ PHX via CLI
+    timeoutInSeconds: 300
+    shell: bash
+    command: |
+      set -euo pipefail
+
+      PIPELINE_ID="ocid1.devopsbuildpipeline.oc1.phx.amaaaaaa7aeocuiadl4lfbd3btwvy7b4ys724pbwkpw7c7u3thy4brdoptzq"
+
+      echo "Preparing to trigger build pipeline: $PIPELINE_ID"
+
+      JSON_PAYLOAD=$(jq -n \
+        --arg pipelineId "$PIPELINE_ID" \
+        --arg ccmVersion "$CCM_ARTIFACT_VERSION" \
+        --arg triggerE2E "true" \
+        '{
+          buildPipelineId: $pipelineId,
+          buildRunArguments: {
+            items: [
+              { name: "CCM_ARTIFACT_VERSION", value: $ccmVersion },
+              { name: "TRIGGER_E2E_ENABLED", value: $triggerE2E }
+            ]
+          },
+          displayName: ("Deploy Integ PHX - CCM Version: " + $ccmVersion)
+        }')
+
+      echo "$JSON_PAYLOAD" > build_run_payload.json
+      echo "Triggering the pipeline with payload:"
+      cat build_run_payload.json
+
+      response=$(oci devops build-run create --from-json file://build_run_payload.json)
+      run_id=$(echo "$response" | jq -r '.data.id')
+
+      if [[ -z "$run_id" ]]; then
+        echo "Failed to trigger pipeline run"
+        exit 1
+      fi
+
+      echo "Successfully triggered pipeline run: $run_id"
