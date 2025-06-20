@@ -228,8 +228,6 @@ type client struct {
 
 	subnetCache         cache.Store
 	configProviderCache cache.Store
-	nodeNsgCache        cache.Store
-	serviceNsgSetCache  cache.Store
 	logger              *zap.SugaredLogger
 }
 
@@ -406,11 +404,7 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 
 		subnetCache:         cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
 		configProviderCache: cache.NewTTLStore(providerConfigCacheKeyFn, serviceAccountTokenExpiryTime-time.Hour),
-
-		nodeNsgCache:       cache.NewTTLStore(nodeNsgCacheKeyFn, 15*time.Minute),
-		serviceNsgSetCache: cache.NewTTLStore(serviceNsgSetCacheKeyFn, 1*time.Hour),
-
-		logger: logger,
+		logger:              logger,
 	}
 
 	return c, nil
@@ -530,13 +524,11 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 		}
 
 		return &client{
-			network:            &network,
-			requestMetadata:    c.requestMetadata,
-			rateLimiter:        c.rateLimiter,
-			subnetCache:        cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-			nodeNsgCache:       cache.NewTTLStore(nodeNsgCacheKeyFn, 15*time.Minute),
-			serviceNsgSetCache: cache.NewTTLStore(serviceNsgSetCacheKeyFn, 1*time.Hour),
-			logger:             c.logger,
+			network:         &network,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
 
 			configProviderCache: c.configProviderCache,
 		}
@@ -592,14 +584,12 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 		}
 
 		return &client{
-			compartment:        &compartment,
-			identity:           &identity,
-			requestMetadata:    c.requestMetadata,
-			rateLimiter:        c.rateLimiter,
-			subnetCache:        cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-			nodeNsgCache:       cache.NewTTLStore(nodeNsgCacheKeyFn, 15*time.Minute),
-			serviceNsgSetCache: cache.NewTTLStore(serviceNsgSetCacheKeyFn, 1*time.Hour),
-			logger:             c.logger,
+			compartment:     &compartment,
+			identity:        &identity,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
 
 			configProviderCache: c.configProviderCache,
 		}
@@ -643,13 +633,11 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 		}
 
 		return &client{
-			filestorage:        &fc,
-			requestMetadata:    c.requestMetadata,
-			rateLimiter:        c.rateLimiter,
-			subnetCache:        cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
-			nodeNsgCache:       cache.NewTTLStore(nodeNsgCacheKeyFn, 15*time.Minute),
-			serviceNsgSetCache: cache.NewTTLStore(serviceNsgSetCacheKeyFn, 1*time.Hour),
-			logger:             c.logger,
+			filestorage:     &fc,
+			requestMetadata: c.requestMetadata,
+			rateLimiter:     c.rateLimiter,
+			subnetCache:     cache.NewTTLStore(subnetCacheKeyFn, time.Duration(24)*time.Hour),
+			logger:          c.logger,
 
 			configProviderCache: c.configProviderCache,
 		}
@@ -764,8 +752,6 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 
 		configProviderCache: c.configProviderCache,
 		subnetCache:         c.subnetCache,
-		nodeNsgCache:        c.nodeNsgCache,
-		serviceNsgSetCache:  c.serviceNsgSetCache,
 		logger:              logger,
 	}
 }

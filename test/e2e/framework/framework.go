@@ -44,22 +44,22 @@ const (
 	DefaultClusterKubeconfig = "/tmp/clusterkubeconfig"
 	DefaultCloudConfig       = "/tmp/cloudconfig"
 
-	ClassOCI           = "oci"
-	ClassOCICSI        = "oci-bv"
-	ClassCustom        = "oci-bv-custom"
-	ClassOCICSIExpand  = "oci-bv-expand"
-	ClassOCILowCost    = "oci-bv-low"
-	ClassOCIBalanced   = "oci-bal"
-	ClassOCIHigh       = "oci-bv-high"
-	ClassOCIUHP        = "oci-uhp"
-	ClassOCIKMS        = "oci-kms"
-	ClassOCIExt3       = "oci-ext3"
-	ClassOCIXfs        = "oci-xfs"
-	ClassFssDynamic    = "oci-file-storage-test"
-	ClassSnapshot      = "oci-snapshot-sc"
-	MinVolumeBlock     = "50Gi"
-	MaxVolumeBlock     = "100Gi"
-	VolumeFss          = "1Gi"
+	ClassOCI          = "oci"
+	ClassOCICSI       = "oci-bv"
+	ClassCustom       = "oci-bv-custom"
+	ClassOCICSIExpand = "oci-bv-expand"
+	ClassOCILowCost   = "oci-bv-low"
+	ClassOCIBalanced  = "oci-bal"
+	ClassOCIHigh      = "oci-bv-high"
+	ClassOCIUHP       = "oci-uhp"
+	ClassOCIKMS       = "oci-kms"
+	ClassOCIExt3      = "oci-ext3"
+	ClassOCIXfs       = "oci-xfs"
+	ClassFssDynamic   = "oci-file-storage-test"
+	ClassSnapshot     = "oci-snapshot-sc"
+	MinVolumeBlock    = "50Gi"
+	MaxVolumeBlock    = "100Gi"
+	VolumeFss         = "1Gi"
 
 	VSClassDefault    = "oci-snapclass"
 	NodeHostnameLabel = "kubernetes.io/hostname"
@@ -119,14 +119,13 @@ var (
 	cmekKMSKey                    string // KMS key for CMEK testing
 	nsgOCIDS                      string // Testing CCM NSG feature
 	backendNsgIds                 string // Testing Rule management Backend NSG feature
-	backendNsgDiscoveryIds        string // Testing Rule management auto-discovery Backend NSG feature
 	reservedIP                    string // Testing public reserved IP feature
 	architecture                  string
 	volumeHandle                  string // The FSS mount volume handle
 	lustreVolumeHandle            string // The Lustre mount volume handle
 	lustreSubnetCidr              string // The Lustre Subnet Cidr
 	staticSnapshotCompartmentOCID string // Compartment ID for cross compartment snapshot test
-	customDriverHandle		      string // Custom driver handle for custom CSI driver installation
+	customDriverHandle            string // Custom driver handle for custom CSI driver installation
 	createUhpNodepool             bool   // Creates UHP nodepool instead of normal nodepool
 	namespace                     string // Namespace for pre-upgrade and post-upgrade testing
 	isPreUpgradeBool              bool
@@ -204,7 +203,6 @@ func init() {
 	flag.StringVar(&cmekKMSKey, "cmek-kms-key", "", "KMS key to be used for CMEK testing")
 	flag.StringVar(&nsgOCIDS, "nsg-ocids", "", "NSG OCIDs to be used to associate to LB")
 	flag.StringVar(&backendNsgIds, "backend-nsg-ocids", "", "backend NSG Ids associated with backends of LB")
-	flag.StringVar(&backendNsgDiscoveryIds, "backend-nsg-discovery-ocids", "", "backend NSG Ids associated with backends of LB for discovery")
 	flag.StringVar(&reservedIP, "reserved-ip", "", "Public reservedIP to be used for testing loadbalancer with reservedIP")
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
 
@@ -372,7 +370,6 @@ type Framework struct {
 	CMEKKMSKey               string
 	NsgOCIDS                 string
 	BackendNsgOcid           string
-	BackendNsgDiscoveryOcid  string
 	ReservedIP               string
 	Architecture             string
 
@@ -383,9 +380,9 @@ type Framework struct {
 
 	// Compartment ID for cross compartment snapshot test
 	StaticSnapshotCompartmentOcid string
-	CustomDriverHandle			  string
-	BlockProvisionerName		  string
-	FSSProvisionerName		      string
+	CustomDriverHandle            string
+	BlockProvisionerName          string
+	FSSProvisionerName            string
 	CreateUhpNodepool             bool
 
 	UpgradeTestingNamespace string
@@ -471,15 +468,13 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		MntTargetCompartmentOcid:      mntTargetCompartmentOCID,
 		CMEKKMSKey:                    cmekKMSKey,
 		NsgOCIDS:                      nsgOCIDS,
-		BackendNsgOcid:                backendNsgIds,
-		BackendNsgDiscoveryOcid:       backendNsgDiscoveryIds,
 		ReservedIP:                    reservedIP,
 		Architecture:                  architecture,
 		VolumeHandle:                  volumeHandle,
 		LustreVolumeHandle:            lustreVolumeHandle,
 		LustreSubnetCidr:              lustreSubnetCidr,
 		StaticSnapshotCompartmentOcid: staticSnapshotCompartmentOCID,
-		CustomDriverHandle: 		   customDriverHandle,
+		CustomDriverHandle:            customDriverHandle,
 		CreateUhpNodepool:             createUhpNodepool,
 		UpgradeTestingNamespace:       namespace,
 		ClusterType:                   clusterTypeEnum,
@@ -584,8 +579,6 @@ func (f *Framework) Initialize() {
 	Logf("NSG OCIDS: %s", f.NsgOCIDS)
 	f.BackendNsgOcid = backendNsgIds
 	Logf("Backend NSG OCIDS: %s", f.BackendNsgOcid)
-	f.BackendNsgDiscoveryOcid = backendNsgDiscoveryIds
-	Logf("Backend NSG Discovery OCIDS: %s", f.BackendNsgDiscoveryOcid)
 	f.ReservedIP = reservedIP
 	Logf("Reserved IP: %s", f.ReservedIP)
 	f.Architecture = architecture

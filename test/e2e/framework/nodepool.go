@@ -359,17 +359,8 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		}
 	}
 
-	var backendNsgIds []string
-	if f.BackendNsgOcid != "" || f.BackendNsgDiscoveryOcid != "" {
-		for _, ocid := range append(
-			strings.Split(f.BackendNsgOcid, ","),
-			strings.Split(f.BackendNsgDiscoveryOcid, ",")...,
-		) {
-			if ocid = strings.TrimSpace(ocid); ocid != "" {
-				backendNsgIds = append(backendNsgIds, ocid)
-			}
-		}
-		nodeConfigDetails.NsgIds = backendNsgIds
+	if f.BackendNsgOcid != "" {
+		nodeConfigDetails.NsgIds = strings.Split(f.BackendNsgOcid, ",")
 	}
 
 	if cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative {
