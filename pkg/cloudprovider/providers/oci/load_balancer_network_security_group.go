@@ -24,7 +24,6 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 )
 
@@ -338,14 +337,6 @@ func (clb *CloudLoadBalancerProvider) reconcileSecurityGroup(ctx context.Context
 	generatedLbEgressSecurityRules := generateNsgLoadBalancerEgressRules(logger, lbservice.ports, lbservice.backendNsgOcids, lbservice.serviceUid)
 	addLbEgressRules, removeLbEgressRules, err := reconcileSecurityRules(logger, generatedLbEgressSecurityRules, filterSecurityRulesForService(existingLbEgressSecurityRules, lbservice.serviceUid))
 
-	// If we have egress rules to remove and no backend NSGs, we need to determine which backend NSGs
-	// were previously configured for this service by examining the rules being removed
-	obsoleteBackendNsgsSet := sets.New[string]()
-	if len(removeLbEgressRules) > 0 && len(lbservice.backendNsgOcids) == 0 {
-		// Extract backend NSG IDs from rules that are being removed
-		obsoleteBackendNsgsSet = findObsoleteBackendNsgs(removeLbEgressRules, existingLbEgressSecurityRules, logger)
-	}
-
 	addLbRules := append(addLbIngressRules, addLbEgressRules...)
 	if len(addLbRules) > 0 {
 		logger.Infof("adding frontend nsg rules to nsg %s", *frontendNsg.Id)
@@ -364,27 +355,7 @@ func (clb *CloudLoadBalancerProvider) reconcileSecurityGroup(ctx context.Context
 		}
 	}
 
-	// backendNsgOcids is the combination of obsolete backend NSGs and the ones configured for this service
-	backendNsgOcids := lbservice.backendNsgOcids
-	if len(obsoleteBackendNsgsSet) > 0 {
-		obsoleteNsgList := obsoleteBackendNsgsSet.UnsortedList()
-		backendNsgOcids = append(backendNsgOcids, obsoleteNsgList...)
-
-		serviceKey := lbservice.serviceUid
-		currentCachedSet, found, _ := clb.client.Networking(nil).GetServiceNsgSetFromCache(serviceKey)
-		if found {
-			for _, obsoleteNsg := range obsoleteNsgList {
-				currentCachedSet.Delete(obsoleteNsg)
-			}
-
-			err := clb.client.Networking(nil).AddServiceNsgSetToCache(serviceKey, currentCachedSet)
-			if err != nil {
-				logger.With(zap.Error(err)).Warn("Failed to update NSG cache")
-			}
-		}
-	}
-
-	for _, nsg := range backendNsgOcids {
+	for _, nsg := range lbservice.backendNsgOcids {
 		_, err := clb.getNsg(ctx, nsg)
 		if err != nil {
 			return err
@@ -398,16 +369,7 @@ func (clb *CloudLoadBalancerProvider) reconcileSecurityGroup(ctx context.Context
 		logger.Info("generating backend nsg rules")
 		// Backend NSG Ingress rules
 		generatedBackendIngressRules := generateNsgBackendIngressRules(logger, lbservice.ports, lbservice.sourceCIDRs, lbservice.isPreserveSource, lbservice.frontendNsgOcid, lbservice.serviceUid)
-
-		addBackendIngressRules := []core.SecurityRule{}
-		var removeBackendIngressRules []string
-
-		if obsoleteBackendNsgsSet.Has(nsg) {
-			logger.Infof("NSG %s is marked as obsolete, removing all rules for this service", nsg)
-			removeBackendIngressRules = filterSecurityRulesIdsForService(existingBackendIngressSecurityRules, lbservice.serviceUid)
-		} else {
-			addBackendIngressRules, removeBackendIngressRules, err = reconcileSecurityRules(logger, generatedBackendIngressRules, filterSecurityRulesForService(existingBackendIngressSecurityRules, lbservice.serviceUid))
-		}
+		addBackendIngressRules, removeBackendIngressRules, err := reconcileSecurityRules(logger, generatedBackendIngressRules, filterSecurityRulesForService(existingBackendIngressSecurityRules, lbservice.serviceUid))
 
 		if len(addBackendIngressRules) > 0 {
 			logger.Infof("adding backend nsg rules to nsg %s", nsg)
@@ -426,27 +388,6 @@ func (clb *CloudLoadBalancerProvider) reconcileSecurityGroup(ctx context.Context
 		}
 	}
 	return nil
-}
-
-// Helper function to extract backend NSG IDs from rules being removed
-func findObsoleteBackendNsgs(removedRuleIds []string, existingRules []core.SecurityRule, logger *zap.SugaredLogger) sets.Set[string] {
-	resultSet := sets.New[string]()
-	for _, ruleId := range removedRuleIds {
-		for _, rule := range existingRules {
-			if *rule.Id != ruleId || rule.Destination == nil ||
-				rule.DestinationType != core.SecurityRuleDestinationTypeNetworkSecurityGroup {
-				continue
-			}
-
-			// This is a rule pointing to a backend NSG that's no longer needed
-			backendNsgId := *rule.Destination
-			if !resultSet.Has(backendNsgId) {
-				resultSet.Insert(backendNsgId)
-				logger.Infof("Found obsolete backend NSG %s from egress rule", backendNsgId)
-			}
-		}
-	}
-	return resultSet
 }
 
 func (clb *CloudLoadBalancerProvider) removeBackendSecurityGroupRules(ctx context.Context, lbservice securityRuleComponents) error {
