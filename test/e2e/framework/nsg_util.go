@@ -18,7 +18,6 @@ package framework
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -75,81 +74,4 @@ func WaitForSinglePortRulesAfterPortChangeOrFailNSG(oci client.Interface, nsgId 
 		}
 	}
 	Failf("Failed: ValidSinglePortRulesAfterPortChangeOrDie Rule %s on NSG %s for old port still present: oldPort: %d, newPort: %d)", string(direction), nsgId, oldPort, newPort)
-}
-
-// Helper function to get the NSGs with a specified tag for a node
-func GetNSGsWithTagForNode(client client.Interface, compartmentId, nodeOcid, tagKey, tagValue string) ([]string, error) {
-	ctx := context.TODO()
-
-	// Get VNICs for the instance
-	vnicAttachments, err := client.Compute().ListVnicAttachments(ctx, compartmentId, nodeOcid)
-	if err != nil {
-		return nil, err
-	}
-
-	var nsgIds []string
-	// For each VNIC, get associated NSGs and check tags
-	for _, attach := range vnicAttachments {
-		vnic, err := client.Networking(nil).GetVNIC(ctx, *attach.VnicId)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get NSGs for this VNIC
-		if vnic.NsgIds != nil && len(vnic.NsgIds) > 0 {
-			for _, nsgId := range vnic.NsgIds {
-				// Get the NSG details to check tags
-				nsg, _, err := client.Networking(nil).GetNetworkSecurityGroup(ctx, nsgId)
-				if err != nil {
-					return nil, err
-				}
-
-				// Check if the NSG has the required tag
-				if nsg.FreeformTags != nil {
-					if val, ok := nsg.FreeformTags[tagKey]; ok && val == tagValue {
-						nsgIds = append(nsgIds, nsgId)
-					}
-				}
-			}
-		}
-	}
-
-	return nsgIds, nil
-}
-
-// Helper function to verify no rules exist for a service in an NSG
-func VerifyNoRulesForService(client client.Interface, nsgId, serviceName string) error {
-	ctx := context.TODO()
-
-	// Check ingress rules
-	ingressRules, err := client.Networking(nil).ListNetworkSecurityGroupSecurityRules(
-		ctx, nsgId, core.ListNetworkSecurityGroupSecurityRulesDirectionIngress)
-	if err != nil {
-		return err
-	}
-
-	// Check egress rules
-	egressRules, err := client.Networking(nil).ListNetworkSecurityGroupSecurityRules(
-		ctx, nsgId, core.ListNetworkSecurityGroupSecurityRulesDirectionEgress)
-	if err != nil {
-		return err
-	}
-
-	// Verify no ingress rules for the service exist
-	for _, rule := range ingressRules {
-		if rule.Description != nil && strings.Contains(*rule.Description, serviceName) {
-			Failf("Found ingress rule for service %s in NSG %s: %s",
-				serviceName, nsgId, *rule.Description)
-		}
-	}
-
-	// Verify no egress rules for the service exist
-	for _, rule := range egressRules {
-		if rule.Description != nil && strings.Contains(*rule.Description, serviceName) {
-			Failf("Found egress rule for service %s in NSG %s: %s",
-				serviceName, nsgId, *rule.Description)
-		}
-	}
-
-	return nil
 }

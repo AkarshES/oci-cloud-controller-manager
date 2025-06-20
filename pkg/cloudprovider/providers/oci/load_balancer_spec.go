@@ -189,9 +189,6 @@ const (
 	// ingress / egress security rules for a given kubernetes service could be either LB or NLB
 	ServiceAnnotationBackendSecurityRuleManagement = "oci.oraclecloud.com/oci-backend-network-security-group"
 
-	// ServiceAnnotationDiscoverBackendNetworkSecurityGroup is a service annotation for automatic discovery of backend Network Security Group(s)
-	ServiceAnnotationDiscoverBackendNetworkSecurityGroup = "oci.oraclecloud.com/discover-backend-network-security-group"
-
 	// ServiceAnnotationLoadbalancerListenerSSLConfig is a service annotation allows you to set the cipher suite on the listener
 	ServiceAnnotationLoadbalancerListenerSSLConfig = "oci.oraclecloud.com/oci-load-balancer-listener-ssl-config"
 
@@ -368,7 +365,6 @@ type ManagedNetworkSecurityGroup struct {
 	nsgRuleManagementMode string
 	frontendNsgId         string
 	backendNsgId          []string
-	discoverBackendNsg    bool
 }
 
 func requiresCertificate(svc *v1.Service) bool {
@@ -381,7 +377,10 @@ func requiresCertificate(svc *v1.Service) bool {
 
 func requiresNsgManagement(svc *v1.Service) bool {
 	manageNSG := strings.ToLower(svc.Annotations[ServiceAnnotationLoadBalancerSecurityRuleManagementMode])
-	return manageNSG == "nsg"
+	if manageNSG == "nsg" {
+		return true
+	}
+	return false
 }
 
 // NewSSLConfig constructs a new SSLConfig.
@@ -623,7 +622,6 @@ func getRuleManagementMode(svc *v1.Service) (string, *ManagedNetworkSecurityGrou
 		nsgRuleManagementMode: ManagementModeNone,
 		frontendNsgId:         "",
 		backendNsgId:          []string{},
-		discoverBackendNsg:    false,
 	}
 
 	annotationExists := false
@@ -634,21 +632,18 @@ func getRuleManagementMode(svc *v1.Service) (string, *ManagedNetworkSecurityGrou
 		return secListMode, &nsg, err
 	}
 
-	if strings.EqualFold(annotationValue, RuleManagementModeSlAll) {
+	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeSlAll) {
 		return ManagementModeAll, &nsg, nil
 	}
-	if strings.EqualFold(annotationValue, RuleManagementModeSlFrontend) {
+	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeSlFrontend) {
 		return ManagementModeFrontend, &nsg, nil
 	}
 
-	if strings.EqualFold(annotationValue, RuleManagementModeNsg) {
-		discoverBackendNsg := isNsgBackendDiscoveryEnabled(svc)
-
+	if strings.ToLower(annotationValue) == strings.ToLower(RuleManagementModeNsg) {
 		nsg = ManagedNetworkSecurityGroup{
 			nsgRuleManagementMode: RuleManagementModeNsg,
 			frontendNsgId:         "",
 			backendNsgId:          []string{},
-			discoverBackendNsg:    discoverBackendNsg,
 		}
 		return RuleManagementModeNsg, &nsg, nil
 	}
@@ -680,13 +675,6 @@ func getManagedBackendNSG(svc *v1.Service) ([]string, error) {
 		return nil, fmt.Errorf("invalid NetworkSecurityGroups OCID: [%s] provided for annotation: %s", networkSecurityGroupIds, nsgAnnotationString)
 	}
 	return backendNsgList, nil
-}
-
-func isNsgBackendDiscoveryEnabled(svc *v1.Service) bool {
-	if discoverValue, ok := svc.Annotations[ServiceAnnotationDiscoverBackendNetworkSecurityGroup]; ok {
-		return strings.ToLower(discoverValue) == "true"
-	}
-	return false
 }
 
 // Certificates builds a map of required SSL certificates.

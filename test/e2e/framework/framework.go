@@ -119,7 +119,6 @@ var (
 	cmekKMSKey                    string // KMS key for CMEK testing
 	nsgOCIDS                      string // Testing CCM NSG feature
 	backendNsgIds                 string // Testing Rule management Backend NSG feature
-	backendNsgDiscoveryIds        string // Testing Rule management auto-discovery Backend NSG feature
 	singleStackIPv6LbSubnet       string // Testing SingleStack IPv6 for Loadbalancer service
 	reservedIP                    string // Testing public reserved IP feature
 	architecture                  string
@@ -202,7 +201,6 @@ func init() {
 	flag.StringVar(&cmekKMSKey, "cmek-kms-key", "", "KMS key to be used for CMEK testing")
 	flag.StringVar(&nsgOCIDS, "nsg-ocids", "", "NSG OCIDs to be used to associate to LB")
 	flag.StringVar(&backendNsgIds, "backend-nsg-ocids", "", "backend NSG Ids associated with backends of LB")
-	flag.StringVar(&backendNsgDiscoveryIds, "backend-nsg-discovery-ocids", "", "backend NSG Ids associated with backends of LB for discovery")
 	flag.StringVar(&singleStackIPv6LbSubnet, "single-stack-ipv6-lb-subnet", "", "SingleStack IPv6 LB subnet to create load balancers in")
 	flag.StringVar(&reservedIP, "reserved-ip", "", "Public reservedIP to be used for testing loadbalancer with reservedIP")
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
@@ -364,7 +362,6 @@ type Framework struct {
 	CMEKKMSKey               string
 	NsgOCIDS                 string
 	BackendNsgOcid           string
-	BackendNsgDiscoveryOcid  string
 	SingleStackIPv6LbSubnet  string
 	ReservedIP               string
 	Architecture             string
@@ -461,8 +458,6 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		MntTargetCompartmentOcid:      mntTargetCompartmentOCID,
 		CMEKKMSKey:                    cmekKMSKey,
 		NsgOCIDS:                      nsgOCIDS,
-		BackendNsgOcid:                backendNsgIds,
-		BackendNsgDiscoveryOcid:       backendNsgDiscoveryIds,
 		ReservedIP:                    reservedIP,
 		Architecture:                  architecture,
 		VolumeHandle:                  volumeHandle,
@@ -567,8 +562,6 @@ func (f *Framework) Initialize() {
 	Logf("NSG OCIDS: %s", f.NsgOCIDS)
 	f.BackendNsgOcid = backendNsgIds
 	Logf("Backend NSG OCIDS: %s", f.BackendNsgOcid)
-	f.BackendNsgDiscoveryOcid = backendNsgDiscoveryIds
-	Logf("Backend NSG Discovery OCIDS: %s", f.BackendNsgDiscoveryOcid)
 	f.SingleStackIPv6LbSubnet = singleStackIPv6LbSubnet
 	Logf("SingleStack IPv6 LB Subnet: %s", f.SingleStackIPv6LbSubnet)
 	f.ReservedIP = reservedIP

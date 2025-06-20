@@ -29,7 +29,6 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/core"
 	errors2 "github.com/pkg/errors"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestComputeAveragesByReturnCode(t *testing.T) {
@@ -1122,22 +1121,6 @@ func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string)
 
 func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error) {
 	return nil, nil
-}
-
-func (c *MockVirtualNetworkClient) GetNodeNsgsFromCacheByNodeOcid(nodeOcid string) ([]string, bool, error) {
-	return []string{}, false, nil
-}
-
-func (c *MockVirtualNetworkClient) AddNodeNsgsToCacheByNodeOcid(nodeOcid string, nsgIDs []string) error {
-	return nil
-}
-
-func (c *MockVirtualNetworkClient) GetServiceNsgSetFromCache(serviceKey string) (sets.String, bool, error) {
-	return sets.NewString(), false, nil
-}
-
-func (c *MockVirtualNetworkClient) AddServiceNsgSetToCache(serviceKey string, nsgSet sets.String) error {
-	return nil
 }
 
 // MockComputeClient mocks Compute client implementation
