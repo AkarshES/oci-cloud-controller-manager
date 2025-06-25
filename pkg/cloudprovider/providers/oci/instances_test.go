@@ -507,7 +507,9 @@ var (
 				UID:  uuid.NewUUID(),
 				Name: "virtualPod1",
 				Labels: map[string]string{
-					"app": "pod1",
+					"virtual": "true",
+					"mixed":   "true",
+					"app":     "pod1",
 				},
 			},
 			Spec: v1.PodSpec{
@@ -519,7 +521,9 @@ var (
 				UID:  uuid.NewUUID(),
 				Name: "virtualPod2",
 				Labels: map[string]string{
-					"app": "pod2",
+					"mixed":   "true",
+					"virtual": "true",
+					"app":     "pod2",
 				},
 			},
 			Spec: v1.PodSpec{
@@ -555,6 +559,11 @@ var (
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  uuid.NewUUID(),
 				Name: "regularPod1",
+				Labels: map[string]string{
+					"mixed":   "true",
+					"app":     "pod4",
+					"virtual": "false",
+				},
 			},
 			Spec: v1.PodSpec{
 				NodeName: "default",
@@ -564,6 +573,11 @@ var (
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  uuid.NewUUID(),
 				Name: "regularPod2",
+				Labels: map[string]string{
+					"mixed":   "true",
+					"app":     "pod5",
+					"virtual": "false",
+				},
 			},
 			Spec: v1.PodSpec{
 				NodeName: "default",
@@ -2061,6 +2075,7 @@ func TestGetCompartmentIDByInstanceID(t *testing.T) {
 
 type mockNodeLister struct {
 	nodes []*v1.Node
+	err   error
 }
 
 func (s *mockNodeLister) List(selector labels.Selector) (ret []*v1.Node, err error) {
@@ -2082,7 +2097,7 @@ func (s *mockNodeLister) List(selector labels.Selector) (ret []*v1.Node, err err
 			nodes = append(nodes, n)
 		}
 	}
-	return nodes, nil
+	return nodes, s.err
 }
 
 func (s *mockNodeLister) Get(name string) (*v1.Node, error) {
