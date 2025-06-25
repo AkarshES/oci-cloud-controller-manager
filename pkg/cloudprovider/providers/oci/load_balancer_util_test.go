@@ -2656,6 +2656,8 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 				UrlPath:           common.String("/desired"),
 				Protocol:          "HTTP",
 				IsForcePlainText:  common.Bool(false),
+				RequestData:       []byte("desired"),
+				ResponseData:      []byte("desired"),
 			},
 			actual: client.GenericHealthChecker{
 				Port:              common.Int(25),
@@ -2665,6 +2667,8 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 				UrlPath:           common.String("/actual"),
 				Protocol:          "TCP",
 				IsForcePlainText:  common.Bool(true),
+				RequestData:       []byte("actual"),
+				ResponseData:      []byte("actual"),
 			},
 			expected: []string{
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Port", 25, 20),
@@ -2675,6 +2679,40 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:UrlPath", "/actual", "/desired"),
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Protocol", "TCP", "HTTP"),
 				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:IsForcePlainText", true, false),
+				fmt.Sprintf(changeFmtStr, "BackendSet:RequestData:RequestData", "actual", "desired"),
+				fmt.Sprintf(changeFmtStr, "BackendSet:ResponseData:ResponseData", "actual", "desired"),
+			},
+		},
+		{
+			name: "Dns changes - DomainName",
+			desired: client.GenericHealthChecker{
+				Dns: &networkloadbalancer.DnsHealthCheckerDetails{
+					DomainName: common.String("desired"),
+				},
+			},
+			actual: client.GenericHealthChecker{
+				Dns: &networkloadbalancer.DnsHealthCheckerDetails{
+					DomainName: common.String("actual"),
+				},
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:DomainName", "actual", "desired"),
+			},
+		},
+		{
+			name: "Dns changes - TransportProtocol",
+			desired: client.GenericHealthChecker{
+				Dns: &networkloadbalancer.DnsHealthCheckerDetails{
+					TransportProtocol: networkloadbalancer.DnsHealthCheckTransportProtocolsUdp,
+				},
+			},
+			actual: client.GenericHealthChecker{
+				Dns: &networkloadbalancer.DnsHealthCheckerDetails{
+					TransportProtocol: networkloadbalancer.DnsHealthCheckTransportProtocolsTcp,
+				},
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:TransportProtocol", "TCP", "UDP"),
 			},
 		},
 	}
@@ -2684,6 +2722,115 @@ func TestGetHealthCheckerChanges(t *testing.T) {
 			changes := getHealthCheckerChanges(&tt.actual, &tt.desired)
 			if !reflect.DeepEqual(changes, tt.expected) {
 				t.Errorf("expected HealthCheckerChanges\n%+v\nbut got\n%+v", tt.expected, changes)
+			}
+		})
+	}
+}
+
+func Test_getHealthCheckerDnsChanges(t *testing.T) {
+	var testCases = []struct {
+		name     string
+		desired  *networkloadbalancer.DnsHealthCheckerDetails
+		actual   *networkloadbalancer.DnsHealthCheckerDetails
+		expected []string
+	}{
+		{
+			name: "No changes",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				DomainName:        common.String("example.com"),
+				TransportProtocol: networkloadbalancer.DnsHealthCheckTransportProtocolsTcp,
+				QueryClass:        networkloadbalancer.DnsHealthCheckQueryClassesIn,
+				QueryType:         networkloadbalancer.DnsHealthCheckQueryTypesA,
+				Rcodes:            []networkloadbalancer.DnsHealthCheckRCodesEnum{networkloadbalancer.DnsHealthCheckRCodesNoerror},
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				DomainName:        common.String("example.com"),
+				TransportProtocol: networkloadbalancer.DnsHealthCheckTransportProtocolsTcp,
+				QueryClass:        networkloadbalancer.DnsHealthCheckQueryClassesIn,
+				QueryType:         networkloadbalancer.DnsHealthCheckQueryTypesA,
+				Rcodes:            []networkloadbalancer.DnsHealthCheckRCodesEnum{networkloadbalancer.DnsHealthCheckRCodesNoerror},
+			},
+			expected: nil,
+		},
+		{
+			name: "DomainName changes",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				DomainName: common.String("desired.com"),
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				DomainName: common.String("actual.com"),
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:DomainName", "actual.com", "desired.com"),
+			},
+		},
+		{
+			name: "TransportProtocol changes",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				TransportProtocol: networkloadbalancer.DnsHealthCheckTransportProtocolsUdp,
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				TransportProtocol: networkloadbalancer.DnsHealthCheckTransportProtocolsTcp,
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:TransportProtocol", "TCP", "UDP"),
+			},
+		},
+		{
+			name: "QueryClass changes",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				QueryClass: networkloadbalancer.DnsHealthCheckQueryClassesIn,
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				QueryClass: networkloadbalancer.DnsHealthCheckQueryClassesCh,
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:QueryClass", "CH", "IN"),
+			},
+		},
+		{
+			name: "QueryType changes",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				QueryType: networkloadbalancer.DnsHealthCheckQueryTypesA,
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				QueryType: networkloadbalancer.DnsHealthCheckQueryTypesAaaa,
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:QueryType", "AAAA", "A"),
+			},
+		},
+		{
+			name: "Rcodes changes",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				Rcodes: []networkloadbalancer.DnsHealthCheckRCodesEnum{networkloadbalancer.DnsHealthCheckRCodesNoerror},
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				Rcodes: []networkloadbalancer.DnsHealthCheckRCodesEnum{networkloadbalancer.DnsHealthCheckRCodesServfail},
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:Rcodes", "[SERVFAIL]", "[NOERROR]"),
+			},
+		},
+		{
+			name: "Rcodes - multiple values",
+			desired: &networkloadbalancer.DnsHealthCheckerDetails{
+				Rcodes: []networkloadbalancer.DnsHealthCheckRCodesEnum{networkloadbalancer.DnsHealthCheckRCodesNoerror, networkloadbalancer.DnsHealthCheckRCodesServfail},
+			},
+			actual: &networkloadbalancer.DnsHealthCheckerDetails{
+				Rcodes: []networkloadbalancer.DnsHealthCheckRCodesEnum{networkloadbalancer.DnsHealthCheckRCodesServfail},
+			},
+			expected: []string{
+				fmt.Sprintf(changeFmtStr, "BackendSet:HealthChecker:Dns:Rcodes", "[SERVFAIL]", "[NOERROR SERVFAIL]"),
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			changes := getHealthCheckerDnsChanges(tt.actual, tt.desired)
+			if !reflect.DeepEqual(changes, tt.expected) {
+				t.Errorf("expected DnsChanges\n%+v\nbut got\n%+v", tt.expected, changes)
 			}
 		})
 	}

@@ -164,7 +164,7 @@ func TestGetNodeIngressRules(t *testing.T) {
 			name: "do not delete health check rules that are used by other services",
 			securityList: &core.SecurityList{
 				IngressSecurityRules: []core.IngressSecurityRule{
-					makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+					makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 					makeIngressSecurityRule("0.0.0.0/0", 80),
 				},
 			},
@@ -186,7 +186,7 @@ func TestGetNodeIngressRules(t *testing.T) {
 			isPreserveSource: false,
 			sourceCIDRs:      []string{"0.0.0.0/0"},
 			expected: []core.IngressSecurityRule{
-				makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+				makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 			},
 			ipFamilies: []string{IPv4},
 		},
@@ -194,7 +194,7 @@ func TestGetNodeIngressRules(t *testing.T) {
 			name: "multiple services for same cluster; one uses default healthcheck and other uses HealthcheckNodeport",
 			securityList: &core.SecurityList{
 				IngressSecurityRules: []core.IngressSecurityRule{
-					makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+					makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 					makeIngressSecurityRule("0.0.0.0/0", 80),
 					makeIngressSecurityRule("1.1.1.1/1", 32000),
 				},
@@ -226,7 +226,7 @@ func TestGetNodeIngressRules(t *testing.T) {
 			isPreserveSource: false,
 			sourceCIDRs:      []string{"0.0.0.0/0"},
 			expected: []core.IngressSecurityRule{
-				makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+				makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 				makeIngressSecurityRule("1.1.1.1/1", 32000),
 			},
 			ipFamilies: []string{IPv4},
@@ -554,7 +554,7 @@ func TestGetNodeIngressRules_NLB(t *testing.T) {
 			name: "do not delete health check rules that are used by other services",
 			securityList: &core.SecurityList{
 				IngressSecurityRules: []core.IngressSecurityRule{
-					makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+					makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 					makeIngressSecurityRule("0.0.0.0/0", 80),
 				},
 			},
@@ -575,7 +575,7 @@ func TestGetNodeIngressRules_NLB(t *testing.T) {
 			},
 			isPreserveSource: true,
 			expected: []core.IngressSecurityRule{
-				makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+				makeIngressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 			},
 			ipFamilies: []string{IPv4},
 		},
@@ -962,9 +962,9 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 			securityList: &core.SecurityList{
 				EgressSecurityRules: []core.EgressSecurityRule{
 					core.EgressSecurityRule{Destination: common.String("0.0.0.0/0")},
-					makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckPort),
-					makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckPort),
-					makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckPort),
+					makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckDefaultPort),
+					makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckDefaultPort),
+					makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckDefaultPort),
 					makeEgressSecurityRule("10.0.40.0/24", 30354),
 					makeEgressSecurityRule("10.0.41.0/24", 30354),
 					makeEgressSecurityRule("10.0.42.0/24", 30354),
@@ -988,9 +988,9 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 			},
 			expected: []core.EgressSecurityRule{
 				core.EgressSecurityRule{Destination: common.String("0.0.0.0/0")},
-				makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckPort),
-				makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckPort),
-				makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckPort),
+				makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckDefaultPort),
+				makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckDefaultPort),
+				makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckDefaultPort),
 				makeEgressSecurityRule("10.0.40.0/24", 30355),
 				makeEgressSecurityRule("10.0.41.0/24", 30355),
 				makeEgressSecurityRule("10.0.42.0/24", 30355),
@@ -1002,9 +1002,9 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 			securityList: &core.SecurityList{
 				EgressSecurityRules: []core.EgressSecurityRule{
 					core.EgressSecurityRule{Destination: common.String("0.0.0.0/0")},
-					makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckPort),
-					makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckPort),
-					makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckPort),
+					makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckDefaultPort),
+					makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckDefaultPort),
+					makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckDefaultPort),
 					makeEgressSecurityRule("10.0.40.0/24", 30354),
 					makeEgressSecurityRule("10.0.41.0/24", 30354),
 					makeEgressSecurityRule("10.0.42.0/24", 30354),
@@ -1015,8 +1015,8 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 				{CidrBlock: common.String("10.0.41.0/24")},
 				{CidrBlock: common.String("10.0.42.0/24")},
 			},
-			actualPort:  lbNodesHealthCheckPort,
-			desiredPort: lbNodesHealthCheckPort + 1,
+			actualPort:  lbNodesHealthCheckDefaultPort,
+			desiredPort: lbNodesHealthCheckDefaultPort + 1,
 			services: []*v1.Service{
 				{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "namespace", Name: "update service health check port"},
@@ -1031,9 +1031,9 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 				makeEgressSecurityRule("10.0.40.0/24", 30354),
 				makeEgressSecurityRule("10.0.41.0/24", 30354),
 				makeEgressSecurityRule("10.0.42.0/24", 30354),
-				makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckPort+1),
-				makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckPort+1),
-				makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckPort+1),
+				makeEgressSecurityRule("10.0.40.0/24", lbNodesHealthCheckDefaultPort+1),
+				makeEgressSecurityRule("10.0.41.0/24", lbNodesHealthCheckDefaultPort+1),
+				makeEgressSecurityRule("10.0.42.0/24", lbNodesHealthCheckDefaultPort+1),
 			},
 			ipFamilies: []string{IPv4},
 		},
@@ -1086,12 +1086,12 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 			name: "do not delete a port rule which is used by another services (default) health check",
 			securityList: &core.SecurityList{
 				EgressSecurityRules: []core.EgressSecurityRule{
-					makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+					makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 				},
 			},
 			subnets:     []*core.Subnet{},
-			actualPort:  lbNodesHealthCheckPort,
-			desiredPort: lbNodesHealthCheckPort,
+			actualPort:  lbNodesHealthCheckDefaultPort,
+			desiredPort: lbNodesHealthCheckDefaultPort,
 			services: []*v1.Service{
 				{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "namespace", Name: "using-default-health-check-port"},
@@ -1103,7 +1103,7 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 				},
 			},
 			expected: []core.EgressSecurityRule{
-				makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+				makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 			},
 			ipFamilies: []string{IPv4},
 		},
@@ -1137,7 +1137,7 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 			securityList: &core.SecurityList{
 				EgressSecurityRules: []core.EgressSecurityRule{
 					makeEgressSecurityRule("0.0.0.0/0", 30000),
-					makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+					makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 				},
 			},
 			subnets:     []*core.Subnet{},
@@ -1164,7 +1164,7 @@ func TestGetLoadBalancerEgressRules(t *testing.T) {
 			},
 			expected: []core.EgressSecurityRule{
 				makeEgressSecurityRule("0.0.0.0/0", 30000),
-				makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckPort),
+				makeEgressSecurityRule("0.0.0.0/0", lbNodesHealthCheckDefaultPort),
 			},
 			ipFamilies: []string{IPv4},
 		},
