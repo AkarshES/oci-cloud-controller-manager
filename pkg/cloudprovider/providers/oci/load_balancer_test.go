@@ -18,6 +18,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	authv1 "k8s.io/api/authentication/v1"
+	"k8s.io/utils/pointer"
 	"reflect"
 	"sort"
 	"strconv"
@@ -1195,11 +1198,12 @@ func TestCloudProvider_EnsureLoadBalancerDeleted(t *testing.T) {
 	}
 }
 
-func Test_getVirtualPodsOfService(t *testing.T) {
+func Test_getManagedAndVirtualPodsOfService(t *testing.T) {
 	tests := []struct {
-		name    string
-		service *v1.Service
-		want    []*v1.Pod
+		name        string
+		service     *v1.Service
+		want        []*v1.Pod
+		wantManaged []*v1.Pod
 	}{
 		{
 			name: "Virtual pods - no err",
@@ -1221,6 +1225,10 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 				},
 			},
 			want: nil,
+			wantManaged: []*v1.Pod{
+				podList["regularPod1"],
+				podList["regularPod2"],
+			},
 		},
 		{
 			name: "Multiple virtual pods and regular pods - no err",
@@ -1232,6 +1240,10 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 			want: []*v1.Pod{
 				podList["virtualPod1"],
 				podList["virtualPod2"],
+			},
+			wantManaged: []*v1.Pod{
+				podList["regularPod1"],
+				podList["regularPod2"],
 			},
 		},
 		{
@@ -1272,9 +1284,10 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := cp.getVirtualPodsOfService(context.TODO(), zap.S(), tt.service)
+			// TODO: Add test for managed pods as well
+			gotManaged, got, err := cp.getManagedAndVirtualPodsOfService(context.TODO(), zap.S(), tt.service)
 			if err != nil {
-				t.Fatalf("getVirtualPodsOfService() error = %v", err)
+				t.Fatalf("getManagedAndVirtualPodsOfService() error = %v", err)
 			}
 			sort.Slice(got, func(i, j int) bool {
 				if got[i].GetUID() > got[j].GetUID() {
@@ -1288,8 +1301,23 @@ func Test_getVirtualPodsOfService(t *testing.T) {
 				}
 				return false
 			})
+			sort.Slice(gotManaged, func(i, j int) bool {
+				if gotManaged[i].GetUID() > gotManaged[j].GetUID() {
+					return true
+				}
+				return false
+			})
+			sort.Slice(tt.wantManaged, func(i, j int) bool {
+				if tt.wantManaged[i].GetUID() > tt.wantManaged[j].GetUID() {
+					return true
+				}
+				return false
+			})
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getVirtualPodsOfService() got = %v, want %v", got, tt.want)
+				t.Errorf("virtual pods in getManagedAndVirtualPodsOfService() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(gotManaged, tt.wantManaged) {
+				t.Errorf("managed pods in getManagedAndVirtualPodsOfService() got = %v, want %v", gotManaged, tt.wantManaged)
 			}
 		})
 	}
@@ -1710,20 +1738,35 @@ func assertError(actual, expected error) bool {
 	return actual.Error() == expected.Error()
 }
 
-type mockPodLister struct{}
+type mockPodLister struct {
+	pods []*v1.Pod
+	err  error
+}
 
 func (s *mockPodLister) List(selector labels.Selector) (ret []*v1.Pod, err error) {
-	return []*v1.Pod{}, nil
+	if selector == nil {
+		return s.pods, s.err
+	}
+	return []*v1.Pod{}, s.err
 }
 
 func (s *mockPodLister) Pods(namespace string) corelisters.PodNamespaceLister {
-	return &mockPodNamespaceLister{}
+	return &mockPodNamespaceLister{
+		pods: s.pods,
+		err:  s.err,
+	}
 }
 
-type mockPodNamespaceLister struct{}
+type mockPodNamespaceLister struct {
+	pods []*v1.Pod
+	err  error
+}
 
 func (s *mockPodNamespaceLister) List(selector labels.Selector) (ret []*v1.Pod, err error) {
 	var pods []*v1.Pod
+	if len(s.pods) > 0 {
+		return s.pods, s.err
+	}
 	for _, po := range podList {
 		if selector != nil {
 			if selector.Matches(labels.Set(po.ObjectMeta.GetLabels())) {
@@ -1733,12 +1776,12 @@ func (s *mockPodNamespaceLister) List(selector labels.Selector) (ret []*v1.Pod, 
 			pods = append(pods, po)
 		}
 	}
-	return pods, nil
+	return pods, s.err
 }
 
 func (s *mockPodNamespaceLister) Get(name string) (ret *v1.Pod, err error) {
 	if po, ok := podList[name]; ok {
-		return po, nil
+		return po, s.err
 	}
 	return nil, k8errors.NewNotFound(v1.Resource("pod"), name)
 }
@@ -2798,6 +2841,598 @@ func TestLoadBalancerToStatus(t *testing.T) {
 			if tc.expectedError != nil {
 				reflect.DeepEqual(tc.expectedError.Error(), actualError.Error())
 			}
+		})
+	}
+}
+
+func TestCheckForNetworkPartition(t *testing.T) {
+	tests := []struct {
+		name              string
+		nodes             []*v1.Node
+		virtualNodeExists bool
+		nodeLister        *mockNodeLister
+		expectedErr       bool
+		expectedResult    bool
+	}{
+		{
+			name: "all nodes are ready",
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "node1",
+					},
+					Status: v1.NodeStatus{
+						Conditions: []v1.NodeCondition{
+							{
+								Type:   v1.NodeReady,
+								Status: v1.ConditionTrue,
+							},
+						},
+					},
+				},
+			},
+			virtualNodeExists: false,
+			expectedErr:       false,
+			expectedResult:    false,
+		},
+		{
+			name:  "all nodes are not ready",
+			nodes: []*v1.Node{},
+			nodeLister: &mockNodeLister{
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node1",
+						},
+						Status: v1.NodeStatus{
+							Conditions: []v1.NodeCondition{
+								{
+									Type:   v1.NodeReady,
+									Status: v1.ConditionFalse,
+								},
+							},
+						},
+					},
+				},
+			},
+			virtualNodeExists: false,
+			expectedErr:       false,
+			expectedResult:    true,
+		},
+		{
+			name:              "empty node list but Lister has nodes",
+			nodes:             []*v1.Node{},
+			virtualNodeExists: false,
+			expectedErr:       true, // Since NodeLister has 1 ready node in it
+			expectedResult:    false,
+		},
+		{
+			name:  "empty provisioned node list",
+			nodes: []*v1.Node{},
+			nodeLister: &mockNodeLister{
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "node1",
+						},
+						Status: v1.NodeStatus{
+							Conditions: []v1.NodeCondition{
+								{
+									Type:   v1.NodeReady,
+									Status: v1.ConditionFalse,
+								},
+							},
+						},
+						Spec: v1.NodeSpec{
+							ProviderID: "ocid1.virtualnode.xyz",
+						},
+					},
+				},
+			},
+			virtualNodeExists: false,
+			expectedErr:       false,
+			expectedResult:    false,
+		},
+		{
+			name:              "virtual node exists",
+			nodes:             []*v1.Node{},
+			virtualNodeExists: true,
+			expectedErr:       false,
+			expectedResult:    false,
+		},
+		{
+			name:              "error listing nodes",
+			nodes:             []*v1.Node{},
+			virtualNodeExists: false,
+			nodeLister: &mockNodeLister{
+				err: errors.New("error listing nodes"),
+			},
+			expectedErr:    true,
+			expectedResult: false,
+		},
+	}
+
+	defaultNodeLister := &mockNodeLister{
+		nodes: []*v1.Node{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "node1",
+				},
+				Status: v1.NodeStatus{
+					Conditions: []v1.NodeCondition{
+						{
+							Type:   v1.NodeReady,
+							Status: v1.ConditionTrue,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cp := &CloudProvider{
+		logger:     zap.NewNop().Sugar(),
+		NodeLister: defaultNodeLister,
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.nodeLister != nil {
+				cp.NodeLister = test.nodeLister
+			}
+			isNetworkPartition, err := cp.checkForNetworkPartition(cp.logger, test.nodes, test.virtualNodeExists)
+			if test.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, test.expectedResult, isNetworkPartition)
+
+			// Reset cp.NodeLister
+			cp.NodeLister = defaultNodeLister
+		})
+	}
+}
+
+func TestGetServiceAccountTokenIfSet(t *testing.T) {
+	expectedSa := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sa",
+			Namespace: "ns",
+		},
+	}
+	tests := []struct {
+		name                   string
+		service                *v1.Service
+		serviceAccount         *v1.ServiceAccount
+		tokenRequest           *authv1.TokenRequest
+		expectedErr            bool
+		expectedToken          *authv1.TokenRequest
+		expectedServiceAccount *v1.ServiceAccount
+	}{
+		{
+			name: "Service Account exists and token is generated",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Annotations: map[string]string{
+						ServiceAnnotationServiceAccountName: "sa",
+					},
+				},
+			},
+			expectedErr: false,
+			expectedToken: &authv1.TokenRequest{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "ns",
+					Name:      "sa",
+				},
+			},
+			expectedServiceAccount: expectedSa,
+		},
+		{
+			name: "Service Account does not exist",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationServiceAccountName: "non-existent-sa",
+					},
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Service Account name is empty",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationServiceAccountName: "",
+					},
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Service Account annotation is missing",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Error creating token request",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationServiceAccountName: "test-sa",
+					},
+				},
+			},
+			serviceAccount: &v1.ServiceAccount{},
+			tokenRequest:   nil,
+			expectedErr:    true,
+		},
+	}
+
+	kc := NewSimpleClientset(expectedSa)
+
+	factory := informers.NewSharedInformerFactoryWithOptions(kc, 0*time.Second, informers.WithNamespace("ns"))
+	serviceAccountInformer := factory.Core().V1().ServiceAccounts()
+	go serviceAccountInformer.Informer().Run(wait.NeverStop)
+
+	cp := &CloudProvider{
+		kubeclient:           kc,
+		ServiceAccountLister: serviceAccountInformer.Lister(),
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			kc := &Clientset{}
+			if test.serviceAccount != nil {
+				kc = NewSimpleClientset(
+					test.serviceAccount,
+				)
+				factory := informers.NewSharedInformerFactoryWithOptions(kc, 0*time.Second, informers.WithNamespace("ns"))
+				serviceAccountInformer := factory.Core().V1().ServiceAccounts()
+				go serviceAccountInformer.Informer().Run(wait.NeverStop)
+
+				cp.ServiceAccountLister = serviceAccountInformer.Lister()
+			}
+			if test.tokenRequest != nil {
+				cp.kubeclient = kc
+			}
+
+			// Wait for Informer to sync
+			time.Sleep(100 * time.Millisecond)
+
+			token, sa, err := cp.getServiceAccountTokenIfSet(context.Background(), test.service)
+			if test.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				if token != nil {
+					// Check if both not nil
+					assert.Equal(t, test.expectedToken.Kind, token.Kind)
+				} else {
+					assert.Equal(t, test.expectedToken, token)
+				}
+				if sa != nil {
+					assert.Equal(t, test.expectedServiceAccount.Name, sa.Name)
+				} else {
+					assert.Equal(t, test.expectedServiceAccount, sa)
+				}
+			}
+		})
+	}
+}
+
+func TestGetProvisionedNodesAndVirtualPodsOfService(t *testing.T) {
+	tests := []struct {
+		name                string
+		service             *v1.Service
+		nodes               []*v1.Node
+		virtualNodeExists   bool
+		podLister           *mockPodLister
+		expectedErr         bool
+		expectedNodes       []*v1.Node
+		expectedVirtualPods []*v1.Pod
+		expectedManagedPods []*v1.Pod
+	}{
+		{
+			name: "Service has provisioned nodes and virtual nodes exist",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "virtualService",
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "true",
+					},
+				},
+			},
+			nodes: []*v1.Node{
+				nodeList["virtualNodeDefault"],
+			},
+			virtualNodeExists: true,
+			podLister: &mockPodLister{
+				pods: []*v1.Pod{
+					podList["virtualPod1"],
+					podList["virtualPod2"],
+				},
+			},
+			expectedErr:   false,
+			expectedNodes: []*v1.Node{},
+			expectedVirtualPods: []*v1.Pod{
+				podList["virtualPod1"],
+				podList["virtualPod2"],
+			},
+		},
+		{
+			name: "Service has provisioned nodes and virtual nodes do not exist",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-service",
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+				},
+			},
+			nodes: []*v1.Node{
+				nodeList["instanceWithAddress1"],
+				nodeList["instanceWithAddress2"],
+			},
+			virtualNodeExists: false,
+			expectedErr:       false,
+			expectedNodes: []*v1.Node{
+				nodeList["instanceWithAddress1"],
+				nodeList["instanceWithAddress2"],
+			},
+			expectedVirtualPods: nil,
+		},
+		{
+			name: "Error listing pods",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "virtualService",
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"app": "pod1",
+					},
+				},
+			},
+			nodes: []*v1.Node{
+				nodeList["virtualNodeDefault"],
+			},
+			virtualNodeExists: false,
+			podLister: &mockPodLister{
+				err: errors.New("error listing pods"),
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Service has managed pods with Pods as Backends mode",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "regularService",
+					Annotations: map[string]string{
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":8080}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					Ports: []v1.ServicePort{
+						{
+							Port: 80,
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			nodes: []*v1.Node{
+				nodeList["default"],
+			},
+			virtualNodeExists: false,
+			podLister: &mockPodLister{
+				pods: []*v1.Pod{
+					podList["regularPod1"],
+					podList["regularPod2"],
+				},
+			},
+			expectedErr: false,
+			expectedNodes: []*v1.Node{
+				nodeList["default"],
+			},
+			expectedManagedPods: []*v1.Pod{
+				podList["regularPod1"],
+				podList["regularPod2"],
+			},
+			expectedVirtualPods: nil,
+		},
+		{
+			name: "Service has both managed and virtual pods with Pods as Backends mode",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mixedService",
+					Annotations: map[string]string{
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":8080}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"mixed": "true",
+					},
+					Ports: []v1.ServicePort{
+						{
+							Port: 80,
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			nodes: []*v1.Node{
+				nodeList["default"],
+				nodeList["virtualNodeDefault"],
+			},
+			virtualNodeExists: true,
+			podLister: &mockPodLister{
+				pods: []*v1.Pod{
+					podList["regularPod1"],
+					podList["regularPod2"],
+					podList["virtualPod1"],
+					podList["virtualPod2"],
+				},
+			},
+			expectedErr: false,
+			expectedNodes: []*v1.Node{
+				nodeList["default"],
+			},
+			expectedManagedPods: []*v1.Pod{
+				podList["regularPod1"],
+				podList["regularPod2"],
+			},
+			expectedVirtualPods: []*v1.Pod{
+				podList["virtualPod1"],
+				podList["virtualPod2"],
+			},
+		},
+		{
+			name: "Error listing pods with Pods as Backends mode",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "regularService",
+					Annotations: map[string]string{
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":8080}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					Ports: []v1.ServicePort{
+						{
+							Port: 80,
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			nodes:             []*v1.Node{},
+			virtualNodeExists: false,
+			podLister: &mockPodLister{
+				err: errors.New("error listing pods"),
+			},
+			expectedErr: true,
+		},
+	}
+
+	cp := &CloudProvider{
+		NodeLister:          &mockNodeLister{},
+		PodLister:           &mockPodLister{},
+		EndpointSliceLister: &mockEndpointSliceLister{},
+		logger:              zap.NewNop().Sugar(),
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cp := cp
+			if test.podLister != nil {
+				cp.PodLister = test.podLister
+			}
+			if len(test.nodes) > 0 {
+				cp.NodeLister = &mockNodeLister{
+					nodes: test.nodes,
+				}
+			}
+			virtualNodeExists, provisionedNodes, managedPods, virtualPods, err := cp.getProvisionedNodesAndPodsOfService(context.Background(), cp.logger, test.service, test.nodes)
+			if test.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.virtualNodeExists, virtualNodeExists)
+				if !virtualNodeExists {
+					assert.Equal(t, test.expectedNodes, provisionedNodes)
+				}
+				assert.ObjectsAreEqualValues(test.expectedVirtualPods, virtualPods)
+				assert.ObjectsAreEqualValues(test.expectedManagedPods, managedPods)
+			}
+		})
+	}
+}
+
+func TestHasCustomNodePorts(t *testing.T) {
+	tests := []struct {
+		name     string
+		service  *v1.Service
+		expected bool
+	}{
+		{
+			name: "Service has custom node ports",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							NodePort: 30080,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Service does not have custom node ports",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							NodePort: 0,
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Service has multiple ports with some custom node ports",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							NodePort: 30080,
+						},
+						{
+							NodePort: 0,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Service has multiple ports with no custom node ports",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							NodePort: 0,
+						},
+						{
+							NodePort: 0,
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := hasCustomNodePorts(test.service)
+			assert.Equal(t, test.expected, actual)
 		})
 	}
 }

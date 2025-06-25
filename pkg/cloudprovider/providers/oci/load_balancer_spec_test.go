@@ -31,8 +31,11 @@ import (
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 var (
@@ -82,6 +85,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 		sslConfig        *SSLConfig
 		clusterTags      *providercfg.InitialTags
 		IpVersions       *IpVersions
+		npnEnabled       bool
 	}{
 		"defaults": {
 			defaultSubnetOne: "one",
@@ -4840,7 +4844,6 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				BackendSetSSLSecretName: backendSecret,
 			},
 		},
-
 		"with rule sets": {
 			defaultSubnetOne: "one",
 			defaultSubnetTwo: "two",
@@ -5177,6 +5180,540 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				},
 			},
 		},
+		"LB compartment is different than cluster compartment": {
+			defaultSubnetOne: "one",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						util.CompartmentIDAnnotation: "different-compartment",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+				},
+			},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			expected: &LBSpec{
+				Name:                        "test-uid",
+				Type:                        LB,
+				Shape:                       "100Mbps",
+				Internal:                    false,
+				Subnets:                     []string{"one"},
+				Compartment:                 "different-compartment",
+				NetworkSecurityGroupIds:     []string{},
+				SourceCIDRs:                 []string{"0.0.0.0/0"},
+				securityListManager:         newSecurityListManagerNOOP(),
+				AssignedIpv6:                nil,
+				Listeners:                   map[string]client.GenericListener{},
+				BackendSets:                 map[string]client.GenericBackendSetDetails{},
+				IsPreserveSource:            common.Bool(false),
+				Ports:                       map[string]portSpec{},
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+			},
+		},
+		"Pods as Backends mode - managed pods only": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: &LBSpec{
+				Name:     "kube-system/testservice/test-uid",
+				Type:     NLB,
+				Shape:    flexibleShape,
+				Internal: false,
+				Subnets:  []string{"one"},
+				Listeners: map[string]client.GenericListener{
+					"TCP-80": {
+						Name:                  common.String("TCP-80"),
+						DefaultBackendSetName: common.String("TCP-80"),
+						Port:                  common.Int(80),
+						Protocol:              common.String("TCP"),
+						IpVersion:             GenericIpVersion(client.GenericIPv4),
+					},
+				},
+				BackendSets: map[string]client.GenericBackendSetDetails{
+					"TCP-80": {
+						Name:      common.String("TCP-80"),
+						IpVersion: GenericIpVersion(client.GenericIPv4),
+						Backends:  []client.GenericBackend{{IpAddress: common.String("10.0.0.1"), Port: common.Int(80), Weight: common.Int(1), TargetId: nil}},
+						HealthChecker: &client.GenericHealthChecker{
+							Protocol:         "TCP",
+							Port:             common.Int(80),
+							Retries:          common.Int(3),
+							TimeoutInMillis:  common.Int(3000),
+							IntervalInMillis: common.Int(10000),
+						},
+						IsPreserveSource: common.Bool(false),
+						Policy:           common.String("FIVE_TUPLE"),
+					},
+				},
+				IsPreserveSource:        common.Bool(false),
+				NetworkSecurityGroupIds: []string{},
+				SourceCIDRs:             []string{"0.0.0.0/0"},
+				Ports: map[string]portSpec{
+					"TCP-80": {
+						ListenerPort:      80,
+						HealthCheckerPort: 80,
+						BackendPort:       80,
+					},
+				},
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								CompartmentIDAnnotation: "default",
+							},
+							Name: "default",
+						},
+						Spec: v1.NodeSpec{
+							ProviderID: "ocid1.default",
+						},
+					},
+				},
+			},
+		},
+		"Pods as Backends mode - both managed and virtual pods": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod1",
+							"virtual": "true",
+						},
+						Annotations: map[string]string{
+							PrivateIPOCIDAnnotation: "privateIpOcid",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.2",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.2",
+							},
+						},
+					},
+				},
+			},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"mixed": "true",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: &LBSpec{
+				Name:     "kube-system/testservice/test-uid",
+				Type:     NLB,
+				Shape:    flexibleShape,
+				Internal: false,
+				Subnets:  []string{"one"},
+				Listeners: map[string]client.GenericListener{
+					"TCP-80": {
+						Name:                  common.String("TCP-80"),
+						DefaultBackendSetName: common.String("TCP-80"),
+						Port:                  common.Int(80),
+						Protocol:              common.String("TCP"),
+						IpVersion:             GenericIpVersion(client.GenericIPv4),
+					},
+				},
+				BackendSets: map[string]client.GenericBackendSetDetails{
+					"TCP-80": {
+						Name:      common.String("TCP-80"),
+						IpVersion: GenericIpVersion(client.GenericIPv4),
+						Backends: []client.GenericBackend{
+							{IpAddress: common.String("10.0.0.2"), Port: common.Int(80), Weight: common.Int(1), TargetId: common.String("privateIpOcid")},
+							{IpAddress: common.String("10.0.0.1"), Port: common.Int(80), Weight: common.Int(1), TargetId: nil},
+						},
+						HealthChecker: &client.GenericHealthChecker{
+							Protocol:         "TCP",
+							Port:             common.Int(80),
+							Retries:          common.Int(3),
+							TimeoutInMillis:  common.Int(3000),
+							IntervalInMillis: common.Int(10000),
+						},
+						IsPreserveSource: common.Bool(false),
+						Policy:           common.String("FIVE_TUPLE"),
+					},
+				},
+				IsPreserveSource:        common.Bool(false),
+				NetworkSecurityGroupIds: []string{},
+				SourceCIDRs:             []string{"0.0.0.0/0"},
+				Ports: map[string]portSpec{
+					"TCP-80": {
+						ListenerPort:      80,
+						BackendPort:       80,
+						HealthCheckerPort: 80,
+					},
+				},
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								CompartmentIDAnnotation: "default",
+							},
+							Name: "default",
+						},
+						Spec: v1.NodeSpec{
+							ProviderID: "ocid1.default",
+						},
+					},
+				},
+			},
+		},
+		"Pods as Backends mode - named ports": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+						Containers: []v1.Container{
+							{
+								Name: "container1",
+								Ports: []v1.ContainerPort{
+									{
+										Name:          "named-port",
+										ContainerPort: 80,
+									},
+								},
+							},
+						},
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod1",
+							"virtual": "true",
+						},
+						Annotations: map[string]string{
+							PrivateIPOCIDAnnotation: "privateIpOcid",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+						Containers: []v1.Container{
+							{
+								Name: "container1",
+								Ports: []v1.ContainerPort{
+									{
+										Name:          "named-port",
+										ContainerPort: 81,
+									},
+								},
+							},
+						},
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.2",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.2",
+							},
+						},
+					},
+				},
+			},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"mixed": "true",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol:   v1.ProtocolTCP,
+							Port:       int32(80),
+							TargetPort: intstr.IntOrString{Type: intstr.String, StrVal: "named-port"},
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: &LBSpec{
+				Name:     "kube-system/testservice/test-uid",
+				Type:     NLB,
+				Shape:    flexibleShape,
+				Internal: false,
+				Subnets:  []string{"one"},
+				Listeners: map[string]client.GenericListener{
+					"TCP-80": {
+						Name:                  common.String("TCP-80"),
+						DefaultBackendSetName: common.String("TCP-80"),
+						Port:                  common.Int(80),
+						Protocol:              common.String("TCP"),
+						IpVersion:             GenericIpVersion(client.GenericIPv4),
+					},
+				},
+				BackendSets: map[string]client.GenericBackendSetDetails{
+					"TCP-80": {
+						Name:      common.String("TCP-80"),
+						IpVersion: GenericIpVersion(client.GenericIPv4),
+						Backends: []client.GenericBackend{
+							{IpAddress: common.String("10.0.0.2"), Port: common.Int(81), Weight: common.Int(1), TargetId: common.String("privateIpOcid")},
+							{IpAddress: common.String("10.0.0.1"), Port: common.Int(80), Weight: common.Int(1), TargetId: nil},
+						},
+						HealthChecker: &client.GenericHealthChecker{
+							Protocol:         "TCP",
+							Port:             common.Int(80),
+							Retries:          common.Int(3),
+							TimeoutInMillis:  common.Int(3000),
+							IntervalInMillis: common.Int(10000),
+						},
+						IsPreserveSource: common.Bool(false),
+						Policy:           common.String("FIVE_TUPLE"),
+					},
+				},
+				IsPreserveSource:        common.Bool(false),
+				NetworkSecurityGroupIds: []string{},
+				SourceCIDRs:             []string{"0.0.0.0/0"},
+				Ports: map[string]portSpec{
+					"TCP-80": {
+						ListenerPort:      80,
+						BackendPort:       80,
+						HealthCheckerPort: 80,
+					},
+				},
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+				nodes: []*v1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								CompartmentIDAnnotation: "default",
+							},
+							Name: "default",
+						},
+						Spec: v1.NodeSpec{
+							ProviderID: "ocid1.default",
+						},
+					},
+				},
+			},
+		},
 		"NAT46 is ENABLED on NLB": {
 			defaultSubnetOne: "one",
 			defaultSubnetTwo: "two",
@@ -5302,6 +5839,13 @@ func TestNewLBSpecSuccess(t *testing.T) {
 			}
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
+			}
+
+			// Enable NPN if requested by test case
+			if tc.npnEnabled {
+				npnEnabled = true
+			} else {
+				npnEnabled = false
 			}
 
 			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
@@ -6839,6 +7383,8 @@ func TestNewLBSpecFailure(t *testing.T) {
 		expectedErrMsg string
 		clusterTags    *providercfg.InitialTags
 		IpVersions     *IpVersions
+		// Requirement for Pods as Backends mode
+		npnEnabled bool
 	}{
 		"unsupported udp protocol": {
 			defaultSubnetOne: "one",
@@ -7334,6 +7880,377 @@ func TestNewLBSpecFailure(t *testing.T) {
 				ServiceAnnotationLoadBalancerType,
 				NLB),
 		},
+		"pods as backends mode - No security rule management mode provided for LB (default: ALL not accepted)": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expectedErrMsg: fmt.Sprintf("invalid service: annotation: %s is required for Pods as Backends mode load balancer", ServiceAnnotationLoadBalancerSecurityListManagementMode),
+		},
+		"pods as backends mode - security rule management mode ALL provided for LB": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityListManagementMode: "ALL",
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration:   "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expectedErrMsg: fmt.Sprintf("invalid service: unsupported value: ALL provided for annotation: %s", ServiceAnnotationLoadBalancerSecurityListManagementMode),
+		},
+		"pods as backends mode - security management mode ALL provided for NLB": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "ALL",
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration:          "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expectedErrMsg: fmt.Sprintf("invalid service: invalid value: ALL provided for annotation: %s", ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode),
+		},
+		"pods as backends mode - security management mode SL-ALL provided for LB (new annotation)": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "SL-ALL",
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration:   "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expectedErrMsg: fmt.Sprintf("invalid service: invalid value: SL-ALL provided for annotation: %s. Not a supported setting for Pods as Backends mode", ServiceAnnotationLoadBalancerSecurityRuleManagementMode),
+		},
+		"pods as backends mode - security management mode SL-ALL provided for NLB (new annotation)": {
+			defaultSubnetOne: "one",
+			managedPods: []*v1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  uuid.NewUUID(),
+						Name: "regularPod1",
+						Labels: map[string]string{
+							"mixed":   "true",
+							"app":     "pod4",
+							"virtual": "false",
+						},
+					},
+					Spec: v1.PodSpec{
+						NodeName: "default",
+					},
+					Status: v1.PodStatus{
+						PodIP: "10.0.0.1",
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			nodes: []*v1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							CompartmentIDAnnotation: "default",
+						},
+						Name: "default",
+					},
+					Spec: v1.NodeSpec{
+						ProviderID: "ocid1.default",
+					},
+				},
+			},
+			npnEnabled: true,
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       NLB,
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "SL-ALL",
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration:   "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Selector: map[string]string{
+						"virtual": "false",
+					},
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expectedErrMsg: fmt.Sprintf("invalid service: invalid value: SL-ALL provided for annotation: %s. Not a supported setting for Pods as Backends mode", ServiceAnnotationLoadBalancerSecurityRuleManagementMode),
+		},
 	}
 
 	cp := &CloudLoadBalancerProvider{
@@ -7352,6 +8269,14 @@ func TestNewLBSpecFailure(t *testing.T) {
 				},
 			}
 			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
+
+			// Enable NPN if requested by test case
+			if tc.npnEnabled {
+				npnEnabled = true
+			} else {
+				npnEnabled = false
+			}
+
 			tc.service.Spec.IPFamilies = []v1.IPFamily{v1.IPFamily(IPv4)}
 			if err == nil {
 				slManagerFactory := func(mode string) securityListManager {
@@ -7685,10 +8610,11 @@ func TestRequiresFrontendNsg(t *testing.T) {
 
 func Test_getBackends(t *testing.T) {
 	type args struct {
-		nodes       []*v1.Node
-		managedPods []*v1.Pod
-		virtualPods []*v1.Pod
-		servicePort *v1.ServicePort
+		nodes            []*v1.Node
+		managedPods      []*v1.Pod
+		virtualPods      []*v1.Pod
+		isPodsAsBackends bool
+		servicePort      *v1.ServicePort
 	}
 	var tests = []struct {
 		name     string
@@ -8189,11 +9115,232 @@ func Test_getBackends(t *testing.T) {
 				{IpAddress: common.String("2001:0000:130F:0000:0000:09C0:876A:1300"), Port: common.Int(80), Weight: common.Int(1)},
 			},
 		},
+		{
+			name: "Pods as Backends mode with both managed and virtual pods",
+			args: args{
+				nodes: []*v1.Node{},
+				managedPods: []*v1.Pod{
+					{
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.2",
+								},
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Ports: []v1.ContainerPort{
+										{
+											ContainerPort: 8080,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				virtualPods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								PrivateIPOCIDAnnotation: "ocid1.privateip.oc1.iad.test",
+							},
+						},
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.3",
+								},
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Ports: []v1.ContainerPort{
+										{
+											ContainerPort: 8080,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				servicePort: &v1.ServicePort{
+					Port:       int32(80),
+					TargetPort: intstr.FromInt(8080),
+				},
+				isPodsAsBackends: true,
+			},
+			want: []client.GenericBackend{
+				{IpAddress: common.String("10.0.0.3"), Port: common.Int(8080), Weight: common.Int(1), TargetId: common.String("ocid1.privateip.oc1.iad.test")},
+				{IpAddress: common.String("10.0.0.2"), Port: common.Int(8080), Weight: common.Int(1)},
+			},
+			wantIPv6: []client.GenericBackend{},
+		},
+		{
+			name: "Pods as Backends mode with IPv4 and IPv6 both",
+			args: args{
+				nodes: []*v1.Node{},
+				managedPods: []*v1.Pod{
+					{
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.2",
+								},
+								{
+									IP: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+								},
+							},
+						},
+					},
+				},
+				virtualPods: []*v1.Pod{},
+				servicePort: &v1.ServicePort{
+					Port: int32(80),
+				},
+				isPodsAsBackends: true,
+			},
+			want: []client.GenericBackend{
+				{IpAddress: common.String("10.0.0.2"), Port: common.Int(80), Weight: common.Int(1)},
+			},
+			wantIPv6: []client.GenericBackend{
+				{IpAddress: common.String("2001:0db8:85a3:0000:0000:8a2e:0370:7334"), Port: common.Int(80), Weight: common.Int(1)},
+			},
+		},
+		{
+			name: "Pods as Backends mode with named ports (multiple pods with different container ports)",
+			args: args{
+				nodes: []*v1.Node{},
+				managedPods: []*v1.Pod{
+					{
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.2",
+								},
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Ports: []v1.ContainerPort{
+										{
+											Name:          "http",
+											ContainerPort: 8080,
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.3",
+								},
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Ports: []v1.ContainerPort{
+										{
+											Name:          "http",
+											ContainerPort: 8081,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				virtualPods: []*v1.Pod{},
+				servicePort: &v1.ServicePort{
+					Port:       int32(80),
+					TargetPort: intstr.FromString("http"),
+				},
+				isPodsAsBackends: true,
+			},
+			want: []client.GenericBackend{
+				{IpAddress: common.String("10.0.0.2"), Port: common.Int(8080), Weight: common.Int(1)},
+				{IpAddress: common.String("10.0.0.3"), Port: common.Int(8081), Weight: common.Int(1)},
+			},
+			wantIPv6: []client.GenericBackend{},
+		},
+		{
+			name: "Pods as Backends mode with both managed and virtual pods but no target port mentioned",
+			args: args{
+				nodes: []*v1.Node{},
+				managedPods: []*v1.Pod{
+					{
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.2",
+								},
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Ports: []v1.ContainerPort{
+										{
+											ContainerPort: 8080,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				virtualPods: []*v1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								PrivateIPOCIDAnnotation: "ocid1.privateip.oc1.iad.test",
+							},
+						},
+						Status: v1.PodStatus{
+							PodIPs: []v1.PodIP{
+								{
+									IP: "10.0.0.3",
+								},
+							},
+						},
+						Spec: v1.PodSpec{
+							Containers: []v1.Container{
+								{
+									Ports: []v1.ContainerPort{
+										{
+											ContainerPort: 8080,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				servicePort: &v1.ServicePort{
+					Port: int32(80),
+				},
+				isPodsAsBackends: true,
+			},
+			want: []client.GenericBackend{
+				{IpAddress: common.String("10.0.0.3"), Port: common.Int(80), Weight: common.Int(1), TargetId: common.String("ocid1.privateip.oc1.iad.test")},
+				{IpAddress: common.String("10.0.0.2"), Port: common.Int(80), Weight: common.Int(1)},
+			},
+			wantIPv6: []client.GenericBackend{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := zap.L()
-			gotIpv4, gotIpv6 := getBackends(logger.Sugar(), tt.args.nodes, tt.args.managedPods, tt.args.virtualPods, tt.args.servicePort, false, nil, false)
+			gotIpv4, gotIpv6 := getBackends(logger.Sugar(), tt.args.nodes, tt.args.managedPods, tt.args.virtualPods, tt.args.servicePort, tt.args.isPodsAsBackends, nil, false)
 			if !reflect.DeepEqual(gotIpv4, tt.want) {
 				t.Errorf("getBackends() = %+v, want %+v", gotIpv4, tt.want)
 			}
@@ -9058,8 +10205,124 @@ func Test_getHealthChecker(t *testing.T) {
 			},
 			err: nil,
 		},
+		"pods as backends - healthcheck annotation with valid JSON": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "HTTP", "port": 8080, "urlPath": "/healthcheck", "interval": 10000, "timeout": 3000, "retries": 3, "returnCode": 200}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			expected: &client.GenericHealthChecker{
+				Protocol:         "HTTP",
+				IsForcePlainText: nil,
+				Port:             common.Int(8080),
+				UrlPath:          common.String("/healthcheck"),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				Retries:          common.Int(3),
+				ReturnCode:       common.Int(200),
+			},
+			err: nil,
+		},
+		"pods as backends - healthcheck annotation with invalid JSON": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "HTTP", "port": 8080, "urlPath": "/healthcheck", "interval": 10000, "timeout": 3000, "retries": 3, returnCode:}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			expected: nil,
+			err:      fmt.Errorf("unable to parse health check configuration JSON"),
+		},
+		"pods as backends - healthcheck annotation with missing required fields": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			expected: nil,
+			err:      fmt.Errorf("missing required fields in healthcheck annotation"),
+		},
+		"pods as backends - healthcheck annotation with invalid protocol": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "Invalid", "port": 8080, "urlPath": "/healthcheck", "interval": 10000, "timeout": 3000, "retries": 3, "returnCode": 200}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			expected: &client.GenericHealthChecker{
+				Protocol:         "Invalid",
+				IsForcePlainText: nil,
+				Port:             common.Int(8080),
+				UrlPath:          common.String("/healthcheck"),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				Retries:          common.Int(3),
+				ReturnCode:       common.Int(200),
+			},
+			err: nil,
+		},
+		"pods as backends - healthcheck annotation with invalid port": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "HTTP", "port": -1, "interval": 10000, "timeout": 3000, "retries": 3}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			expected: &client.GenericHealthChecker{
+				Protocol:         "HTTP",
+				Port:             common.Int(-1),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				Retries:          common.Int(3),
+				ReturnCode:       common.Int(200),
+			},
+			err: nil,
+		},
+		"pods as backends - NLB healthcheck annotation with valid JSON": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "nlb",
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: `{"protocol": "TCP", "port": 8080, "interval": 10000, "timeout": 3000, "retries": 3}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			expected: &client.GenericHealthChecker{
+				Protocol:         "TCP",
+				Port:             common.Int(8080),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				Retries:          common.Int(3),
+			},
+			err: nil,
+		},
 	}
-
+	npnEnabled = true
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			result, err := getHealthChecker(tc.service)
@@ -9067,11 +10330,174 @@ func Test_getHealthChecker(t *testing.T) {
 			if tc.err != nil && err == nil {
 				t.Errorf("Error: expected\n%+v\nbut got\n%+v", tc.err, err)
 			}
-			if err != nil && err.Error() != tc.err.Error() {
+			if err != nil && errors.Is(err, tc.err) {
 				t.Errorf("Error: expected\n%+v\nbut got\n%+v", tc.err, err)
 			}
-			if !reflect.DeepEqual(result, tc.expected) {
+			if err == nil && !reflect.DeepEqual(result, tc.expected) {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.expected, result)
+			}
+		})
+	}
+	npnEnabled = false
+}
+
+func TestGetHealthCheckForPodsBackends(t *testing.T) {
+	tests := []struct {
+		name        string
+		svc         *v1.Service
+		healthCheck *client.GenericHealthChecker
+		wantErr     bool
+	}{
+		{
+			name: "valid health check configuration - HTTP",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "HTTP", "port": 80, "urlPath": "/healthcheck"}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{
+				Protocol:         "HTTP",
+				Port:             common.Int(80),
+				UrlPath:          common.String("/healthcheck"),
+				Retries:          common.Int(3),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				ReturnCode:       common.Int(200),
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid health check configuration - minimum HTTP",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "HTTP"}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{
+				Protocol:         "HTTP",
+				Port:             common.Int(0),
+				Retries:          common.Int(3),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				ReturnCode:       common.Int(http.StatusOK),
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid health check configuration - minimum TCP",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": "TCP"}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{
+				Protocol:         "TCP",
+				Port:             common.Int(0),
+				Retries:          common.Int(3),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing health check configuration",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{},
+			wantErr:     true,
+		},
+		{
+			name: "invalid health check configuration",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerHealthCheckConfiguration: `{"protocol": 0}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{},
+			wantErr:     true,
+		},
+		{
+			name: "NLB valid health check configuration",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "nlb",
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: `{"protocol": "TCP", "port": 80}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{
+				Protocol:         "TCP",
+				Port:             common.Int(80),
+				Retries:          common.Int(3),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+			},
+			wantErr: false,
+		},
+		{
+			name: "NLB missing health check configuration",
+			svc: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: "nlb",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: common.Bool(false),
+				},
+			},
+			healthCheck: &client.GenericHealthChecker{},
+			wantErr:     true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			initialHealthCheckCopy := client.GenericHealthChecker{
+				Port:             common.Int(0),
+				Retries:          common.Int(3),
+				IntervalInMillis: common.Int(10000),
+				TimeoutInMillis:  common.Int(3000),
+				ReturnCode:       common.Int(http.StatusOK),
+			}
+			resultingHealthCheck := &initialHealthCheckCopy
+			fmt.Println("Initial Healthchcek", *resultingHealthCheck.Port)
+			err := getHealthCheckForPodsBackends(tt.svc, resultingHealthCheck)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getHealthCheckForPodsBackends() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err == nil && !reflect.DeepEqual(tt.healthCheck, resultingHealthCheck) {
+				t.Errorf("Expected \n%+v\nbut got\n%+v", tt.healthCheck, resultingHealthCheck)
+				t.Errorf("Expected \n%+v\nbut got\n%+v", *tt.healthCheck.Port, *resultingHealthCheck.Port)
 			}
 		})
 	}
@@ -9458,6 +10884,134 @@ func Test_getSecurityListManagementMode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_getSecurityListManagementMode_PodsAsBackends(t *testing.T) {
+	testCases := map[string]struct {
+		service  *v1.Service
+		expected string
+		err      error
+	}{
+		"Pods as Backends mode - security list management mode not provided (error)": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType: LB,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "",
+			err:      fmt.Errorf("annotation: %s is required for Pods as Backends mode load balancer", ServiceAnnotationLoadBalancerSecurityListManagementMode),
+		},
+		"Pods as Backends mode - security list management mode All (error)": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       LB,
+						ServiceAnnotationLoadBalancerSecurityListManagementMode: "All",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "",
+			err:      fmt.Errorf("unsupported value: All provided for annotation: %s when using Pods as Backends mode", ServiceAnnotationLoadBalancerSecurityListManagementMode),
+		},
+		"Pods as Backends mode - security list management mode Frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       LB,
+						ServiceAnnotationLoadBalancerSecurityListManagementMode: "Frontend",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "Frontend",
+			err:      nil,
+		},
+		"Pods as Backends mode - security list management mode None": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                       LB,
+						ServiceAnnotationLoadBalancerSecurityListManagementMode: "None",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "None",
+			err:      nil,
+		},
+		"Pods as Backends mode - NLB security list management mode All (error)": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "",
+			err:      fmt.Errorf("unsupported value: All provided for annotation: %s when using Pods as Backends mode", ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode),
+		},
+		"Pods as Backends mode - NLB security list management mode Frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "Frontend",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "Frontend",
+			err:      nil,
+		},
+		"Pods as Backends mode - NLB security list management mode None": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "None",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			expected: "None",
+			err:      nil,
+		},
+	}
+	npnEnabled = true
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			result, err := getSecurityListManagementMode(tc.service)
+			if err != nil {
+				if !reflect.DeepEqual(err, tc.err) {
+					t.Errorf("Expected error\n%+v\nbut got\n%+v", tc.err, err)
+				}
+			}
+			if !reflect.DeepEqual(result, tc.expected) {
+				t.Errorf("Expected security list management mode\n%+v\nbut got\n%+v", tc.expected, result)
+			}
+		})
+	}
+	npnEnabled = false
 }
 
 func Test_getRuleManagementMode(t *testing.T) {
@@ -9895,7 +11449,7 @@ func Test_validateService(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("Security list management mode can only be 'None' for UDP protocol"),
+			err: fmt.Errorf("Security rule management mode can only be 'None' for UDP protocol"),
 		},
 		"session affinity not none": {
 			service: &v1.Service{
@@ -9916,6 +11470,121 @@ func Test_validateService(t *testing.T) {
 				},
 			},
 			err: fmt.Errorf("OCI only supports SessionAffinity \"None\" currently"),
+		},
+		"valid service": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		"unsupported session affinity": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityClientIP,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			err: errors.New("OCI only supports SessionAffinity \"None\" currently"),
+		},
+		"unsupported protocol (UDP) for LB": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			err: errors.New("OCI load balancers do not support UDP"),
+		},
+		"unsupported protocol (UDP) for NLB with security list management mode All": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "All",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			err: errors.New("Security rule management mode can only be 'None' for UDP protocol"),
+		},
+		"unsupported protocol (UDP) for NLB with security list management mode Frontend": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "Frontend",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			err: errors.New("Security rule management mode can only be 'None' for UDP protocol"),
+		},
+		"valid protocol (UDP) for NLB with security list management mode None": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                              NLB,
+						ServiceAnnotationNetworkLoadBalancerSecurityListManagementMode: "None",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolUDP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		"invalid security rule management mode for Pods as Backends mode": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "invalid-mode",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			err: errors.New("invalid value: invalid-mode provided for annotation: oci.oraclecloud.com/security-rule-management-mode"),
 		},
 	}
 	for name, tc := range testCases {
@@ -12689,11 +14358,13 @@ func Test_getBackendSets(t *testing.T) {
 
 func Test_getPorts(t *testing.T) {
 	var tests = []struct {
-		name       string
-		service    *v1.Service
-		ipVersions []string
-		err        error
-		ports      map[string]portSpec
+		name        string
+		service     *v1.Service
+		ipVersions  []string
+		err         error
+		ports       map[string]portSpec
+		managedPods []*v1.Pod
+		virtualPods []*v1.Pod
 	}{
 		{
 			name: "IpFamilies IPv4 ListenerBackendSetIpVersion IPv4",
@@ -12825,10 +14496,211 @@ func Test_getPorts(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "single port",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+							NodePort: int32(30080),
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
+			},
+			ipVersions: []string{IPv4},
+			ports: map[string]portSpec{
+				"TCP-80": {
+					ListenerPort:      80,
+					BackendPort:       30080,
+					HealthCheckerPort: 10256,
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "multiple ports",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+							NodePort: int32(30080),
+						},
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(443),
+							NodePort: int32(30443),
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
+			},
+			ipVersions: []string{IPv4},
+			ports: map[string]portSpec{
+				"TCP-80": {
+					ListenerPort:      80,
+					BackendPort:       30080,
+					HealthCheckerPort: 10256,
+				},
+				"TCP-443": {
+					ListenerPort:      443,
+					BackendPort:       30443,
+					HealthCheckerPort: 10256,
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "Pods as Backends mode",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+					IPFamilies:                    []v1.IPFamily{v1.IPFamily(IPv4)},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			ipVersions: []string{IPv4},
+			managedPods: []*v1.Pod{
+				{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Ports: []v1.ContainerPort{
+									{
+										Name:          "http",
+										ContainerPort: 80,
+									},
+								},
+							},
+						},
+					},
+					Status: v1.PodStatus{
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			ports: map[string]portSpec{
+				"TCP-80": {
+					ListenerPort:      80,
+					BackendPort:       80,
+					HealthCheckerPort: 80,
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "Pods as Backends mode with named ports",
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            NLB,
+						ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration: "{\"protocol\":\"TCP\",\"port\":80}",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol:   v1.ProtocolTCP,
+							Port:       int32(80),
+							TargetPort: intstr.FromString("http"),
+						},
+					},
+					IPFamilies:                    []v1.IPFamily{v1.IPFamily(IPv4)},
+					AllocateLoadBalancerNodePorts: pointer.Bool(false),
+				},
+			},
+			ipVersions: []string{IPv4},
+			managedPods: []*v1.Pod{
+				{
+					Spec: v1.PodSpec{
+						Containers: []v1.Container{
+							{
+								Ports: []v1.ContainerPort{
+									{
+										Name:          "http",
+										ContainerPort: 8080,
+									},
+								},
+							},
+						},
+					},
+					Status: v1.PodStatus{
+						PodIPs: []v1.PodIP{
+							{
+								IP: "10.0.0.1",
+							},
+						},
+					},
+				},
+			},
+			virtualPods: []*v1.Pod{},
+			ports: map[string]portSpec{
+				"TCP-80": {
+					ListenerPort:      80,
+					BackendPort:       8080,
+					HealthCheckerPort: 80,
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "DualStack IPv4 and IPv6",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4), v1.IPFamily(IPv6)},
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+							NodePort: int32(30080),
+						},
+					},
+				},
+			},
+			ipVersions: []string{IPv4, IPv6},
+			ports: map[string]portSpec{
+				"TCP-80": {
+					ListenerPort:      80,
+					BackendPort:       30080,
+					HealthCheckerPort: 10256,
+				},
+				"TCP-80-IPv6": {
+					ListenerPort:      80,
+					BackendPort:       30080,
+					HealthCheckerPort: 10256,
+				},
+			},
+			err: nil,
+		},
 	}
+	// To allow Pods as Backends test cases to run
+	npnEnabled = true
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := getPorts(tt.service, tt.ipVersions, nil, nil)
+			result, err := getPorts(tt.service, tt.ipVersions, tt.managedPods, tt.virtualPods)
 			if !reflect.DeepEqual(result, tt.ports) {
 				t.Errorf("getPorts() = %+v, want %+v", result, tt.ports)
 			}
@@ -12839,6 +14711,7 @@ func Test_getPorts(t *testing.T) {
 			}
 		})
 	}
+	npnEnabled = false
 }
 
 func Test_getLoadBalancerSourceRanges(t *testing.T) {
