@@ -31,7 +31,7 @@ subprocess.run(
     check=True
 )
 subprocess.run(
-    ["sheepy", "deploy", "-d", "releases/cpo-release/app.json", "create", "--all"],
+    ["sheepy", "deploy", "-d", "releases/cpo-release/app.json", "create", "--all", "--skip-target-check"],
     check=True,
     stdin=sys.stdin,
     stdout=sys.stdout,

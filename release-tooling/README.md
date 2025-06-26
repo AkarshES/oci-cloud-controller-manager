@@ -2,6 +2,14 @@
 
 1. Create an empty virtual environment using python3.8 or python3.9 (e.g. python3.9 -m venv venv3)
    * Install the required python version if you do not have it already via `brew install python@3.9`
+   * For Mac with Apple Silicon install x86_64 version of python:
+     * How to check your python architecture:
+          *  ```lalitsin@Lalits-MacBook-Pro release-tooling %  file `python3.8 -c "import sys;print(sys.executable)"`
+         usr/local/opt/python@3.9/bin/python3.9: Mach-O 64-bit executable x86_64```
+     * If it is `arm64` instead of `x86_64`, uninstall python:
+       * ```/usr/local/bin/brew uninstall python@3.9```
+     * Now install the `x86_64` variant:
+       * ```arch -x86_64 /usr/local/bin/brew install python@3.9```
 2. Access the virtual environment with source venv3/bin/activate
 
 ```
@@ -30,8 +38,8 @@ pip install --upgrade jira
 
 **Notes:**
 1. The change locations field is from config.j2, this file need to be manually edited every time there is a new region added (please check the (region build page)[https://devops.oci.oraclecorp.com/region-build/regions?regionsFilter=state%20%3D%20%22Production%22&sortInfo%5BsortBy%5D=Generation&sortInfo%5BsortDirection%5D=Desc]) for recently GA regions (Note: Even though this is a good starting point, this page does not include regions where OKE is GA but the whole region is not GA yet so please check our slack channels for latest information)
-2. Currently, spectre.values.setup execution targets are not supported (upstream sheepy limitation), we will need to manually add in case these targets need to be included (usually found for RB regions)
-
+2. Currently, spectre.values.setup execution targets are not supported (upstream sheepy limitation), we will need to manually add in case these targets need to be included (usually found for RB regions). Comment out blocks or remove airport codes for RB regions in release-tooling/templates/shared_modules/release_templates/release_schedules.py
+3. Setup BitBucket HTTP Access Token in system keychain by following: https://dyn.slack.com/archives/C04B2D0R6LX/p1741976021289749?thread_ts=1741732302.787999&cid=C04B2D0R6LX
 # Cleaning up unwanted Releases
 ```bash
 git clone ssh://git@bitbucket.oci.oraclecorp.com:7999/shep/shepherd-cli.git
