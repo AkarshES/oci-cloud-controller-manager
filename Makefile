@@ -39,6 +39,8 @@ COMPONENT ?= oci-cloud-controller-manager oci-volume-provisioner oci-flexvolume-
 OCI_CLI_VERSION ?= master
 KUBECTL_VERSION ?= 1.11.0
 
+DEPLOYMENT_PIPELINE_ID := "ocid1.devopsbuildpipeline.oc1.phx.amaaaaaa7aeocuiaa54z5gqks6ewodlvvs2iuyc3chxqfyfu2g6hi2zxgasq"
+
 GIT_COMMIT := $(shell GCOMMIT=`git rev-parse --short HEAD`; if [ -n "`git status . --porcelain`" ]; then echo "$$GCOMMIT-dirty"; else echo $$GCOMMIT; fi)
 DOCKER_REPO_ROOT?=/go/src/github.com/oracle/oci-cloud-controller-manager
 # Allow overriding for release versions else just equal the build (git hash)
@@ -257,3 +259,81 @@ rpm-test:
 .PHONY: extract-multiarch-sha
 extract-multiarch-sha:
 	curl https://artifactory-builds.oci.oraclecorp.com/odo-docker-signed-local/oke-public-cloud-provider-oci/$(IMAGE_TAG)/list.manifest.json?properties
+
+
+.PHONY: onboard-cicd
+onboard-cicd:
+	@printf "\033[1;32mCongrats! You’re just a code push away!\033[0m\n"
+	$(eval TARGET_BRANCH_PREFIX := $(shell git rev-parse --abbrev-ref HEAD))
+	@# Determine DEPLOY_MODE with validation and default
+	@if [ -z "$(MODE)" ]; then \
+	  echo "No MODE provided, defaulting to 'PUSH_ONLY'"; \
+	  DEPLOY_MODE="PUSH_ONLY"; \
+	elif [ "$(MODE)" = "DEFAULT" ] || [ "$(MODE)" = "PUSH_ONLY" ]; then \
+	  DEPLOY_MODE="$(MODE)"; \
+	else \
+	  echo "Invalid MODE: must be 'DEFAULT' or 'PUSH_ONLY'"; \
+	  exit 1; \
+	fi; \
+	echo "Using current branch: $(TARGET_BRANCH_PREFIX)"; \
+	echo "Using deploy mode: $$DEPLOY_MODE"; \
+	awk -v pid="$(DEPLOYMENT_PIPELINE_ID)" \
+	    -v branch="$(TARGET_BRANCH_PREFIX)" \
+	    -v tenancy="\"CNP_DEV\"" \
+	    -v deploy_mode="\"$$DEPLOY_MODE\"" '\
+		/^releaseBranches:.*\]$$/ {gsub(/\]$$/, ", \"" branch "*\"]")} \
+		/^triggerOnCommitBranches:.*\]$$/ {gsub(/\]$$/, ", \"" branch "*\"]")} \
+		/^bitbucketTag:/ { \
+			print $$0; \
+			print "pipelineId: \"" pid "\""; \
+			print "exportVariables = {"; \
+			print "  CCM_ARTIFACT_VERSION = $${version}"; \
+			print "  DEPLOY_MODE = " deploy_mode; \
+			print "  TRIGGER_E2ES = \"false\""; \
+			print "}"; \
+			next \
+		} \
+		{print} \
+	' ocibuild.conf > temp && mv temp ocibuild.conf
+
+	@printf "\n\033[1;42;30m  CONFIGURATION APPLIED TO ocibuild.conf  \033[0m\n\n"
+	@printf "\033[1;34mParameter Customization Guide:\033[0m\n"
+	@printf "  \033[1;33mDEPLOY_MODE\033[0m\n"
+	@printf "    - DEFAULT   : Image push + mapping update\n"
+	@printf "    - PUSH_ONLY : Image push only\n\n"
+	@printf "  \033[1;33mTRIGGER_E2ES\033[0m\n"
+	@printf "    - true  : triggers E2E tests after deployment\n"
+	@printf "    - false : skips E2E triggers\n\n"
+	@printf "  \033[1;33mTARGET_TENANCY\033[0m\n"
+	@printf "    - CNP_DEV  : deploys to oci_cnp_dev tenancy\n"
+	@printf "    - ODX_MOCK : deploys to odx-mock tenancy\n"
+	@printf "    - ALL      : deploys to entire integ environments\n\n"
+	@printf "Pipeline notifications will be available in the \033[1;4m#cpo-devops\033[0m channel\n"
+	@printf "\nMode documentation can be found in the \033]8;;file://$(PWD)/docs/Development.md\adocs/Development.md\033]8;;\033\\ file\n"
+
+.PHONY: deboard-cicd
+deboard-cicd:
+	@printf "\033[1;33mRemoving CI/CD configuration from ocibuild.conf...\033[0m\n"
+	$(eval TARGET_BRANCH_PREFIX := $(shell git rev-parse --abbrev-ref HEAD))
+	@# Remove branch from releaseBranches and triggerOnCommitBranches arrays
+	@# Remove pipelineId and exportVariables block
+	@awk -v branch="$(TARGET_BRANCH_PREFIX)" '\
+	   /^releaseBranches:/ { \
+	      gsub(", \"" branch "\\*\"", ""); \
+	      gsub("\"" branch "\\*\", ", ""); \
+	      gsub("\"" branch "\\*\"", ""); \
+	   } \
+	   /^triggerOnCommitBranches:/ { \
+	      gsub(", \"" branch "\\*\"", ""); \
+	      gsub("\"" branch "\\*\", ", ""); \
+	      gsub("\"" branch "\\*\"", ""); \
+	   } \
+	   /^pipelineId:/ { next } \
+	   /^exportVariables = \{/ { \
+	      while (getline > 0 && $$0 !~ /^\}$$/) continue; \
+	      next \
+	   } \
+	   {print} \
+	' ocibuild.conf > temp && mv temp ocibuild.conf
+	@printf "\033[1;32mCI/CD configuration removed successfully!\033[0m\n"
+	@printf "Branch '\033[1;33m$(TARGET_BRANCH_PREFIX)\033[0m' has been deboarded from CI/CD pipeline.\n"
