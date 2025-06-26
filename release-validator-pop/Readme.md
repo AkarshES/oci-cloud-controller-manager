@@ -13,7 +13,7 @@
 1. Create a release branch from the internal branch, e.g `release/v1.8.0`.
 2. Add the images needed to be pushed via application release to `MANIFEST.csv` and run the following command from the root directory of the project
 ```bash
- sh ./shepherd/limits/scripts/gen_images_tfvars.sh MANIFEST.csv >> shepherd/limits/flock_structure/images.auto.tfvars.json
+ sh ./shepherd/limits/scripts/gen_images_tfvars.sh MANIFEST.csv > shepherd/limits/flock_structure/images.auto.tfvars.json
 ```
 3. The above command will update these 2 files with information about the images to be pushed - `images.auto.tfvars.json` and `image_versions.json`.
 4. Create a PR from the release branch to `internal` branch. Once the PR is created, a new build for `release-validator-ccm-csi` will be triggered. Navigate to [release-validator-build-page][1] Create App releases from this commit as was done previously and provide the artifact tag for `release-validator-ccm-csi` corresponding to the new build triggered for the PR.
