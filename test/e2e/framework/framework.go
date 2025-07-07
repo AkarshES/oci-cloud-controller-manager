@@ -141,6 +141,7 @@ var (
 	maxPodsPerNode                int
 	cniType                       string
 	cniTypeEnum                   oke.ClusterPodNetworkOptionDetailsCniTypeEnum
+	nodeMetadata				  map[string]string
 )
 
 func init() {
@@ -314,6 +315,8 @@ type Framework struct {
 	OkeClusterK8sVersion string
 	//k8s version value (eg. v1.10.11, v1.11.8) used when create nodepool
 	OkeNodePoolK8sVersion string
+	// NodePool metadata
+	NodeMetadata map[string]string
 
 	// Pod subnet
 	PodSubnet string
@@ -481,6 +484,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		AddOkeSystemTags:              addOkeSystemTags,
 		ClusterOcid:                   ClusterID,
 		CniType:                       cniTypeEnum,
+		NodeMetadata: 				   nodeMetadata,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -627,6 +631,12 @@ func (f *Framework) Initialize() {
 	f.NodePoolSize = nodepoolsize
 	Logf("Nodepool size: %s", f.NodePoolSize)
 	f.AddOkeSystemTags = addOkeSystemTags
+
+	f.NodeMetadata = map[string]string{
+		"areLegacyImdsEndpointsDisabled": "true",
+	}
+	Logf("Using legacyImdsEndpointDisabled %s", f.NodeMetadata["areLegacyImdsEndpointsDisabled"])
+
 	Logf("AddOkeSystemTags : %v", f.AddOkeSystemTags)
 	if strings.ToUpper(clusterType) == "ENHANCED_CLUSTER" {
 		clusterTypeEnum = oke.ClusterTypeEnhancedCluster

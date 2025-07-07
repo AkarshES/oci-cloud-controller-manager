@@ -75,7 +75,7 @@ const (
 	LoadBalancerCreateTimeoutDefault = 20 * time.Minute
 	LoadBalancerCreateTimeoutLarge   = 2 * time.Hour
 
-	LoadBalancerDeleteTimeoutDefault = 2 * time.Minute
+	LoadBalancerDeleteTimeoutDefault = 5 * time.Minute
 
 	// Time required by the loadbalancer to cleanup, proportional to numApps/Ing.
 	// Bring the cleanup timeout back down to 5m once b/33588344 is resolved.

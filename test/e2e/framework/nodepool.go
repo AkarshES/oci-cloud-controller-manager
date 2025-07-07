@@ -40,6 +40,8 @@ type NodePoolCreateConfig struct {
 
 	NodeShapeConfig oke.CreateNodeShapeConfigDetails
 
+	NodeMetadata map[string]string
+
 	// Options contain the test related options that are to be used when doing Cluster create operations.
 	Options TestOptions
 }
@@ -395,6 +397,7 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		KubeVersion:       kubeVersion,
 		NodeConfigDetails: &nodeConfigDetails,
 		NodeSourceDetails: nodeSourceViaImageDetails,
+		NodeMetadata:      f.NodeMetadata,
 		Options:           TestOptions{ExpectedError: expectedError},
 	}
 
@@ -426,6 +429,7 @@ func (f *Framework) CreateNodePoolWithVersion(clusterID, nodeImageName, nodeShap
 		KubeVersion:       kubeVersion,
 		QuantityPerSubnet: &quantityPerSubnet,
 		Subnets:           subnets,
+		NodeMetadata:      f.NodeMetadata,
 		Options:           TestOptions{ExpectedError: expectedError},
 	}
 	response, _ := f.createNodePoolWithConfig(cfg, ctx)
@@ -460,6 +464,7 @@ func (f *Framework) createNodePoolWithConfig(cfg *NodePoolCreateConfig, ctx cont
 			QuantityPerSubnet: cfg.QuantityPerSubnet,
 			NodeConfigDetails: cfg.NodeConfigDetails,
 			NodeSourceDetails: cfg.NodeSourceDetails,
+			NodeMetadata:      f.NodeMetadata,
 		},
 	}
 	if f.Architecture == "ARM" || strings.Contains(cfg.NodeShape, "Flex") {
