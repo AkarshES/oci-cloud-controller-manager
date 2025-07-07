@@ -760,6 +760,7 @@ func (j *PVCTestJig) CreateBootVolume(c ocicore.ComputeClient, bs ocicore.Blocks
 	instances, err := c.ListInstances(ctx, ocicore.ListInstancesRequest{
 		AvailabilityDomain: &adLabel,
 		CompartmentId: &compartmentId,
+		LifecycleState: ocicore.InstanceLifecycleStateRunning,
 	})
 	if err != nil {
 		Failf("Error listing instances: %v", err)
@@ -781,8 +782,8 @@ func (j *PVCTestJig) CreateBootVolume(c ocicore.ComputeClient, bs ocicore.Blocks
 	if len(attachmentsResp.Items) == 0 {
 		Failf("No boot volume attachment found for instance %s", *instance.Id)
 	}
-
 	attachment := attachmentsResp.Items[0]
+
 	Logf("Cloning boot volume %s", *attachment.BootVolumeId)
 	resp, err := bs.CreateBootVolume(ctx, ocicore.CreateBootVolumeRequest{
 		CreateBootVolumeDetails: ocicore.CreateBootVolumeDetails{
@@ -792,6 +793,9 @@ func (j *PVCTestJig) CreateBootVolume(c ocicore.ComputeClient, bs ocicore.Blocks
 			},
 		},
 	})
+	if err != nil {
+		Failf("Failed create boot volume : %v", err)
+	}
 
 	bootVolumeId := resp.BootVolume.Id
 	Logf("Waiting for cloned boot volume %s to become available", *bootVolumeId)

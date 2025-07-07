@@ -67,8 +67,8 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 
 		if ((!setupF.IsPreUpgrade && !setupF.IsPostUpgrade) || createUpgradeTestingNodepool) && setupF.ExistingClusterOcid == "" {
 			if !setupF.CreateUhpNodepool {
-				var ocpus = float32(1.0)
-				var memoryInGBs = float32(6.0)
+				var ocpus = float32(2.0)
+				var memoryInGBs = float32(12.0)
 				var NodeShapeConfig = oke.CreateNodeShapeConfigDetails{
 					Ocpus:       &ocpus,
 					MemoryInGBs: &memoryInGBs,
