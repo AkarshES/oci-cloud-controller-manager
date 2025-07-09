@@ -110,6 +110,98 @@ locals {
 
       skip_dns = true
     }
+    "herds_common" = {
+      env              = "herds_common"
+      oke_tenancy_ocid   = "ocid1.tenancy.oc1..aaaaaaaaokzgjbo5qvhmnsv24qh6hfu2khtujvgat23ix3o26g5azxqbwnha"
+
+      // Configuration for PKI certificate
+      mapi_subdomain          = "mr"
+      certificate_compartment = "" // Defaults to orchestration compartment
+
+      // Spectre Configuration
+      spectre_group_name = "clusters_common_test"
+
+      // KaaS Configuration
+      kaas_name_format = "oke-herds-common-mp-cell%d"
+
+      // WFaaS Configuration
+      wfaas_name_format = "oke-herds-cmn-mp-cell%d" 
+
+      // API instance configuration
+      api_hostclass = "oke-mp-api-dev" 
+
+      // Worker instance configuration
+      worker_hostclass = "oke-mp-worker-dev"
+
+      // Logging configuration
+      api_log_namespace_format     = "oke-herds-common-api-cell%d"
+      monitor_log_namespace_format = "oke-herds-common-monitor-cell%d"
+      worker_log_namespace_format  = "oke-herds-common-worker-cell%d"
+      // Generic OKE configuration
+      service_name = "okerbaas"
+
+      // SMS Configuration
+      sms_namespace_name_format = "oke-herds-common-mapi-cell%d"
+      oke_secrets_namespace     = "oke-herds-common0"
+      // Configuration about other OKE components
+      etcdop_s3compat_bucket = "tkc-etcd-backup-herds-common-0"
+      os_namespace           = "okerbaas"
+      // Alarms configuration
+      alarms_compartment              = "" // Defaults to orchestration compartment
+      alarms_enabled                  = false
+      mapi_api_alarms_enabled         = false
+      mapi_alarms_fleet_format        = "okerbaas.oke-herds-common-mapi-cell%d"
+      mapi_alarms_hostmetrics_fleet   = "okerbaas.oke-mp-api-herds-common"
+      kmon_alarms_enabled             = false
+      kmon_alarms_fleet_format        = "okerbaas.oke-herds-common-kmon-cell%d"
+      worker_alarms_enabled           = false
+      worker_alarms_fleet_format      = "okerbaas.oke-herds-common-wfworker-cell%d"
+      worker_alarms_hostmetrics_fleet = "okerbaas.oke-mp-worker-herds-common"
+      // API ODO Configuration
+      api_pool_alias_format = "oke-herds-common-mapi-cell%d"
+      api_app_alias_format  = "oke-herds-common-mapi-cell%d"
+
+      // Monitor ODO Configuration
+      monitor_app_alias_format = "oke-herds-common-kmon-cell%d"
+
+      // Worker ODO Configuration
+      worker_pool_alias_format = "oke-herds-common-mpworker-cell%d"
+      worker_app_alias_format  = "oke-herds-common-wfworker-cell%d"
+
+      // SPLAT - base service already exists because this is still part of oc1
+      splat_service_name_format           = "oke-mapi-cell%d-herdstest"
+      splat_service_fleet                 = "overlay-dev-fleet"
+      splat_operational_spec_fleet_format = "oke-herds-common-mapi-cell%d"
+      splat_host_header_format            = "oke-herds-common-mapi-cell%d.%s.oci.%s"
+      // The following hardcoded compartment name in api.yaml is replaced with
+      // orchestration compartment OCID for non-production environments
+      splat_compartment_token_to_replace = "ocid1.compartment.oc1..aaaaaaaa25nt3xxdztunf4mtccovffzqe4mjtyjoerraxrlf7wbjrtu4crxq"
+      splat_mapi_subdomain_format        = "oke-herds-common-mapi-cell%d"
+      splat_allowed_service_principal    = "okerbaas,omkrbaastest"
+
+      // Configuration for image
+      image_name = local.io_overlay_uek5_images["20201014"].name
+      image_url  = local.io_overlay_uek5_images["20201014"].url
+
+      // Configuration for Evergreen Image
+      image_type_arm = "EG9A"
+      image_type_x86 = "EG9X"
+
+      // T2
+      t2_namespace      = "oci_oke_herds-common"
+      t2_fleet_template = "okerbaas.herds-common-oke-clusters-%s" 
+
+      cp_vcn_compartment = "oke-cp-api"
+      pl_vcn_name        = "oke-admin"
+      pl_vcn_compartment = "admin"
+      #ask
+      prime_vcn_compartment = "rbaas-0"
+      prime_vcn_name        = "rbaas"
+
+      skip_dns = true
+      canary_tenancies      = jsonencode(["okecanaryherds"]),
+    }
+
     "polaris" = {
       env              = "polaris"
       oke_tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxc346rx7oshe74elt6upirg54l62b4iaxalrkc44hqpv4nxq333a"
@@ -397,6 +489,9 @@ locals {
     tenancy_info = {
       rbaas = {
         oc1 = "okerbaastest"
+      }
+      herds_common = {
+        oc1 = "okerbaas"
       }
       dev = {
         oc1 = "ociokedev"
@@ -746,6 +841,7 @@ locals {
 
   defined_cell_overrides = {
     "herds.oc1.eu-frankfurt-1.cell0" = {}
+    "herds_common.oc1.eu-frankfurt-1.cell0" = {}
     "polaris.oc1.us-sanjose-1.cell0" = {}
     "dev.oc1.us-ashburn-1.cell0"     = {}
     "dev.oc1.us-ashburn-1.cell3"     = {

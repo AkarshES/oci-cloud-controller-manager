@@ -24,7 +24,7 @@ locals {
   preprod_phases = ["polaris", "dev", "integ"]
   preprod_scalar = contains(keys(local.prod_realm_by_name), "oc1") ? 1 : 0
   preprod_cell_overrides = local.preprod_scalar == 1 ? {
-    for key, value in local.cell_overrides : key => value if split(".", key)[0] != "prd" && split(".", key)[0] != "herds" && split(".", key)[1] == "oc1"
+    for key, value in local.cell_overrides : key => value if split(".", key)[0] != "prd" && ! contains(["herds", "herds_common"], split(".", key)[0]) && split(".", key)[1] == "oc1"
   } : {}
   preprod_env_setup_ets = local.preprod_scalar == 1 ? {
     "polaris.oc1" = {
@@ -69,7 +69,7 @@ locals {
       additional_locals = module.integ-oc1-config.config
     }
   } : {}
-  preprod_spectre_regional_ets = local.preprod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] != "prd" && split(".", key)[0] != "herds" && split(".", key)[1] == "oc1"]) : toset([])
+  preprod_spectre_regional_ets = local.preprod_scalar == 1 ? toset([for key in local.spectre_regional_et : key if ! contains(local.build_regions_nocell, key) && split(".", key)[0] != "prd" && ! contains(["herds", "herds_common"], split(".", key)[0]) && split(".", key)[1] == "oc1"]) : toset([])
 }
 
 resource "shepherd_release_phase" "preprod" {
