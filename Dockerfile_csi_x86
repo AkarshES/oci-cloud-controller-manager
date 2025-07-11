@@ -1,0 +1,38 @@
+FROM odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke-golang-fips:go1.24.1-51 as builder
+
+RUN microdnf install yum yum-utils
+
+ARG COMPONENT
+ARG SRC_DIRS
+ENV SRC /gopath/src/github.com/oracle/oci-cloud-controller-manager
+
+RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/io-ol8-latest-yum-local && yum repolist enabled \
+  && yum install -y make \
+  && yum clean all
+
+RUN mkdir -p /go/bin $SRC
+ADD . $SRC
+WORKDIR $SRC
+
+RUN SRC_DIRS=${SRC_DIRS} make coverage
+RUN COMPONENT=${COMPONENT} make clean build
+
+FROM ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips as base
+RUN rm -f /etc/yum.repos.d/*
+COPY artifactory.repo /etc/yum.repos.d/.
+
+RUN microdnf install -y io-ol8-container-hardening util-linux e2fsprogs xfsprogs && \
+    microdnf update -y && \
+    microdnf clean all && \
+    rm -rf /var/cache/yum /var/lib/yum /var/lib/rpm /var/lib/dnf /var/tmp /root/.gem /usr/share/doc
+
+COPY scripts/* /sbin/
+
+RUN chmod 755 /sbin/encrypt-mount && \
+    chmod 755 /sbin/encrypt-umount && \
+    chmod 755 /sbin/rpm-host && \
+    chmod 755 /sbin/chroot-bash
+
+FROM scratch
+COPY --from=base / /
+COPY --from=0 /gopath/src/github.com/oracle/oci-cloud-controller-manager/dist/oci-csi-node-driver /usr/local/bin/
