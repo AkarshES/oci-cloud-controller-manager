@@ -5,6 +5,8 @@ failImmediatelyOnError: true
 shell: bash
 
 env:
+  variables:
+    SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
 
 steps:
   - type: Command
@@ -18,43 +20,71 @@ steps:
       source oit_http_proxy
       oit_http_proxy activate
       oit_http_proxy show        
-      yum install jq
+      yum install -y jq
       
+      # Clone CCM/CSI repo
       git clone --depth 1 --single-branch --branch ${CCM_CSI_INTERNAL_BRANCH} \
-      ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
-      "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager" || exit      
+        ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oci-cloud-controller-manager.git \
+        "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager"
 
+      # Clone Stampede repo
       git clone --depth 1 --single-branch --branch ${HERDS_BASE_BRANCH} \
-      ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oke-herds-stampede.git \
-      "${OCI_WORKSPACE_DIR}/oke-herds-stampede" || exit      
+        ssh://git@bitbucket.oci.oraclecorp.com:7999/oke/oke-herds-stampede.git \
+        "${OCI_WORKSPACE_DIR}/oke-herds-stampede"
       
+      cd "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager"
+      COMMIT_ID=$(git rev-parse HEAD)
+      echo "Using local commit: $COMMIT_ID"
       cd ${OCI_WORKSPACE_DIR}/oke-herds-stampede
       
       formatted_date=$(date +"%-d-%b-%y")
-      echo $formatted_date
-      HERDS_WORKING_BRANCH="ccm-csi-stampede-$formatted_date-$OCI_PIPELINE_RUN_NUMBER"
+      BRANCH="ccm-csi-stampede-${formatted_date}-${OCI_PIPELINE_RUN_NUMBER}"
+      echo " Working branch: ${BRANCH}"
+      git checkout -b "${BRANCH}"
       
-      git checkout -b "$HERDS_WORKING_BRANCH"
-      
-      cd ${OCI_WORKSPACE_DIR}
-      ls -lart
-      
-      MANIFEST_PATH="${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/MANIFEST.csv"
-      STAMPEDE_SPECS_PATH="${OCI_WORKSPACE_DIR}/oke-herds-stampede/stampede-specs.json"
-      TF_DEFAULT_VALUES_PATH="${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/shepherd/limits/shared_modules/properties_values/default_values.tf"
+      # Run our updated script (derives MANIFEST.csv and TF path from the repo)
       bash ${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager/stampede/update_stampede_spec.sh \
-        -m $MANIFEST_PATH -s $STAMPEDE_SPECS_PATH -t ${TF_DEFAULT_VALUES_PATH}
+        -r "${OCI_WORKSPACE_DIR}/oci-cloud-controller-manager" \
+        -s "${OCI_WORKSPACE_DIR}/oke-herds-stampede/stampede-specs.json" \
+        -c "${COMMIT_ID}"
       
       cd ${OCI_WORKSPACE_DIR}/oke-herds-stampede
 
-      # Stage all changes
+      # Stage & commit if any changes
       git add .
       echo "=== Committing Changes ==="
-      # Check if anything is staged for commit
       if ! git diff --cached --quiet; then
-      echo "✅ Changes detected — committing and pushing"
-      git commit -m "Sync ccm-csi Application artifacts on ${formatted_date} Run #${OCI_PIPELINE_RUN_NUMBER}"
-      git push origin HEAD
+        echo " Changes detected — committing and pushing"
+        git commit -m "Sync ccm-csi Application & Infrastructure artifacts on ${formatted_date} (Run #${OCI_PIPELINE_RUN_NUMBER})"
+        git push origin HEAD
+      
+        # Send Slack notification for sync completed
+        COMPARE_URL="https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oke-herds-stampede/compare/commits?sourceBranch=refs%2Fheads%2F${BRANCH}&targetBranch=refs%2Fheads%2Fmain"
+        curl -X POST -H "Content-Type: application/json" \
+          --data '{"text":" 🐮🗿<!subteam^S02N9E62NCW|@oke_csi> Updated stampeded json from manifest.csv in branch *'${BRANCH}'*\n• <'${COMPARE_URL}'|View changes>"}' \
+          "${SLACK_WEBHOOK_URL}"
+      
       else
-      echo ">> No changes to commit — skipping push"
+        echo ">> No changes to commit — skipping push"
+        # Send Slack notification for no sync required
+        curl -X POST -H "Content-Type: application/json" \
+          --data '{"text":"🐸 <!subteam^S02N9E62NCW|@oke_csi> No sync required - stampede specs are already up to date with manifest.csv from *'${CCM_CSI_INTERNAL_BRANCH}'*"}' \
+          "${SLACK_WEBHOOK_URL}"
       fi
+    timeoutInSeconds: 6000
+    onFailure:
+      - type: Command
+        command: |
+          echo "Sending slack message for pipeline failure"
+          source oit_http_proxy
+          oit_http_proxy activate
+          oit_http_proxy show
+          
+          # Build pipeline URLs
+          RUN_URL="https://devops.oci.oraclecorp.com/devops-build/projects/ocid1.devopsproject.oc1.phx.amaaaaaa7aeocuiaaajogoeyfulynhzq5fy5d7qvmf23rahiugqiusk2kfra/build-pipelines/${OCI_PIPELINE_ID}/build-runs/${OCI_PIPELINE_RUN_ID}?region=us-phoenix-1"
+          PIPE_URL="https://devops.oci.oraclecorp.com/devops-build/projects/ocid1.devopsproject.oc1.phx.amaaaaaa7aeocuiaaajogoeyfulynhzq5fy5d7qvmf23rahiugqiusk2kfra/build-pipelines/${OCI_PIPELINE_ID}?region=us-phoenix-1"
+          
+          curl -X POST -H "Content-Type: application/json" \
+            --data '{"text":"❌ <!subteam^S02N9E62NCW|@oke_csi> CCM/CSI Stampede Sync Pipeline Failed\n• <'${RUN_URL}'|Run #'${OCI_PIPELINE_RUN_NUMBER}'>\n• <'${PIPE_URL}'|Pipeline>\n• Branch: '${CCM_CSI_INTERNAL_BRANCH}'"}' \
+            "${SLACK_WEBHOOK_URL}"
+        timeoutInSeconds: 400
