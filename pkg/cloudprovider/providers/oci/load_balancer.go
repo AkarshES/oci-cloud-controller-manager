@@ -2199,22 +2199,20 @@ func (cp *CloudProvider) getProvisionedNodesAndPodsOfService(ctx context.Context
 		err = errors.Wrap(err, "failed to check if cluster has virtual nodes")
 		return
 	}
+	isPodsAsBackendsModeEnabled := isPodsAsBackendsMode(service)
 
-	// Get pods scheduled on managed and virtual nodes for the service
-	managedPods, virtualPods, err = cp.getManagedAndVirtualPodsOfService(ctx, logger, service)
-	if err != nil {
-		logger.With(zap.Error(err)).Error("Failed to get virtual or managed pods of the service")
-		err = errors.Wrap(err, "failed to get virtual or managed pods of the service")
-		return
-	}
-	if !virtualNodeExists {
-		virtualPods = nil
-	}
-	if !isPodsAsBackendsMode(service) {
-		managedPods = nil
+	if virtualNodeExists {
+		if isPodsAsBackendsModeEnabled {
+			// Fetch both managed and virtual pods
+			managedPods, virtualPods, err = cp.getManagedAndVirtualPodsOfService(ctx, logger, service)
+		} else {
+			// Fetch only virtual pods
+			_, virtualPods, err = cp.getManagedAndVirtualPodsOfService(ctx, logger, service)
+		}
 	}
 
 	return
+
 }
 
 func isPodsAsBackendsMode(service *v1.Service) bool {
@@ -2234,38 +2232,43 @@ func (cp *CloudProvider) getManagedAndVirtualPodsOfService(ctx context.Context, 
 	var virtualPods []*v1.Pod
 	var managedPods []*v1.Pod
 	for _, es := range endpointSlices {
-		for _, e := range es.Endpoints {
-			if e.TargetRef.Kind == "Pod" {
-				if _, exists := endpointSet[e.Addresses[0]]; exists {
-					continue
-				}
-
-				pod, err := cp.PodLister.Pods(es.Namespace).Get(e.TargetRef.Name)
-				if err != nil {
-					if apierrors.IsNotFound(err) {
-						logger.With(zap.Error(err)).Errorf("Pod object does not exist: %s", e.TargetRef.Name)
+		if es.Endpoints != nil && len(es.Endpoints) > 0 {
+			for _, e := range es.Endpoints {
+				if e.TargetRef != nil && e.TargetRef.Kind == "Pod" {
+					if _, exists := endpointSet[e.Addresses[0]]; exists {
 						continue
 					}
-					return nil, nil, err
-				}
 
-				node, err := cp.NodeLister.Get(pod.Spec.NodeName)
-				if err != nil {
-					if apierrors.IsNotFound(err) {
-						logger.With(zap.Error(err)).Errorf("Node object does not exist: %s", pod.Spec.NodeName)
-						continue
+					pod, err := cp.PodLister.Pods(es.Namespace).Get(e.TargetRef.Name)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							logger.With(zap.Error(err)).Errorf("Pod object does not exist: %s", e.TargetRef.Name)
+							continue
+						}
+						return nil, nil, err
 					}
-					return nil, nil, err
-				}
 
-				if IsVirtualNode(node) {
-					virtualPodsSet[string(pod.UID)] = pod
+					node, err := cp.NodeLister.Get(pod.Spec.NodeName)
+					if err != nil {
+						if apierrors.IsNotFound(err) {
+							logger.With(zap.Error(err)).Errorf("Node object does not exist: %s", pod.Spec.NodeName)
+							continue
+						}
+						return nil, nil, err
+					}
+
+					if IsVirtualNode(node) {
+						virtualPodsSet[string(pod.UID)] = pod
+					} else {
+						// Managed Node
+						managedPodsSet[string(pod.UID)] = pod
+					}
+
+					endpointSet[e.Addresses[0]] = struct{}{}
 				} else {
-					// Managed Node
-					managedPodsSet[string(pod.UID)] = pod
+					err := fmt.Errorf("targetRef is nil in endpointslice %s", es.Name)
+					return nil, nil, err
 				}
-
-				endpointSet[e.Addresses[0]] = struct{}{}
 			}
 		}
 	}
