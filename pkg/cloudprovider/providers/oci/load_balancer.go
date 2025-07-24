@@ -2587,6 +2587,5 @@ func (cp *CloudProvider) getIpAddressOcidMap(ctx context.Context, provisionedSvc
 			}
 		}
 	}
-	cp.logger.Infof("debug-nat46: constructed ipAddressOcidMap: %v", ipAddressOcidMap)
 	return ipAddressOcidMap, nil
 }
