@@ -18,11 +18,13 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
+	csi_util "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
+	"github.com/oracle/oci-go-sdk/v65/filestorage"
 )
 
 const (
@@ -36,9 +38,11 @@ const (
 var SbWorkerDelay time.Duration
 
 const (
-	fssCSIDriverName = "fss.csi.oraclecloud.com"
-	bvCSIDriverName  = "blockvolume.csi.oraclecloud.com"
-	fvdDriverName    = "oracle/oci"
+	fssCSIDriverName              = "fss.csi.oraclecloud.com"
+	bvCSIDriverName               = "blockvolume.csi.oraclecloud.com"
+	fvdDriverName                 = "oracle/oci"
+	ProvisionerSecretKey          = "volume.kubernetes.io/provisioner-deletion-secret-name"
+	ProvisionerSecretNamespaceKey = "volume.kubernetes.io/provisioner-deletion-secret-namespace"
 )
 
 type PvStorageType string
@@ -63,6 +67,9 @@ type genericVolume struct {
 	definedTags      map[string]map[string]interface{}
 	metricNamePrefix string
 	pvStorageType    PvStorageType
+	freeformTags     map[string]string
+	displayName      *string
+	kmsKeyId         *string
 }
 
 func NewStorageBackfillController(
@@ -172,7 +179,6 @@ func (sb *StorageBackfillController) backfill(pvName string) error {
 	startTime := time.Now()
 	volume := genericVolume{}
 	logger := sb.logger.With("persistentVolume", pvName)
-	dimensionsMap := make(map[string]string)
 	var metricName string
 
 	pv, err := sb.pvLister.Get(pvName)
@@ -183,11 +189,41 @@ func (sb *StorageBackfillController) backfill(pvName string) error {
 
 	volume.pvStorageType = GetStorageType(pv)
 
-	// FSS doesn't support system tags. do not process when the pv is
-	//backed by FSS storage
 	if volume.pvStorageType == FSS {
-		logger.Infof("%s is a FSS storage. not processing the pv", pv.Name)
-		return nil
+		volume.metricNamePrefix = "FSS_" + util.SystemTagErrTypePrefix
+
+		volumeHandle := csi_util.ValidateFssId(pv.Spec.PersistentVolumeSource.CSI.VolumeHandle)
+		if volumeHandle.FilesystemOcid == "" {
+			return fmt.Errorf("unable to get the FilesystemOcid from pv")
+		}
+
+		volume.id = volumeHandle.FilesystemOcid
+
+		logger = logger.With("volumeId", volume.id)
+
+		fss, err := sb.getFss(volume.id)
+
+		if err != nil {
+			logger.With(zap.Error(err)).Errorf("failed to get FSS for id %s", volume.id)
+			sb.sendSBFailureMetric(volume, metrics.FSSUpdate, startTime, err)
+			return err
+		}
+
+		volume.definedTags = fss.DefinedTags
+		volume.freeformTags = fss.FreeformTags
+		volume.kmsKeyId = fss.KmsKeyId
+
+		if !systemTagsExists(sb.logger, fss.SystemTags, sb.config) && fss.LifecycleState == filestorage.FileSystemLifecycleStateActive {
+			logger.With("fss", "%v", *fss).Infof("detected FSS without OKE system tags. proceeding to add")
+			err = sb.addSystemTagToVolume(logger, volume)
+			if err != nil {
+				logger.With(zap.Error(err)).Warnf("updateFileSystem didn't succeed. unable to add oke system tags")
+				sb.sendSBFailureMetric(volume, metrics.FSSUpdate, startTime, err)
+				return err
+			}
+			logger.Infof("Successfully added oke system tags to fss")
+
+		}
 	}
 
 	if volume.pvStorageType == BV {
@@ -202,20 +238,20 @@ func (sb *StorageBackfillController) backfill(pvName string) error {
 		bv, err := sb.getBv(volume.id)
 		if err != nil {
 			logger.With(zap.Error(err)).Errorf("failed to get BV for id %s", volume.id)
-			dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), volume.metricNamePrefix)
-			dimensionsMap[metrics.ResourceOCIDDimension] = volume.id
-			metrics.SendMetricData(sb.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
+			sb.sendSBFailureMetric(volume, metricName, startTime, err)
 			return err
 		}
 
-		if !sb.doesBVHaveOkeSystemTag(bv) && bv.LifecycleState == core.VolumeLifecycleStateAvailable {
+		volume.definedTags = bv.DefinedTags
+		volume.freeformTags = bv.FreeformTags
+		volume.displayName = bv.DisplayName
+
+		if !systemTagsExists(sb.logger, bv.SystemTags, sb.config) && bv.LifecycleState == core.VolumeLifecycleStateAvailable {
 			logger.With("bv", "%v", *bv).Infof("detected block volume without OKE system tags. proceeding to add")
-			err = sb.addBlockVolumeOkeSystemTags(bv)
+			err = sb.addSystemTagToVolume(logger, volume)
 			if err != nil {
 				logger.With(zap.Error(err)).Warnf("updateBlockVolume didn't succeed. unable to add oke system tags")
-				dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), volume.metricNamePrefix)
-				dimensionsMap[metrics.ResourceOCIDDimension] = volume.id
-				metrics.SendMetricData(sb.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
+				sb.sendSBFailureMetric(volume, metricName, startTime, err)
 				return err
 			}
 			logger.Infof("sucessfully added oke system tags")
@@ -224,11 +260,10 @@ func (sb *StorageBackfillController) backfill(pvName string) error {
 	return nil
 }
 
-// pvNeedProcessing checks if the PV is using OCI CSI/FVD driver and the storage type is not FSS
+// pvNeedProcessing checks if the PV is using OCI CSI/FVD driver and PV using the workload identity should be skipped. Currently only FSS supports workload identity.
 func (sb *StorageBackfillController) pvNeedProcessing(pv *v1.PersistentVolume) bool {
-	// TODO: PV using the workload identity should be skipped. Currently only FSS is supported. JIRA: OKE-33601
 	return sb.isOciCSIorFVDStorage(pv) &&
-		GetStorageType(pv) != FSS &&
+		!util.StorageClassWorkloadIdentityCheck(pv.GetObjectMeta().GetAnnotations(), ProvisionerSecretKey, ProvisionerSecretNamespaceKey) &&
 		sb.isPvPhaseEligble(pv)
 }
 
@@ -298,24 +333,14 @@ func (sb *StorageBackfillController) getBv(id string) (*core.Volume, error) {
 	return sb.ociClient.BlockStorage().GetVolume(ctx, id)
 }
 
-func (sb *StorageBackfillController) doesBVHaveOkeSystemTag(bv *core.Volume) bool {
-	if bv.SystemTags == nil {
-		return false
-	}
-	okeSystemTagFromConfig := getResourceTrackingSystemTagsFromConfig(sb.logger, sb.config.Tags)
-	if okeSystemTagFromConfig == nil {
-		return false
-	}
-
-	if okeSystemTag, okeSystemTagNsExists := bv.SystemTags[OkeSystemTagNamesapce]; okeSystemTagNsExists {
-		return reflect.DeepEqual(okeSystemTag, okeSystemTagFromConfig[OkeSystemTagNamesapce])
-	}
-	return false
+func (sb *StorageBackfillController) getFss(id string) (*filestorage.FileSystem, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	defer cancel()
+	return sb.ociClient.FSS(nil).GetFileSystem(ctx, id)
 }
 
-func (sb *StorageBackfillController) addBlockVolumeOkeSystemTags(bv *core.Volume) error {
-	var bvDefinedTagRequest, okeSystemTagFromConfig map[string]map[string]interface{}
-	logger := sb.logger.With("volumeId", *bv.Id)
+func (sb *StorageBackfillController) addSystemTagToVolume(logger *zap.SugaredLogger, gv genericVolume) error {
+	var gvDefinedTagRequest, okeSystemTagFromConfig map[string]map[string]interface{}
 	ctx, cancel := context.WithTimeout(context.Background(), sbClientTimeout)
 	defer cancel()
 	okeSystemTagFromConfig = getResourceTrackingSystemTagsFromConfig(sb.logger, sb.config.Tags)
@@ -327,41 +352,97 @@ func (sb *StorageBackfillController) addBlockVolumeOkeSystemTags(bv *core.Volume
 		return fmt.Errorf("oke system tag namespace is not found in the cloud config")
 	}
 
-	if bv.DefinedTags != nil {
-		bvDefinedTagRequest = bv.DefinedTags
+	if gv.definedTags != nil {
+		gvDefinedTagRequest = gv.definedTags
 	}
-	bvDefinedTagRequest[OkeSystemTagNamesapce] = okeSystemTagFromConfig[OkeSystemTagNamesapce]
-	if len(bvDefinedTagRequest) > MaxDefinedTagPerResource {
+	gvDefinedTagRequest[OkeSystemTagNamesapce] = okeSystemTagFromConfig[OkeSystemTagNamesapce]
+	if len(gvDefinedTagRequest) > MaxDefinedTagPerResource {
 		return fmt.Errorf(MaxDefinedTagErrMessage, "volume")
 	}
 
-	bvUpdateDetails := core.UpdateVolumeDetails{
-		FreeformTags: bv.FreeformTags,
-		DefinedTags:  bvDefinedTagRequest,
-		DisplayName:  bv.DisplayName,
-	}
+	var err error
+	var fss *filestorage.FileSystem
+	var bv *core.Volume
 
-	bv, err := sb.ociClient.BlockStorage().UpdateVolume(ctx, *bv.Id, bvUpdateDetails)
-
-	if err != nil {
-		// check for rate limiting to slow down processing rate
-		var ociServiceError common.ServiceError
-		if errors.As(err, &ociServiceError) {
-			if ociServiceError.GetHTTPStatusCode() == http.StatusTooManyRequests &&
-				ociServiceError.GetCode() == client.HTTP429TooManyRequestsCode {
-				SbWorkerDelay = SbWorkerDelay * 2
-				logger.Infof("rate limited for the UpdateVolume request. updated sleep delay to %v", SbWorkerDelay)
-			}
+	switch gv.pvStorageType {
+	case FSS:
+		fssUpdateDetails := filestorage.UpdateFileSystemDetails{
+			FreeformTags: gv.freeformTags,
+			DefinedTags:  gvDefinedTagRequest,
+			KmsKeyId:     gv.kmsKeyId,
 		}
-		return err
+
+		fss, err = sb.ociClient.FSS(nil).UpdateFileSystem(ctx, fssUpdateDetails, gv.id)
+		if err != nil {
+			checkForRateLimit(logger, err, "UpdateFileSystem")
+			return err
+		}
+		logger.Infof("updated file system request to add oke system tag is successful")
+		fss, err = sb.ociClient.FSS(nil).AwaitFileSystemActive(ctx, logger, *fss.Id)
+		if err != nil {
+			return err
+		}
+		if !systemTagsExists(sb.logger, fss.SystemTags, sb.config) {
+			return fmt.Errorf("validation of oke system tags after update file system operation has failed. File system details: %v", *fss)
+		}
+	case BV:
+		bvUpdateDetails := core.UpdateVolumeDetails{
+			FreeformTags: gv.freeformTags,
+			DefinedTags:  gvDefinedTagRequest,
+			DisplayName:  gv.displayName,
+		}
+
+		bv, err = sb.ociClient.BlockStorage().UpdateVolume(ctx, gv.id, bvUpdateDetails)
+		if err != nil {
+			checkForRateLimit(logger, err, "UpdateVolume")
+			return err
+		}
+		logger.Info("updated volume request to add oke system tag is successful")
+		bv, err = sb.ociClient.BlockStorage().AwaitVolumeAvailableORTimeout(ctx, *bv.Id)
+		if err != nil {
+			return err
+		}
+		if !systemTagsExists(sb.logger, bv.SystemTags, sb.config) {
+			return fmt.Errorf("validation of oke system tags after update volume operation has failed. volume details: %v", *bv)
+		}
+	default:
+		return fmt.Errorf("Unknown PV storage type: %v", gv.pvStorageType)
 	}
-	logger.Infof("updated volume request to add oke system tag is successful")
-	bv, err = sb.ociClient.BlockStorage().AwaitVolumeAvailableORTimeout(ctx, *bv.Id)
-	if err != nil {
-		return err
-	}
-	if !sb.doesBVHaveOkeSystemTag(bv) {
-		return fmt.Errorf("validation of oke system tags after update volume operation has failed. volume details: %v", *bv)
-	}
+
 	return nil
+}
+
+func checkForRateLimit(logger *zap.SugaredLogger, err error, requestType string) {
+	var ociServiceError common.ServiceError
+	if errors.As(err, &ociServiceError) {
+		if ociServiceError.GetHTTPStatusCode() == http.StatusTooManyRequests &&
+			ociServiceError.GetCode() == client.HTTP429TooManyRequestsCode {
+			SbWorkerDelay = SbWorkerDelay * 2
+			logger.Infof("rate limited for the %s request. updated sleep delay to %v", requestType, SbWorkerDelay)
+		}
+	}
+}
+
+func (sb *StorageBackfillController) sendSBFailureMetric(volume genericVolume, metricName string, startTime time.Time, err error) {
+	dimensionsMap := make(map[string]string)
+	dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.GetError(err), volume.metricNamePrefix)
+	dimensionsMap[metrics.ResourceOCIDDimension] = volume.id
+	metrics.SendMetricData(sb.metricPusher, metricName, time.Since(startTime).Seconds(), dimensionsMap)
+}
+
+// compares resource and config system tags. Returns true if all false if systemTags matches.
+func systemTagsExists(logger *zap.SugaredLogger, systemTags map[string]map[string]interface{}, config *providercfg.Config) bool {
+	if systemTags == nil {
+		return false
+	}
+
+	okeSystemTagFromConfig := getResourceTrackingSystemTagsFromConfig(logger, config.Tags)
+	if okeSystemTagFromConfig == nil {
+		return false
+	}
+
+	if okeSystemTag, okeSystemTagNsExists := systemTags[OkeSystemTagNamesapce]; okeSystemTagNsExists {
+		return reflect.DeepEqual(okeSystemTag, okeSystemTagFromConfig[OkeSystemTagNamesapce])
+	}
+	return false
 }

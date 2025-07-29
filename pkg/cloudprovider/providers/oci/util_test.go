@@ -15,11 +15,14 @@
 package oci
 
 import (
-	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
+	"go.uber.org/zap"
 
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
@@ -354,6 +357,122 @@ func TestGetIntegerFromEnv(t *testing.T) {
 				t.FailNow()
 			} else {
 				t.Logf("expected: %+v, and actual GetIntegerFromEnv => %+v", testCase.expected, actual)
+			}
+		})
+	}
+}
+
+func TestSystemTagsExists(t *testing.T) {
+	tests := []struct {
+		name       string
+		systemTags map[string]map[string]interface{}
+		config     *providercfg.Config
+		expected   bool
+	}{
+		{
+			name: "basic-volume",
+			systemTags: map[string]map[string]interface{}{
+				"orcl-containerengine": {
+					"Cluster": "ocid1.cluster.aaaa....",
+				},
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa....",
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "basic-volume-with-system-tag",
+			systemTags: map[string]map[string]interface{}{
+				"orcl-free-tier": {
+					"Foo": "bar",
+				},
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa....",
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "basic-volume-with-oke-system-tag-ns",
+			systemTags: map[string]map[string]interface{}{
+				"orcl-containerengine": {
+					"volume": "ocid1.volume.aaaa..",
+				},
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa....",
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "basic-volume-with-oke-system-tag-key-value",
+			systemTags: map[string]map[string]interface{}{
+				"orcl-foobar": {
+					"Cluster": "ocid1.cluster.aaaa....",
+				},
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa....",
+							},
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "oke-system-tag-is-not-present-in-config",
+			systemTags: map[string]map[string]interface{}{
+				"orcl-containerengine": {
+					"Cluster": "ocid1.cluster.aaaa....",
+				},
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: nil,
+				},
+			},
+			expected: false,
+		},
+	}
+	sbc := &StorageBackfillController{
+		logger: zap.S(),
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			sbc.config = tc.config
+			actual := systemTagsExists(logging.Logger().Sugar(), tc.systemTags, tc.config)
+			if actual != tc.expected {
+				t.Errorf("expected %t but got %t", tc.expected, actual)
 			}
 		})
 	}

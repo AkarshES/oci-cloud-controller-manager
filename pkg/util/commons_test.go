@@ -258,3 +258,64 @@ func TestMergeTagConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkloadIdentityCheck(t *testing.T) {
+	tests := map[string]struct {
+		parameters map[string]string
+		secretName string
+		namespace  string
+		expected   bool
+	}{
+		"nil parameters": {
+			parameters: nil,
+			secretName: "testSecretName",
+			namespace:  "testNameSpace",
+			expected:   false,
+		},
+		"parameters wrong secret name and namespace": {
+			parameters: map[string]string{"foo": "bar"},
+			secretName: "testSecretName",
+			namespace:  "testNameSpace",
+			expected:   false,
+		},
+		"empty secret name": {
+			parameters: map[string]string{"secretName": "secretValue", "namespaceName": "namespaceValue"},
+			secretName: "",
+			namespace:  "namespaceName",
+			expected:   false,
+		},
+		"empty namespace": {
+			parameters: map[string]string{"secretName": "secretValue", "namespaceName": "namespaceValue"},
+			secretName: "secretName",
+			namespace:  "",
+			expected:   false,
+		},
+		"empty parameter namespace value": {
+			parameters: map[string]string{"secretName": "secretValue", "namespaceName": ""},
+			secretName: "secretName",
+			namespace:  "namespaceName",
+			expected:   false,
+		},
+		"empty parameter secret value": {
+			parameters: map[string]string{"secretName": "", "namespaceName": "namespaceValue"},
+			secretName: "secretName",
+			namespace:  "namespaceName",
+			expected:   false,
+		},
+		"success case": {
+			parameters: map[string]string{"secretName": "secretName", "namespaceName": "namespaceValue"},
+			secretName: "secretName",
+			namespace:  "namespaceName",
+			expected:   true,
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual := StorageClassWorkloadIdentityCheck(tc.parameters, tc.secretName, tc.namespace)
+			if actual != tc.expected {
+				t.Errorf("Expected %v but got %v", tc.expected, actual)
+			}
+		})
+	}
+
+}

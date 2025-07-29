@@ -15,7 +15,6 @@ import (
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-go-sdk/v65/common"
-	"github.com/oracle/oci-go-sdk/v65/core"
 )
 
 var (
@@ -140,6 +139,102 @@ var (
 				Phase: v1.VolumeAvailable,
 			},
 		},
+		"oci-csi-fss-pv-failed-phase": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "oci-csi-fss-pv-failed-phase",
+			},
+			Spec: v1.PersistentVolumeSpec{
+				PersistentVolumeSource: v1.PersistentVolumeSource{
+					CSI: &v1.CSIPersistentVolumeSource{
+						Driver:       fssCSIDriverName,
+						VolumeHandle: fssOCid,
+					},
+				},
+			},
+			Status: v1.PersistentVolumeStatus{
+				Phase: v1.VolumeFailed,
+			},
+		},
+		"oci-csi-fss-pv-workload-identity": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "oci-csi-fss-pv-workload-identity",
+				Annotations: map[string]string{
+					ProvisionerSecretKey:          "secret",
+					ProvisionerSecretNamespaceKey: "namespace",
+				},
+			},
+			Spec: v1.PersistentVolumeSpec{
+				PersistentVolumeSource: v1.PersistentVolumeSource{
+					CSI: &v1.CSIPersistentVolumeSource{
+						Driver:       fssCSIDriverName,
+						VolumeHandle: fssOCid,
+					},
+				},
+			},
+			Status: v1.PersistentVolumeStatus{
+				Phase: v1.VolumeFailed,
+			},
+		},
+		"oci-csi-fss-pv-workload-identity-available-phase": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "oci-csi-fss-pv-workload-identity-available-phase",
+				Annotations: map[string]string{
+					ProvisionerSecretKey:          "secret",
+					ProvisionerSecretNamespaceKey: "namespace",
+				},
+			},
+			Spec: v1.PersistentVolumeSpec{
+				PersistentVolumeSource: v1.PersistentVolumeSource{
+					CSI: &v1.CSIPersistentVolumeSource{
+						Driver:       fssCSIDriverName,
+						VolumeHandle: fssOCid,
+					},
+				},
+			},
+			Status: v1.PersistentVolumeStatus{
+				Phase: v1.VolumeAvailable,
+			},
+		},
+		"oci-csi-fss-pv-wl-empty-secret-namespace": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "oci-csi-fss-pv-2",
+				Annotations: map[string]string{
+					ProvisionerSecretKey:          "",
+					ProvisionerSecretNamespaceKey: "",
+				},
+			},
+			Spec: v1.PersistentVolumeSpec{
+				PersistentVolumeSource: v1.PersistentVolumeSource{
+					CSI: &v1.CSIPersistentVolumeSource{
+						Driver:       fssCSIDriverName,
+						VolumeHandle: fssOCid,
+					},
+				},
+			},
+			Status: v1.PersistentVolumeStatus{
+				Phase: v1.VolumeFailed,
+			},
+		},
+		"oci-csi-fss-pv-wl-key-mismatch": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "oci-csi-fss-pv-2",
+				Annotations: map[string]string{
+					"testKey":          "secret",
+					"testNamespaceKey": "namespace",
+				},
+			},
+			Spec: v1.PersistentVolumeSpec{
+				PersistentVolumeSource: v1.PersistentVolumeSource{
+					CSI: &v1.CSIPersistentVolumeSource{
+						Driver:       fssCSIDriverName,
+						VolumeHandle: fssOCid,
+					},
+				},
+			},
+			Status: v1.PersistentVolumeStatus{
+				Phase: v1.VolumeFailed,
+			},
+		},
 	}
 )
 
@@ -202,7 +297,7 @@ func Test_sbc_pusher(t *testing.T) {
 			pvs: []*v1.PersistentVolume{
 				pvList["oci-csi-fss-pv"],
 			},
-			itemExits: false,
+			itemExits: true,
 		},
 		{
 			name: "oci csi fvd pv",
@@ -229,6 +324,41 @@ func Test_sbc_pusher(t *testing.T) {
 			name: "fvd pv",
 			pvs: []*v1.PersistentVolume{
 				pvList["fvd-pv"],
+			},
+			itemExits: false,
+		},
+		{
+			name: "oci csi fss pv failed phase",
+			pvs: []*v1.PersistentVolume{
+				pvList["oci-csi-fss-pv-failed-phase"],
+			},
+			itemExits: false,
+		},
+		{
+			name: "oci csi fss pv workload identity",
+			pvs: []*v1.PersistentVolume{
+				pvList["oci-csi-fss-pv-workload-identity"],
+			},
+			itemExits: false,
+		},
+		{
+			name: "oci csi fss pv workload identity available phase",
+			pvs: []*v1.PersistentVolume{
+				pvList["oci-csi-fss-pv-workload-identity-available-phase"],
+			},
+			itemExits: false,
+		},
+		{
+			name: "oci csi fss pv wl empty secret namespace",
+			pvs: []*v1.PersistentVolume{
+				pvList["oci-csi-fss-pv-wl-empty-secret-namespace"],
+			},
+			itemExits: false,
+		},
+		{
+			name: "oci csi fss pv wl key mismatch",
+			pvs: []*v1.PersistentVolume{
+				pvList["oci-csi-fss-pv-wl-key-mismatch"],
 			},
 			itemExits: false,
 		},
@@ -374,144 +504,19 @@ func Test_getBlockVolumeOcidFromPV(t *testing.T) {
 
 }
 
-func Test_doesBVHaveOkeSystemTag(t *testing.T) {
-	testCases := []struct {
-		name     string
-		bv       *core.Volume
-		config   *providercfg.Config
-		expected bool
-	}{
-		{
-			name: "basic-volume",
-			bv: &core.Volume{
-				SystemTags: map[string]map[string]interface{}{
-					"orcl-containerengine": {
-						"Cluster": "ocid1.cluster.aaaa....",
-					},
-				},
-			},
-			config: &providercfg.Config{
-				Tags: &providercfg.InitialTags{
-					Common: &providercfg.TagConfig{
-						DefinedTags: map[string]map[string]interface{}{
-							"orcl-containerengine": {
-								"Cluster": "ocid1.cluster.aaaa....",
-							},
-						},
-					},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "basic-volume-with-system-tag",
-			bv: &core.Volume{
-				SystemTags: map[string]map[string]interface{}{
-					"orcl-free-tier": {
-						"Foo": "bar",
-					},
-				},
-			},
-			config: &providercfg.Config{
-				Tags: &providercfg.InitialTags{
-					Common: &providercfg.TagConfig{
-						DefinedTags: map[string]map[string]interface{}{
-							"orcl-containerengine": {
-								"Cluster": "ocid1.cluster.aaaa....",
-							},
-						},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "basic-volume-with-oke-system-tag-ns",
-			bv: &core.Volume{
-				SystemTags: map[string]map[string]interface{}{
-					"orcl-containerengine": {
-						"volume": "ocid1.volume.aaaa..",
-					},
-				},
-			},
-			config: &providercfg.Config{
-				Tags: &providercfg.InitialTags{
-					Common: &providercfg.TagConfig{
-						DefinedTags: map[string]map[string]interface{}{
-							"orcl-containerengine": {
-								"Cluster": "ocid1.cluster.aaaa....",
-							},
-						},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "basic-volume-with-oke-system-tag-key-value",
-			bv: &core.Volume{
-				SystemTags: map[string]map[string]interface{}{
-					"orcl-foobar": {
-						"Cluster": "ocid1.cluster.aaaa....",
-					},
-				},
-			},
-			config: &providercfg.Config{
-				Tags: &providercfg.InitialTags{
-					Common: &providercfg.TagConfig{
-						DefinedTags: map[string]map[string]interface{}{
-							"orcl-containerengine": {
-								"Cluster": "ocid1.cluster.aaaa....",
-							},
-						},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "oke-system-tag-is-not-present-in-config",
-			bv: &core.Volume{
-				SystemTags: map[string]map[string]interface{}{
-					"orcl-containerengine": {
-						"Cluster": "ocid1.cluster.aaaa....",
-					},
-				},
-			},
-			config: &providercfg.Config{
-				Tags: &providercfg.InitialTags{
-					Common: nil,
-				},
-			},
-			expected: false,
-		},
-	}
-	sbc := &StorageBackfillController{
-		logger: zap.S(),
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			sbc.config = tc.config
-			actual := sbc.doesBVHaveOkeSystemTag(tc.bv)
-			if actual != tc.expected {
-				t.Errorf("expected %t but got %t", tc.expected, actual)
-			}
-		})
-	}
-}
-
-func Test_addBlockVolumeOkeSystemTags(t *testing.T) {
+func Test_addSystemTagToVolume(t *testing.T) {
 	testCases := []struct {
 		name                     string
-		bv                       *core.Volume
+		volume                   genericVolume
 		config                   *providercfg.Config
 		wantErr                  error
 		expectedSbWorkerDelayVal time.Duration
 	}{
 		{
 			name: "expect an error oke system tag is not loaded onto config (nil)",
-			bv: &core.Volume{
-				Id: common.String("sample-id"),
+			volume: genericVolume{
+				id:            *common.String("sample-id"),
+				pvStorageType: BV,
 			},
 			config: &providercfg.Config{
 				Tags: &providercfg.InitialTags{},
@@ -519,10 +524,11 @@ func Test_addBlockVolumeOkeSystemTags(t *testing.T) {
 			wantErr: errors.New("oke system tag is not found in the cloud config"),
 		},
 		{
-			name: "expect an error when defined tags are limits are reached",
-			bv: &core.Volume{
-				Id:          common.String("sample-id"),
-				DefinedTags: map[string]map[string]interface{}{},
+			name: "expect an error when defined tags are limits are reached on BV",
+			volume: genericVolume{
+				id:            *common.String("sample-id"),
+				definedTags:   map[string]map[string]interface{}{},
+				pvStorageType: BV,
 			},
 			config: &providercfg.Config{
 				Tags: &providercfg.InitialTags{
@@ -538,10 +544,11 @@ func Test_addBlockVolumeOkeSystemTags(t *testing.T) {
 			wantErr: errors.New("max limit of defined tags for volume is reached. skip adding tags. sending metric"),
 		},
 		{
-			name: "expect an error when updateLoadBalancer work request fails",
-			bv: &core.Volume{
-				Id:          common.String("work-request-fails"),
-				DefinedTags: map[string]map[string]interface{}{},
+			name: "expect an error when updateVolume work request fails",
+			volume: genericVolume{
+				id:            *common.String("work-request-fails"),
+				definedTags:   map[string]map[string]interface{}{},
+				pvStorageType: BV,
 			},
 			config: &providercfg.Config{
 				Tags: &providercfg.InitialTags{
@@ -558,9 +565,10 @@ func Test_addBlockVolumeOkeSystemTags(t *testing.T) {
 		},
 		{
 			name: "expect an error and slow down processing rate when updateLoadBalancer work request with 429",
-			bv: &core.Volume{
-				Id:          common.String("api-returns-too-many-requests"),
-				DefinedTags: map[string]map[string]interface{}{},
+			volume: genericVolume{
+				id:            *common.String("api-returns-too-many-requests"),
+				definedTags:   map[string]map[string]interface{}{},
+				pvStorageType: BV,
 			},
 			config: &providercfg.Config{
 				Tags: &providercfg.InitialTags{
@@ -576,6 +584,78 @@ func Test_addBlockVolumeOkeSystemTags(t *testing.T) {
 			wantErr:                  errors.New("Too many requests"),
 			expectedSbWorkerDelayVal: time.Second * 6,
 		},
+		{
+			name: "expect an error oke system tag is not loaded onto config (nil)",
+			volume: genericVolume{
+				id:            *common.String("sample-id"),
+				pvStorageType: FSS,
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{},
+			},
+			wantErr: errors.New("oke system tag is not found in the cloud config"),
+		},
+		{
+			name: "expect an error when defined tags are limits are reached on FSS",
+			volume: genericVolume{
+				id:            *common.String("sample-id"),
+				definedTags:   map[string]map[string]interface{}{},
+				pvStorageType: FSS,
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa...",
+							},
+						},
+					},
+				},
+			},
+			wantErr: errors.New("max limit of defined tags for volume is reached. skip adding tags. sending metric"),
+		},
+		{
+			name: "expect an error when updateFileSystem work request fails",
+			volume: genericVolume{
+				id:            *common.String("work-request-fails"),
+				definedTags:   map[string]map[string]interface{}{},
+				pvStorageType: FSS,
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa...",
+							},
+						},
+					},
+				},
+			},
+			wantErr: errors.New("UpdateFileSystem request failed: internal server error"),
+		},
+		{
+			name: "expect an error when api returns 429:too many request error",
+			volume: genericVolume{
+				id:            *common.String("api-returns-too-many-requests"),
+				definedTags:   map[string]map[string]interface{}{},
+				pvStorageType: FSS,
+			},
+			config: &providercfg.Config{
+				Tags: &providercfg.InitialTags{
+					Common: &providercfg.TagConfig{
+						DefinedTags: map[string]map[string]interface{}{
+							"orcl-containerengine": {
+								"Cluster": "ocid1.cluster.aaaa...",
+							},
+						},
+					},
+				},
+			},
+			wantErr:                  errors.New("Too many requests"),
+			expectedSbWorkerDelayVal: time.Second * 12,
+		},
 	}
 	sbc := &StorageBackfillController{
 		logger: zap.S(),
@@ -588,10 +668,10 @@ func Test_addBlockVolumeOkeSystemTags(t *testing.T) {
 			sbc.ociClient = &MockOCIClient{}
 			if strings.Contains(tc.name, "limit") {
 				for i := 1; i <= 64; i++ {
-					tc.bv.DefinedTags["ns"+strconv.Itoa(i)] = map[string]interface{}{"key": strconv.Itoa(i)}
+					tc.volume.definedTags["ns"+strconv.Itoa(i)] = map[string]interface{}{"key": strconv.Itoa(i)}
 				}
 			}
-			err := sbc.addBlockVolumeOkeSystemTags(tc.bv)
+			err := sbc.addSystemTagToVolume(sbc.logger, tc.volume)
 			t.Logf("%v", tc.wantErr)
 			t.Logf("%v", err)
 			if !assertError(tc.wantErr, err) {

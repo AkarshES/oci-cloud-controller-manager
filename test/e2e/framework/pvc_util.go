@@ -69,8 +69,8 @@ type PVCTestJig struct {
 }
 
 type Options struct {
-	BlockProvisionerName  string
-	FSSProvisionerName	  string
+	BlockProvisionerName string
+	FSSProvisionerName   string
 }
 
 // NewPVCTestJig allocates and inits a new PVCTestJig.
@@ -754,7 +754,7 @@ func waitForVolumeState(ctx context.Context, bsClient ocicore.BlockstorageClient
 }
 
 // CreateBootVolume is a function to create the boot volume
-func (j *PVCTestJig) CreateBootVolume(c ocicore.ComputeClient, bs ocicore.BlockstorageClient,adLabel string, compartmentId string) string {
+func (j *PVCTestJig) CreateBootVolume(c ocicore.ComputeClient, bs ocicore.BlockstorageClient, adLabel string, compartmentId string) string {
 	ctx := context.Background()
 
 	instances, err := c.ListInstances(ctx, ocicore.ListInstancesRequest{
@@ -2204,6 +2204,7 @@ func (j *PVCTestJig) CreateSecret(secretName, saName, saNamespace string) error 
 
 	_, err := j.KubeClient.CoreV1().Secrets(saNamespace).Create(context.Background(), secret, metav1.CreateOptions{})
 	if err != nil {
+		Logf("failed to create secret: %v", err)
 		return fmt.Errorf("failed to create secret: %v", err)
 	}
 	fmt.Printf("Secret %s created in namespace %s\n", secretName, saNamespace)
