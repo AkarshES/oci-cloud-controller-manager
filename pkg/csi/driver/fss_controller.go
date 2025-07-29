@@ -15,6 +15,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	fss "github.com/oracle/oci-go-sdk/v65/filestorage"
+	"github.com/pkg/errors"
 	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +46,9 @@ var (
 )
 
 const (
-	serviceAccountTokenExpiry = 3600
+	serviceAccountTokenExpiry        = 3600
+	secretServiceAccountKey          = "serviceAccount"
+	secretServiceAccountNamespaceKey = "serviceAccountNamespace"
 )
 
 var ServiceAccountTokenExpiry = int64(serviceAccountTokenExpiry)
@@ -160,6 +163,13 @@ func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateV
 	}
 
 	log, response, storageClassParameters, err, done := extractStorageClassParameters(ctx, d, log, dimensionsMap, volumeName, req.GetParameters(), startTime, identityClient)
+
+	if enableOkeSystemTags {
+		if !util.StorageClassWorkloadIdentityCheck(req.GetSecrets(), secretServiceAccountKey, secretServiceAccountNamespaceKey) && util.IsCommonTagPresent(d.config.Tags) {
+			storageClassParameters.scTags = util.MergeTagConfig(storageClassParameters.scTags, d.config.Tags.Common)
+		}
+	}
+
 	if done {
 		dimensionsMap[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.ErrValidation, util.CSIStorageType)
 		metrics.SendMetricData(d.metricPusher, metrics.FssAllProvision, time.Since(startTime).Seconds(), dimensionsMap)
@@ -298,6 +308,22 @@ func (d *FSSControllerDriver) getOrCreateFileSystem(ctx context.Context, storage
 	} else {
 		// Creating new file system
 		provisionedFileSystem, err = provisionFileSystem(ctx, log, d.client, volumeName, storageClassParameters, fssClient)
+
+		// retry provision without oke system tags
+		if err != nil && client.IsSystemTagNotFoundOrNotAuthorisedError(log, errors.Unwrap(err)) {
+			d.prepareToRetryWithoutSystemTags(log, err, &storageClassParameters, dimensionsMap, startTimeFileSystem)
+			provisionedFileSystem, err = provisionFileSystem(ctx, log, d.client, volumeName, storageClassParameters, fssClient)
+		}
+
+		// This is a fail-safe mechanism. Currently, if we try to create FS with system tag via workload identity
+		//It throws `InvalidParameter` error Message: Invalid tags. Here we are checking if there is systemTag, of yes then retry without system tag.
+		if err != nil && client.IsInvalidTagInvalidParametersError(log, errors.Unwrap(err)) {
+			if val, ok := storageClassParameters.scTags.DefinedTags[OkeSystemTagNamesapce]; ok && val != nil {
+				d.prepareToRetryWithoutSystemTags(log, err, &storageClassParameters, dimensionsMap, startTimeFileSystem)
+				provisionedFileSystem, err = provisionFileSystem(ctx, log, d.client, volumeName, storageClassParameters, fssClient)
+			}
+		}
+
 		if err != nil {
 			log.With("service", "fss", "verb", "create", "resource", "fileSystem", "statusCode", util.GetHttpStatusCode(err)).
 				With(zap.Error(err)).Error("New File System creation failed")
@@ -397,6 +423,22 @@ func (d *FSSControllerDriver) getOrCreateMountTarget(ctx context.Context, storag
 
 			// Creating new mount target
 			provisionedMountTarget, err = provisionMountTarget(ctx, log, d.client, volumeName, storageClassParameters, fssClient)
+
+			// retry provision without oke system tags
+			if err != nil && client.IsSystemTagNotFoundOrNotAuthorisedError(log, errors.Unwrap(err)) {
+				d.prepareToRetryWithoutSystemTags(log, err, &storageClassParameters, dimensionsMap, startTimeMountTarget)
+				provisionedMountTarget, err = provisionMountTarget(ctx, log, d.client, volumeName, storageClassParameters, fssClient)
+			}
+
+			// This is a fail-safe mechanism. Currently, if we try to create FS with system tag via workload identity
+			//It throws `InvalidParameter` error Message: Invalid tags. Here we are checking if there is systemTag, of yes then retry without system tag.
+			if err != nil && client.IsInvalidTagInvalidParametersError(log, errors.Unwrap(err)) {
+				if val, ok := storageClassParameters.scTags.DefinedTags[OkeSystemTagNamesapce]; ok && val != nil {
+					d.prepareToRetryWithoutSystemTags(log, err, &storageClassParameters, dimensionsMap, startTimeMountTarget)
+					provisionedMountTarget, err = provisionMountTarget(ctx, log, d.client, volumeName, storageClassParameters, fssClient)
+				}
+			}
+
 			if err != nil {
 				log.With("service", "fss", "verb", "create", "resource", "mountTarget", "statusCode", util.GetHttpStatusCode(err)).
 					With(zap.Error(err)).Error("New Mount Target creation failed")
@@ -1154,6 +1196,15 @@ func (d *FSSControllerDriver) ValidateVolumeCapabilities(ctx context.Context, re
 		},
 	}, nil
 
+}
+
+func (d *FSSControllerDriver) prepareToRetryWithoutSystemTags(log *zap.SugaredLogger, err error, storageClassParameters *StorageClassParameters, dimensionsMap map[string]string, startTimeFileSystem time.Time) {
+	log.With("Ad name", storageClassParameters.availabilityDomain, "Compartment Id", d.config.CompartmentID).With(zap.Error(err)).Warn("New volume creation failed due to oke system tags error. sending metric & retrying without oke system tags")
+	errorType := util.SystemTagErrTypePrefix + util.GetError(err)
+	metricDimension := util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
+	dimensionsMap[metrics.ComponentDimension] = metricDimension
+	metrics.SendMetricData(d.metricPusher, metrics.FSSProvision, time.Since(startTimeFileSystem).Seconds(), dimensionsMap)
+	delete(storageClassParameters.scTags.DefinedTags, OkeSystemTagNamesapce)
 }
 
 func (d *FSSControllerDriver) ListVolumes(ctx context.Context, request *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {

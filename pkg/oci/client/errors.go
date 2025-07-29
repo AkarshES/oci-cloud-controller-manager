@@ -34,9 +34,12 @@ the error message "The following tag namespaces / keys are not authorized or not
 */
 var regexSystemTagNotFoundNotAuthorised = regexp.MustCompile(".*tag namespace.*orcl-containerengine.*")
 
+var regexInvalidTagsInvalidParameters = regexp.MustCompile(`Invalid tags`)
+
 // HTTP Error Types
 const (
 	HTTP400RelatedResourceNotAuthorizedOrNotFoundCode = "RelatedResourceNotAuthorizedOrNotFound"
+	HTTP400InvalidParameterCode                       = "InvalidParameter"
 	HTTP401NotAuthenticatedCode                       = "NotAuthenticated"
 	HTTP404NotAuthorizedOrNotFoundCode                = "NotAuthorizedOrNotFound"
 	HTTP409IncorrectStateCode                         = "IncorrectState"
@@ -132,6 +135,22 @@ func IsSystemTagNotFoundOrNotAuthorisedError(logger *zap.SugaredLogger, err erro
 		if ociServiceError.GetHTTPStatusCode() == http.StatusBadRequest &&
 			ociServiceError.GetCode() == HTTP400RelatedResourceNotAuthorizedOrNotFoundCode {
 			return regexSystemTagNotFoundNotAuthorised.MatchString(ociServiceError.GetMessage())
+		}
+	}
+	return false
+}
+
+func IsInvalidTagInvalidParametersError(logger *zap.SugaredLogger, err error) bool {
+	var ociServiceError common.ServiceError
+
+	// unwrap till ociServiceError is found
+	if errors.As(err, &ociServiceError) {
+		logger.Debugf("API error code: %s", ociServiceError.GetCode())
+		logger.Debugf("service error message: %s", ociServiceError.GetMessage())
+
+		if ociServiceError.GetHTTPStatusCode() == http.StatusBadRequest &&
+			ociServiceError.GetCode() == HTTP400InvalidParameterCode {
+			return regexInvalidTagsInvalidParameters.MatchString(ociServiceError.GetMessage())
 		}
 	}
 	return false

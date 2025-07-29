@@ -21,6 +21,10 @@ var (
 
 func (j *PVCTestJig) CreateService(namespace string) string {
 
+	Logf("DEBUG : CreateService starts here ")
+
+	Logf("DEBUG : namespace %v", namespace)
+
 	req := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -41,9 +45,18 @@ func (j *PVCTestJig) CreateService(namespace string) string {
 		},
 	}
 
+	Logf("DEBUG : request - %v", req)
+
 	resp, err := j.KubeClient.CoreV1().Services(namespace).Create(context.Background(), &req, metav1.CreateOptions{})
 	Expect(err).NotTo(HaveOccurred())
 
+	if err != nil {
+		Logf("DEBUG : error - %v", err)
+	}
+
+	Logf("DEBUG : response - %v", resp)
+
+	Logf("DEBUG : CreateService ends here ")
 	return resp.Name
 }
 
