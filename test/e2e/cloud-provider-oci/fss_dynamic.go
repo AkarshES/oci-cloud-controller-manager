@@ -33,7 +33,7 @@ const (
 var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 	f := framework.NewDefaultFramework("fss-dynamic")
 
-	Context("[cloudprovider][storage][csi][fss][mtexist]", func() {
+	Context("[cloudprovider][storage][csi][fss][system-tags][mtexist]", func() {
 		It("Basic Create PVC and POD for CSI-FSS", func() {
 			scParameters := map[string]string{"availabilityDomain": setupF.AdLocation, "mountTargetOcid": setupF.MntTargetOcid, "exportOptions": defaultExportOptionsJsonString}
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-dyn-e2e-test")
@@ -41,6 +41,18 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
+
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+
+			hasOkeSystemTag, err := f.CheckFSSystemTagByVolumeName(volumeName, setupF.Compartment1, setupF.AdLocation)
+
+			if err != nil {
+				framework.Failf("Failed to check system tag: %v", err)
+			}
+
+			if setupF.AddOkeSystemTags && !hasOkeSystemTag && setupF.CustomDriverHandle == "" {
+				framework.Failf("the resource %s is expected to have oke system tags", volumeName)
+			}
 		})
 		It("Create PVC and POD for CSI-FSS with exportPath", func() {
 			scParameters := map[string]string{"availabilityDomain": setupF.AdLocation, "mountTargetOcid": setupF.MntTargetOcid, "exportOptions": defaultExportOptionsJsonString}
@@ -50,6 +62,18 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
+
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+
+			hasOkeSystemTag, err := f.CheckFSSystemTagByVolumeName(volumeName, setupF.Compartment1, setupF.AdLocation)
+
+			if err != nil {
+				framework.Failf("Failed to check system tag: %v", err)
+			}
+
+			if setupF.AddOkeSystemTags && !hasOkeSystemTag && setupF.CustomDriverHandle == "" {
+				framework.Failf("the resource %s is expected to have oke system tags", volumeName)
+			}
 		})
 		It("Create PVC and POD for CSI-FSS with exportPath and exportOptions", func() {
 			scParameters := map[string]string{"availabilityDomain": setupF.AdLocation, "mountTargetOcid": setupF.MntTargetOcid, "exportOptions": defaultExportOptionsJsonString}
@@ -59,6 +83,18 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
+
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+
+			hasOkeSystemTag, err := f.CheckFSSystemTagByVolumeName(volumeName, setupF.Compartment1, setupF.AdLocation)
+
+			if err != nil {
+				framework.Failf("Failed to check system tag: %v", err)
+			}
+
+			if setupF.AddOkeSystemTags && !hasOkeSystemTag && setupF.CustomDriverHandle == "" {
+				framework.Failf("the resource %s is expected to have oke system tags", volumeName)
+			}
 		})
 		It("Create PVC and POD for CSI-FSS with kmsKey", func() {
 			scParameters := map[string]string{"availabilityDomain": setupF.AdLocation, "mountTargetOcid": setupF.MntTargetOcid, "exportOptions": defaultExportOptionsJsonString}
@@ -68,6 +104,18 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
+
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+
+			hasOkeSystemTag, err := f.CheckFSSystemTagByVolumeName(volumeName, setupF.Compartment1, setupF.AdLocation)
+
+			if err != nil {
+				framework.Failf("Failed to check system tag: %v", err)
+			}
+
+			if setupF.AddOkeSystemTags && !hasOkeSystemTag && setupF.CustomDriverHandle == "" {
+				framework.Failf("the resource %s is expected to have oke system tags", volumeName)
+			}
 		})
 		It("Create PVC and POD for CSI-FSS with in-transit encryption", func() {
 			checkNodeAvailability(f)
@@ -78,6 +126,18 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, true, []string{})
+
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+
+			hasOkeSystemTag, err := f.CheckFSSystemTagByVolumeName(volumeName, setupF.Compartment1, setupF.AdLocation)
+
+			if err != nil {
+				framework.Failf("Failed to check system tag: %v", err)
+			}
+
+			if setupF.AddOkeSystemTags && !hasOkeSystemTag && setupF.CustomDriverHandle == "" {
+				framework.Failf("the resource %s is expected to have oke system tags", volumeName)
+			}
 		})
 		It("Create PVC & POD for CSI-FSS using workload Identity Resource Principal", func() {
 			if f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
@@ -94,8 +154,21 @@ var _ = Describe("Dynamic FSS test in cluster compartment", func() {
 			f.StorageClasses = append(f.StorageClasses, scName)
 			pvc := pvcJig.CreateAndAwaitPVCOrFailDynamicFSS(f.Namespace.Name, "50Gi", scName, v1.ClaimPending, nil)
 			writePod, readPod := pvcJig.CheckSinglePodReadWrite(f.Namespace.Name, pvc.Name, false, []string{})
+
+			volumeName := pvcJig.GetVolumeNameFromPVC(pvc.GetName(), f.Namespace.Name)
+
+			hasOkeSystemTag, err := f.CheckFSSystemTagByVolumeName(volumeName, setupF.Compartment1, setupF.AdLocation)
+
+			if err != nil {
+				framework.Failf("Failed to check system tag: %v", err)
+			}
+
+			if setupF.AddOkeSystemTags && hasOkeSystemTag && setupF.CustomDriverHandle == "" {
+				framework.Failf("the resource %s is expected not to have oke system tags", volumeName)
+			}
+
 			//adding pod deletion check as resources are being created by using workload identity resource principal
-			err := pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod)
+			err = pvcJig.DeleteAndAwaitPod(f.Namespace.Name, writePod)
 			if err != nil {
 				framework.Failf("Error deleting pod: %v", err)
 			}
@@ -517,7 +590,7 @@ var _ = Describe("Dynamic FSS deletion test", func() {
 			volumeName := pvc.Spec.VolumeName
 			framework.Logf("Pod name : %s", podName)
 			framework.Logf("Persistent volume name : %s", volumeName)
-			fsId, err := f.GetFSIdByDisplayName(context.Background(), f.CloudProviderConfig.CompartmentID, setupF.AdLocation, volumeName)
+			fsId, err := f.GetFSSIdByDisplayName(context.Background(), f.CloudProviderConfig.CompartmentID, setupF.AdLocation, volumeName)
 			if err != nil {
 				framework.Failf("Failed to get FS Id by display name: %s", err.Error())
 			}
@@ -558,7 +631,7 @@ var _ = Describe("Dynamic FSS deletion test", func() {
 			volumeName := pvc.Spec.VolumeName
 			framework.Logf("Pod name : %s", podName)
 			framework.Logf("Persistent volume name : %s", volumeName)
-			fsId, err := f.GetFSIdByDisplayName(context.Background(), f.CloudProviderConfig.CompartmentID, setupF.AdLocation, volumeName)
+			fsId, err := f.GetFSSIdByDisplayName(context.Background(), f.CloudProviderConfig.CompartmentID, setupF.AdLocation, volumeName)
 			if err != nil {
 				framework.Failf("Failed to get FS Id by display name: %s", err.Error())
 			}
@@ -598,7 +671,7 @@ var _ = Describe("Dynamic FSS deletion test", func() {
 			volumeName := pvc.Spec.VolumeName
 			framework.Logf("Pod name : %s", podName)
 			framework.Logf("Persistent volume name : %s", volumeName)
-			fsId, err := f.GetFSIdByDisplayName(context.Background(), setupF.MntTargetCompartmentOcid, setupF.AdLocation, volumeName)
+			fsId, err := f.GetFSSIdByDisplayName(context.Background(), setupF.MntTargetCompartmentOcid, setupF.AdLocation, volumeName)
 			if err != nil {
 				framework.Failf("Failed to get FS Id by display name: %s", err.Error())
 			}
@@ -639,7 +712,7 @@ var _ = Describe("Dynamic FSS deletion test", func() {
 			volumeName := pvc.Spec.VolumeName
 			framework.Logf("Pod name : %s", podName)
 			framework.Logf("Persistent volume name : %s", volumeName)
-			fsId, err := f.GetFSIdByDisplayName(context.Background(), setupF.MntTargetCompartmentOcid, setupF.AdLocation, volumeName)
+			fsId, err := f.GetFSSIdByDisplayName(context.Background(), setupF.MntTargetCompartmentOcid, setupF.AdLocation, volumeName)
 			if err != nil {
 				framework.Failf("Failed to get FS Id by display name: %s", err.Error())
 			}

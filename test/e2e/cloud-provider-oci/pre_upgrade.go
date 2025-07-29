@@ -2,11 +2,10 @@ package e2e
 
 import (
 	. "github.com/onsi/ginkgo"
-
 	"github.com/oracle/oci-cloud-controller-manager/pkg/volume/provisioner/block"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/volume/provisioner/core"
 	"github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
-
+	"github.com/oracle/oci-go-sdk/v65/containerengine"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -62,13 +61,34 @@ var _ = Describe("Pre Upgrade testing", func() {
 		})
 	})
 
-	Context("[pre-upgrade]", func() {
+	Context("[pre-upgrade][system-tag]", func() {
 		It("Basic Create Statefulset with PVC and POD for CSI-FSS", func() {
-			scParameters := map[string]string{"availabilityDomain": "", "mountTargetOcid": setupF.MntTargetOcid}
+			scParameters := map[string]string{"availabilityDomain": setupF.AdLocation, "mountTargetOcid": setupF.MntTargetOcid, "exportOptions": defaultExportOptionsJsonString}
 			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-dyn-preupgrade-test")
 			scName := f.CreateStorageClassOrFail(framework.ClassFssDynamic, setupF.FSSProvisionerName, scParameters, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
 			serviceName := pvcJig.CreateService(setupF.UpgradeTestingNamespace)
 			pvcJig.CreateAndAwaitStatefulSetDynamicFss("csi-app-fss-dyn", serviceName, scName, framework.MinVolumeBlock, replicas)
+		})
+		It("Create PVC & POD for CSI-FSS using workload Identity Resource Principal", func() {
+			if f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+				Skip("Skipping Workload Identity test because the cluster is not an OKE ENHANCED_CLUSTER")
+			}
+			if setupF.CustomDriverHandle != "" {
+				Skip("Skipping Workload Identity test because tests being run using open source image")
+			}
+
+			pvcJig := framework.NewPVCTestJig(f.ClientSet, "csi-fss-dyn-e2e-preupgrade-wl-test")
+			saName := pvcJig.CreateServiceAccountOrFail(framework.ClassFssDynamic, "sa")
+			pvcJig.CreateSecret("fss-secret", saName.Name, framework.ClassFssDynamic)
+
+			scParameters := map[string]string{"availabilityDomain": setupF.AdLocation, "mountTargetOcid": setupF.MntTargetOcid, "csi.storage.k8s.io/provisioner-secret-name": "fss-secret", "csi.storage.k8s.io/provisioner-secret-namespace": framework.ClassFssDynamic, "exportOptions": defaultExportOptionsJsonString}
+
+			scName := f.CreateStorageClassOrFail(framework.ClassFssDynamic+"wl", setupF.FSSProvisionerName, scParameters, pvcJig.Labels, "WaitForFirstConsumer", false, "Delete", nil)
+
+			f.StorageClasses = append(f.StorageClasses, scName)
+			serviceName := pvcJig.CreateService(setupF.UpgradeTestingNamespace)
+
+			pvcJig.CreateAndAwaitStatefulSetDynamicFss("csi-app-fss-dyn-wl", serviceName, scName, framework.MinVolumeBlock, replicas)
 		})
 	})
 })

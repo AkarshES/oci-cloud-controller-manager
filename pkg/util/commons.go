@@ -147,3 +147,13 @@ func IsCommonTagPresent(initialTags *config.InitialTags) bool {
 
 	return initialTags != nil && initialTags.Common != nil
 }
+
+// Check for workload identity in PV.
+func StorageClassWorkloadIdentityCheck(parameters map[string]string, secretName string, namespace string) bool {
+	if parameters != nil {
+		secret, secretExists := parameters[secretName]
+		nameSpace, nameSpaceExists := parameters[namespace]
+		return secretExists && nameSpaceExists && secret != "" && nameSpace != ""
+	}
+	return false
+}

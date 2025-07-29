@@ -39,7 +39,7 @@ const (
 	CloneAvailableTimeout      = 10 * time.Minute
 
 	// Expected number of statefulsets to be created during upgrade testing.
-	ExpectedStatefulSets = 6
+	ExpectedStatefulSets = 7
 
 	DefaultClusterKubeconfig = "/tmp/clusterkubeconfig"
 	DefaultCloudConfig       = "/tmp/cloudconfig"

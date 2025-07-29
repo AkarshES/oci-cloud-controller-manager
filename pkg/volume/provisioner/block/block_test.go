@@ -147,6 +147,13 @@ func (c *MockFileStorageClient) CreateFileSystem(ctx context.Context, details fi
 	return &filestorage.FileSystem{Id: &fileSystemID}, nil
 }
 
+func (MockFileStorageClient) UpdateFileSystem(ctx context.Context, details filestorage.UpdateFileSystemDetails, id string) (*filestorage.FileSystem, error) {
+	return &filestorage.FileSystem{
+		Id:             &id,
+		LifecycleState: filestorage.FileSystemLifecycleStateActive,
+	}, nil
+}
+
 // GetFileSystem mocks the FileStorage GetFileSystem implementation.
 func (c *MockFileStorageClient) GetFileSystem(ctx context.Context, id string) (*filestorage.FileSystem, error) {
 	return &filestorage.FileSystem{

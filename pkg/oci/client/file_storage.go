@@ -41,6 +41,7 @@ type FileStorageInterface interface {
 	AwaitFileSystemActive(ctx context.Context, logger *zap.SugaredLogger, id string) (*fss.FileSystem, error)
 	CreateFileSystem(ctx context.Context, details fss.CreateFileSystemDetails) (*fss.FileSystem, error)
 	DeleteFileSystem(ctx context.Context, id string) error
+	UpdateFileSystem(ctx context.Context, details fss.UpdateFileSystemDetails, id string) (*fss.FileSystem, error)
 
 	CreateExport(ctx context.Context, details fss.CreateExportDetails) (*fss.Export, error)
 	FindExport(ctx context.Context, fsID, path, exportSetID string) (*fss.ExportSummary, error)
@@ -69,6 +70,32 @@ func (c *client) CreateFileSystem(ctx context.Context, details fss.CreateFileSys
 		c.logger.With("service", "fss", "verb", createVerb, "resource", fileSystemResource).
 			With("volumeName", *(details.DisplayName), "OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
 			Info("OPC Request ID recorded for CreateFileSystem call.")
+	}
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return &resp.FileSystem, nil
+}
+
+func (c *client) UpdateFileSystem(ctx context.Context, details fss.UpdateFileSystemDetails, id string) (*fss.FileSystem, error) {
+	if !c.rateLimiter.Writer.TryAccept() {
+		return nil, RateLimitError(false, "UpdateFileSystem")
+	}
+
+	resp, err := c.filestorage.UpdateFileSystem(ctx, fss.UpdateFileSystemRequest{
+		UpdateFileSystemDetails: details,
+		RequestMetadata:         c.requestMetadata,
+		FileSystemId:            &id,
+	})
+
+	incRequestCounter(err, updateVerb, fileSystemResource)
+
+	if resp.OpcRequestId != nil {
+		c.logger.With("service", "fss", "verb", updateVerb, "resource", fileSystemResource).
+			With("volumeName", *(details.DisplayName), "OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
+			Info("OPC Request ID recorded for UpdateFileSystem call.")
 	}
 
 	if err != nil {

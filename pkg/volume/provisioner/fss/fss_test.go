@@ -166,6 +166,13 @@ func (c *MockFileStorageClient) GetFileSystem(ctx context.Context, id string) (*
 	}, nil
 }
 
+func (MockFileStorageClient) UpdateFileSystem(ctx context.Context, details filestorage.UpdateFileSystemDetails, id string) (*filestorage.FileSystem, error) {
+	return &filestorage.FileSystem{
+		Id:             &id,
+		LifecycleState: filestorage.FileSystemLifecycleStateActive,
+	}, nil
+}
+
 func (c *MockFileStorageClient) AwaitFileSystemActive(ctx context.Context, logger *zap.SugaredLogger, id string) (*filestorage.FileSystem, error) {
 	return &filestorage.FileSystem{
 		Id:             &id,

@@ -1392,6 +1392,22 @@ func (MockFileStorageClient) DeleteFileSystem(ctx context.Context, id string) er
 	return nil
 }
 
+var updateFileSystemErrors = map[string]error{
+	"work-request-fails": errors.New("UpdateFileSystem request failed: internal server error"),
+	"api-returns-too-many-requests": mockServiceError{
+		StatusCode: http.StatusTooManyRequests,
+		Code:       client.HTTP429TooManyRequestsCode,
+		Message:    "Too many requests",
+	},
+}
+
+func (MockFileStorageClient) UpdateFileSystem(ctx context.Context, details filestorage.UpdateFileSystemDetails, id string) (*filestorage.FileSystem, error) {
+	if err, ok := updateFileSystemErrors[id]; ok {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (MockFileStorageClient) CreateExport(ctx context.Context, details filestorage.CreateExportDetails) (*filestorage.Export, error) {
 	return nil, nil
 }

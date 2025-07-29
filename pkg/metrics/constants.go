@@ -49,6 +49,8 @@ const (
 	FSSProvision = "FSS_PROVISION"
 	// FSSDelete is the OCI metric suffix for FSS delete
 	FSSDelete = "FSS_DELETE"
+	// FSSUpdate is the OCI metric suffix for FSS update
+	FSSUpdate = "FSS_UPDATE"
 
 	// MTProvision is the OCI metric suffix for Mount Target provision
 	MTProvision = "MT_PROVISION"
