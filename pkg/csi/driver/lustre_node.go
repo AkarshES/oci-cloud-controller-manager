@@ -156,6 +156,7 @@ func (d LustreNodeDriver) loadCSIConfig() {
 
 
 func (d LustreNodeDriver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+
 	if req.VolumeId == "" {
 		return nil, status.Error(codes.InvalidArgument, "Volume ID must be provided")
 	}
@@ -250,7 +251,10 @@ func (d LustreNodeDriver) NodePublishVolume(ctx context.Context, req *csi.NodePu
 	logger := d.logger.With("volumeID", req.VolumeId)
 	logger.Debugf("volume context: %v", req.VolumeContext)
 
-	_, lnetLabel := csi_util.ValidateLustreVolumeId(req.VolumeId)
+	isValidVolumeId, lnetLabel := csi_util.ValidateLustreVolumeId(req.VolumeId)
+	if !isValidVolumeId {
+		return nil, status.Error(codes.InvalidArgument, "Invalid Volume Handle provided.")
+	}
 
 	//Lnet Setup
 	if setupLnet, ok := req.GetVolumeContext()[SetupLnet]; ok && setupLnet == "true" {
@@ -321,6 +325,7 @@ func (d LustreNodeDriver) NodePublishVolume(ctx context.Context, req *csi.NodePu
 }
 
 func (d LustreNodeDriver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+
 	if req.VolumeId == "" {
 		return nil, status.Error(codes.InvalidArgument, "NodeUnpublishVolume: Volume ID must be provided")
 	}
