@@ -18,6 +18,8 @@ func TestValidateLustreVolumeId(t *testing.T) {
 	}{
 		// Valid cases
 		{"192.168.227.11@tcp1:192.168.227.12@tcp1:/demo", true, "tcp1"},
+		{"192.168.227.11@tcp1 & rm -rf /:192.168.227.12@tcp1:/demo", false, ""},
+		{"192.168.227.11@tcp1:192.168.227.12@tcp1:/demo & rm -rf", false, "tcp1"},
 		{"192.168.227.11@tcp1:/demo", true, "tcp1"},
 		// Invalid cases
 		{"192.168.227.11@tcp1:192.168.227.12@tcp1", false, "tcp1"},      // No fsname provided
