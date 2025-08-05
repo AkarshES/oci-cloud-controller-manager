@@ -242,6 +242,8 @@
     - "oke"
     - "sheepy"
     - "stencil"
+    - "cks-crb-ft-3061236"
+    - "cks-crb-ft-template"
 {% endblock LABELS %}
 
 #
@@ -366,10 +368,10 @@
     export TENANCY_ID=<tenancy-id-from-above-runbook>
     export REGION=<region>
 
-    sh script.sh -t $TENANCY_ID -i "v1.27-bff7091ad1d-51" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.28-eeb0f8e9df3-57" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.29-0a03da73b3b-50" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.30-244b8933d7e-43" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.30-faf8d3457bc-116" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.31-c009ab5e5a7-76" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.32-59689274696-43" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.33-f7750ce0b4d-17" -r $REGION
     {code}
 
     *Example Output*
@@ -492,16 +494,16 @@
 
     For each of the dashboard {*}change the realm and region to current one being executed{*}, after the deployment is complete and successful in shepherd as applicable.
     ||Order||Grafana Dashboard||What to monitor ?||
-    |1|[OKE Data Plane Canary|https://grafana.oci.oraclecorp.com/d/420420/oke-canary-metrics-data-plane-canary?orgId=1&refresh=1m&from=now-1h&to=now&var-realm=oc1&var-region=ap-mumbai-1&var-fleet=okecanaryla.data-plane-oke-canary-prod-v2pub&var-fleet=okecanaryla.data-plane-oke-canary-prod-v2pub-latest]
-    [OKE Control Plane Canary|https://grafana.oci.oraclecorp.com/d/OpQiFB6Zz/oke-cluster-create-delete-canary?orgId=1&refresh=1m&from=now-3h&to=now&var-realm=oc1&var-region=us-ashburn-1&var-fleet=okecanaryla.control-plane-oke-canary-prod-v2pub]|*Validate that canary does not fail in the grafana, or canary alarms do not fire.
-    * Refer screenshots in the bottom of this section if needed.|
+    |1|[OKE Data Plane Canary|https://grafana.oci.oraclecorp.com/d/420420/oke-canary-metrics-data-plane-canary]
+    [OKE Control Plane Canary|https://grafana.oci.oraclecorp.com/d/OpQiFB6Zz/oke-cluster-create-delete-canary?]| * Validate that canary does not fail in the grafana, or canary alarms do not fire. * Refer screenshots in the bottom of this section if needed.|
     |2|[Cloud Provider Oci Monitoring|https://grafana.oci.oraclecorp.com/d/eaDdAjE7k/cpo-monitoring-calls-made-via-kmi?panelId=28&fullscreen&orgId=1&refresh=1m&from=now-3h&to=now-1m]| * This dashboard indicates the health of the CCM container running on the KMIs. Make sure that there is no steady increase in the restart count of CCM containers|
     |3|[CSI Block Volume Regional Monitor Grafana|https://grafana.oci.oraclecorp.com/d/RoO1I0w7k/cpo-monitoring-volumes?orgId=1&from=now-12h&to=now-1m&var-realm=oc1&var-granularity=30m&var-MQLRegion=us-ashburn-1&var-fleet=prod-oke-clusters-IAD-dataplane&var-volume_ocid=&refresh=15m]
     [CSI FSS Regional Monitor|https://grafana.oci.oraclecorp.com/d/u6e8QL9Vz/cpo-monitoring-file-storage-service?orgId=1&refresh=15m&from=now-24h&to=now-1m&var-realm=oc1&var-granularity=10m&var-MQLRegion=us-ashburn-1&var-fleet=prod-oke-clusters-IAD-dataplane&var-volume_ocid=&var-mt_ocid=&var-fs_ocid=&var-exp_ocid=]|*Monitor Spike in 5XX errors for CSI Block Volume and FSS operations in grafana panels if there is significant spike please proceed to rollback.|
-    |4|[MP Reconcile Cluster State Latency|https://grafana.oci.oraclecorp.com/d/oG0GFvpGk/oke-management-plane-worker-operations?panelId=411&fullscreen&orgId=1&refresh=1m&var-realm=oc1&var-region=us-ashburn-1&var-granularity=5m&var-project=kubernetes&var-hostmetrics_project=hostmetrics&var-hostmetrics_fleet=oke-mp-worker-prod&var-worker_fleet=oke-wfworker-cell0&var-hostmetrics_hosts=All&var-ad=All&var-envSetup=prod-cell0&var-wf_tenant_prefix=oke-mp-cell0&var-wf_cp_tenant_prefix=oke-cp-prod&var-upgrade_application_name=oke-release-kmi-integ&var-hostmetrics_cell=cell0&var-tenancy_name=&var-odo_updater_metrics_prefix=ociokeinteg.oke-mp-worker-integ&var-odo_app_metrics_prefix=ociokeinteg.oke-integ-mp-worker-integ]| * Monitor the alarm queue for the MP reconcile cluster state latency alarms and that the alarm does not fire.|
+    |4|[MP Workflows|https://grafana.oci.oraclecorp.com/d/oG0GFvpGk/oke-management-plane-worker-operations?viewPanel=501&orgId=1&from=now-7d&to=now]| * Monitor the alarm queue for the MP reconcile/workflow latency alarms and that the alarm does not fire.|
     |5|[SK8s Loadbalancer Canary|https://devops.oci.oraclecorp.com/canaries/ap-mumbai-1/ske/ske-canary-production]| * Capture 3 consecutive canary success runs & add the screenshot to the comments in the CM.|
     |6|[OMK Canary grafana|https://grafana.oci.oraclecorp.com/d/DxkloHWIz/omk-canary?orgId=1&refresh=1m&var-realm=oc16&var-region=All&var-fleet=omk-canary&var-Environment=production&var-project=omk-%7B%7B$Environment%7D%7D&var-CanaryServiceAD=us-westjordan-1-ad-1&from=now-2d&to=now]
     [OMK Canary devops|https://devops.oci.oraclecorp.com/canaries/mx-queretaro-1/omk/omk-dp-canary-production]|Capture 2 consecutive canary success runs & add the screenshot to the comments in the CM.|
+    |7|[CPO Version tracker|https://grafana.oci.oraclecorp.com/d/tUVGlAISz/oke-cpo-version-tracker]|Watch for the CPO versions to get updated in the region|
     h4. OC5 related links for ONSR validation
     * Grafana Dashboard name : OKE - Canary Metrics - T2-MQL
     * [https://grafana.us-tacoma-1.oci.oraclerealm5.com/d/ZuYzBEZMk/oke-canary-metrics-t2-mql?orgId=1&refresh=1m&var-realm=oc5&var-region=us-tacoma-1&var-fleet=okecanaryla.control-plane-oke-canary-prod-v1h&var-fleet=okecanaryla.control-plane-oke-canary-prod-v2pub&var-fleet=okecanaryla.data-plane-oke-canary-prod-v1h&var-fleet=okecanaryla.data-plane-oke-canary-prod-v1h-latest&var-fleet=okecanaryla.data-plane-oke-canary-prod-v2pub&var-fleet=okecanaryla.data-plane-oke-canary-prod-v2pub-latest&from=now-6h&to=now]

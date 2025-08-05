@@ -10,7 +10,7 @@ infra   = meta_variables.get('infra')
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
 
-config_id="985d26c8-0d3d-4001-8f9c-5efffe9d8bb3"
+config_id="cb49930d-4bf9-4ef7-b111-3658af9b111e"
 
 app_release_template = {
     "alias": "image-push",
@@ -63,32 +63,32 @@ if app:
             {
                 "resolver_type": "static",
                 "artifacts": {
-                    "oke-public-cloud-provider-oci__v1_DOT_29-0911461af79-92",
-                    "oke-public-cloud-provider-oci__v1_DOT_30-a67f7b269a7-85",
-                    "oke-public-cloud-provider-oci__v1_DOT_31-c7e5bd92e29-43",
-                    "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11",
+                    "oke-public-cloud-provider-oci__v1_DOT_30-faf8d3457bc-116",
+                    "oke-public-cloud-provider-oci__v1_DOT_31-c009ab5e5a7-76",
+                    "oke-public-cloud-provider-oci__v1_DOT_32-59689274696-43",
+                    "oke-public-cloud-provider-oci__v1_DOT_33-f7750ce0b4d-17",
                     "release-validator-ccm-csi"
                 },
                 "resolver_params": {
                     "static_versions": {
-                        "oke-public-cloud-provider-oci__v1_DOT_29-0911461af79-92": {
-                            "version": "v1.29-0911461af79-92",
+                        "oke-public-cloud-provider-oci__v1_DOT_30-faf8d3457bc-116": {
+                            "version": "v1.30-faf8d3457bc-116",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_30-a67f7b269a7-85": {
-                            "version": "v1.30-a67f7b269a7-85",
+                        "oke-public-cloud-provider-oci__v1_DOT_31-c009ab5e5a7-76": {
+                            "version": "v1.31-c009ab5e5a7-76",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_31-c7e5bd92e29-43": {
-                            "version": "v1.31-c7e5bd92e29-43",
+                        "oke-public-cloud-provider-oci__v1_DOT_32-59689274696-43": {
+                            "version": "v1.32-59689274696-43",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_32-c01d1d4113e-11": {
-                            "version": "v1.32-c01d1d4113e-11",
+                        "oke-public-cloud-provider-oci__v1_DOT_33-f7750ce0b4d-17": {
+                            "version": "v1.33-f7750ce0b4d-17",
                             "summary": "CPO image to be pushed for release"
                         },
                         "release-validator-ccm-csi": {
-                            "version": "42adb2ce10d_25",
+                            "version": "0d98af35cf1_105",
                             "summary": "Release validator POP image to be pushed for release"
                         },
                     }
