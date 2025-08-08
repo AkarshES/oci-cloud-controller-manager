@@ -23,6 +23,7 @@ import (
 
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	v1 "k8s.io/api/core/v1"
 	v1discovery "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -2199,4 +2200,44 @@ func (s *mockEndpointSliceNamespaceLister) Get(name string) (ret *v1discovery.En
 		return es, nil
 	}
 	return nil, errors.New("get endpointSlice error")
+}
+
+func TestGetLoggerWithNodeDetails(t *testing.T) {
+	testCases := []struct {
+		name     string
+		nodeName string
+	}{
+		{
+			name:     "Instance with Provider ID",
+			nodeName: "instance1",
+		},
+	}
+
+	core, recorded := observer.New(zap.InfoLevel)
+	sugar := zap.New(core).Sugar()
+
+	cp := &CloudProvider{
+		NodeLister: &mockNodeLister{},
+		logger:     sugar,
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			logger, _ := cp.getLoggerWithNodeDetails(types.NodeName(tt.nodeName))
+			// adding a test log to record logger
+			logger.Info("test log")
+			logs := recorded.All()
+			if len(logs) != 1 {
+				t.Errorf("got logs len %d, want 1", len(logs))
+			}
+			fields := logs[0].ContextMap()
+			value, exists := fields["ProviderID"]
+			if !exists {
+				t.Errorf("Expected logger with field ProviderID")
+			}
+			if value != nodeList[tt.nodeName].Spec.ProviderID {
+				t.Errorf("Expected logger with field ProviderID")
+			}
+		})
+	}
 }
