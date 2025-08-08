@@ -17,6 +17,7 @@ package oci
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"net"
 	"strings"
 
@@ -212,7 +213,12 @@ func (cp *CloudProvider) getNodeIpFamily(instanceId string) ([]string, error) {
 // returns the address of the calling instance. We should do a rename to
 // make this clearer.
 func (cp *CloudProvider) NodeAddresses(ctx context.Context, name types.NodeName) ([]api.NodeAddress, error) {
-	cp.logger.With("nodeName", name).Debug("Getting node addresses")
+	logger, isInfoLog := cp.getLoggerWithNodeDetails(name)
+	if isInfoLog {
+		logger.Info("Getting node addresses")
+	} else {
+		logger.Debug("Getting node addresses")
+	}
 
 	nodeName := mapNodeNameToInstanceName(name)
 	compartmentID, err := cp.getCompartmentIDByNodeName(nodeName)
@@ -248,7 +254,12 @@ func (cp *CloudProvider) NodeAddressesByProviderID(ctx context.Context, provider
 
 // InstanceID returns the cloud provider ID of the node with the specified NodeName.
 func (cp *CloudProvider) InstanceID(ctx context.Context, nodeName types.NodeName) (string, error) {
-	cp.logger.With("nodeName", nodeName).Debug("Getting instance id for node name")
+	logger, isInfoLog := cp.getLoggerWithNodeDetails(nodeName)
+	if isInfoLog {
+		logger.Info("Getting instance id for node name")
+	} else {
+		logger.Debug("Getting instance id for node name")
+	}
 
 	name := mapNodeNameToInstanceName(nodeName)
 	compartmentID, err := cp.getCompartmentIDByNodeName(name)
@@ -267,7 +278,13 @@ func (cp *CloudProvider) InstanceID(ctx context.Context, nodeName types.NodeName
 
 // InstanceType returns the type of the specified instance.
 func (cp *CloudProvider) InstanceType(ctx context.Context, name types.NodeName) (string, error) {
-	cp.logger.With("nodeName", name).Debug("Getting instance type by node name")
+	logger, isInfoLog := cp.getLoggerWithNodeDetails(name)
+	if isInfoLog {
+		logger.Info("Getting instance type by node name")
+	} else {
+		logger.Debug("Getting instance type by node name")
+	}
+
 	compartmentID, err := cp.getCompartmentIDByNodeName(mapNodeNameToInstanceName(name))
 	if err != nil {
 		return "", errors.Wrap(err, "error getting CompartmentID from Node Name")
@@ -476,4 +493,18 @@ func (cp *CloudProvider) getNodeObjectAddressById(nodeId string) ([]api.NodeAddr
 		}
 	}
 	return []api.NodeAddress{}, nil
+}
+
+func (cp *CloudProvider) getLoggerWithNodeDetails(name types.NodeName) (*zap.SugaredLogger, bool) {
+	shouldLogWithProviderId := false
+	logger := cp.logger.With("nodeName", name)
+	node, err := cp.NodeLister.Get(string(name))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "unable to get node details for node"))
+		return logger, shouldLogWithProviderId
+	}
+	if node.Spec.ProviderID == "" {
+		shouldLogWithProviderId = true
+	}
+	return logger.With("ProviderID", fmt.Sprintf("%s", node.Spec.ProviderID)), shouldLogWithProviderId
 }
