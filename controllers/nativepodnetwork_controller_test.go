@@ -504,23 +504,32 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 		existingIpsByVnic     map[string]*vnicSecondaryAddresses
 		ipFamilies            []string
 		allocatedSecondaryIps IpAddressCountByVersion
-		maxPodCount           int
+		npnCR                 v1beta1.NativePodNetwork
+		gvaNics               []GvaNics
 		expected              []VnicIPAllocations
 		err                   error
 	}{
 		{
-			name:                  "base case",
-			existingIpsByVnic:     map[string]*vnicSecondaryAddresses{},
-			ipFamilies:            []string{IPv4},
-			maxPodCount:           0,
+			name:              "base case",
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{},
+			ipFamilies:        []string{IPv4},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(0),
+				},
+			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected:              []VnicIPAllocations{},
 			err:                   nil,
 		},
 		{
-			name:        "one vnic with one additional IP required",
-			ipFamilies:  []string{IPv4},
-			maxPodCount: 2,
+			name:       "one vnic with one additional IP required",
+			ipFamilies: []string{IPv4},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(2),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{
@@ -528,13 +537,23 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					}},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 1, V6: 0},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 0}}},
-			err:                   nil,
+			expected: []VnicIPAllocations{
+				{
+					"one",
+					[]string{IPv4},
+					IpAddressCountByVersion{V4: 2, V6: 0},
+				},
+			},
+			err: nil,
 		},
 		{
-			name:        "one vnic with space for required IPs",
-			ipFamilies:  []string{IPv4},
-			maxPodCount: 31,
+			name:       "one vnic with space for required IPs",
+			ipFamilies: []string{IPv4},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(31),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{
@@ -546,14 +565,22 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 0},
 			expected: []VnicIPAllocations{
-				{"one", IpAddressCountByVersion{V4: 14, V6: 0}},
+				{
+					"one",
+					[]string{IPv4},
+					IpAddressCountByVersion{V4: 14, V6: 0},
+				},
 			},
 			err: nil,
 		},
 		{
-			name:        "one vnic without space for required IPs",
-			ipFamilies:  []string{IPv4},
-			maxPodCount: 31,
+			name:       "one vnic without space for required IPs",
+			ipFamilies: []string{IPv4},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(31),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{
@@ -568,12 +595,16 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 19, V6: 0},
 			expected:              nil,
-			err:                   errors.New("failed to allocate the required number of IPs with existing VNICs"),
+			err:                   errors.New("failed to allocate required number of IPs with existing VNICs"),
 		},
 		{
-			name:        "one vnic for required IPv4 and IPv6",
-			ipFamilies:  []string{IPv4, IPv6},
-			maxPodCount: 31,
+			name:       "one vnic for required IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(31),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{
@@ -589,13 +620,23 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 18, V6: 18},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 14, V6: 14}}},
-			err:                   nil,
+			expected: []VnicIPAllocations{
+				{
+					"one",
+					[]string{IPv4, IPv6},
+					IpAddressCountByVersion{V4: 14, V6: 14},
+				},
+			},
+			err: nil,
 		},
 		{
-			name:        "two vnic for required IPv4 and IPv6",
-			ipFamilies:  []string{IPv4, IPv6},
-			maxPodCount: 62,
+			name:       "two vnic for required IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(62),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{
@@ -627,13 +668,28 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 48, V6: 48},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 2, V6: 2}}, {"two", IpAddressCountByVersion{V4: 14, V6: 14}}},
-			err:                   nil,
+			expected: []VnicIPAllocations{
+				{
+					"one",
+					[]string{IPv4},
+					IpAddressCountByVersion{V4: 2, V6: 2},
+				},
+				{
+					"two",
+					[]string{IPv4, IPv6},
+					IpAddressCountByVersion{V4: 14, V6: 14},
+				},
+			},
+			err: nil,
 		},
 		{
-			name:        "two vnic for required IPv4 and IPv6",
-			ipFamilies:  []string{IPv4, IPv6},
-			maxPodCount: 34,
+			name:       "two vnic for required IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(34),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{},
@@ -645,26 +701,45 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 32, V6: 32}}, {"two", IpAddressCountByVersion{V4: 4, V6: 4}}},
-			err:                   nil,
+			expected: []VnicIPAllocations{
+				{
+					"one",
+					[]string{IPv4, IPv6},
+					IpAddressCountByVersion{V4: 32, V6: 32},
+				},
+				{
+					"two",
+					[]string{IPv4, IPv6},
+					IpAddressCountByVersion{V4: 4, V6: 4},
+				},
+			},
+			err: nil,
 		},
 		{
-			name:        "one vnic",
-			ipFamilies:  []string{IPv4},
-			maxPodCount: 31,
+			name:       "one vnic",
+			ipFamilies: []string{IPv4},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(31),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
-			expected:              []VnicIPAllocations{{"one", IpAddressCountByVersion{V4: 32, V6: 0}}},
+			expected:              []VnicIPAllocations{{"one", []string{IPv4}, IpAddressCountByVersion{V4: 32, V6: 0}}},
 			err:                   nil,
 		},
 		{
-			name:        "two vnic for required IPv4 and IPv6",
-			ipFamilies:  []string{IPv4, IPv6},
-			maxPodCount: 64,
+			name:       "two vnic for required IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(64),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{},
@@ -681,16 +756,20 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
-				{"one", IpAddressCountByVersion{V4: 32, V6: 32}},
-				{"two", IpAddressCountByVersion{V4: 32, V6: 32}},
-				{"three", IpAddressCountByVersion{V4: 3, V6: 3}},
+				{"one", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"two", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"three", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 3, V6: 3}},
 			},
 			err: nil,
 		},
 		{
-			name:        "single vnic for required IPv4 and IPv6",
-			ipFamilies:  []string{IPv4, IPv6},
-			maxPodCount: 32,
+			name:       "single vnic for required IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(32),
+				},
+			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"one": {
 					V4: []core.PrivateIp{},
@@ -703,15 +782,296 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
-				{"one", IpAddressCountByVersion{V4: 32, V6: 32}},
-				{"two", IpAddressCountByVersion{V4: 2, V6: 2}},
+				{"one", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"two", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 2, V6: 2}},
+			},
+			err: nil,
+		},
+		{
+			name:       "Secondary vnics present on spec",
+			ipFamilies: []string{IPv4, IPv6},
+			gvaNics: []GvaNics{
+				{
+					vnicId: common.String("green"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"green"},
+							IpCount:              31,
+							IpFamilies:           []string{IPv4, IPv6},
+						},
+					},
+				},
+			},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(32),
+					SecondaryVnics: []v1beta1.SecondaryVnic{
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								DisplayName: "",
+								FreeformTags: map[string]string{
+									"applicationResource": "green",
+									"ip-count":            "31",
+								},
+							},
+						},
+					},
+				},
+			},
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"green": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+					},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"green", []string{IPv4, IPv6}, IpAddressCountByVersion{
+					V4: 14,
+					V6: 14,
+				}},
+			},
+			err: nil,
+		},
+		{
+			name:       "Secondary vnic present with IPv4 and IPv6",
+			ipFamilies: []string{IPv4, IPv6},
+			gvaNics: []GvaNics{
+				{
+					vnicId: common.String("app-a"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-a"},
+							IpCount:              31,
+							IpFamilies:           []string{IPv4, IPv6},
+						},
+					},
+				},
+			},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(32),
+					SecondaryVnics: []v1beta1.SecondaryVnic{
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-a"},
+								IpCount:              31,
+							},
+						},
+					},
+				},
+			},
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"app-a": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
+			},
+			err: nil,
+		},
+		{
+			name:       "Secondary vnic with 14 ip count",
+			ipFamilies: []string{IPv4, IPv6},
+			gvaNics: []GvaNics{
+				{
+					vnicId: common.String("app-a"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-a"},
+							IpCount:              14,
+							IpFamilies:           []string{IPv4, IPv6},
+						},
+					},
+				},
+			},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(31),
+					SecondaryVnics: []v1beta1.SecondaryVnic{
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-a"},
+								IpCount:              14,
+							},
+						},
+					},
+				},
+			},
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"app-a": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 15, V6: 15}},
+			},
+			err: nil,
+		},
+		{
+			name:       "2 Secondary vnic with IPv4 and IPv6 and different ip count",
+			ipFamilies: []string{IPv4, IPv6},
+			gvaNics: []GvaNics{
+				{
+					vnicId: common.String("app-a"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-a"},
+							IpCount:              20,
+							IpFamilies:           []string{IPv4, IPv6},
+						},
+					},
+				},
+				{
+					vnicId: common.String("app-b"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-b"},
+							IpCount:              15,
+							IpFamilies:           []string{IPv4, IPv6},
+						},
+					},
+				},
+			},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(32),
+					SecondaryVnics: []v1beta1.SecondaryVnic{
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-a"},
+								IpCount:              20,
+							},
+						},
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-b"},
+								IpCount:              15,
+							},
+						},
+					},
+				},
+			},
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"app-a": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+				"app-b": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 21, V6: 21}},
+				{"app-b", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 16, V6: 16}},
+			},
+			err: nil,
+		},
+		{
+			name:       "3 Secondary vnic with IPv4 partially allocated ips",
+			ipFamilies: []string{IPv4},
+			gvaNics: []GvaNics{
+				{
+					vnicId: common.String("app-a"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-a"},
+							IpCount:              20,
+							IpFamilies:           []string{IPv4},
+						},
+					},
+				},
+				{
+					vnicId: common.String("app-b"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-b"},
+							IpCount:              15,
+							IpFamilies:           []string{IPv4},
+						},
+					},
+				},
+				{
+					vnicId: common.String("app-c"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-c"},
+							IpCount:              9,
+							IpFamilies:           []string{IPv4},
+						},
+					},
+				},
+			},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(32),
+					SecondaryVnics: []v1beta1.SecondaryVnic{
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-a"},
+								IpCount:              20,
+							},
+						},
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-b"},
+								IpCount:              15,
+							},
+						},
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-c"},
+								IpCount:              9,
+							},
+						},
+					},
+				},
+			},
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"app-a": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+					},
+					V6: []core.Ipv6{},
+				},
+				"app-b": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+				"app-c": {
+					V4: []core.PrivateIp{},
+					V6: []core.Ipv6{},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"app-a", []string{IPv4}, IpAddressCountByVersion{V4: 1, V6: 0}},
+				{"app-b", []string{IPv4}, IpAddressCountByVersion{V4: 16, V6: 0}},
+				{"app-c", []string{IPv4}, IpAddressCountByVersion{V4: 10, V6: 0}},
 			},
 			err: nil,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			allocation, err := getAdditionalSecondaryIPsNeededPerVNIC(tc.existingIpsByVnic, tc.maxPodCount, tc.allocatedSecondaryIps, tc.ipFamilies)
+			allocation, err := getAdditionalSecondaryIPsNeededPerVNIC(tc.existingIpsByVnic, &tc.npnCR, tc.allocatedSecondaryIps, tc.ipFamilies, tc.gvaNics)
 			if (err == nil && tc.err != nil) || err != nil && tc.err == nil {
 				t.Errorf("expected err:\n%+v\nbut got err:\n%+v", tc.err, err)
 				t.FailNow()
@@ -881,6 +1241,38 @@ var (
 			V6: &ipv6cidr,
 		}},
 	}
+	gvaNics = v1beta1.VNICAddress{
+		VNICID:      &one,
+		MACAddress:  &mac1,
+		RouterIP:    &routerIP1,
+		Addresses:   []*string{&testAddress1},
+		HostAddress: &hostAddressIpv4,
+		HostAddresses: []v1beta1.HostAddress{
+			{
+				V4: &hostAddressIpv4,
+				V6: &hostAddressIpv6,
+			},
+		},
+		NicConfiguration: &v1beta1.NicConfiguration{
+			IpCount:              common.Int(20),
+			IpFamilies:           []string{IPv4, IPv6},
+			SubnetId:             common.String("gvaSubnet"),
+			ApplicationResources: []string{"green"},
+		},
+		PodAddresses: []v1beta1.PodAddress{{
+			V4: &testAddress1,
+			V6: &testIPv6Address1,
+		}},
+		RouterIPs: []v1beta1.RouterIP{{
+			V4: &routerIP1,
+			V6: &ipv6routerIP,
+		}},
+		SubnetCidr: &cidr1,
+		SubnetCidrs: []v1beta1.SubnetCidr{{
+			V4: &cidr1,
+			V6: &ipv6cidr,
+		}},
+	}
 )
 
 func TestConvertCoreVNICtoNPNStatus(t *testing.T) {
@@ -890,6 +1282,7 @@ func TestConvertCoreVNICtoNPNStatus(t *testing.T) {
 		additionalSecondaryIps map[string]*vnicSecondaryAddresses
 		ipFamilies             []string
 		expected               []v1beta1.VNICAddress
+		gvaNics                []GvaNics
 	}{
 		{
 			name:                   "base case",
@@ -981,10 +1374,26 @@ func TestConvertCoreVNICtoNPNStatus(t *testing.T) {
 			},
 			expected: []v1beta1.VNICAddress{singleStackIPv6},
 		},
+		{
+			name:                   "Single stack IPv6 ULA prefix CIDR",
+			existingSecondaryVNICs: []SubnetVnic{subnetVnic2},
+			ipFamilies:             []string{IPv6},
+			gvaNics:                []GvaNics{},
+			additionalSecondaryIps: map[string]*vnicSecondaryAddresses{
+				one: {
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address2},
+					},
+					hostIpv6: &hostAddressIpv6,
+				},
+			},
+			expected: []v1beta1.VNICAddress{singleStackIPv6},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			vnics := convertCoreVNICtoNPNStatus(tc.existingSecondaryVNICs, tc.additionalSecondaryIps, tc.ipFamilies)
+			vnics := convertCoreVNICtoNPNStatus(tc.existingSecondaryVNICs, tc.additionalSecondaryIps, tc.ipFamilies, tc.gvaNics)
 			if !reflect.DeepEqual(vnics, tc.expected) {
 				t.Errorf("expected npnVNIC to be:\n%+v\nbut got:\n%+v", tc.expected, vnics)
 			}
@@ -1138,7 +1547,7 @@ func (c *MockComputeClient) GetPrimaryVNICForInstance(ctx context.Context, compa
 	return nil, nil
 }
 
-func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetId *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
+func (c *MockComputeClient) AttachVnic(ctx context.Context, opts client.AttachVnicOptions) (response core.VnicAttachment, err error) {
 	return core.VnicAttachment{}, nil
 }
 
@@ -1555,24 +1964,6 @@ func TestGetSecondaryIpsByVNICs(t *testing.T) {
 			},
 			err: nil,
 		},
-		{
-			name:       "Error to List IPv4",
-			ipFamilies: []string{IPv4},
-			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
-				Id: common.String("err"),
-			}}},
-			output: nil,
-			err:    errors.New("failed to list ipv4"),
-		},
-		{
-			name:       "Error to List IPv6",
-			ipFamilies: []string{IPv6},
-			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
-				Id: common.String("err"),
-			}}},
-			output: nil,
-			err:    errors.New("failed to list ipv6"),
-		},
 	}
 
 	npn := &NativePodNetworkReconciler{
@@ -1583,7 +1974,7 @@ func TestGetSecondaryIpsByVNICs(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic, tt.ipFamilies)
+			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic)
 			if err != nil && err.Error() != tt.err.Error() {
 				t.Errorf("got error %s, expected %s", err, tt.err)
 			}
