@@ -683,7 +683,7 @@ func (c *MockComputeClient) GetVnicAttachment(ctx context.Context, vnicAttachmen
 	return nil, nil
 }
 
-func (c *MockComputeClient) AttachVnic(ctx context.Context, instanceID, subnetID *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
+func (c *MockComputeClient) AttachVnic(ctx context.Context, opts client.AttachVnicOptions) (response core.VnicAttachment, err error) {
 	return core.VnicAttachment{}, nil
 }
 

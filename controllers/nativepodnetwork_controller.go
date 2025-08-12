@@ -43,6 +43,7 @@ import (
 
 	npnv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
+	utils "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
@@ -56,6 +57,8 @@ const (
 	CREATE_IPV6         = "CREATE_IPV6"
 	ATTACH_VNIC         = "ATTACH_VNIC"
 	INITIALIZE_NPN_NODE = "INITIALIZE_NPN_NODE"
+	// GVA_DEFAULT_IP_COUNT is set to 16 at OKE-CP
+	GVA_DEFAULT_IP_COUNT = 16
 	// maxSecondaryIpsPerVNIC
 	// max allocatable IPs per vnic is 32 where one IP will be used as host address
 	// NPN requires one additional IP (from secondary vnic) as host address, it is used to talk with primary VNIC address for the host namespace interface.
@@ -83,6 +86,8 @@ const (
 	ComputingAdditionalIpsByVnic                    = "Computing required additionalIpsByVnic"
 	ComputedAdditionalIpsByVnic                     = "Computed required additionalIpsByVnic"
 	FetchingSecondaryVNICsAndIPsForInstance         = "Fetching secondary VNICs & attached private IPs for instance once again"
+
+	TaintKeyApplicationResourceOnly = "oci.oraclecloud.com/application-resource-only"
 )
 
 var (
@@ -128,14 +133,16 @@ type IpAllocations struct {
 }
 
 type VnicIPAllocations struct {
-	vnicId string
-	ips    IpAddressCountByVersion
+	vnicId     string
+	ipFamilies []string
+	ips        IpAddressCountByVersion
 }
 
 type VnicIPAllocationResponse struct {
 	vnicId        string
 	errIPv4       error
 	errIPv6       error
+	ipFamilies    []string
 	ipAllocations IpAllocations
 }
 type VnicAttachmentResponseSlice []VnicAttachmentResponse
@@ -164,6 +171,13 @@ type vnicSecondaryAddresses struct {
 	V6       []core.Ipv6
 	hostIpv4 *string
 	hostIpv6 *string
+
+	ipFamilies []string
+}
+
+type GvaNics struct {
+	vnicId            *string
+	SecondaryVnicSpec *npnv1beta1.SecondaryVnic
 }
 
 type ErrorMetric interface {
@@ -337,7 +351,6 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	log.WithValues("instanceId", *npn.Spec.Id).Info(FetchingInstance)
-	requiredSecondaryVNICs := int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxPodIpsPerVNIC))
 	instance, err := r.OCIClient.Compute().GetInstance(ctx, *npn.Spec.Id)
 	if err != nil || instance.Id == nil {
 		failReason, failMessage = "GetInstanceFailed", "failed to get OCI compute instance"
@@ -385,14 +398,41 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(FetchedExistingSecondaryVNICsForInstance)
 
-	requiredAdditionalSecondaryVNICs := requiredSecondaryVNICs - len(existingSecondaryVNICs)
+	var requiredSecondaryVNICs int
+	var gvaNics []GvaNics
+	provisionRequiredAdditionalSecondaryVNICs := 0
+	if isGvaNode(&npn) {
+		log.WithValues("Reconciling user-specified SecondaryVnics")
+		if len(npn.Spec.SecondaryVnics) > len(existingSecondaryVNICs) {
+			gvaNics, err = r.attachUserSpecifiedSecondaryVnics(ctx, npn)
+			if err != nil {
+				failReason, failMessage = "FailedToCreateVNIC", errVnicNotAttached.Error()
+				r.handleError(ctx, req, err, "AttachVnic")
+				return ctrl.Result{RequeueAfter: time.Second * 10}, err
+			}
+		} else if len(npn.Spec.SecondaryVnics) == len(existingSecondaryVNICs) {
+			log.Info("getting the user-specified SecondaryVnics")
+			gvaNics, err = r.getGvaNic(ctx, &npn, existingSecondaryVNICs)
+		}
+		requiredSecondaryVNICs = len(npn.Spec.SecondaryVnics)
+		log.WithValues("gvaNics", gvaNics).Info("attachUserSpecifiedSecondaryVnics returned GvaNics")
+	} else {
+		requiredSecondaryVNICs = int(math.Ceil(float64(*npn.Spec.MaxPodCount) / maxPodIpsPerVNIC))
+		provisionRequiredAdditionalSecondaryVNICs = requiredSecondaryVNICs - len(existingSecondaryVNICs)
+	}
 
-	if requiredAdditionalSecondaryVNICs > 0 {
-		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocateAdditionalVNICsToInstance)
-		additionalVNICAttachments := make([]VnicAttachmentResponse, requiredAdditionalSecondaryVNICs)
-		for index := 0; index < requiredAdditionalSecondaryVNICs; index++ {
+	if provisionRequiredAdditionalSecondaryVNICs > 0 {
+		log.WithValues("provisionRequiredAdditionalSecondaryVNICs", provisionRequiredAdditionalSecondaryVNICs).Info(AllocateAdditionalVNICsToInstance)
+		additionalVNICAttachments := make([]VnicAttachmentResponse, provisionRequiredAdditionalSecondaryVNICs)
+		for index := 0; index < provisionRequiredAdditionalSecondaryVNICs; index++ {
 			startTime := time.Now()
-			vnicAttachment, err := r.OCIClient.Compute().AttachVnic(ctx, npn.Spec.Id, npn.Spec.PodSubnetIds[0], npn.Spec.NetworkSecurityGroupIds, &SKIP_SOURCE_DEST_CHECK)
+			opts := ociclient.AttachVnicOptions{
+				InstanceID:          npn.Spec.Id,
+				SubnetID:            npn.Spec.PodSubnetIds[0],
+				NsgIds:              stringPointerToStringSlice(npn.Spec.NetworkSecurityGroupIds),
+				SkipSourceDestCheck: &SKIP_SOURCE_DEST_CHECK,
+			}
+			vnicAttachment, err := r.OCIClient.Compute().AttachVnic(ctx, opts)
 			additionalVNICAttachments[index].VnicAttachment, additionalVNICAttachments[index].err = vnicAttachment, err
 			if additionalVNICAttachments[index].err != nil {
 				failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to attach VNIC to instance: "+additionalVNICAttachments[index].err.Error()
@@ -404,9 +444,9 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			additionalVNICAttachments[index].timeTaken = float64(time.Since(startTime).Seconds())
 			log.WithValues("vnic", additionalVNICAttachments[index].VnicAttachment).Info("VNIC attached to instance")
 
-			if ensured, err := r.ensureVnicAttachedAndAvailable(ctx, &vnicAttachment); !ensured {
+			if _, ensured, err := r.ensureVnicAttachedAndAvailable(ctx, &vnicAttachment); !ensured {
 				failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to ensure required additional VNICs"
-				log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).
+				log.WithValues("provisionRequiredAdditionalSecondaryVNICs", provisionRequiredAdditionalSecondaryVNICs).
 					Error(err, failMessage)
 				r.handleError(ctx, req, err, "AttachVNIC")
 				r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric(), "")
@@ -417,7 +457,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			}
 		}
 		r.PushMetric(VnicAttachmentResponseSlice(additionalVNICAttachments).ErrorMetric(), "")
-		log.WithValues("requiredAdditionalSecondaryVNICs", requiredAdditionalSecondaryVNICs).Info(AllocatedAdditionalVNICsToInstance)
+		log.WithValues("provisionRequiredAdditionalSecondaryVNICs", provisionRequiredAdditionalSecondaryVNICs).Info(AllocatedAdditionalVNICsToInstance)
 	}
 
 	log.Info(SecondFetchingExistingSecondaryVNICsForInstance)
@@ -431,25 +471,26 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(SecondFetchedExistingSecondaryVNICsForInstance)
 
-	vnicAttached, err := r.validateVnicAttachmentsAreInAttachedState(ctx, *instance.Id, requiredSecondaryVNICs, existingSecondaryVNICs)
-	if vnicAttached == false || err != nil {
-		failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to validate required VNICs"
-		log.Error(err, failMessage)
-		r.handleError(ctx, req, err, "AttachVNIC")
-		return ctrl.Result{}, err
+	if provisionRequiredAdditionalSecondaryVNICs > 0 {
+		vnicAttached, err := r.validateVnicAttachmentsAreInAttachedState(ctx, *instance.Id, requiredSecondaryVNICs, existingSecondaryVNICs)
+		if vnicAttached == false || err != nil {
+			failReason, failMessage = "AttachAdditionalVNICsFailed", "failed to validate required VNICs"
+			log.Error(err, failMessage)
+			r.handleError(ctx, req, err, "AttachVNIC")
+			return ctrl.Result{}, err
+		}
 	}
-
-	ipFamilies, err := getIpFamilies(ctx, npn)
+	nodeIpFamilies, err := getIpFamilies(ctx, npn)
 	if err != nil {
 		log.Error(err, "failed to get IpFamilies from NPN CR")
 		r.handleError(ctx, req, err, "GetNPN_IPFamilies")
 		return ctrl.Result{}, err
 	}
 
-	nodeName := getNodeNameFromPrimaryVnic(primaryVnic, ipFamilies)
+	nodeName := getNodeNameFromPrimaryVnic(primaryVnic, nodeIpFamilies)
 
 	log.Info(FetchingPrivateIPsForSecondaryVNICs)
-	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, ipFamilies)
+	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs)
 	if err != nil {
 		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
@@ -459,7 +500,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).Info(FetchedPrivateIPsForSecondaryVNICs)
 
 	log.Info(ComputingAdditionalIpsByVnic)
-	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount, totalAllocatedSecondaryIPs, ipFamilies)
+	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, &npn, totalAllocatedSecondaryIPs, nodeIpFamilies, gvaNics)
 	if err != nil {
 		failReason, failMessage = "AllocatePrivateIPsFailed", "failed to allocate the required IP addresses"
 		log.WithValues("maxPodCount", *npn.Spec.MaxPodCount).Error(err, failMessage)
@@ -472,11 +513,14 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.Info(AllocatingAdditionalPrivateIPsForSecondaryVNICs)
 	vnicAdditionalIpAllocations := make([]VnicIPAllocationResponse, requiredSecondaryVNICs)
 	workqueue.ParallelizeUntil(ctx, requiredSecondaryVNICs, requiredSecondaryVNICs, func(outerIndex int) {
-		parallelLog := log.WithValues("vnicId", additionalIpsByVnic[outerIndex].vnicId).WithValues("requiredIPs", additionalIpsByVnic[outerIndex].ips)
+		parallelLog := log.WithValues("vnicId", additionalIpsByVnic[outerIndex].vnicId).
+			WithValues("requiredIPs", additionalIpsByVnic[outerIndex].ips).
+			WithValues("vnicIpFamilies", additionalIpsByVnic[outerIndex].ipFamilies)
 		var errIPv4 error = nil
 		var errIPv6 error = nil
 		allocations := IpAllocations{}
-		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+		vnicIpFamilies := additionalIpsByVnic[outerIndex].ipFamilies
+		if len(vnicIpFamilies) == 0 || contains(vnicIpFamilies, IPv4) {
 			if additionalIpsByVnic[outerIndex].ips.V4 > 0 {
 				parallelLog.Info("Need to allocate secondary IPv4 for VNIC")
 				ipv4Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V4)
@@ -493,7 +537,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 				allocations.V4 = ipv4Allocations
 			}
 		}
-		if contains(ipFamilies, IPv6) {
+		if contains(vnicIpFamilies, IPv6) {
 			if additionalIpsByVnic[outerIndex].ips.V6 > 0 {
 				parallelLog.Info("Need to allocate secondary IPv6 for VNIC")
 				ipv6Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V6)
@@ -511,11 +555,11 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			}
 		}
 		mutex.Lock()
-		vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, errIPv4, errIPv6, allocations}
+		vnicAdditionalIpAllocations[outerIndex] = VnicIPAllocationResponse{additionalIpsByVnic[outerIndex].vnicId, errIPv4, errIPv6, vnicIpFamilies, allocations}
 		mutex.Unlock()
 	})
 	for _, ips := range vnicAdditionalIpAllocations {
-		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
+		if len(ips.ipFamilies) == 0 || contains(ips.ipFamilies, IPv4) {
 			if ips.errIPv4 != nil {
 				failReason, failMessage = "CreatePrivateIPFailed", ips.errIPv4.Error()
 				r.handleError(ctx, req, ips.errIPv4, "CreatePrivateIP")
@@ -524,7 +568,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			}
 			r.PushMetric(IPAllocationSlice(ips.ipAllocations.V4).ErrorMetric(), IPv4)
 		}
-		if contains(ipFamilies, IPv6) {
+		if contains(ips.ipFamilies, IPv6) {
 			if ips.errIPv6 != nil {
 				failReason, failMessage = "CreateIPv6Failed", ips.errIPv6.Error()
 				r.handleError(ctx, req, ips.errIPv6, "CreateIPv6")
@@ -545,7 +589,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("existingSecondaryVNICs", existingSecondaryVNICs).
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(FetchedExistingSecondaryVNICsForInstance)
-	existingSecondaryIpsbyVNIC, err = r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, ipFamilies)
+	existingSecondaryIpsbyVNIC, err = r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs)
 	if err != nil {
 		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
@@ -558,15 +602,28 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		Info("Fetched existingSecondaryIp for instance")
 
 	// assign host IP address here per vnic
-	existingSecondaryIpsbyVNIC = assignHostIpAddressForVnic(existingSecondaryIpsbyVNIC, ipFamilies)
+	existingSecondaryIpsbyVNIC = assignHostIpAddressForVnic(existingSecondaryIpsbyVNIC, nodeIpFamilies)
 
 	// validate if maxPodCount = number of secondary IPs available on the vnics
-	err = validateMaxPodCountWithSecondaryIPCount(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount, ipFamilies)
-	if err != nil {
-		failReason = "IPsNotEqualToMaxPodCount"
-		log.Error(err, "secondary IPs are not equal to MaxPodCount")
-		r.handleError(ctx, req, err, "validateMaxPodCountWithSecondaryIPCount")
-		return ctrl.Result{}, err
+	if !isGvaNode(&npn) {
+		err = validateMaxPodCountWithSecondaryIPCount(existingSecondaryIpsbyVNIC, *npn.Spec.MaxPodCount, nodeIpFamilies)
+		if err != nil {
+			failReason = "IPsNotEqualToMaxPodCount"
+			log.Error(err, "secondary IPs are not equal to MaxPodCount")
+			r.handleError(ctx, req, err, "validateMaxPodCountWithSecondaryIPCount")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// For GVA, we need to validate against vnic[].NicConfiguration.ipCount
+	if isGvaNode(&npn) {
+		err = validateVnicIPCountsAgainstConfiguredIpCount(existingSecondaryIpsbyVNIC, npn.Status.VNICs, nodeIpFamilies)
+		if err != nil {
+			failReason = "VnicIpsNotEqualToConfiguredCount"
+			log.Error(err, "VNIC IPs are not equal to configured ipCount")
+			r.handleError(ctx, req, err, "validateVnicIPCountsAgainstConfiguredIpCount")
+			return ctrl.Result{}, err
+		}
 	}
 
 	log.Info("Fetching NPN CR for owner ref & status update")
@@ -589,6 +646,16 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
+	if isGvaNode(&npn) && checkApplicationResourcesUsedOnAllVnics(gvaNics) {
+		log.Info("Add taint to node based on vnic application resource advertisements")
+		nodeObject, err = r.setApplicationResourceTaint(ctx, nodeObject)
+		if err != nil {
+			failReason = "SetTaintOnNodeFailed"
+			r.handleError(ctx, req, err, "SetTaintOnNode")
+			return ctrl.Result{}, err
+		}
+	}
+
 	if err = controllerutil.SetOwnerReference(nodeObject, &updateNPN, r.Scheme); err != nil {
 		failReason, failMessage = "UpdateOwnerRefrenceFailed", "failed to update owner ref on NPN CR"
 		log.Error(err, failMessage)
@@ -604,7 +671,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	updateNPN.Status.State = &STATE_SUCCESS
 	updateNPN.Status.Reason = &COMPLETED
-	updateNPN.Status.VNICs = convertCoreVNICtoNPNStatus(existingSecondaryVNICs, existingSecondaryIpsbyVNIC, ipFamilies)
+	updateNPN.Status.VNICs = convertCoreVNICtoNPNStatus(existingSecondaryVNICs, existingSecondaryIpsbyVNIC, nodeIpFamilies, gvaNics)
 	r.Recorder.Event(&npn, v1.EventTypeNormal, "NPN_CR_Success", "NPN CR reconciled successfully")
 	err = r.Status().Update(ctx, &updateNPN)
 	if err != nil {
@@ -673,27 +740,35 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 }
 
 // get the list of secondary private ips allocated on the given VNIC
-func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context, existingSecondaryVNICs []SubnetVnic, ipFamilies []string) (map[string]*vnicSecondaryAddresses, error) {
+func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context, existingSecondaryVNICs []SubnetVnic) (map[string]*vnicSecondaryAddresses, error) {
 	ipsByVNICs := make(map[string]*vnicSecondaryAddresses)
 	log := log.FromContext(ctx)
 	for _, secondary := range existingSecondaryVNICs {
 		vnicSecondaryAddresses := &vnicSecondaryAddresses{}
+		var ipFamiliesPerVnic []string
 		log := log.WithValues("vnicId", *secondary.Vnic.Id)
 		var err error
-		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
-			vnicSecondaryAddresses.V4, err = r.OCIClient.Networking(nil).ListPrivateIps(ctx, *secondary.Vnic.Id)
-			if err != nil {
-				log.Error(err, "failed to list secondary IPv4 IPs for VNIC")
-				return nil, err
-			}
+
+		vnicSecondaryAddresses.V4, err = r.OCIClient.Networking(nil).ListPrivateIps(ctx, *secondary.Vnic.Id)
+		if err != nil {
+			log.Error(err, "failed to list secondary IPv4 IPs for VNIC")
+			return nil, err
 		}
-		if contains(ipFamilies, IPv6) {
-			vnicSecondaryAddresses.V6, err = r.OCIClient.Networking(nil).ListIpv6s(ctx, *secondary.Vnic.Id)
-			if err != nil {
-				log.Error(err, "failed to list secondary IPv6 IPs for VNIC")
-				return nil, err
-			}
+
+		if len(vnicSecondaryAddresses.V4) > 0 {
+			ipFamiliesPerVnic = append(ipFamiliesPerVnic, IPv4)
 		}
+
+		vnicSecondaryAddresses.V6, err = r.OCIClient.Networking(nil).ListIpv6s(ctx, *secondary.Vnic.Id)
+		if err != nil {
+			log.Error(err, "failed to list secondary IPv6 IPs for VNIC")
+			return nil, err
+		}
+		if len(vnicSecondaryAddresses.V6) > 0 {
+			ipFamiliesPerVnic = append(ipFamiliesPerVnic, IPv6)
+		}
+		vnicSecondaryAddresses.ipFamilies = ipFamiliesPerVnic
+
 		vnicSecondaryAddresses = filterPrimaryIp(vnicSecondaryAddresses)
 		ipsByVNICs[*secondary.Vnic.Id] = vnicSecondaryAddresses
 	}
@@ -810,58 +885,97 @@ func validateAdditionalVnicAttachments(vnics []VnicAttachmentResponse) error {
 }
 
 // compute the number of (additional) IPs needed to be allocated per VNIC
-func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSecondaryAddresses, maxPodCount int, allocatedSecondaryIps IpAddressCountByVersion, ipFamilies []string) ([]VnicIPAllocations, error) {
-	if maxPodCount == 0 {
-		return []VnicIPAllocations{}, nil
+func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSecondaryAddresses, npn *npnv1beta1.NativePodNetwork, totalAllocated IpAddressCountByVersion, nodeIpFamilies []string, gvaNics []GvaNics) ([]VnicIPAllocations, error) {
+
+	if *npn.Spec.MaxPodCount == 0 && len(npn.Status.VNICs) == 0 {
+		return nil, nil
 	}
 
-	// Required Host Addresses is supposed to be one host address per vnic
-	requiredHostAddresses := len(existingIpsByVnic)
+	var podCount int
+	if *npn.Spec.MaxPodCount > 0 {
+		podCount = *npn.Spec.MaxPodCount
+	}
 
-	requiredSecondaryIPv4 := 0
-	requiredSecondaryIPv6 := 0
-	var requireIPv6, requireIPv4 bool
-	if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
-		requiredSecondaryIPv4 = maxPodCount - allocatedSecondaryIps.V4 + requiredHostAddresses
-		requireIPv4 = true
-	}
-	if contains(ipFamilies, IPv6) {
-		requiredSecondaryIPv6 = maxPodCount - allocatedSecondaryIps.V6 + requiredHostAddresses
-		requireIPv6 = true
-	}
-	additionalIpsByVnic := make([]VnicIPAllocations, 0)
-	for vnic, existingIps := range existingIpsByVnic {
-		ipAllocation := IpAddressCountByVersion{}
-		if requireIPv4 {
-			allocatableIPv4 := maxSecondaryIpsPerVNIC - len(existingIps.V4)
-			if len(existingIps.V4) == maxSecondaryIpsPerVNIC {
-				ipAllocation.V4 = 0
-			} else if allocatableIPv4 > requiredSecondaryIPv4 {
-				ipAllocation.V4 = requiredSecondaryIPv4
-				requiredSecondaryIPv4 -= requiredSecondaryIPv4
-			} else {
-				ipAllocation.V4 = allocatableIPv4
-				requiredSecondaryIPv4 -= allocatableIPv4
+	vnicCount := len(existingIpsByVnic)
+	requireIPv4 := len(nodeIpFamilies) == 0 || contains(nodeIpFamilies, IPv4)
+	requireIPv6 := contains(nodeIpFamilies, IPv6)
+
+	requiredIPv4ByVnic := map[string]int{}
+	requiredIPv6ByVnic := map[string]int{}
+	var totalRequiredIPv4, totalRequiredIPv6 int
+
+	perVnicIpFamilies := make(map[string][]string)
+	if isGvaNode(npn) {
+		for _, vnic := range gvaNics {
+			if vnic.vnicId == nil {
+				continue
 			}
+			vnicID := *vnic.vnicId
+			ipCount := vnic.SecondaryVnicSpec.CreateVnicDetails.IpCount
+			vnicIpFamilies := vnic.SecondaryVnicSpec.CreateVnicDetails.IpFamilies
+			perVnicIpFamilies[vnicID] = vnicIpFamilies
+			if contains(vnicIpFamilies, IPv4) {
+				// 1 for host IP
+				requiredIPv4ByVnic[vnicID] = max(0, ipCount+1-len(existingIpsByVnic[vnicID].V4))
+			}
+			if contains(vnicIpFamilies, IPv6) {
+				// 1 for host IP
+				requiredIPv6ByVnic[vnicID] = max(0, ipCount+1-len(existingIpsByVnic[vnicID].V6))
+			}
+		}
+	} else {
+		if requireIPv4 {
+			totalRequiredIPv4 = podCount - totalAllocated.V4 + vnicCount
 		}
 		if requireIPv6 {
-			allocatableIPv6 := maxSecondaryIpsPerVNIC - len(existingIps.V6)
-			if len(existingIps.V6) == maxSecondaryIpsPerVNIC {
-				ipAllocation.V6 = 0
-			} else if allocatableIPv6 > requiredSecondaryIPv6 {
-				ipAllocation.V6 = requiredSecondaryIPv6
-				requiredSecondaryIPv6 -= requiredSecondaryIPv6
-			} else {
-				ipAllocation.V6 = allocatableIPv6
-				requiredSecondaryIPv6 -= allocatableIPv6
+			totalRequiredIPv6 = podCount - totalAllocated.V6 + vnicCount
+		}
+	}
+
+	additional := []VnicIPAllocations{}
+	for vnicID, existing := range existingIpsByVnic {
+		ipAlloc := IpAddressCountByVersion{}
+
+		var ipFamilies []string
+		var needV4, needV6 int
+
+		if isGvaNode(npn) {
+			ipFamilies = perVnicIpFamilies[vnicID]
+			needV4 = requiredIPv4ByVnic[vnicID]
+			needV6 = requiredIPv6ByVnic[vnicID]
+		} else {
+			ipFamilies = nodeIpFamilies
+			needV4 = totalRequiredIPv4
+			needV6 = totalRequiredIPv6
+		}
+
+		if contains(ipFamilies, IPv4) {
+			available := maxSecondaryIpsPerVNIC - len(existing.V4)
+			ipAlloc.V4 = min(needV4, available)
+			if !isGvaNode(npn) {
+				totalRequiredIPv4 -= ipAlloc.V4
 			}
 		}
-		additionalIpsByVnic = append(additionalIpsByVnic, VnicIPAllocations{vnic, ipAllocation})
+
+		if contains(ipFamilies, IPv6) {
+			available := maxSecondaryIpsPerVNIC - len(existing.V6)
+			ipAlloc.V6 = min(needV6, available)
+			if !isGvaNode(npn) {
+				totalRequiredIPv6 -= ipAlloc.V6
+			}
+		}
+
+		additional = append(additional, VnicIPAllocations{
+			vnicId:     vnicID,
+			ips:        ipAlloc,
+			ipFamilies: ipFamilies,
+		})
 	}
-	if requiredSecondaryIPv4 > 0 || requiredSecondaryIPv6 > 0 {
-		return nil, errors.New("failed to allocate the required number of IPs with existing VNICs")
+
+	if !isGvaNode(npn) && (totalRequiredIPv4 > 0 || totalRequiredIPv6 > 0) {
+		return nil, errors.New("failed to allocate required number of IPs with existing VNICs")
 	}
-	return additionalIpsByVnic, nil
+	return additional, nil
 }
 
 // check if there were any errors during secondary ip allocation
@@ -875,15 +989,24 @@ func validateVnicIpAllocation(ipAllocations []IPAllocation) error {
 }
 
 // util method to translate OCI objects to NPN status fields
-func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSecondaryIpsByVNIC map[string]*vnicSecondaryAddresses, ipFamilies []string) []npnv1beta1.VNICAddress {
-	requireIPv6s, requireIPv4s := contains(ipFamilies, IPv6), contains(ipFamilies, IPv4)
-
+func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSecondaryIpsByVNIC map[string]*vnicSecondaryAddresses, nodeIpFamilies []string, nics []GvaNics) []npnv1beta1.VNICAddress {
 	npnVNICAddresses := make([]npnv1beta1.VNICAddress, 0, len(existingSecondaryIpsByVNIC))
 	for _, vnic := range existingSecondaryVNICs {
+		nicConfiguration := getNicConfigurationForNodes(vnic.Vnic, vnic.Subnet, nics)
+
+		ipFamilies := nodeIpFamilies
+		if len(nicConfiguration.IpFamilies) > 0 {
+			ipFamilies = nicConfiguration.IpFamilies
+		}
+		requireIPv6s, requireIPv4s := contains(ipFamilies, IPv6), contains(ipFamilies, IPv4)
 		npnVNICAddress := npnv1beta1.VNICAddress{
 			VNICID:     vnic.Vnic.Id,
 			MACAddress: vnic.Vnic.MacAddress,
 		}
+		if len(nics) > 0 && *nicConfiguration.IpCount > 0 {
+			npnVNICAddress.NicConfiguration = nicConfiguration
+		}
+
 		vnicSecondaryAddresses := existingSecondaryIpsByVNIC[*vnic.Vnic.Id]
 		var hostIPv4, hostIPv6, subnetCidrV4, subnetCidrV6, routerIPv4, routerIPv6 *string
 		if requireIPv4s {
@@ -900,7 +1023,7 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 			}
 			routerIPv6 = vnic.Subnet.Ipv6VirtualRouterIp
 		}
-		if len(ipFamilies) > 0 {
+		if len(nodeIpFamilies) > 0 {
 			hostIPv4 = vnicSecondaryAddresses.hostIpv4
 			hostIPv6 = vnicSecondaryAddresses.hostIpv6
 			// Populate new fields only in case of IPFamilies being present in CRD
@@ -924,7 +1047,7 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 			}
 		}
 		var secondaryIpCount int
-		if len(ipFamilies) == 0 || requireIPv4s {
+		if len(nodeIpFamilies) == 0 || requireIPv4s {
 			secondaryIpCount = len(existingSecondaryIpsByVNIC[*vnic.Vnic.Id].V4)
 		}
 		if requireIPv6s {
@@ -934,8 +1057,8 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 		vnicPodAddresses := make([]npnv1beta1.PodAddress, 0, secondaryIpCount)
 		var ipv4IP, ipv6IP *string
 		for i := 0; i < secondaryIpCount; i++ {
-			if len(ipFamilies) == 0 || requireIPv4s {
-				// Populate the old fields in case of IPv4 or ipFamilies length == 0
+			if len(nodeIpFamilies) == 0 || requireIPv4s {
+				// Populate the old fields in case of IPv4 or nodeIpFamilies length == 0
 				vnicAddresses = append(vnicAddresses, vnicSecondaryAddresses.V4[i].IpAddress)
 			}
 			if requireIPv4s {
@@ -944,7 +1067,7 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 			if requireIPv6s {
 				ipv6IP = vnicSecondaryAddresses.V6[i].IpAddress
 			}
-			if len(ipFamilies) > 0 {
+			if len(nodeIpFamilies) > 0 {
 				// Populate new fields only in case of IPFamilies being present in CRD
 				vnicPodAddresses = append(vnicPodAddresses, npnv1beta1.PodAddress{
 					V4: ipv4IP,
@@ -953,7 +1076,7 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 			}
 		}
 
-		if len(ipFamilies) == 0 || requireIPv4s {
+		if len(nodeIpFamilies) == 0 || requireIPv4s {
 			npnVNICAddress.HostAddress = vnicSecondaryAddresses.hostIpv4
 			npnVNICAddress.RouterIP = vnic.Subnet.VirtualRouterIp
 			npnVNICAddress.SubnetCidr = vnic.Subnet.CidrBlock
@@ -1057,7 +1180,7 @@ func (r *NativePodNetworkReconciler) waitForInstanceToReachRunningState(ctx cont
 // ensureVnicAttachedAndAvailable polls until vnic attachment is attached and vnic is available.
 // We might keep waiting for 2 minutes when VNIC attach fails i.e. VNIC Attachment goes to Detaching/Detached
 // and Vnic to Terminated/Terminating states so we error out in those situations and stop retrying
-func (r *NativePodNetworkReconciler) ensureVnicAttachedAndAvailable(ctx context.Context, vnicAttachment *core.VnicAttachment) (ensured bool, err error) {
+func (r *NativePodNetworkReconciler) ensureVnicAttachedAndAvailable(ctx context.Context, vnicAttachment *core.VnicAttachment) (vnicId *string, ensured bool, err error) {
 	err = wait.PollImmediate(time.Second*5, ensureVnicAttachedAndAvailablePollDuration, func() (bool, error) {
 		log := log.FromContext(ctx)
 		if vnicAttachment.Id == nil {
@@ -1097,9 +1220,9 @@ func (r *NativePodNetworkReconciler) ensureVnicAttachedAndAvailable(ctx context.
 		return true, nil
 	})
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
-	return true, nil
+	return vnicAttachment.VnicId, true, nil
 }
 
 // validateVnicAttachmentsAreInAttachedState will validate if the vnics have been attached
@@ -1111,7 +1234,7 @@ func (r *NativePodNetworkReconciler) validateVnicAttachmentsAreInAttachedState(c
 	}
 
 	for _, vnicAttachment := range attachedSecondaryVnics {
-		if ensured, err := r.ensureVnicAttachedAndAvailable(ctx, vnicAttachment.Attachment); !ensured {
+		if _, ensured, err := r.ensureVnicAttachedAndAvailable(ctx, vnicAttachment.Attachment); !ensured {
 			log.Error(err, "Failed to ensure Vnic is attached & available")
 			return false, err
 		}
@@ -1132,4 +1255,238 @@ func getNodeNameFromPrimaryVnic(ip *core.Vnic, ipFamilies []string) string {
 		return *ip.PrivateIp
 	}
 	return ""
+}
+
+func toOCIIpv6PairDetails(source []npnv1beta1.Ipv6AddressIpv6SubnetCidrPairDetail) []core.Ipv6AddressIpv6SubnetCidrPairDetails {
+	out := make([]core.Ipv6AddressIpv6SubnetCidrPairDetails, 0, len(source))
+	for _, s := range source {
+		out = append(out, core.Ipv6AddressIpv6SubnetCidrPairDetails{
+			Ipv6Address:    common.String(s.Ipv6Address),
+			Ipv6SubnetCidr: common.String(s.Ipv6SubnetCidr),
+		})
+	}
+	return out
+}
+
+func isGvaNode(npn *npnv1beta1.NativePodNetwork) bool {
+	return npn.Spec.SecondaryVnics != nil && len(npn.Spec.SecondaryVnics) > 0
+}
+
+func validateVnicIPCountsAgainstConfiguredIpCount(existingIpsByVnic map[string]*vnicSecondaryAddresses, vnics []npnv1beta1.VNICAddress, ipFamilies []string) error {
+	for _, vnic := range vnics {
+		if vnic.NicConfiguration == nil {
+			continue
+		}
+		if vnic.VNICID == nil || vnic.NicConfiguration.IpCount == nil {
+			continue // skip if ID or IpCount is missing
+		}
+		vnicID := *vnic.VNICID
+		configuredCount := *vnic.NicConfiguration.IpCount
+
+		actualV4 := len(existingIpsByVnic[vnicID].V4)
+		actualV6 := len(existingIpsByVnic[vnicID].V6)
+
+		if (len(ipFamilies) == 0 || contains(ipFamilies, IPv4)) && actualV4 != configuredCount {
+			return errors2.Errorf("VNIC %s: IPv4 count (%d) != configured ipCount (%d)", vnicID, actualV4, configuredCount)
+		}
+		if contains(ipFamilies, IPv6) && actualV6 != configuredCount {
+			return errors2.Errorf("VNIC %s: IPv6 count (%d) != configured ipCount (%d)", vnicID, actualV6, configuredCount)
+		}
+	}
+	return nil
+}
+
+func (r *NativePodNetworkReconciler) attachUserSpecifiedSecondaryVnics(ctx context.Context, npn npnv1beta1.NativePodNetwork) ([]GvaNics, error) {
+	log := log.FromContext(ctx)
+	attachmentResponses := make([]VnicAttachmentResponse, len(npn.Spec.SecondaryVnics))
+
+	gvaNics := make([]GvaNics, 0, len(npn.Spec.SecondaryVnics))
+	for idx, sv := range npn.Spec.SecondaryVnics {
+		c := sv.CreateVnicDetails
+		subnet, err := r.OCIClient.Networking(nil).GetSubnet(ctx, c.SubnetId)
+		if err != nil {
+			log.Error(err, "failed to get subnet for VNIC")
+			return gvaNics, err
+		}
+		ipFamilies := getVnicIpFamily(subnet, sv.CreateVnicDetails)
+
+		opts := ociclient.AttachVnicOptions{
+			InstanceID:                           npn.Spec.Id,
+			SubnetID:                             &c.SubnetId,
+			NsgIds:                               c.NsgIds,
+			SkipSourceDestCheck:                  &c.SkipSourceDestCheck,
+			DisplayName:                          &c.DisplayName,
+			AssignPublicIp:                       &c.AssignPublicIp,
+			AssignIpv6Ip:                         &c.AssignIpv6Ip,
+			DefinedTags:                          c.DefinedTags,
+			FreeformTags:                         c.FreeformTags,
+			Ipv6AddressIpv6SubnetCidrPairDetails: toOCIIpv6PairDetails(c.Ipv6AddressIpv6SubnetCidrPairDetails),
+			SecurityAttributes:                   c.SecurityAttributes,
+		}
+		sv.CreateVnicDetails.IpFamilies = ipFamilies
+
+		startTime := time.Now()
+		vnicAttachment, err := r.OCIClient.Compute().AttachVnic(ctx, opts)
+		if err != nil {
+			log.Error(err, "failed to attach user-specified SecondaryVNIC", "secondaryVnicIndex", idx, "displayName", sv.DisplayName)
+			r.PushMetric(VnicAttachmentResponseSlice(attachmentResponses).ErrorMetric(), "")
+			return gvaNics, err
+		}
+
+		attachmentResponses[idx].VnicAttachment = vnicAttachment
+		attachmentResponses[idx].err = err
+		attachmentResponses[idx].timeTaken = float64(time.Since(startTime).Seconds())
+
+		log.Info("User-specified SecondaryVNIC attached", "secondaryVnicIndex", idx, "vnicAttachmentId", vnicAttachment.Id)
+		vnicID, ensured, err := r.ensureVnicAttachedAndAvailable(ctx, &vnicAttachment)
+		if !ensured || err != nil {
+			log.Error(err, "failed to ensure SecondaryVNIC is available", "secondaryVnicIndex", idx)
+			r.PushMetric(VnicAttachmentResponseSlice(attachmentResponses).ErrorMetric(), "")
+			return gvaNics, err
+		}
+		log.WithValues("vnicId", vnicID).Info("User-specified SecondaryVNIC attached")
+		gvaNics = append(gvaNics, GvaNics{
+			vnicId:            vnicID,
+			SecondaryVnicSpec: &sv,
+		})
+
+	}
+
+	// Push metrics for all attaches in this batch
+	r.PushMetric(VnicAttachmentResponseSlice(attachmentResponses).ErrorMetric(), "")
+	log.Info("All user-specified SecondaryVnics successfully attached")
+	return gvaNics, nil
+}
+
+func extractIpCountAndApplicationResource(vnicId string, nics []GvaNics) (ipCount int, applicationResource []string) {
+	for _, nic := range nics {
+		if *nic.vnicId == vnicId {
+			return nic.SecondaryVnicSpec.CreateVnicDetails.IpCount, nic.SecondaryVnicSpec.CreateVnicDetails.ApplicationResources
+		}
+	}
+	return GVA_DEFAULT_IP_COUNT, []string{}
+}
+
+// getSecurityTag : method unused, to be supported whenever NPWF passes SecurityAttributes via NPN.Spec
+func getSecurityTag(attributes map[string]map[string]interface{}, attributeName, tagName, field string) (value string, ok bool) {
+	if attr, exists := attributes[attributeName]; exists {
+		if tagAny, exists := attr[tagName]; exists {
+			if tag, typeOk := tagAny.(map[string]interface{}); typeOk {
+				if v, exists := tag[field]; exists {
+					if strVal, strOk := v.(string); strOk {
+						return strVal, true
+					}
+				}
+			}
+		}
+	}
+	return "", false
+}
+
+func getNicConfigurationForNodes(vnic *core.Vnic, subnet *core.Subnet, nics []GvaNics) *npnv1beta1.NicConfiguration {
+	ipCount, applicationResources := extractIpCountAndApplicationResource(*vnic.Id, nics)
+	var ipFamilies []string
+	for _, nic := range nics {
+		if nic.vnicId != nil && vnic.Id != nil && *nic.vnicId == *vnic.Id {
+			ipFamilies = getVnicIpFamily(subnet, nic.SecondaryVnicSpec.CreateVnicDetails)
+			break
+		}
+	}
+
+	return &npnv1beta1.NicConfiguration{
+		IpCount:                 common.Int(ipCount),
+		IpFamilies:              ipFamilies,
+		SubnetId:                vnic.SubnetId,
+		NetworkSecurityGroupIDs: vnic.NsgIds,
+		ApplicationResources:    applicationResources,
+	}
+}
+
+func getVnicIpFamily(subnet *core.Subnet, details npnv1beta1.CreateVnicDetails) []string {
+	if utils.IsIpv6SingleStackSubnet(subnet) {
+		return []string{IPv6}
+	}
+	if utils.IsIpv4SingleStackSubnet(subnet) {
+		return []string{IPv4}
+	}
+	// At this point, must be dual-stack
+	if details.AssignIpv6Ip {
+		return []string{IPv4, IPv6}
+	}
+	return []string{IPv4}
+}
+func stringPointerToStringSlice(original []*string) []string {
+	stringArray := make([]string, 0, len(original))
+	for _, value := range original {
+		stringArray = append(stringArray, *value)
+	}
+	return stringArray
+}
+
+func (r *NativePodNetworkReconciler) getGvaNic(ctx context.Context, npn *npnv1beta1.NativePodNetwork, existingSecondaryVNICs []SubnetVnic) ([]GvaNics, error) {
+	gvaNics := make([]GvaNics, 0, len(existingSecondaryVNICs))
+
+	for _, vnic := range existingSecondaryVNICs {
+		var matchedSpec *npnv1beta1.SecondaryVnic
+		vnicDisplayName := ""
+		if vnic.Vnic.DisplayName != nil {
+			vnicDisplayName = *vnic.Vnic.DisplayName
+		}
+		subnet, err := r.OCIClient.Networking(nil).GetSubnet(ctx, *vnic.Vnic.SubnetId)
+		if err != nil {
+			return gvaNics, err
+		}
+		for idx, sv := range npn.Spec.SecondaryVnics {
+			if sv.CreateVnicDetails.DisplayName == vnicDisplayName {
+				ipFamilies := getVnicIpFamily(subnet, sv.CreateVnicDetails)
+				matchedSpec = &npn.Spec.SecondaryVnics[idx]
+				matchedSpec.CreateVnicDetails.IpFamilies = ipFamilies
+				break
+			}
+		}
+		if matchedSpec == nil {
+			continue
+		}
+
+		gvaNics = append(gvaNics, GvaNics{
+			vnicId:            vnic.Vnic.Id,
+			SecondaryVnicSpec: matchedSpec,
+		})
+	}
+	return gvaNics, nil
+}
+
+func checkApplicationResourcesUsedOnAllVnics(gvaNics []GvaNics) bool {
+	for _, vnic := range gvaNics {
+		if vnic.SecondaryVnicSpec != nil {
+			applicationResources := vnic.SecondaryVnicSpec.CreateVnicDetails.ApplicationResources
+			if len(applicationResources) == 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (r *NativePodNetworkReconciler) setApplicationResourceTaint(ctx context.Context, nodeObject *v1.Node) (*v1.Node, error) {
+	taint := v1.Taint{
+		Key:    TaintKeyApplicationResourceOnly,
+		Value:  "",
+		Effect: v1.TaintEffectNoSchedule,
+	}
+
+	taintFound := false
+	for _, t := range nodeObject.Spec.Taints {
+		if t.Key == taint.Key && t.Effect == taint.Effect {
+			taintFound = true
+			break
+		}
+	}
+	if !taintFound {
+		nodeObject.Spec.Taints = append(nodeObject.Spec.Taints, taint)
+		if err := r.Client.Update(ctx, nodeObject); err != nil {
+			return nil, fmt.Errorf("failed to update node with taint: %w", err)
+		}
+	}
+	return nodeObject, nil
 }
