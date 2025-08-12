@@ -16,11 +16,12 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
-	"k8s.io/utils/pointer"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 // ComputeInterface defines the subset of the OCI compute API utilised by the CCM.
@@ -35,7 +36,7 @@ type ComputeInterface interface {
 	GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error)
 
 	ListVnicAttachments(ctx context.Context, compartmentID, instanceID string) (response []core.VnicAttachment, err error)
-	AttachVnic(ctx context.Context, instanceID, subnetId *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error)
+	AttachVnic(ctx context.Context, opts AttachVnicOptions) (response core.VnicAttachment, err error)
 	GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error)
 
 	VolumeAttachmentInterface
@@ -312,26 +313,55 @@ func (c *client) GetVnicAttachment(ctx context.Context, vnicAttachmentId *string
 	return &resp.VnicAttachment, nil
 }
 
-func (c *client) AttachVnic(ctx context.Context, instanceID, subnetId *string, nsgIds []*string, skipSourceDestCheck *bool) (response core.VnicAttachment, err error) {
+type AttachVnicOptions struct {
+	InstanceID                           *string
+	SubnetID                             *string
+	NsgIds                               []string
+	SkipSourceDestCheck                  *bool
+	DisplayName                          *string
+	AssignPublicIp                       *bool
+	AssignIpv6Ip                         *bool
+	DefinedTags                          map[string]map[string]string
+	FreeformTags                         map[string]string
+	Ipv6AddressIpv6SubnetCidrPairDetails []core.Ipv6AddressIpv6SubnetCidrPairDetails
+	SecurityAttributes                   map[string]apiextensionsv1.JSON
+}
+
+func (c *client) AttachVnic(ctx context.Context, opts AttachVnicOptions) (response core.VnicAttachment, err error) {
 	if !c.rateLimiter.Reader.TryAccept() {
 		return response, RateLimitError(false, "AttachVnic")
 	}
-	assignPublicIp := false
 	requestMetadata := getDefaultRequestMetadata(c.requestMetadata)
+	assignPublicIp := false
+	if opts.AssignPublicIp != nil {
+		assignPublicIp = *opts.AssignPublicIp
+	}
+	details := core.CreateVnicDetails{
+		AssignIpv6Ip:        opts.AssignIpv6Ip,
+		AssignPublicIp:      &assignPublicIp,
+		DefinedTags:         convertTags(opts.DefinedTags),
+		DisplayName:         opts.DisplayName,
+		FreeformTags:        opts.FreeformTags,
+		SecurityAttributes:  apiExtensionsJSONToMap(opts.SecurityAttributes),
+		SkipSourceDestCheck: opts.SkipSourceDestCheck,
+		SubnetId:            opts.SubnetID,
+	}
+
+	if len(opts.Ipv6AddressIpv6SubnetCidrPairDetails) > 0 {
+		details.Ipv6AddressIpv6SubnetCidrPairDetails = opts.Ipv6AddressIpv6SubnetCidrPairDetails
+	}
+	if len(opts.NsgIds) > 0 {
+		details.NsgIds = opts.NsgIds
+	}
+
 	resp, err := c.compute.AttachVnic(ctx, core.AttachVnicRequest{
 		AttachVnicDetails: core.AttachVnicDetails{
-			CreateVnicDetails: &core.CreateVnicDetails{
-				SubnetId:            subnetId,
-				NsgIds:              stringPointerToStringSlice(nsgIds),
-				SkipSourceDestCheck: skipSourceDestCheck,
-				AssignPublicIp:      &assignPublicIp,
-				FreeformTags:        map[string]string{CreatedBy: CCM, "InstanceId": pointer.StringDeref(instanceID, "")},
-			},
-			InstanceId: instanceID,
+			CreateVnicDetails: &details,
+			InstanceId:        opts.InstanceID,
 		},
-		RequestMetadata: requestMetadata})
+		RequestMetadata: requestMetadata,
+	})
 	incRequestCounter(err, createVerb, vnicAttachmentResource)
-
 	if err != nil {
 		return response, errors.WithStack(err)
 	}
@@ -361,10 +391,26 @@ func getNonTerminalInstances(instances []core.Instance) []core.Instance {
 	return result
 }
 
-func stringPointerToStringSlice(original []*string) []string {
-	stringArray := make([]string, 0, len(original))
-	for _, value := range original {
-		stringArray = append(stringArray, *value)
+func convertTags(tags map[string]map[string]string) map[string]map[string]interface{} {
+	result := make(map[string]map[string]interface{}, len(tags))
+	for k, v := range tags {
+		inner := make(map[string]interface{}, len(v))
+		for ik, iv := range v {
+			inner[ik] = iv
+		}
+		result[k] = inner
 	}
-	return stringArray
+	return result
+}
+
+func apiExtensionsJSONToMap(in map[string]apiextensionsv1.JSON) map[string]map[string]interface{} {
+	result := make(map[string]map[string]interface{}, len(in))
+	for k, v := range in {
+		var m map[string]interface{}
+		if err := json.Unmarshal(v.Raw, &m); err == nil {
+			result[k] = m
+		}
+		// Optionally: handle errors/log if strict unmarshalling is needed
+	}
+	return result
 }
