@@ -242,6 +242,7 @@
     - "stencil"
     - "cks-crb-ft-3061236"
     - "cks-crb-ft-template"
+    - "SCA_Team_Parent"
 {% endblock LABELS %}
 
 #
@@ -366,10 +367,9 @@
     export TENANCY_ID=<tenancy-id-from-above-runbook>
     export REGION=<region>
 
-    sh script.sh -t $TENANCY_ID -i "v1.30-faf8d3457bc-116" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.31-c009ab5e5a7-76" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.32-59689274696-43" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.33-f7750ce0b4d-17" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.31-4e30e28b828-80-csi" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.32-2c5fcd2e853-46-csi" -r $REGION
+    sh script.sh -t $TENANCY_ID -i "v1.33-87690329d0a-20-csi" -r $REGION
     {code}
 
     *Example Output*
