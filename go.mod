@@ -7,6 +7,7 @@ toolchain go1.23.4
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker => github.com/docker/docker v25.0.6+incompatible
+	github.com/oracle/oci-go-sdk/v65 => oci.private.devops.scmservice.us-phoenix-1.oci.oracleiaas.com/namespaces/axuxirvibvvo/projects/SDK/repositories/oci-go-sdk.git/v65 v65.96.0-p
 	k8s.io/api => k8s.io/api v0.31.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.31.1

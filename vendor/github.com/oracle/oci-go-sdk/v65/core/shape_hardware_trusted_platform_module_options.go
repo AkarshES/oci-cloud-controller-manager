@@ -21,27 +21,24 @@ import (
 	"strings"
 )
 
-// GetInternalZprNsgAssociationDetails Details needed to fetch ZPR NSGs, Statement ID for associated Data Security Rules and and NSG Rules
-type GetInternalZprNsgAssociationDetails struct {
+// ShapeHardwareTrustedPlatformModuleOptions Configuration options for the Hardware Trusted Platform Module (TPM).
+type ShapeHardwareTrustedPlatformModuleOptions struct {
 
-	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the compartment the VNIC / Gateway is associated to.
-	CompartmentId *string `mandatory:"true" json:"compartmentId"`
+	// Boolean values that indicate whether the Hardware Trusted Platform Module can be enabled or disabled.
+	AllowedValues []bool `mandatory:"false" json:"allowedValues"`
 
-	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the VNIC to fetch details for.
-	VnicId *string `mandatory:"false" json:"vnicId"`
-
-	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the DRG / LPG to fetch details for.
-	GatewayId *string `mandatory:"false" json:"gatewayId"`
+	// Whether the Hardware Trusted Platform Module is enabled by default.
+	IsDefaultEnabled *bool `mandatory:"false" json:"isDefaultEnabled"`
 }
 
-func (m GetInternalZprNsgAssociationDetails) String() string {
+func (m ShapeHardwareTrustedPlatformModuleOptions) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m GetInternalZprNsgAssociationDetails) ValidateEnumValue() (bool, error) {
+func (m ShapeHardwareTrustedPlatformModuleOptions) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {

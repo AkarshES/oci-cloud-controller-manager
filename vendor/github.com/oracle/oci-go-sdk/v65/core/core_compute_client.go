@@ -71,7 +71,7 @@ func newComputeClientFromBaseClient(baseClient common.BaseClient, configProvider
 
 // SetRegion overrides the region of this client.
 func (client *ComputeClient) SetRegion(region string) {
-	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://{dualStack?ds.:}iaas.{region}.{dualStack?oci.:}{secondLevelDomain}", "iaas")
+	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://iaas.{region}.{dualStack?ds.oci.:}{secondLevelDomain}", "iaas")
 }
 
 // SetConfigurationProvider sets the configuration provider including the region, returns an error if is not valid
@@ -6449,7 +6449,7 @@ func (client ComputeClient) listComputeGpuMemoryClusters(ctx context.Context, re
 	defer common.CloseBodyIfValid(httpResponse)
 	response.RawResponse = httpResponse
 	if err != nil {
-		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryClusterCollection/ListComputeGpuMemoryClusters"
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryCluster/ListComputeGpuMemoryClusters"
 		err = common.PostProcessServiceError(err, "Compute", "ListComputeGpuMemoryClusters", apiReferenceLink)
 		return response, err
 	}
