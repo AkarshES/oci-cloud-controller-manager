@@ -34,9 +34,9 @@ locals {
         "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
         "v1.29" : "v1.29-0f63a5020b8-110@sha256:466c7d32860ef68c4c98feba232409bf1580c732ee23fd3294ce59e2653bd125",
         "v1.30" : "v1.30-9696a00641f-5952@sha256:ef50fb8445e15b6e816bc68d6261f07e10e66b758da2923df023dbe4bd82da47",
-        "v1.31" : "v1.31-4e30e28b828-80-csi@sha256:bf55f642531ebcb3e8ec09c3adeb9507552733df58e9fc6b7692bc241d5df2ad",
-        "v1.32" : "v1.32-2c5fcd2e853-46-csi@sha256:fb9e892af78589a74bf8a85fa47af4de66cb97a5fbe33846a5e4380f97c024ec",
-        "v1.33" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f"
+        "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+        "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+        "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
       }
     }
   }
@@ -777,6 +777,26 @@ locals {
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+          }
+        ))
+      }
+
+      "prd.oc42" = {
+        "all" : jsonencode(merge(local.csi_default_mapping.default.all,
+          {
+            "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+            "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+            "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
+          }
+        ))
+      }
+
+      "prd.oc43" = {
+        "all" : jsonencode(merge(local.csi_default_mapping.default.all,
+          {
+            "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+            "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+            "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
           }
         ))
       }
