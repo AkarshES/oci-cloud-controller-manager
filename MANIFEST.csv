@@ -1,3 +1,4 @@
+
 oke-public-cloud-provider-oci                     , oke-multiarch-1.23-4c65264-146
 oke-public-cloud-provider-oci                     , oke-1.23-526d1e6-171
 oke-public-cloud-provider-oci-arm                 , oke-1.23-526d1e6-171
@@ -70,3 +71,9 @@ oke-public-cloud-provider-oci                     , v1.33-f7750ce0b4d-17
 oke-public-cloud-provider-oci                     , v1.31-4e30e28b828-80-csi
 oke-public-cloud-provider-oci                     , v1.32-2c5fcd2e853-46-csi
 oke-public-cloud-provider-oci                     , v1.33-87690329d0a-20-csi
+oke-public-cloud-provider-oci                     , v1.31-cf08f0038f7-81
+oke-public-cloud-provider-oci                     , v1.32-78963521fd5-47
+oke-public-cloud-provider-oci                     , v1.33-f1c7a986844-21
+oke-public-cloud-provider-oci                     , v1.31-cf08f0038f7-81-csi
+oke-public-cloud-provider-oci                     , v1.32-78963521fd5-47-csi
+oke-public-cloud-provider-oci                     , v1.33-f1c7a986844-21-csi

@@ -1,6 +1,9 @@
 {
   "images": [
     {
+      "": ""
+    },
+    {
       "oke-public-cloud-provider-oci": "oke-multiarch-1.23-4c65264-146"
     },
     {
@@ -215,6 +218,24 @@
     },
     {
       "oke-public-cloud-provider-oci": "v1.33-87690329d0a-20-csi"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.31-cf08f0038f7-81"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.32-78963521fd5-47"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.33-f1c7a986844-21"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.31-cf08f0038f7-81-csi"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.32-78963521fd5-47-csi"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.33-f1c7a986844-21-csi"
     }
   ]
 }

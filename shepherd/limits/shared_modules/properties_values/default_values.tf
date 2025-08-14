@@ -1,6 +1,6 @@
 locals {
   // Update the pop version corresponding to the pop build for app release
-  pop_version = "0833a431093_111"
+  pop_version = "0d98af35cf1_105"
 
   // Update the ccm image sha value here for updating CCM versions for respective k8s versions across all realms
   ccm_default_mapping = {
@@ -446,6 +446,30 @@ locals {
           }
         ))
       }
+
+      // When removing overrides, make sure to remove only for versions being released
+      "prd.oc42" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "v1.30" : "v1.30-b106062a226-102@sha256:c465da6e1e47240539734e960e89e54dfdf91ccc5cf7d4a5c24608ecc20beebc",
+            "v1.31" : "v1.31-cf08f0038f7-81@sha256:9244a2ea5162620abe71b3818cd0b24bee9cc2888f9adbabb684ed79fa5cac44",
+            "v1.32" : "v1.32-78963521fd5-47@sha256:e5cb6343db08172a5c5130f3c003a98fcd63d24c12ed98825c33249cc4f2181d",
+            "v1.33" : "v1.33-f1c7a986844-21@sha256:9431fd0796b5153ba994f7a1c9441c15efd212af27341b36d7cda739073d4367"
+          }
+        ))
+      }
+
+      // When removing overrides, make sure to remove only for versions being released
+      "prd.oc43" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "v1.30" : "v1.30-b106062a226-102@sha256:c465da6e1e47240539734e960e89e54dfdf91ccc5cf7d4a5c24608ecc20beebc",
+            "v1.31" : "v1.31-cf08f0038f7-81@sha256:9244a2ea5162620abe71b3818cd0b24bee9cc2888f9adbabb684ed79fa5cac44",
+            "v1.32" : "v1.32-78963521fd5-47@sha256:e5cb6343db08172a5c5130f3c003a98fcd63d24c12ed98825c33249cc4f2181d",
+            "v1.33" : "v1.33-f1c7a986844-21@sha256:9431fd0796b5153ba994f7a1c9441c15efd212af27341b36d7cda739073d4367"
+          }
+        ))
+      }
     }
 
     // CSI Image Mappings
@@ -777,6 +801,30 @@ locals {
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+          }
+        ))
+      }
+
+      // When removing overrides, make sure to remove only for versions being released
+      "prd.oc42" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "v1.30" : "v1.30-b106062a226-102@sha256:c465da6e1e47240539734e960e89e54dfdf91ccc5cf7d4a5c24608ecc20beebc",
+            "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+            "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+            "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
+          }
+        ))
+      }
+
+      // When removing overrides, make sure to remove only for versions being released
+      "prd.oc43" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "v1.30" : "v1.30-b106062a226-102@sha256:c465da6e1e47240539734e960e89e54dfdf91ccc5cf7d4a5c24608ecc20beebc",
+            "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+            "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+            "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
           }
         ))
       }
