@@ -780,6 +780,26 @@ locals {
           }
         ))
       }
+
+      "prd.oc42" = {
+        "all" : jsonencode(merge(local.csi_default_mapping.default.all,
+          {
+            "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+            "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+            "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
+          }
+        ))
+      }
+
+      "prd.oc43" = {
+        "all" : jsonencode(merge(local.csi_default_mapping.default.all,
+          {
+            "v1.31" : "v1.31-cf08f0038f7-81-csi@sha256:e724a3065c7cc63de0e4bf59a7b28e2bedb8b9a368e67b27dc2c6137d8459c5a",
+            "v1.32" : "v1.32-78963521fd5-47-csi@sha256:0899ec3102b6d2d85fa27d1d257cd6a1930429748a193f7e071bb0f894f04307",
+            "v1.33" : "v1.33-f1c7a986844-21-csi@sha256:d365ec14548c2a4c3da1c9f1ca578098710db8183fb512427c7f71223583f4c8"
+          }
+        ))
+      }
     }
   }
   global_default_values_by_property = {
