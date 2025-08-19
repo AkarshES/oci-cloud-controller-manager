@@ -2073,6 +2073,57 @@ func TestGetCompartmentIDByInstanceID(t *testing.T) {
 	}
 }
 
+func TestGetNodeObjectAddressById(t *testing.T) {
+	testCases := []struct {
+		name            string
+		nodeId          string
+		expectedAddress []v1.NodeAddress
+	}{
+		{
+			name:   "test-node-1",
+			nodeId: "test-node-id-1",
+			expectedAddress: []v1.NodeAddress{
+				{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
+				{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
+			},
+		},
+		{
+			name:            "non-existent-node",
+			nodeId:          "test-node-id-2",
+			expectedAddress: []v1.NodeAddress{},
+		},
+	}
+
+	cp := &CloudProvider{
+		NodeLister: &mockNodeLister{
+			nodes: []*v1.Node{
+				{Spec: v1.NodeSpec{
+					ProviderID: "test-node-id-1",
+				},
+					Status: v1.NodeStatus{
+						Addresses: []v1.NodeAddress{
+							{Type: v1.NodeInternalIP, Address: "10.0.0.1"},
+							{Type: v1.NodeExternalIP, Address: "0.0.0.1"},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := cp.getNodeObjectAddressById(tt.nodeId)
+			if err != nil {
+				t.Errorf("getNodeObjectAddressById(%s) got error %v, expected nil", tt.nodeId, err)
+			}
+			if !reflect.DeepEqual(res, tt.expectedAddress) {
+				t.Errorf("getNodeObjectAddressById(%s) => %v, want %v", tt.nodeId, res, tt.expectedAddress)
+			}
+		})
+	}
+
+}
+
 type mockNodeLister struct {
 	nodes []*v1.Node
 	err   error
