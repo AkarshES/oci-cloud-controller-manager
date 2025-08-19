@@ -55,6 +55,10 @@ func (c *client) GetInstance(ctx context.Context, id string) (*core.Instance, er
 		return nil, errors.WithStack(err)
 	}
 
+	if IsInstanceInTerminalState(&resp.Instance) {
+		c.instanceIdToPrimaryVnicCache.Delete(resp.Instance.Id)
+	}
+
 	return &resp.Instance, nil
 }
 
@@ -113,6 +117,16 @@ func (c *client) listVNICAttachments(ctx context.Context, req core.ListVnicAttac
 func (c *client) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error) {
 	logger := c.logger.With("instanceID", instanceID, "compartmentID", compartmentID)
 
+	if primaryVnicId, exists := c.instanceIdToPrimaryVnicCache.Load(instanceID); exists {
+		vnic, err := c.GetVNIC(ctx, primaryVnicId.(string))
+		if err != nil {
+			return nil, err
+		}
+		if vnic.IsPrimary != nil && *vnic.IsPrimary {
+			return vnic, nil
+		}
+	}
+	logger.Info("cache miss to retrieve the primary vnic of the instance")
 	var page *string
 	for {
 		resp, err := c.listVNICAttachments(ctx, core.ListVnicAttachmentsRequest{
@@ -138,12 +152,12 @@ func (c *client) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, i
 				continue
 			}
 
-			// TODO(apryde): Cache map[instanceID]primaryVNICID.
 			vnic, err := c.GetVNIC(ctx, *attachment.VnicId)
 			if err != nil {
 				return nil, err
 			}
 			if vnic.IsPrimary != nil && *vnic.IsPrimary {
+				c.instanceIdToPrimaryVnicCache.Store(instanceID, *attachment.VnicId)
 				return vnic, nil
 			}
 		}
@@ -152,7 +166,6 @@ func (c *client) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, i
 			break
 		}
 	}
-
 	return nil, errors.WithStack(errNotFound)
 }
 
