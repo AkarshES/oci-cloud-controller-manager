@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -226,9 +227,10 @@ type client struct {
 	requestMetadata common.RequestMetadata
 	rateLimiter     RateLimiter
 
-	subnetCache         cache.Store
-	configProviderCache cache.Store
-	logger              *zap.SugaredLogger
+	subnetCache                  cache.Store
+	instanceIdToPrimaryVnicCache sync.Map
+	configProviderCache          cache.Store
+	logger                       *zap.SugaredLogger
 }
 
 func setupBaseClient(log *zap.SugaredLogger, client *common.BaseClient, signer common.HTTPRequestSigner, interceptor common.RequestInterceptor, endpointOverrideEnvVar string) {

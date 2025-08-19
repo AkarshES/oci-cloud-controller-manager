@@ -72,8 +72,28 @@ func (cp *CloudProvider) getCompartmentIDByInstanceID(instanceID string) (string
 	return "", errors.New("compartmentID annotation missing in the node. Would retry")
 }
 
+// extractNodeAddresses attempts to acquire the list of addresses from the primary VNIC for that instance.
+// If the instance is terminated, the cache is updated accordingly and an empty address list is returned.
+// also returns an empty address on an error if the instance is NOT in ACTIVE state.
 func (cp *CloudProvider) extractNodeAddresses(ctx context.Context, instanceID string) ([]api.NodeAddress, error) {
 	addresses := []api.NodeAddress{}
+	logger := cp.logger.With("instanceId", instanceID)
+
+	instance, err := cp.client.Compute().GetInstance(ctx, instanceID)
+	if err != nil {
+		if client.IsNotFound(err) {
+			// return the current Node address to handle misconfiguration.
+			return cp.getNodeObjectAddressById(instanceID)
+		}
+		return nil, errors.Wrap(err, "GetPrimaryVNICForInstance")
+	}
+
+	if instance.LifecycleState == core.InstanceLifecycleStateTerminated {
+		logger.Infof("instance is TERMINATED. deleting the cache record")
+		cp.instanceCache.Delete(instance)
+		return addresses, nil
+	}
+
 	compartmentID, err := cp.getCompartmentIDByInstanceID(instanceID)
 	if err != nil {
 		return nil, err
@@ -81,6 +101,12 @@ func (cp *CloudProvider) extractNodeAddresses(ctx context.Context, instanceID st
 
 	vnic, err := cp.client.Compute().GetPrimaryVNICForInstance(ctx, compartmentID, instanceID)
 	if err != nil {
+		logger.Infof("could not get primary VNIC of the instance. checking instance lifecycle state")
+		if client.IsInstanceInTerminalState(instance) ||
+			client.IsInstanceInStoppedState(instance) {
+			logger.Infof("instance is not ACTIVE. returning empty address")
+			return addresses, nil
+		}
 		return nil, errors.Wrap(err, "GetPrimaryVNICForInstance")
 	}
 
@@ -322,7 +348,6 @@ func (cp *CloudProvider) InstanceExistsByProviderID(ctx context.Context, provide
 	if err != nil {
 		return false, err
 	}
-
 	return !client.IsInstanceInTerminalState(instance), nil
 }
 
@@ -438,4 +463,17 @@ func (cp *CloudProvider) getIPv6IdByAddress(ctx context.Context, ipv6Address, no
 		}
 	}
 	return "", fmt.Errorf("id is not found for the ipv6 address %s on the node %s", ipv6Address, nodeId)
+}
+
+func (cp *CloudProvider) getNodeObjectAddressById(nodeId string) ([]api.NodeAddress, error) {
+	nodes, err := cp.NodeLister.List(labels.Everything())
+	if err != nil {
+		return nil, errors.Wrap(err, "error listing nodes")
+	}
+	for _, node := range nodes {
+		if node.Spec.ProviderID == nodeId {
+			return node.Status.Addresses, nil
+		}
+	}
+	return []api.NodeAddress{}, nil
 }
