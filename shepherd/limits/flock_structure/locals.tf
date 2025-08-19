@@ -531,7 +531,7 @@ locals {
       // Configuration for worker instances in any cell
       worker_instance_count = 9
       image_type            = "E446"
-      cell_count            = 2
+      cell_count = 2
     }
     "integ.oc1.us-phoenix-1" = {
       worker_instance_count = 9
@@ -580,6 +580,7 @@ locals {
       image_type = "E446"
     }
     "prd.oc1.ap-sydney-1" = {
+      cell_count = 2
       phase      = length(shepherd_release_phase.prd-oc1-single-ad-part-1) == 1 ? shepherd_release_phase.prd-oc1-single-ad-part-1[0].name : null
       image_type = "E446"
     }
@@ -600,24 +601,27 @@ locals {
       // Configuration for worker instances in any cell
       // we need to add cell_count here when we have more than one cell in a region
       // example: cell_count = 10
-      cell_count            = 2
+      cell_count = 4
       skip_dns              = true
       worker_instance_count = 9
       phase                 = length(shepherd_release_phase.prd-oc1-bake-3) == 1 ? shepherd_release_phase.prd-oc1-bake-3[0].name : null
     }
     "prd.oc1.us-phoenix-1" = {
       // Configuration for worker instances in any cell
+      cell_count = 4
       worker_instance_count = 9
       phase                 = length(shepherd_release_phase.prd-oc1-phx) == 1 ? shepherd_release_phase.prd-oc1-phx[0].name : null
     }
     "prd.oc1.uk-london-1" = {
       // Configuration for worker instances in any cell
+      cell_count = 2
       worker_instance_count = 9
       phase                 = length(shepherd_release_phase.prd-oc1-bake-2) == 1 ? shepherd_release_phase.prd-oc1-bake-2[0].name : null
       image_type            = "E446"
     }
     "prd.oc1.eu-frankfurt-1" = {
       // Configuration for worker instances in any cell
+      cell_count = 3
       worker_instance_count = 9
       phase                 = length(shepherd_release_phase.prd-oc1-fra) == 1 ? shepherd_release_phase.prd-oc1-fra[0].name : null
       image_type            = "E446"
@@ -663,7 +667,7 @@ locals {
     }
 
     "polaris.oc1.us-sanjose-1" = {
-      cell_count            = 2
+      cell_count = 2
       mapi_instance_count   = 2
       worker_instance_count = 2
     }
@@ -744,6 +748,9 @@ locals {
     "herds.oc1.eu-frankfurt-1.cell0" = {}
     "polaris.oc1.us-sanjose-1.cell0" = {}
     "dev.oc1.us-ashburn-1.cell0"     = {}
+    "dev.oc1.us-ashburn-1.cell3"     = {
+      predecessor = "dev.oc1.us-ashburn-1.cell0"
+    }
     "dev.oc1.eu-frankfurt-1.cell0"   = {}
     "dev.oc1.uk-london-1.cell0"      = {}
     "dev.oc1.us-phoenix-1.cell0"     = {
@@ -885,10 +892,6 @@ locals {
       predecessor           = "prd.oc1.us-ashburn-1.cell0"
       oke_secrets_namespace = "oke-prime-prod-cell1"
     }
-    "prd.oc1.us-ashburn-1.cell2" = {
-      predecessor           = "prd.oc1.us-ashburn-1.cell1"
-      oke_secrets_namespace = "oke-prime-prod-cell2"
-    }
     "prd.oc1.us-phoenix-1.cell1" = {
       predecessor           = "prd.oc1.us-phoenix-1.cell0"
       oke_secrets_namespace = "oke-prime-prod-cell1"
@@ -897,10 +900,35 @@ locals {
       predecessor           = "prd.oc1.eu-frankfurt-1.cell0"
       oke_secrets_namespace = "oke-prime-prod-cell1"
     }
+    "prd.oc1.ap-sydney-1.cell1" = {
+      predecessor           = "prd.oc1.ap-sydney-1.cell0"
+      oke_secrets_namespace = "oke-prime-prod-cell1"
+    }
+    "prd.oc1.uk-london-1.cell1" = {
+      predecessor           = "prd.oc1.uk-london-1.cell0"
+      oke_secrets_namespace = "oke-prime-prod-cell1"
+    }
+    "prd.oc1.us-ashburn-1.cell2" = {
+      predecessor           = "prd.oc1.us-ashburn-1.cell1"
+      oke_secrets_namespace = "oke-prime-prod-cell2"
+    }
     "prd.oc1.us-phoenix-1.cell2" = {
       predecessor           = "prd.oc1.us-phoenix-1.cell1"
       oke_secrets_namespace = "oke-prime-prod-cell2"
     }
+    "prd.oc1.eu-frankfurt-1.cell2" = {
+      predecessor           = "prd.oc1.eu-frankfurt-1.cell1"
+      oke_secrets_namespace = "oke-prime-prod-cell2"
+    }
+    "prd.oc1.us-ashburn-1.cell3" = {
+      predecessor           = "prd.oc1.us-ashburn-1.cell2"
+      oke_secrets_namespace = "oke-prime-prod-cell3"
+    }
+    "prd.oc1.us-phoenix-1.cell3" = {
+      predecessor           = "prd.oc1.us-phoenix-1.cell2"
+      oke_secrets_namespace = "oke-prime-prod-cell3"
+    }
+
     "prd.oc8.ap-ibaraki-1.cell0" = {
       alarms_enabled          = true
       mapi_api_alarms_enabled = true

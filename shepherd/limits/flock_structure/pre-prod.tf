@@ -35,7 +35,7 @@ locals {
       additional_locals = module.polaris-oc1-config.config
     },
     "dev.oc1" = {
-      cell_count        = 1
+      cell_count        = 4
       realm             = "oc1"
       env               = "dev"
       region            = "us-ashburn-1"
