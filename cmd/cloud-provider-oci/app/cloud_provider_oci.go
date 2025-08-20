@@ -305,6 +305,7 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 	if err != nil {
 		logger.Fatalf("Failed to create Node Auto Repair Controller: %v", err)
 	}
+	logger.Info("CCM: started NAR controller.")
 
 	if err := narCtrl.Run(mgr, config, options); err != nil {
 		logger.Fatalf("NOR Controller failed to start: %v", err)
