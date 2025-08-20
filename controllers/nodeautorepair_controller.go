@@ -66,7 +66,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// 4. If the loop completes without finding a "True" IMDSUnreachable condition,
 	// the node is considered healthy.
-	r.Logger.Info("Node is healthy and has no IMDSUnreachable condition.", "node", req.NamespacedName.Name)
+	log.Info("CCM: Node auto repair Node is healthy and has no IMDSUnreachable condition.", "node", req.NamespacedName.Name)
 
 	// The reconciliation is complete. Return an empty result to indicate no need to re-process.
 	return ctrl.Result{}, nil
