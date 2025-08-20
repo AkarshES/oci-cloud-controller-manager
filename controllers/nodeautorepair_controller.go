@@ -50,7 +50,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// 2. Iterate through the node's status conditions to check for problems.
 	for _, condition := range node.Status.Conditions {
-		log.Info("CCM NAR: found condition ", condition.String())
+		log.Info("CCM NAR: found condition " + condition.String())
 		// 3. Look for the "IMDSUnreachable" condition and check if its status is True.
 		if condition.Type == "IMDSUnreachable" && condition.Status == v1.ConditionTrue {
 			// Log a warning event to Kubernetes to make the issue visible.
