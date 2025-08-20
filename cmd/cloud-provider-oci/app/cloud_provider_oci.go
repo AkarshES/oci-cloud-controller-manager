@@ -301,7 +301,17 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 		logger.Info("crd manager not instantiated as no customer resource enabled.")
 	}
 
+	narCtrl, err := GetController(narController, ctx, logger, mgr)
+	if err != nil {
+		logger.Fatalf("Failed to create Node Auto Repair Controller: %v", err)
+	}
+
+	if err := narCtrl.Run(mgr, config, options); err != nil {
+		logger.Fatalf("NOR Controller failed to start: %v", err)
+	}
+
 	controllers := []string{metricsController, ccmController, volumeProvisioner}
+	controllers = append(controllers, narController)
 	if enableCSI {
 		controllers = append(controllers, csiController)
 	}
