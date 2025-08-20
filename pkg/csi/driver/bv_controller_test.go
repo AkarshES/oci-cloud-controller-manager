@@ -671,6 +671,10 @@ func (c *MockComputeClient) GetInstanceByNodeName(ctx context.Context, compartme
 	return nil, nil
 }
 
+func (c *MockComputeClient) TerminateInstance(ctx context.Context, nodeId string) (string, error) {
+	return "", nil
+}
+
 func (c *MockComputeClient) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error) {
 	return nil, nil
 }
