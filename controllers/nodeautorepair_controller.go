@@ -60,7 +60,8 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			log.Info("CCM: IMDS is unreachable, triggering repair action.", "node", req.NamespacedName.Name)
 
 			// Requeue the request after a delay to periodically check if the issue is resolved.
-			return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+			log.Info("CCM: Requeue after 10 mins", "node", req.NamespacedName.Name)
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 		}
 	}
 
