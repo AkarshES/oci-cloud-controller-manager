@@ -77,7 +77,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log := zap.L().Sugar()
 	log.Info("Setting up NPN controller with manager")
-	r.Recorder = mgr.GetEventRecorderFor("nativepodnetwork")
+	r.Recorder = mgr.GetEventRecorderFor("nodeautoRepair")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		// Watch for changes to Node objects. This is crucial for checking persistent
@@ -94,18 +94,16 @@ func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}
 
 				// Filter events to only those from Node Problem Detector.
-				if event.Source.Component == "npd" && event.InvolvedObject.Kind == "Node" {
-					// Only create a reconcile request for the "IMDSCheckFailed" event.
-					if event.Reason == "IMDSCheckFailed" {
-						return []reconcile.Request{
-							{
-								NamespacedName: types.NamespacedName{
-									Name: event.InvolvedObject.Name,
-								},
+				if event.Reason == "IMDSCheckFailed" {
+					return []reconcile.Request{
+						{
+							NamespacedName: types.NamespacedName{
+								Name: event.InvolvedObject.Name,
 							},
-						}
+						},
 					}
 				}
+
 				return nil
 			}),
 		).
