@@ -233,3 +233,11 @@ validate-mappings:
 .PHONY: clean-pop
 clean:
 	rm -rf release-validator-pop/out release-validator-pop/image_versions.json
+
+.PHONY: validate-release-validator-pop
+validate-release-validator-pop:
+	./hack/validate-release-validator-pop.sh
+
+.PHONY: validate-images-auto-tfvars-json
+validate-images-auto-tfvars-json:
+	./hack/validate-images-auto-tfvars-json.sh
