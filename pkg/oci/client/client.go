@@ -457,7 +457,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociClien
 			logger.Error("Failed to get new LB client with oke workload identity configuration provider! Error:" + err.Error())
 			return nil
 		}
-		setupBaseClient(logger, &lb.BaseClient, signer, interceptor, "")
+		setupBaseClient(logger, &lb.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 
 		err = configureCustomTransport(logger, &lb.BaseClient)
 		if err != nil {
@@ -477,7 +477,7 @@ func (c *client) LoadBalancer(logger *zap.SugaredLogger, lbType string, ociClien
 			logger.Error("Failed to get new NLB client with oke workload identity configuration provider! Error:" + err.Error())
 			return nil
 		}
-		setupBaseClient(logger, &nlb.BaseClient, signer, interceptor, "")
+		setupBaseClient(logger, &nlb.BaseClient, signer, interceptor, "NLB_ENDPOINT_OVERRIDE")
 
 		err = configureCustomTransport(logger, &nlb.BaseClient)
 		if err != nil {
@@ -515,7 +515,7 @@ func (c *client) Networking(ociClientConfig *OCIClientConfig) NetworkingInterfac
 			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 			return nil
 		}
-		setupBaseClient(c.logger, &network.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &network.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 
 		err = configureCustomTransport(c.logger, &network.BaseClient)
 		if err != nil {
@@ -562,7 +562,7 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 			return nil
 		}
-		setupBaseClient(c.logger, &identity.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &identity.BaseClient, signer, interceptor, "ID_ENDPOINT_OVERRIDE")
 
 		err = configureCustomTransport(c.logger, &identity.BaseClient)
 		if err != nil {
@@ -575,7 +575,7 @@ func (c *client) Identity(ociClientConfig *OCIClientConfig) IdentityInterface {
 			c.logger.Errorf("Failed to create Compartments workload identity client  %v", err)
 			return nil
 		}
-		setupBaseClient(c.logger, &compartment.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &compartment.BaseClient, signer, interceptor, "COMPARTMENT_ENDPOINT_OVERRIDE")
 
 		err = configureCustomTransport(c.logger, &compartment.BaseClient)
 		if err != nil {
@@ -624,7 +624,7 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 			r.Header.Set("x-cross-tenancy-request", ociClientConfig.TenancyId)
 			return nil
 		}
-		setupBaseClient(c.logger, &fc.BaseClient, signer, interceptor, "")
+		setupBaseClient(c.logger, &fc.BaseClient, signer, interceptor, "FSS_ENDPOINT_OVERRIDE")
 
 		err = configureCustomTransport(c.logger, &fc.BaseClient)
 		if err != nil {
@@ -727,7 +727,7 @@ func (c *client) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType str
 		c.logger.Errorf("Failed to create Network workload identity client %v", err)
 		return nil
 	}
-	setupBaseClient(logger, &network.BaseClient, signer, interceptor, "")
+	setupBaseClient(logger, &network.BaseClient, signer, interceptor, "CORE_ENDPOINT_OVERRIDE")
 	err = configureCustomTransport(c.logger, &network.BaseClient)
 	if err != nil {
 		c.logger.Error("Failed configure custom transport for Network Client %v", err)
