@@ -94,7 +94,6 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// 2. Iterate through the node's status conditions to check for problems.
 	for _, condition := range node.Status.Conditions {
-		log.Info("CCM NAR: found condition " + condition.String())
 		// 3. Look for the "IMDSUnreachable" condition and check if its status is True.
 		if condition.Type == "IMDSUnreachable" && condition.Status == v1.ConditionTrue {
 			// Log a warning event to Kubernetes to make the issue visible.
@@ -127,12 +126,12 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 func (r *NodeAutoRepairReconciler) rebootNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
-	logger := log.FromContext(ctx, norInstanceId, nodeId, norClusterId, clusterId)
+	// logger := log.FromContext(ctx, norInstanceId, nodeId, norClusterId, clusterId)
 	var workRequestId string
 	var err error
 
 	workRequestId, err = r.OCIClient.ContainerEngine().RebootClusterNode(ctx, nodeId, clusterId, nor)
-	logger.Info("CCM: Trigger reboot action")
+	// logger.Info("CCM: Trigger reboot action")
 	return workRequestId, err
 }
 
@@ -152,6 +151,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	if !reflect.DeepEqual(oldNode.Status.Conditions, newNode.Status.Conditions) {
+		p.log.Infof("CCM: event %v triggered reconcilation", e)
 		p.log.Infow("CCM: Node conditions have changed, triggering reconciliation.",
 			"node", newNode.Name,
 			"oldConditions", oldNode.Status.Conditions,
@@ -159,6 +159,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 		)
 		return true
 	}
+	p.log.Infof("CCM: event %v triggered reconcilation", e)
 	p.log.Info("CCM: Node conditions haven't changed")
 
 	return false
