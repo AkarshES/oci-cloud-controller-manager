@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 	"sync"
 	"time"
 
@@ -141,28 +140,69 @@ type ConditionChangedPredicate struct {
 }
 
 func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
+	// Assert that both the old and new objects are of type *v1.Node.
 	oldNode, ok := e.ObjectOld.(*v1.Node)
 	if !ok {
+		// If the old object is not a Node, we can't perform a comparison.
 		return false
 	}
 	newNode, ok := e.ObjectNew.(*v1.Node)
 	if !ok {
+		// If the new object is not a Node, we can't perform a comparison.
 		return false
 	}
 
-	if !reflect.DeepEqual(oldNode.Status.Conditions, newNode.Status.Conditions) {
-		p.log.Infof("CCM: event %v triggered reconcilation", e)
-		p.log.Infow("CCM: Node conditions have changed, triggering reconciliation.",
-			"node", newNode.Name,
-			"oldConditions", oldNode.Status.Conditions,
-			"newConditions", newNode.Status.Conditions,
-		)
-		return true
-	}
-	p.log.Infof("CCM: event %v triggered reconcilation", e)
-	p.log.Info("CCM: Node conditions haven't changed")
+	// Convert the conditions slices to maps for efficient lookup by condition type.
+	oldConditions := getConditionMap(oldNode.Status.Conditions)
+	newConditions := getConditionMap(newNode.Status.Conditions)
 
+	// Iterate through the new conditions to find added or changed conditions.
+	for _, newCondition := range newConditions {
+		oldCondition, exists := oldConditions[newCondition.Type]
+
+		// Case 1: A new condition was added.
+		if !exists {
+			p.log.Infow("CCM: New condition added to node.",
+				"node", newNode.Name,
+				"conditionType", newCondition.Type,
+				"status", newCondition.Status,
+				"reason", newCondition.Reason,
+			)
+			return true
+		}
+
+		// Case 2: An existing condition's status, reason, or message changed.
+		if oldCondition.Status != newCondition.Status ||
+			oldCondition.Reason != newCondition.Reason ||
+			oldCondition.Message != newCondition.Message {
+			p.log.Infow("CCM: Node condition changed.",
+				"node", newNode.Name,
+				"conditionType", newCondition.Type,
+				"oldStatus", oldCondition.Status,
+				"newStatus", newCondition.Status,
+				"oldReason", oldCondition.Reason,
+				"newReason", newCondition.Reason,
+				"oldHeartBeatTime", oldCondition.LastHeartbeatTime,
+				"newHeartBeatTime", newCondition.LastHeartbeatTime,
+				"oldTransitTime", oldCondition.LastTransitionTime,
+				"newTransitTime", newCondition.LastHeartbeatTime,
+			)
+			return true
+		}
+	}
+	p.log.Info("CCM: Condition hasn't changed")
+	// If we reach here, no significant changes were found in the conditions.
 	return false
+}
+
+// getConditionMap is a helper function to convert a slice of NodeCondition
+// objects into a map for quick lookup.
+func getConditionMap(conditions []v1.NodeCondition) map[v1.NodeConditionType]v1.NodeCondition {
+	conditionMap := make(map[v1.NodeConditionType]v1.NodeCondition, len(conditions))
+	for _, condition := range conditions {
+		conditionMap[condition.Type] = condition
+	}
+	return conditionMap
 }
 
 func (p ConditionChangedPredicate) Create(e event.CreateEvent) bool {
