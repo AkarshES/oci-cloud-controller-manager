@@ -120,6 +120,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 		// If the old object is not a Node, we can't perform a comparison.
 		return false
 	}
+
 	newNode, ok := e.ObjectNew.(*v1.Node)
 	if !ok {
 		// If the new object is not a Node, we can't perform a comparison.
@@ -149,6 +150,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 		if oldCondition.Status != newCondition.Status ||
 			oldCondition.Reason != newCondition.Reason ||
 			oldCondition.Message != newCondition.Message {
+
 			p.log.Infow("CCM: Node condition: "+string(newCondition.Type)+" changed",
 				"node", newNode.Name,
 				"conditionType", newCondition.Type,
@@ -161,13 +163,26 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 				"oldTransitTime", oldCondition.LastTransitionTime,
 				"newTransitTime", newCondition.LastHeartbeatTime,
 			)
-
 			if oldCondition.Type == "IMDSUnreachable" {
 				return true
 			}
 		}
 	}
-	p.log.Info("CCM: Condition hasn't changed")
+
+	var lastManager string
+	var lastUpdateTime time.Time
+	for _, field := range newNode.ManagedFields {
+		if field.Time.After(lastUpdateTime) {
+			lastUpdateTime = field.Time.Time
+			lastManager = field.Manager
+		}
+	}
+
+	if lastManager != "" {
+		p.log.Info("CCM: Condition hasn't changed. Detected a change in the Node object.", "manager", lastManager, "updateTime", lastUpdateTime)
+	} else {
+		p.log.Info("CCM: Condition hasn't changed. No manager found for this update event.")
+	}
 	// If we reach here, no significant changes were found in the conditions.
 	return false
 }
