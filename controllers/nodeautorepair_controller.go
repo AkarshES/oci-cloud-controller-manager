@@ -43,8 +43,8 @@ type NodeAutoRepairReconciler struct {
 // It configures the controller to watch for changes to both Node and Event objects.
 func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log := zap.L().Sugar()
-	log.Info("Setting up NPN controller with manager")
-	r.Recorder = mgr.GetEventRecorderFor("nodeautoRepair")
+	log.Info("Setting up NAR controller with manager")
+	r.Recorder = mgr.GetEventRecorderFor("nodeAutoRepair")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		// Watch for changes to Node objects. This is crucial for checking persistent
@@ -171,15 +171,17 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 
 	var lastManager string
 	var lastUpdateTime time.Time
+	var fieldName string
 	for _, field := range newNode.ManagedFields {
 		if field.Time.After(lastUpdateTime) {
 			lastUpdateTime = field.Time.Time
 			lastManager = field.Manager
+			fieldName = field.String()
 		}
 	}
 
 	if lastManager != "" {
-		p.log.Info("CCM: Condition hasn't changed. Detected a change in the Node object.", "manager", lastManager, "updateTime", lastUpdateTime)
+		p.log.Info("CCM: Condition hasn't changed. Detected a change in the Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
 	} else {
 		p.log.Info("CCM: Condition hasn't changed. No manager found for this update event.")
 	}
