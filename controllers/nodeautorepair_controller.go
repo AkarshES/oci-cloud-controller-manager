@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -20,7 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,30 +50,6 @@ func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Watch for changes to Node objects. This is crucial for checking persistent
 		// conditions like DiskPressure, MemoryPressure, or custom NPD conditions.
 		For(&v1.Node{}, builder.WithPredicates(ConditionChangedPredicate{log: log})).
-		// Watch for new Event objects. This is used for temporary issues reported
-		// by NPD, like a transient IMDS check failure.
-		Watches(
-			&v1.Event{},
-			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
-				event, ok := obj.(*v1.Event)
-				if !ok {
-					return nil
-				}
-
-				// Filter events to only those from Node Problem Detector.
-				if event.Reason == "IMDSCheckFailed" {
-					return []reconcile.Request{
-						{
-							NamespacedName: types.NamespacedName{
-								Name: event.InvolvedObject.Name,
-							},
-						},
-					}
-				}
-
-				return nil
-			}),
-		).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 20, CacheSyncTimeout: time.Hour}).
 		Complete(r)
 }
@@ -175,7 +149,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 		if oldCondition.Status != newCondition.Status ||
 			oldCondition.Reason != newCondition.Reason ||
 			oldCondition.Message != newCondition.Message {
-			p.log.Infow("CCM: Node condition changed.",
+			p.log.Infow("CCM: Node condition: "+string(newCondition.Type)+" changed",
 				"node", newNode.Name,
 				"conditionType", newCondition.Type,
 				"oldStatus", oldCondition.Status,
@@ -187,7 +161,10 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 				"oldTransitTime", oldCondition.LastTransitionTime,
 				"newTransitTime", newCondition.LastHeartbeatTime,
 			)
-			return true
+
+			if oldCondition.Type == "IMDSUnreachable" {
+				return true
+			}
 		}
 	}
 	p.log.Info("CCM: Condition hasn't changed")
