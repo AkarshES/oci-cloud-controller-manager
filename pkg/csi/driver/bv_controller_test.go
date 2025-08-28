@@ -1384,7 +1384,7 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: errors.New("Failed to attach volume to the node: timed out waiting for the condition"),
+			wantErr: errors.New("Failed to attach volume volume-attachment-stuck-in-attaching-state to the instance sample-provider-id. error: timed out waiting for the condition"),
 		},
 		{
 			name: "WaitForShareableVolumeAttached times out",
@@ -1399,7 +1399,7 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: errors.New("Failed to attach volume to the node: timed out waiting for the condition"),
+			wantErr: errors.New("Failed to attach volume volume-attachment-stuck-in-attaching-state to the instance sample-provider-id. error: timed out waiting for the condition"),
 		},
 		{
 			name: "isShareable, but not all attachments are shareable",
@@ -1414,8 +1414,7 @@ func TestControllerDriver_ControllerPublishVolume(t *testing.T) {
 				},
 			},
 			want: nil,
-			wantErr: errors.New("Failed to attach volume to node. " +
-				"The volume already has a non-shareable attachment."),
+			wantErr: errors.New("Failed to attach volume shareable-volume-with-nonshareable-attachments to node sample-provider-id. The volume already has a non-shareable attachment shareable-volume-with-nonshareable-attachments to instance sample-provider-id-2."),
 		},
 	}
 	for _, tt := range tests {
@@ -1467,7 +1466,7 @@ func TestControllerDriver_ControllerUnpublishVolume(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: errors.New("timed out waiting for volume to be detached"),
+			wantErr: errors.New("timed out waiting for volume volume-attachment-stuck-in-detaching-state to get detached from instance sample-provider-id. error timed out waiting for the condition"),
 		},
 		{
 			name: "FindVolumeAttachment times out",
