@@ -610,7 +610,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 		csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-		return nil, status.Errorf(codes.InvalidArgument, "failed to get ProviderID by nodeName. error : %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "failed to get ProviderID by nodeName. error : %s", err.Error())
 	}
 	id = client.MapProviderIDToInstanceID(id)
 	dimensionsMap[metrics.InstanceIdDimension] = id
@@ -660,7 +660,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 		csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-		return nil, status.Errorf(codes.Unknown, "failed to get the attachment options. error : %s", err)
+		return nil, status.Errorf(codes.Unknown, "failed to get the attachment options. error : %s", err.Error())
 	}
 
 	//in transit encryption is not supported for other attachment type than paravirtualized
@@ -679,7 +679,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 		csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-		return nil, status.Errorf(codes.Unknown, "failed to get compartmentID from node annotation:. error : %s", err)
+		return nil, status.Errorf(codes.Unknown, "failed to get compartmentID from node annotation. error : %s", err.Error())
 	}
 
 	volumeAttachments, err := d.client.Compute().ListVolumeAttachments(ctx, compartmentID, req.VolumeId)
@@ -709,7 +709,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 				csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 				dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 				metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-				return nil, status.Errorf(codes.Internal, "Error while waiting for volume to get detached before attaching: %s", err)
+				return nil, status.Errorf(codes.Internal, "Error while waiting for volume to get detached before attaching: %s", err.Error())
 			}
 		} else {
 			// check for non-shareable and attached to other node
@@ -746,7 +746,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 						csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 						dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 						metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-						return nil, status.Errorf(codes.Internal, "Failed to attach volume to the node: %s", err)
+						return nil, status.Errorf(codes.Internal, "Failed to attach volume to the node: %s", err.Error())
 					}
 				}
 
@@ -760,7 +760,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 						csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 						dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 						metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-						return nil, status.Errorf(codes.Internal, "Failed to generate publish context: %s", err)
+						return nil, status.Errorf(codes.Internal, "Failed to generate publish context: %s", err.Error())
 					}
 					return resp, nil
 				}
@@ -795,7 +795,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 			csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 			metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-			return nil, status.Errorf(codes.Internal, "failed paravirtualized attachment instance to volume. error : %s", err)
+			return nil, status.Errorf(codes.Internal, "failed paravirtualized attachment instance to volume. error : %s", err.Error())
 		}
 	} else {
 		nodeVolumeAttachment, err = d.client.Compute().AttachVolume(ctx, id, req.VolumeId, volumeAttachmentOptions.isShareable)
@@ -806,7 +806,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 			csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 			metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-			return nil, status.Errorf(codes.Internal, "failed iscsi attachment instance to volume : %s", err)
+			return nil, status.Errorf(codes.Internal, "failed iscsi attachment instance to volume :  %s", err.Error())
 		}
 	}
 
@@ -818,7 +818,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 		csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-		return nil, status.Errorf(codes.Internal, "Failed to attach volume to the node %s", err)
+		return nil, status.Errorf(codes.Internal, "Failed to attach volume to the node %s", err.Error())
 	}
 	log.Info("Volume is ATTACHED to Node.")
 	csiMetricDimension = util.GetComponentForMetricDimension(util.Success, util.CSIStorageType)
@@ -831,7 +831,7 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 		csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-		return nil, status.Errorf(codes.Internal, "Failed to generate publish context: %s", err)
+		return nil, status.Errorf(codes.Internal, "Failed to generate publish context: %s", err.Error())
 	}
 	return resp, nil
 }
@@ -966,7 +966,7 @@ func (d *BlockVolumeControllerDriver) ControllerUnpublishVolume(ctx context.Cont
 			csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 			metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-			return nil, status.Errorf(codes.Unknown, "volume can not be detached %s", err)
+			return nil, status.Errorf(codes.Unknown, "volume can not be detached %s", err.Error())
 		}
 	}
 	log.With("instanceID", *attachedVolume.GetInstanceId()).Info("Waiting for Volume to Detach")
@@ -978,7 +978,7 @@ func (d *BlockVolumeControllerDriver) ControllerUnpublishVolume(ctx context.Cont
 		csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 		dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 		metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-		return nil, status.Errorf(codes.Unknown, "timed out waiting for volume to be detached %s", err)
+		return nil, status.Errorf(codes.Unknown, "timed out waiting for volume to be detached %s", err.Error())
 	}
 
 	multipath := false
