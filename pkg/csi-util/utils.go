@@ -644,3 +644,32 @@ func LoadCSIConfigFromConfigMap(csiConfig *CSIConfig, k kubernetes.Interface, co
 		logger.Infof("Successfully loaded ConfigMap %v. Using customized configuration for csi driver.", configMapName)
 	}
 }
+
+
+// TruncateError truncates the given message to fit within maxBytes (in bytes, not characters),
+// appending "..." if truncation occurs. This prevents Kubernetes API validation errors
+// on fields like VolumeAttachment.status.attachError.message (max 262144 bytes).
+// Use a maxBytes slightly under the limit (e.g., 262000) for safety.
+func TruncateError(msg string, maxBytes int) string {
+	if maxBytes <= 0 {
+		return ""
+	}
+
+	bytesMsg := []byte(msg)
+	if len(bytesMsg) <= maxBytes {
+		return msg
+	}
+
+	// Define suffix and calculate truncation point
+	suffix := "..."
+	suffixBytes := []byte(suffix)
+	truncLen := maxBytes - len(suffixBytes)
+
+	// Ensure truncation doesn't split multi-byte characters (e.g., UTF-8)
+	// by finding the last valid rune boundary
+	for truncLen > 0 && (bytesMsg[truncLen] & 0xc0) == 0x80 {
+		truncLen--
+	}
+
+	return string(bytesMsg[:truncLen]) + suffix
+}
