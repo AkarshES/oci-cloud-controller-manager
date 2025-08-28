@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/oracle/oci-go-sdk/v65/common"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -643,4 +645,60 @@ func LoadCSIConfigFromConfigMap(csiConfig *CSIConfig, k kubernetes.Interface, co
 		}
 		logger.Infof("Successfully loaded ConfigMap %v. Using customized configuration for csi driver.", configMapName)
 	}
+}
+
+
+func TruncateError(err error, maxBytes int) string {
+	errorMsg := ""
+	if maxBytes <= 0 {
+		return errorMsg
+	}
+	if serviceErr, ok := common.IsServiceErrorRichInfo(errors.Cause(err)); ok {
+		errorMsg = fmt.Sprintf(`Error returned by %s Service. Http Status Code: %d. Error Code: %s. Opc request id: %s. Message: %s. Operation Name: %s`,
+			serviceErr.GetTargetService(), serviceErr.GetHTTPStatusCode(), serviceErr.GetCode(), serviceErr.GetOpcRequestID(), serviceErr.GetMessage(), serviceErr.GetOperationName())
+	} else {
+		errorMsg = err.Error()
+	}
+
+	bytesMsg := []byte(errorMsg)
+	if len(bytesMsg) <= maxBytes {
+		return errorMsg
+	}
+
+	// Define suffix and calculate truncation point
+	suffix := "..."
+	suffixBytes := []byte(suffix)
+	truncLen := maxBytes - len(suffixBytes)
+
+	// Ensure truncation doesn't split multi-byte characters (e.g., UTF-8)
+	// by finding the last valid rune boundary
+	for truncLen > 0 && (bytesMsg[truncLen] & 0xc0) == 0x80 {
+		truncLen--
+	}
+
+	return string(bytesMsg[:truncLen]) + suffix
+}
+
+func TruncateErrorOld(msg string, maxBytes int) string {
+	if maxBytes <= 0 {
+		return ""
+	}
+
+	bytesMsg := []byte(msg)
+	if len(bytesMsg) <= maxBytes {
+		return msg
+	}
+
+	// Define suffix and calculate truncation point
+	suffix := "..."
+	suffixBytes := []byte(suffix)
+	truncLen := maxBytes - len(suffixBytes)
+
+	// Ensure truncation doesn't split multi-byte characters (e.g., UTF-8)
+	// by finding the last valid rune boundary
+	for truncLen > 0 && (bytesMsg[truncLen] & 0xc0) == 0x80 {
+		truncLen--
+	}
+
+	return string(bytesMsg[:truncLen]) + suffix
 }
