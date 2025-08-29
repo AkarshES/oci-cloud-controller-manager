@@ -645,11 +645,6 @@ func LoadCSIConfigFromConfigMap(csiConfig *CSIConfig, k kubernetes.Interface, co
 	}
 }
 
-
-// TruncateError truncates the given message to fit within maxBytes (in bytes, not characters),
-// appending "..." if truncation occurs. This prevents Kubernetes API validation errors
-// on fields like VolumeAttachment.status.attachError.message (max 262144 bytes).
-// Use a maxBytes slightly under the limit (e.g., 262000) for safety.
 func TruncateError(msg string, maxBytes int) string {
 	if maxBytes <= 0 {
 		return ""
