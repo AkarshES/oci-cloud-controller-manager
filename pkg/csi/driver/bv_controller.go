@@ -949,7 +949,7 @@ func (d *BlockVolumeControllerDriver) ControllerUnpublishVolume(ctx context.Cont
 			csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 			metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-			return nil, status.Errorf(codes.Internal, "Failed to find volume attachment :", csi_util.TruncateError(err.Error(), maxVolumeAttachErrorMsgBytes))
+			return nil, status.Errorf(codes.Internal, "Failed to find volume attachment : %s", csi_util.TruncateError(err.Error(), maxVolumeAttachErrorMsgBytes))
 		}
 		if attachedVolume == nil {
 			log.With("service", "compute", "verb", "get", "resource", "volumeAttachment", "statusCode", util.GetHttpStatusCode(err)).With(zap.Error(err)).
