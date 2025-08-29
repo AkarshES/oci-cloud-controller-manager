@@ -55,7 +55,7 @@ const (
 	resourceTrackingFeatureFlagName = "CPO_ENABLE_RESOURCE_ATTRIBUTION"
 	OkeSystemTagNamesapce           = "orcl-containerengine"
 	MaxDefinedTagPerVolume          = 64
-	maxVolumeAttachErrorMsgBytes = 200000
+	maxVolumeAttachErrorMsgBytes = 200
 
 )
 
@@ -797,22 +797,11 @@ func (d *BlockVolumeControllerDriver) ControllerPublishVolume(ctx context.Contex
 			csiMetricDimension = util.GetComponentForMetricDimension(errorType, util.CSIStorageType)
 			dimensionsMap[metrics.ComponentDimension] = csiMetricDimension
 			metrics.SendMetricData(d.metricPusher, csiMetricPrefix, time.Since(startTime).Seconds(), dimensionsMap)
-			log.With("service", "compute", "verb", "create", "resource", "volumeAttachment", "statusCode", util.GetHttpStatusCode(err)).
-				With("instanceID", id).Infof("1. failed paravirtualized attachment instance to volume. error : %s", err.Error())
-
-			log.With("service", "compute", "verb", "create", "resource", "volumeAttachment", "statusCode", util.GetHttpStatusCode(err)).
-				With("instanceID", id).Infof("2. failed paravirtualized attachment instance to volume. error : %v", err)
-
-			log.With("service", "compute", "verb", "create", "resource", "volumeAttachment", "statusCode", util.GetHttpStatusCode(err)).
-				With("instanceID", id).Infof("3. failed paravirtualized attachment instance to volume. error : %s", errors.Cause(err).Error())
-
-			log.With("service", "compute", "verb", "create", "resource", "volumeAttachment", "statusCode", util.GetHttpStatusCode(err)).
-				With("instanceID", id).Infof("4. failed paravirtualized attachment instance to volume. error : %s", errors.Cause(err))
 
 			log.With("service", "compute", "verb", "create", "resource", "volumeAttachment", "statusCode", util.GetHttpStatusCode(err)).
 				With("instanceID", id).Infof("5. Truncated failed paravirtualized attachment instance to volume. error : %s", csi_util.TruncateError(err.Error(), maxVolumeAttachErrorMsgBytes))
 
-			return nil, status.Errorf(codes.Internal, "failed paravirtualized attachment instance to volume. error : %s", errors.Cause(err).Error())
+			return nil, status.Errorf(codes.Internal, "failed paravirtualized attachment instance to volume. error : %s", "test")
 		}
 	} else {
 		nodeVolumeAttachment, err = d.client.Compute().AttachVolume(ctx, id, req.VolumeId, volumeAttachmentOptions.isShareable)
