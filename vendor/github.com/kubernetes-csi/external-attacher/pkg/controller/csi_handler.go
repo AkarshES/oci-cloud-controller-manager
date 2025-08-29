@@ -605,10 +605,13 @@ func (h *csiHandler) saveAttachError(ctx context.Context, va *storage.VolumeAtta
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info("Saving attach error")
 	clone := va.DeepCopy()
+	logger.V(2).Info("Temp 1 : The Error is this", "err", err.Error())
+
 	clone.Status.AttachError = &storage.VolumeError{
 		Message: err.Error(),
 		Time:    metav1.Now(),
 	}
+	logger.V(2).Info("Temp 2 : The Error is this", "err", clone.Status.AttachError)
 
 	var newVa *storage.VolumeAttachment
 	if newVa, err = h.patchVA(ctx, va, clone, "status"); err != nil {
