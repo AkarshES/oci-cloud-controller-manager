@@ -2625,6 +2625,68 @@ func TestHasBackendSetChanged(t *testing.T) {
 			},
 			expected: true,
 		},
+		{
+			name: "Max backend connections added",
+			desired: client.GenericBackendSetDetails{
+				Name:                  common.String("TCP-80-IPv6"),
+				Policy:                common.String("policy"),
+				Backends:              []client.GenericBackend{},
+				BackendMaxConnections: common.Int(256),
+			},
+			actual: client.GenericBackendSetDetails{
+				Name:     common.String("TCP-80-IPv6"),
+				Policy:   common.String("policy"),
+				Backends: []client.GenericBackend{},
+			},
+			expected: true,
+		},
+		{
+			name: "Max backend connections updated",
+			desired: client.GenericBackendSetDetails{
+				Name:                  common.String("TCP-80-IPv6"),
+				Policy:                common.String("policy"),
+				Backends:              []client.GenericBackend{},
+				BackendMaxConnections: common.Int(256),
+			},
+			actual: client.GenericBackendSetDetails{
+				Name:                  common.String("TCP-80-IPv6"),
+				Policy:                common.String("policy"),
+				Backends:              []client.GenericBackend{},
+				BackendMaxConnections: common.Int(0),
+			},
+			expected: true,
+		},
+		{
+			name: "Max backend connections added",
+			desired: client.GenericBackendSetDetails{
+				Name:     common.String("TCP-80-IPv6"),
+				Policy:   common.String("policy"),
+				Backends: []client.GenericBackend{},
+			},
+			actual: client.GenericBackendSetDetails{
+				Name:                  common.String("TCP-80-IPv6"),
+				Policy:                common.String("policy"),
+				Backends:              []client.GenericBackend{},
+				BackendMaxConnections: common.Int(256),
+			},
+			expected: true,
+		},
+		{
+			name: "Max backend connections - no change",
+			desired: client.GenericBackendSetDetails{
+				Name:                  common.String("TCP-80-IPv6"),
+				Policy:                common.String("policy"),
+				Backends:              []client.GenericBackend{},
+				BackendMaxConnections: common.Int(256),
+			},
+			actual: client.GenericBackendSetDetails{
+				Name:                  common.String("TCP-80-IPv6"),
+				Policy:                common.String("policy"),
+				Backends:              []client.GenericBackend{},
+				BackendMaxConnections: common.Int(256),
+			},
+			expected: false,
+		},
 	}
 
 	for _, tt := range testCases {

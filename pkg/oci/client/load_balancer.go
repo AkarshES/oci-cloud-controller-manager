@@ -359,6 +359,9 @@ func (c *loadbalancerClientStruct) CreateBackendSet(ctx context.Context, lbID st
 	if details.SslConfiguration != nil {
 		createBackendSetRequest.SslConfiguration = genericSslConfigurationToSslConfiguration(details.SslConfiguration)
 	}
+	if details.BackendMaxConnections != nil {
+		createBackendSetRequest.BackendMaxConnections = details.BackendMaxConnections
+	}
 	resp, err := c.loadbalancer.CreateBackendSet(ctx, createBackendSetRequest)
 
 	incRequestCounter(err, createVerb, backendSetResource)
@@ -389,6 +392,9 @@ func (c *loadbalancerClientStruct) UpdateBackendSet(ctx context.Context, lbID st
 
 	if details.SslConfiguration != nil {
 		updateBackendSetRequest.SslConfiguration = genericSslConfigurationToSslConfiguration(details.SslConfiguration)
+	}
+	if details.BackendMaxConnections != nil {
+		updateBackendSetRequest.BackendMaxConnections = details.BackendMaxConnections
 	}
 	resp, err := c.loadbalancer.UpdateBackendSet(ctx, updateBackendSetRequest)
 
@@ -868,6 +874,10 @@ func (c *loadbalancerClientStruct) backendSetsToGenericBackendSetDetails(backend
 			backendDetailsStruct.SslConfiguration = sslConfigurationToGenericSslConfiguration(v.SslConfiguration)
 		}
 
+		if v.BackendMaxConnections != nil {
+			backendDetailsStruct.BackendMaxConnections = v.BackendMaxConnections
+		}
+
 		if v.SessionPersistenceConfiguration != nil {
 			backendDetailsStruct.SessionPersistenceConfiguration = getGenericSessionPersistenceConfiguration(v.SessionPersistenceConfiguration)
 		}
@@ -899,6 +909,10 @@ func (c *loadbalancerClientStruct) genericBackendSetDetailsToBackendSets(backend
 
 		if v.SslConfiguration != nil {
 			backendSetDetailsStruct.SslConfiguration = genericSslConfigurationToSslConfiguration(v.SslConfiguration)
+		}
+
+		if v.BackendMaxConnections != nil {
+			backendSetDetailsStruct.BackendMaxConnections = v.BackendMaxConnections
 		}
 
 		if v.SessionPersistenceConfiguration != nil {
