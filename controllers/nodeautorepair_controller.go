@@ -28,6 +28,13 @@ const (
 	narName string = "narName"
 )
 
+var CONDITIONS map[string]string = map[string]string{
+	"IMDSUnreachable": "True",
+	"GPUCount":        "True",
+	"GPUCdfpCable":    "True",
+	"GPURowRemap":     "True",
+}
+
 type NodeAutoRepairReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
@@ -68,31 +75,35 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// 2. Iterate through the node's status conditions to check for problems.
 	for _, condition := range node.Status.Conditions {
 		// 3. Look for the "IMDSUnreachable" condition and check if its status is True.
-		if condition.Type == "IMDSUnreachable" && condition.Status == v1.ConditionTrue {
-			// Log a warning event to Kubernetes to make the issue visible.
-			r.Recorder.Event(node, v1.EventTypeWarning, "IMDSUnreachableFromCCM", "Node condition IMDSUnreachable is now: True")
-
-			// Trigger the auto-repair logic here. For example, you can call a separate function.
-			log.Info("CCM: IMDS is unreachable, triggering repair action.", "node", req.NamespacedName.Name)
-
-			// Requeue the request after a delay to periodically check if the issue is resolved.
-			log.Info("CCM: Requeue after 10 mins", "node", req.NamespacedName.Name)
-			workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
-				Spec: norv1beta1.NodeOperationRuleSpec{
-					NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
-						EvictionGracePeriod:             1,
-						IsForceActionAfterGraceDuration: true,
-					},
-				},
-			})
-			log.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
-			return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
+		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; ok {
+			if conditionStatus != string(v1.ConditionTrue) {
+				continue
+			}
 		}
+		// Log a warning event to Kubernetes to make the issue visible.
+		r.Recorder.Event(node, v1.EventTypeWarning, "IMDSUnreachableFromCCM", "Node condition IMDSUnreachable is now: True")
+
+		// Trigger the auto-repair logic here. For example, you can call a separate function.
+		log.Info("CCM: condition "+string(condition.Type)+" triggered. Triggering repair action.", "node", req.NamespacedName.Name)
+
+		// Requeue the request after a delay to periodically check if the issue is resolved.
+		log.Info("CCM: Requeue after 10 mins", "node", req.NamespacedName.Name)
+		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
+			Spec: norv1beta1.NodeOperationRuleSpec{
+				NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
+					EvictionGracePeriod:             1,
+					IsForceActionAfterGraceDuration: true,
+				},
+			},
+		})
+		log.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
+		return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
+
 	}
 
 	// 4. If the loop completes without finding a "True" IMDSUnreachable condition,
 	// the node is considered healthy.
-	log.Info("CCM: Node auto repair Node is healthy and has no IMDSUnreachable condition.", "node", req.NamespacedName.Name)
+	log.Info("CCM: Node auto repair Node is healthy and has no NPD conditions.", "node", req.NamespacedName.Name)
 
 	// The reconciliation is complete. Return an empty result to indicate no need to re-process.
 	return ctrl.Result{}, nil
@@ -181,9 +192,9 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	if lastManager != "" {
-		p.log.Info("CCM: Condition hasn't changed. Detected a change in the Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
+		p.log.Info("CCM: NPD Condition hasn't changed. Detected a change in Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
 	} else {
-		p.log.Info("CCM: Condition hasn't changed. No manager found for this update event.")
+		p.log.Info("CCM: NPD Condition hasn't changed. No manager found for this update event.")
 	}
 	// If we reach here, no significant changes were found in the conditions.
 	return false
