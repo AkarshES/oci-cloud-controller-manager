@@ -1,0 +1,37 @@
+FROM --platform=linux/arm64 odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke-golang-fips:go1.24.1-51 as builder
+ARG CI_IMAGE_REGISTRY
+RUN microdnf install yum yum-utils
+ARG COMPONENT
+
+ENV SRC /go/src/github.com/oracle/oci-cloud-controller-manager
+
+RUN yum-config-manager --disable \* && yum-config-manager --add-repo https://artifactory.oci.oraclecorp.com/io-ol8-latest-yum-aarch64-local && yum repolist enabled \
+  && yum install -y make \
+  && yum clean all
+
+ENV GOPATH /go/
+RUN mkdir -p /go/bin $SRC
+ADD . $SRC
+
+WORKDIR $SRC
+
+RUN ARCH=arm make clean build-arm-all
+
+FROM --platform=linux/arm64 ocr-docker-remote.artifactory.oci.oraclecorp.com/os/oraclelinux:8-slim-fips as base
+RUN rm -f /etc/yum.repos.d/*
+COPY artifactory_arm.repo /etc/yum.repos.d/.
+
+RUN microdnf -y install util-linux e2fsprogs xfsprogs && \
+    microdnf update && \
+    microdnf clean all
+
+COPY scripts/encrypt-mount /sbin/encrypt-mount
+COPY scripts/encrypt-umount /sbin/encrypt-umount
+COPY scripts/rpm-host /sbin/rpm-host
+COPY scripts/chroot-bash /sbin/chroot-bash
+RUN chmod 755 /sbin/encrypt-mount
+RUN chmod 755 /sbin/encrypt-umount
+RUN chmod 755 /sbin/rpm-host
+RUN chmod 755 /sbin/chroot-bash
+
+COPY --from=0 /go/src/github.com/oracle/oci-cloud-controller-manager/dist/arm/* /usr/local/bin/
