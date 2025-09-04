@@ -7,6 +7,7 @@ toolchain go1.23.4
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker => github.com/docker/docker v25.0.6+incompatible
+	github.com/oracle/oci-go-sdk/v65 => oci.private.devops.scmservice.us-phoenix-1.oci.oracleiaas.com/namespaces/axuxirvibvvo/projects/SDK/repositories/oci-go-sdk.git/v65 v65.96.0-p
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.16.0
 	google.golang.org/grpc => google.golang.org/grpc v1.60.1
 	k8s.io/api => k8s.io/api v0.30.1
@@ -84,7 +85,7 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubelet v0.30.3
-	k8s.io/kubernetes v1.30.3
+	k8s.io/kubernetes v1.30.14
 	k8s.io/mount-utils v0.30.1
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.18.0
@@ -133,7 +134,7 @@ require (
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/cli v25.0.1+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v25.0.6+incompatible // indirect
+	github.com/docker/docker v28.4.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
