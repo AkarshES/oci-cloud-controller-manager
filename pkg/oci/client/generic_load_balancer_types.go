@@ -15,7 +15,8 @@ type GenericBackendSetDetails struct {
 	Backends                        []GenericBackend
 	SessionPersistenceConfiguration *GenericSessionPersistenceConfiguration
 	// Only needed for LB
-	SslConfiguration *GenericSslConfigurationDetails
+	BackendMaxConnections *int
+	SslConfiguration      *GenericSslConfigurationDetails
 	// Only needed for NLB
 	IsPreserveSource *bool
 	IpVersion        *GenericIpVersion
