@@ -176,6 +176,18 @@ const (
 
 	// ServiceAnnotationLoadbalancerBackendSetSSLConfig is a service annotation allows you to set the cipher suite on the backendSet
 	ServiceAnnotationLoadbalancerBackendSetSSLConfig = "oci.oraclecloud.com/oci-load-balancer-backendset-ssl-config"
+
+	// ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections represents
+	// the maximum number of simultaneous connections the load balancer can make to any backend
+	// in the backend set unless the backend has its own maxConnections setting. If this is not
+	// set or set to 0 then the number of simultaneous connections the load balancer can make
+	// to any backend in the backend set unless the backend has its own maxConnections setting
+	// is unlimited.
+	// If setting backendMaxConnections to some value other than 0 then that value must be greater
+	// or equal to 256.
+	// Example: `300`
+	// https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/BackendSetDetails
+	ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections = "oci-load-balancer.oraclecloud.com/backendset-backend-max-connections"
 )
 
 // NLB specific annotations
@@ -819,12 +831,19 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 			return nil, err
 		}
 		backendsIPv4, backendsIPv6 := getBackends(logger, provisionedNodes, virtualPods, servicePort.NodePort)
+
+		backendMaxConnections, err := getBackendSetBackendMaxConnections(svc)
+		if err != nil {
+			return nil, err
+		}
+
 		genericBackendSetDetails := client.GenericBackendSetDetails{
-			Name:             common.String(backendSetName),
-			Policy:           &loadbalancerPolicy,
-			HealthChecker:    healthChecker,
-			IsPreserveSource: &isPreserveSource,
-			SslConfiguration: sslConfiguration,
+			Name:                  common.String(backendSetName),
+			Policy:                &loadbalancerPolicy,
+			HealthChecker:         healthChecker,
+			IsPreserveSource:      &isPreserveSource,
+			BackendMaxConnections: backendMaxConnections,
+			SslConfiguration:      sslConfiguration,
 		}
 
 		if strings.Contains(backendSetName, IPv6) && contains(listenerBackendIpVersion, IPv6) {
@@ -983,6 +1002,38 @@ func getHealthCheckTimeout(svc *v1.Service) (int, error) {
 		timeoutInMillis = tInt
 	}
 	return timeoutInMillis, nil
+}
+
+func getBackendSetBackendMaxConnections(svc *v1.Service) (value *int, err error) {
+	lbType := getLoadBalancerType(svc)
+	var backendMaxConnections int
+	annotationValue := ""
+	annotationExists := false
+
+	annotationValue, annotationExists = svc.Annotations[ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections]
+	if annotationExists {
+		if lbType != LB {
+			return nil, fmt.Errorf("annotation: %s is only supported for %s of type \"lb\"", ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections, ServiceAnnotationLoadBalancerType)
+		}
+
+		if annotationValue == "" {
+			return
+		}
+		backendMaxConnections, err = strconv.Atoi(annotationValue)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing service annotation: %s=%s",
+				ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections,
+				annotationValue,
+			)
+		}
+		if backendMaxConnections != 0 && (backendMaxConnections < 256 || backendMaxConnections > 65535) {
+			return nil, fmt.Errorf("value of service annotation: %s can not be less than 256 or greater than 65535",
+				ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections,
+			)
+		}
+		value = common.Int(backendMaxConnections)
+	}
+	return
 }
 
 func GetSSLConfiguration(cfg *SSLConfig, name string, port int, sslConfigAnnotation string) (*client.GenericSslConfigurationDetails, error) {

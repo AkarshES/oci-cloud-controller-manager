@@ -250,6 +250,10 @@ func hasBackendSetChanged(logger *zap.SugaredLogger, actual client.GenericBacken
 		backendSetChanges = append(backendSetChanges, fmt.Sprintf(changeFmtStr, "BackEndSet:IsPreserveSource", toBool(actual.IsPreserveSource), toBool(desired.IsPreserveSource)))
 	}
 
+	if toInt(actual.BackendMaxConnections) != toInt(desired.BackendMaxConnections) {
+		backendSetChanges = append(backendSetChanges, fmt.Sprintf(changeFmtStr, "BackEndSet:BackendMaxConnections", toInt(actual.BackendMaxConnections), toInt(desired.BackendMaxConnections)))
+	}
+
 	backendSetChanges = append(backendSetChanges, getSSLConfigurationChanges(actual.SslConfiguration, desired.SslConfiguration)...)
 	nameFormat := "%s:%d"
 
@@ -380,6 +384,7 @@ func getBackendSetChanges(logger *zap.SugaredLogger, actual map[string]client.Ge
 					Policy:                          actualBackendSet.Policy,
 					Backends:                        backendsToBackendDetails(actualBackendSet.Backends),
 					SessionPersistenceConfiguration: actualBackendSet.SessionPersistenceConfiguration,
+					BackendMaxConnections:           actualBackendSet.BackendMaxConnections,
 					SslConfiguration:                sslConfigurationToDetails(actualBackendSet.SslConfiguration),
 					IpVersion:                       actualBackendSet.IpVersion,
 				},

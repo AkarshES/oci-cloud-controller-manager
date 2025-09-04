@@ -11361,6 +11361,616 @@ func Test_getBackendSets(t *testing.T) {
 			},
 			err: nil,
 		},
+		"BackendSet - Backend Max Connections - valid value": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+							NodePort: 36667,
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections: "256",
+					},
+				},
+			},
+			provisionedNodes: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:130B",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:1300",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.1",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.2",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+			},
+			virtualPods:              []*v1.Pod{},
+			sslCfg:                   nil,
+			listenerBackendIpVersion: []string{IPv4},
+			wantBackendSets: map[string]client.GenericBackendSetDetails{
+				"TCP-67": {
+					Name:   &testThreeBackendSetNameIPv4,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("10.0.0.1"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+						{IpAddress: common.String("10.0.0.2"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+					},
+					SessionPersistenceConfiguration: nil,
+					SslConfiguration:                nil,
+					IpVersion:                       GenericIpVersion(client.GenericIPv4),
+					IsPreserveSource:                common.Bool(false),
+					BackendMaxConnections:           common.Int(256),
+				},
+			},
+			err: nil,
+		},
+		"BackendSet - Backend Max Connections - invalid value": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+							NodePort: 36667,
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections: "1",
+					},
+				},
+			},
+			provisionedNodes: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:130B",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:1300",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.1",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.2",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+			},
+			virtualPods:              []*v1.Pod{},
+			sslCfg:                   nil,
+			listenerBackendIpVersion: []string{IPv4},
+			wantBackendSets: map[string]client.GenericBackendSetDetails{
+				"TCP-67": {
+					Name:   &testThreeBackendSetNameIPv4,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("10.0.0.1"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+						{IpAddress: common.String("10.0.0.2"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+					},
+					SessionPersistenceConfiguration: nil,
+					SslConfiguration:                nil,
+					IpVersion:                       GenericIpVersion(client.GenericIPv4),
+					IsPreserveSource:                common.Bool(false),
+					BackendMaxConnections:           common.Int(0),
+				},
+			},
+			err: fmt.Errorf("value of service annotation: %s can not be less than 256 or greater than 65535",
+				ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections,
+			),
+		},
+		"BackendSet - Backend Max Connections - parsing error": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+							NodePort: 36667,
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections: "invalid",
+					},
+				},
+			},
+			provisionedNodes: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:130B",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:1300",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.1",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.2",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+			},
+			virtualPods:              []*v1.Pod{},
+			sslCfg:                   nil,
+			listenerBackendIpVersion: []string{IPv4},
+			wantBackendSets: map[string]client.GenericBackendSetDetails{
+				"TCP-67": {
+					Name:   &testThreeBackendSetNameIPv4,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("10.0.0.1"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+						{IpAddress: common.String("10.0.0.2"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+					},
+					SessionPersistenceConfiguration: nil,
+					SslConfiguration:                nil,
+					IpVersion:                       GenericIpVersion(client.GenericIPv4),
+					IsPreserveSource:                common.Bool(false),
+					BackendMaxConnections:           common.Int(0),
+				},
+			},
+			err: fmt.Errorf("error parsing service annotation: %s=%s",
+				ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections,
+				"invalid",
+			),
+		},
+		"BackendSet - Backend Max Connections - invalid annotation for NLB": {
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(67),
+							NodePort: 36667,
+						},
+					},
+					IPFamilies: []v1.IPFamily{v1.IPFamily(IPv4)},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:                            "nlb",
+						ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections: "0",
+					},
+				},
+			},
+			provisionedNodes: []*v1.Node{
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:130B",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "2001:0000:130F:0000:0000:09C0:876A:1300",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.1",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+				{
+					TypeMeta:   metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{},
+					Spec: v1.NodeSpec{
+						ProviderID: testNodeString,
+					},
+					Status: v1.NodeStatus{
+						Capacity:    nil,
+						Allocatable: nil,
+						Phase:       "",
+						Conditions:  nil,
+						Addresses: []v1.NodeAddress{
+							{
+								Address: "10.0.0.2",
+								Type:    "InternalIP",
+							},
+						},
+						DaemonEndpoints: v1.NodeDaemonEndpoints{},
+						NodeInfo:        v1.NodeSystemInfo{},
+						Images:          nil,
+						VolumesInUse:    nil,
+						VolumesAttached: nil,
+						Config:          nil,
+					},
+				},
+			},
+			virtualPods:              []*v1.Pod{},
+			sslCfg:                   nil,
+			listenerBackendIpVersion: []string{IPv4},
+			wantBackendSets: map[string]client.GenericBackendSetDetails{
+				"TCP-67": {
+					Name:   &testThreeBackendSetNameIPv4,
+					Policy: common.String("FIVE_TUPLE"),
+					HealthChecker: &client.GenericHealthChecker{
+						Protocol:         "HTTP",
+						IsForcePlainText: common.Bool(false),
+						Port:             common.Int(10256),
+						UrlPath:          common.String("/healthz"),
+						Retries:          common.Int(3),
+						TimeoutInMillis:  common.Int(3000),
+						IntervalInMillis: common.Int(10000),
+						ReturnCode:       common.Int(http.StatusOK),
+					},
+					Backends: []client.GenericBackend{
+						{IpAddress: common.String("10.0.0.1"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+						{IpAddress: common.String("10.0.0.2"), Port: common.Int(36667), Weight: common.Int(1), TargetId: &testNodeString},
+					},
+					SessionPersistenceConfiguration: nil,
+					SslConfiguration:                nil,
+					IpVersion:                       GenericIpVersion(client.GenericIPv4),
+					IsPreserveSource:                common.Bool(false),
+					BackendMaxConnections:           common.Int(0),
+				},
+			},
+			err: fmt.Errorf("annotation: %s is only supported for %s of type \"lb\"", ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections, ServiceAnnotationLoadBalancerType),
+		},
 	}
 	for name, tc := range testCases {
 		logger := zap.L()
@@ -11374,6 +11984,9 @@ func Test_getBackendSets(t *testing.T) {
 			}
 			if err != nil && err.Error() != tc.err.Error() {
 				t.Errorf("Expected \n%+v\nbut got\n%+v", tc.err, err)
+			}
+			if err != nil {
+				return
 			}
 			if len(gotBackendSets) != len(tc.wantBackendSets) {
 				t.Errorf("Number of excpected listeners \n%+v\nbut got\n%+v", len(tc.wantBackendSets), len(gotBackendSets))
@@ -11402,6 +12015,9 @@ func Test_getBackendSets(t *testing.T) {
 						want, _ := json.Marshal(backendSetDetails.SslConfiguration)
 						got, _ := json.Marshal(gotBackendSet.SslConfiguration)
 						t.Errorf("backendSetDetails SslConfiguration failed want: %s \n got: %s \n", want, got)
+					}
+					if toInt(backendSetDetails.BackendMaxConnections) != toInt(gotBackendSet.BackendMaxConnections) {
+						t.Errorf("Expected backendSetDetails BackendMaxConnections \n%+v\nbut got backendSetDetails BackendMaxConnections \n%+v", toInt(backendSetDetails.BackendMaxConnections), toInt(gotBackendSet.BackendMaxConnections))
 					}
 				}
 			}
