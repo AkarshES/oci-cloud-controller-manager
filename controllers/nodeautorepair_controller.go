@@ -80,8 +80,16 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				continue
 			}
 		}
+
+		if string(condition.Type) == "GPUCOUNT" {
+			log.Info("CCM: condition "+string(condition.Type)+" triggered. Triggering terminate action.", "node", req.NamespacedName.Name)
+			workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
+			log.Info("CCM: Terminate instance workrequest id: " + workrequestId)
+			return ctrl.Result{}, nil
+		}
+
 		// Log a warning event to Kubernetes to make the issue visible.
-		r.Recorder.Event(node, v1.EventTypeWarning, "IMDSUnreachableFromCCM", "Node condition IMDSUnreachable is now: True")
+		r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), "Node condition"+string(condition.Type)+" is now: True")
 
 		// Trigger the auto-repair logic here. For example, you can call a separate function.
 		log.Info("CCM: condition "+string(condition.Type)+" triggered. Triggering repair action.", "node", req.NamespacedName.Name)
