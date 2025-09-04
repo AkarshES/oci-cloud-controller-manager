@@ -27,7 +27,7 @@ import (
 type ComputeInterface interface {
 	// GetInstance gets information about the specified instance.
 	GetInstance(ctx context.Context, id string) (*core.Instance, error)
-	TerminateInstance(ctx context.Context, id string) (string, error)
+	TerminateInstance(ctx context.Context, id string) (*string, error)
 
 	// GetInstanceByNodeName gets the OCI instance corresponding to the given
 	// Kubernetes node name.
@@ -59,9 +59,9 @@ func (c *client) GetInstance(ctx context.Context, id string) (*core.Instance, er
 	return &resp.Instance, nil
 }
 
-func (c *client) TerminateInstance(ctx context.Context, id string) (string, error) {
+func (c *client) TerminateInstance(ctx context.Context, id string) (*string, error) {
 	if !c.rateLimiter.Reader.TryAccept() {
-		return "", RateLimitError(false, "TerminateInstance")
+		return nil, RateLimitError(false, "TerminateInstance")
 	}
 
 	resp, err := c.compute.TerminateInstance(ctx, core.TerminateInstanceRequest{
@@ -70,10 +70,10 @@ func (c *client) TerminateInstance(ctx context.Context, id string) (string, erro
 	incRequestCounter(err, getVerb, instanceResource)
 
 	if err != nil {
-		return "", errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
-	return *resp.OpcRequestId, nil
+	return resp.OpcRequestId, nil
 }
 
 func (c *client) getInstanceByDisplayName(ctx context.Context, compartmentID, displayName string) (*core.Instance, error) {

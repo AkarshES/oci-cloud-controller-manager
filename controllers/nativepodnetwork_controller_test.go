@@ -1130,6 +1130,10 @@ func (c *MockComputeClient) GetInstance(ctx context.Context, id string) (*core.I
 	return nil, nil
 }
 
+func (c *MockComputeClient) TerminateInstance(ctx context.Context, id string) (*string, error) {
+	return nil, nil
+}
+
 func (c *MockComputeClient) GetInstanceByNodeName(ctx context.Context, compartmentID, vcnID, nodeName string) (*core.Instance, error) {
 	return nil, nil
 }
