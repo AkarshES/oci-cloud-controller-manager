@@ -150,6 +150,10 @@ func (c *mockComputeClient) GetInstance(ctx context.Context, request core.GetIns
 	return core.GetInstanceResponse{}, nil
 }
 
+func (c *mockComputeClient) TerminateInstance(ctx context.Context, request core.TerminateInstanceRequest) (response core.TerminateInstanceResponse, err error) {
+	return core.TerminateInstanceResponse{}, nil
+}
+
 func (c *mockComputeClient) ListInstances(ctx context.Context, request core.ListInstancesRequest) (response core.ListInstancesResponse, err error) {
 	return core.ListInstancesResponse{}, nil
 }

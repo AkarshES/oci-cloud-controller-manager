@@ -84,7 +84,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if string(condition.Type) == "GPUCOUNT" {
 			log.Info("CCM: condition "+string(condition.Type)+" triggered. Triggering terminate action.", "node", req.NamespacedName.Name)
 			workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
-			log.Info("CCM: Terminate instance workrequest id: " + *workrequestId)
+			log.Info("CCM: Terminate instance workrequest id: " + workrequestId)
 			return ctrl.Result{}, nil
 		}
 

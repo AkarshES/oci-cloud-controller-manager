@@ -918,6 +918,10 @@ func (MockOCIClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType
 // MockComputeClient mocks Compute client implementation
 type MockComputeClient struct{}
 
+func (MockComputeClient) TerminateInstance(ctx context.Context, id string) (string, error) {
+	return "", nil
+}
+
 func (MockComputeClient) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
 	if instance, ok := instances[id]; ok {
 		return instance, nil

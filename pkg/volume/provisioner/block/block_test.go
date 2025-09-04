@@ -17,9 +17,10 @@ package block
 import (
 	"context"
 	"fmt"
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"testing"
 	"time"
+
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -236,6 +237,10 @@ type MockComputeClient struct{}
 // GetInstance gets information about the specified instance.
 func (c *MockComputeClient) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
 	return nil, nil
+}
+
+func (c *MockComputeClient) TerminateInstance(ctx context.Context, id string) (string, error) {
+	return "", nil
 }
 
 // GetInstanceByNodeName gets the OCI instance corresponding to the given
