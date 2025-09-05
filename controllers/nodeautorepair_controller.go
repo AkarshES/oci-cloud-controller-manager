@@ -74,11 +74,8 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// 2. Iterate through the node's status conditions to check for problems.
 	for _, condition := range node.Status.Conditions {
-		// 3. Look for the "IMDSUnreachable" condition and check if its status is True.
-		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; ok {
-			if conditionStatus != string(v1.ConditionTrue) {
-				continue
-			}
+		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; !ok || conditionStatus != string(v1.ConditionTrue) {
+			continue
 		}
 
 		if string(condition.Type) == "GPUCOUNT" {
@@ -182,7 +179,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 				"oldTransitTime", oldCondition.LastTransitionTime,
 				"newTransitTime", newCondition.LastHeartbeatTime,
 			)
-			if oldCondition.Type == "IMDSUnreachable" {
+			if _, ok := CONDITIONS[string(oldCondition.Type)]; ok {
 				return true
 			}
 		}
