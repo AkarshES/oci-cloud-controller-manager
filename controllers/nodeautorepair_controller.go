@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
@@ -35,6 +37,12 @@ var CONDITIONS map[string]string = map[string]string{
 	"GPURowRemap":     "True",
 }
 
+var REPAIR_TAINT v1.Taint = v1.Taint{
+	Key:    "oci.oraclecloud.com/nodeAutoRepairScheduled",
+	Value:  "true",
+	Effect: v1.TaintEffectNoSchedule,
+}
+
 type NodeAutoRepairReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
@@ -47,52 +55,103 @@ type NodeAutoRepairReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-// It configures the controller to watch for changes to both Node and Event objects.
 func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log := zap.L().Sugar()
 	log.Info("Setting up NAR controller with manager")
 	r.Recorder = mgr.GetEventRecorderFor("nodeAutoRepair")
 
 	return ctrl.NewControllerManagedBy(mgr).
-		// Watch for changes to Node objects. This is crucial for checking persistent
-		// conditions like DiskPressure, MemoryPressure, or custom NPD conditions.
 		For(&v1.Node{}, builder.WithPredicates(ConditionChangedPredicate{log: log})).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 20, CacheSyncTimeout: time.Hour}).
 		Complete(r)
 }
 
-// Reconcile implements reconcile.TypedReconciler.
+// Reconcile is the main controller loop, now acting as an orchestrator.
 func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
-	log := log.FromContext(ctx)
-	log = log.WithValues(norName, "NAR")
-	// 1. Fetch the Node object that triggered the reconciliation.
+	// Use the logger from the context, as requested.
+	logger := log.FromContext(ctx)
+	logger = logger.WithValues(narName, "NAR")
+
+	// 1. Fetch the Node object.
 	node := &v1.Node{}
 	if err := r.Client.Get(ctx, req.NamespacedName, node); err != nil {
-		// If the node is not found, it might have been deleted. Ignore the request.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// 2. Iterate through the node's status conditions to check for problems.
+	// 2. Check if the node has an unhealthy condition.
+	if unhealthyCondition := findUnhealthyCondition(node); unhealthyCondition != nil {
+		// 2a. If unhealthy, execute the repair logic.
+		logger.Info("Node is unhealthy, starting repair process", "condition", unhealthyCondition.Type)
+		return r.handleUnhealthyNode(ctx, logger, node, unhealthyCondition)
+	}
+
+	// 3. If healthy, execute the cleanup logic for any previous repairs.
+	return r.cleanupRepairArtifacts(ctx, logger, node)
+}
+
+// findUnhealthyCondition checks if a node has a condition that warrants repair.
+// It returns the first matching unhealthy condition, or nil if the node is healthy.
+func findUnhealthyCondition(node *v1.Node) *v1.NodeCondition {
 	for _, condition := range node.Status.Conditions {
-		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; !ok || conditionStatus != string(v1.ConditionTrue) {
-			continue
+		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; ok && conditionStatus == string(condition.Status) {
+			return &condition
 		}
+	}
+	return nil
+}
 
-		if string(condition.Type) == "GPUCOUNT" {
-			log.Info("CCM: condition "+string(condition.Type)+" triggered. Triggering terminate action.", "node", req.NamespacedName.Name)
-			workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
-			log.Info("CCM: Terminate instance workrequest id: " + workrequestId)
-			return ctrl.Result{}, nil
+// handleUnhealthyNode performs all actions when a node is found to be unhealthy.
+func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, condition *v1.NodeCondition) (ctrl.Result, error) {
+	patch := client.MergeFrom(node.DeepCopy())
+	var needsPatch bool
+
+	// Action 1: Add repair label if it doesn't exist.
+	if node.Labels == nil {
+		node.Labels = make(map[string]string)
+	}
+	labelKey := "oci.oraclecloud.com.problem_detected/" + string(condition.Type)
+	labelFound := false
+	if _, ok := node.Labels[labelKey]; !ok {
+		node.Labels[labelKey] = "true"
+		logger.Info("Adding label to unhealthy node", "node", node.Name, "label", labelKey)
+		needsPatch = true
+		labelFound = true
+	}
+
+	// Action 2: Add repair taint if it doesn't exist.
+	taintFound := false
+	for _, taint := range node.Spec.Taints {
+		if taint.Key == REPAIR_TAINT.Key && taint.Effect == REPAIR_TAINT.Effect {
+			taintFound = true
+			break
 		}
+	}
+	if !taintFound {
+		node.Spec.Taints = append(node.Spec.Taints, REPAIR_TAINT)
+		logger.Info("Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
+		needsPatch = true
+	}
 
-		// Log a warning event to Kubernetes to make the issue visible.
-		r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), "Node condition"+string(condition.Type)+" is now: True")
+	// Action 3: Apply a single patch for both label and taint to be efficient.
+	if needsPatch {
+		if err := r.Client.Patch(ctx, node, patch); err != nil {
+			logger.Error(err, "Failed to patch node with repair label/taint")
+			return ctrl.Result{}, err
+		}
+	}
 
-		// Trigger the auto-repair logic here. For example, you can call a separate function.
-		log.Info("CCM: condition "+string(condition.Type)+" triggered. Triggering repair action.", "node", req.NamespacedName.Name)
+	// Action 4: Trigger the repair action (terminate or reboot).
+	if string(condition.Type) == "GPUCountMismatch" && taintFound {
+		logger.Info("GPUCountMismatch condition detected on already tainted node. Triggering terminate action.", "node", node.Name)
+		workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
+		logger.Info("Terminate instance workrequest id: " + workrequestId)
+		return ctrl.Result{}, nil
+	}
 
-		// Requeue the request after a delay to periodically check if the issue is resolved.
-		log.Info("CCM: Requeue after 10 mins", "node", req.NamespacedName.Name)
+	r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), "Node condition "+string(condition.Type)+" is now: True, triggering repair action")
+	logger.Info("Condition triggered repair action", "condition", string(condition.Type), "node", node.Name)
+
+	if labelFound {
 		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
 			Spec: norv1beta1.NodeOperationRuleSpec{
 				NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
@@ -101,26 +160,62 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				},
 			},
 		})
-		log.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
-		return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
-
+		logger.Info("Auto Repair work request id for reboot: " + workRequestId)
 	}
 
-	// 4. If the loop completes without finding a "True" IMDSUnreachable condition,
-	// the node is considered healthy.
-	log.Info("CCM: Node auto repair Node is healthy and has no NPD conditions.", "node", req.NamespacedName.Name)
+	logger.Info("Requeuing request for periodic check", "after", "15m")
+	return ctrl.Result{RequeueAfter: 15 * time.Minute}, nil
+}
 
-	// The reconciliation is complete. Return an empty result to indicate no need to re-process.
+// cleanupRepairArtifacts checks a healthy node for leftover repair items and removes them.
+func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, logger logr.Logger, node *v1.Node) (ctrl.Result, error) {
+	patch := client.MergeFrom(node.DeepCopy())
+	var needsPatch bool
+
+	// 1. Clean up repair labels.
+	for key := range node.Labels {
+		if strings.HasPrefix(key, "oci.oraclecloud.com.problem_detected/") {
+			logger.Info("Node is healthy, removing repair label", "node", node.Name, "label", key)
+			delete(node.Labels, key)
+			needsPatch = true
+		}
+	}
+
+	// 2. Clean up repair taints.
+	var taintsToKeep []v1.Taint
+	var taintRemoved bool
+	for _, taint := range node.Spec.Taints {
+		if taint.Key == REPAIR_TAINT.Key && taint.Effect == REPAIR_TAINT.Effect {
+			taintRemoved = true
+		} else {
+			taintsToKeep = append(taintsToKeep, taint)
+		}
+	}
+
+	if taintRemoved {
+		logger.Info("Node is healthy, removing repair taint", "node", node.Name, "taint", REPAIR_TAINT.Key)
+		node.Spec.Taints = taintsToKeep
+		needsPatch = true
+	}
+
+	// 3. Apply a single patch only if changes were made.
+	if needsPatch {
+		logger.Info("Applying cleanup patch to node", "node", node.Name)
+		if err := r.Client.Patch(ctx, node, patch); err != nil {
+			logger.Error(err, "Failed to apply cleanup patch to node")
+			return ctrl.Result{}, err
+		}
+	} else {
+		logger.Info("Node is healthy and has no NPD conditions to clean up.", "node", node.Name)
+	}
+
 	return ctrl.Result{}, nil
 }
 
 func (r *NodeAutoRepairReconciler) rebootNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
-	// logger := log.FromContext(ctx, norInstanceId, nodeId, norClusterId, clusterId)
 	var workRequestId string
 	var err error
-
 	workRequestId, err = r.OCIClient.ContainerEngine().RebootClusterNode(ctx, nodeId, clusterId, nor)
-	// logger.Info("CCM: Trigger reboot action")
 	return workRequestId, err
 }
 
@@ -130,61 +225,29 @@ type ConditionChangedPredicate struct {
 }
 
 func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
-	// Assert that both the old and new objects are of type *v1.Node.
 	oldNode, ok := e.ObjectOld.(*v1.Node)
 	if !ok {
-		// If the old object is not a Node, we can't perform a comparison.
 		return false
 	}
-
 	newNode, ok := e.ObjectNew.(*v1.Node)
 	if !ok {
-		// If the new object is not a Node, we can't perform a comparison.
 		return false
 	}
-
-	// Convert the conditions slices to maps for efficient lookup by condition type.
 	oldConditions := getConditionMap(oldNode.Status.Conditions)
 	newConditions := getConditionMap(newNode.Status.Conditions)
-
-	// Iterate through the new conditions to find added or changed conditions.
 	for _, newCondition := range newConditions {
 		oldCondition, exists := oldConditions[newCondition.Type]
-
-		// Case 1: A new condition was added.
 		if !exists {
-			p.log.Infow("CCM: New condition added to node.",
-				"node", newNode.Name,
-				"conditionType", newCondition.Type,
-				"status", newCondition.Status,
-				"reason", newCondition.Reason,
-			)
+			p.log.Infow("CCM: New condition added to node.", "node", newNode.Name, "conditionType", newCondition.Type, "status", newCondition.Status, "reason", newCondition.Reason)
 			return true
 		}
-
-		// Case 2: An existing condition's status, reason, or message changed.
-		if oldCondition.Status != newCondition.Status ||
-			oldCondition.Reason != newCondition.Reason ||
-			oldCondition.Message != newCondition.Message {
-
-			p.log.Infow("CCM: Node condition: "+string(newCondition.Type)+" changed",
-				"node", newNode.Name,
-				"conditionType", newCondition.Type,
-				"oldStatus", oldCondition.Status,
-				"newStatus", newCondition.Status,
-				"oldReason", oldCondition.Reason,
-				"newReason", newCondition.Reason,
-				"oldHeartBeatTime", oldCondition.LastHeartbeatTime,
-				"newHeartBeatTime", newCondition.LastHeartbeatTime,
-				"oldTransitTime", oldCondition.LastTransitionTime,
-				"newTransitTime", newCondition.LastHeartbeatTime,
-			)
+		if oldCondition.Status != newCondition.Status || oldCondition.Reason != newCondition.Reason || oldCondition.Message != newCondition.Message {
+			p.log.Infow("CCM: Node condition: "+string(newCondition.Type)+" changed", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
 			if _, ok := CONDITIONS[string(oldCondition.Type)]; ok {
 				return true
 			}
 		}
 	}
-
 	var lastManager string
 	var lastUpdateTime time.Time
 	var fieldName string
@@ -195,18 +258,14 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 			fieldName = field.String()
 		}
 	}
-
 	if lastManager != "" {
 		p.log.Info("CCM: NPD Condition hasn't changed. Detected a change in Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
 	} else {
 		p.log.Info("CCM: NPD Condition hasn't changed. No manager found for this update event.")
 	}
-	// If we reach here, no significant changes were found in the conditions.
 	return false
 }
 
-// getConditionMap is a helper function to convert a slice of NodeCondition
-// objects into a map for quick lookup.
 func getConditionMap(conditions []v1.NodeCondition) map[v1.NodeConditionType]v1.NodeCondition {
 	conditionMap := make(map[v1.NodeConditionType]v1.NodeCondition, len(conditions))
 	for _, condition := range conditions {
