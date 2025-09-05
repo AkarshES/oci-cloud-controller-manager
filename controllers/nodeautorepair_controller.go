@@ -183,16 +183,16 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 
 	// 2. Clean up repair taints.
 	var taintsToKeep []v1.Taint
-	var taintRemoved bool
+	var taintToRemove bool
 	for _, taint := range node.Spec.Taints {
 		if taint.Key == REPAIR_TAINT.Key && taint.Effect == REPAIR_TAINT.Effect {
-			taintRemoved = true
+			taintToRemove = true
 		} else {
 			taintsToKeep = append(taintsToKeep, taint)
 		}
 	}
 
-	if taintRemoved {
+	if taintToRemove {
 		logger.Info("Node is healthy, removing repair taint", "node", node.Name, "taint", REPAIR_TAINT.Key)
 		node.Spec.Taints = taintsToKeep
 		needsPatch = true
