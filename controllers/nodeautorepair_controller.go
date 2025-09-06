@@ -81,7 +81,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// 2. Check if the node has an unhealthy condition.
 	if unhealthyCondition := findUnhealthyCondition(node); unhealthyCondition != nil {
 		// 2a. If unhealthy, execute the repair logic.
-		logger.Info("Node is unhealthy, starting repair process", "condition", unhealthyCondition.Type)
+		logger.Info("CCM: Node is unhealthy, starting repair process", "condition", unhealthyCondition.Type)
 		return r.handleUnhealthyNode(ctx, logger, node, unhealthyCondition)
 	}
 
@@ -113,7 +113,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	labelFound := false
 	if _, ok := node.Labels[labelKey]; !ok {
 		node.Labels[labelKey] = "true"
-		logger.Info("Adding label to unhealthy node", "node", node.Name, "label", labelKey)
+		logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
 		needsPatch = true
 		labelFound = true
 	}
@@ -128,7 +128,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	}
 	if !taintFound {
 		node.Spec.Taints = append(node.Spec.Taints, REPAIR_TAINT)
-		logger.Info("Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
+		logger.Info("CCM: Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
 		needsPatch = true
 	}
 
@@ -144,12 +144,12 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	if string(condition.Type) == "GPUCountMismatch" && taintFound {
 		logger.Info("GPUCountMismatch condition detected on already tainted node. Triggering terminate action.", "node", node.Name)
 		workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
-		logger.Info("Terminate instance workrequest id: " + workrequestId)
+		logger.Info("CCM: Terminate instance workrequest id: " + workrequestId)
 		return ctrl.Result{}, nil
 	}
 
 	r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), "Node condition "+string(condition.Type)+" is now: True, triggering repair action")
-	logger.Info("Condition triggered repair action", "condition", string(condition.Type), "node", node.Name)
+	logger.Info("CCM: Condition triggered repair action", "condition", string(condition.Type), "node", node.Name)
 
 	if labelFound {
 		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
@@ -160,10 +160,10 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 				},
 			},
 		})
-		logger.Info("Auto Repair work request id for reboot: " + workRequestId)
+		logger.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
 	}
 
-	logger.Info("Requeuing request for periodic check", "after", "15m")
+	logger.Info("CCM: Requeuing request for periodic check after 15m.")
 	return ctrl.Result{RequeueAfter: 15 * time.Minute}, nil
 }
 
