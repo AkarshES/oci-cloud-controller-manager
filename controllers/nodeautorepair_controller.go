@@ -174,7 +174,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 
 	// 1. Clean up repair labels.
 	for key := range node.Labels {
-		if strings.HasPrefix(key, "oci.oraclecloud.com.problem_detected/") {
+		if strings.HasPrefix(key, "oci.oraclecloud.com.problem-detected/") {
 			logger.Info("Node is healthy, removing repair label", "node", node.Name, "label", key)
 			delete(node.Labels, key)
 			needsPatch = true
