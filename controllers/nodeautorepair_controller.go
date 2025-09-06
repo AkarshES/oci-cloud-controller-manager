@@ -109,11 +109,11 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	if node.Labels == nil {
 		node.Labels = make(map[string]string)
 	}
-	labelKey := "oci.oraclecloud.com.problem_detected/" + string(condition.Type)
+	labelKey := "oci.oraclecloud.com.problem_detected/" + strings.ToLower(string(condition.Type))
 	labelFound := false
 	if _, ok := node.Labels[labelKey]; !ok {
 		node.Labels[labelKey] = "true"
-		logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
+		// logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
 		needsPatch = true
 		labelFound = true
 	}
@@ -128,14 +128,14 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	}
 	if !taintFound {
 		node.Spec.Taints = append(node.Spec.Taints, REPAIR_TAINT)
-		logger.Info("CCM: Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
+		// logger.Info("CCM: Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
 		needsPatch = true
 	}
 
 	// Action 3: Apply a single patch for both label and taint to be efficient.
 	if needsPatch {
 		if err := r.Client.Patch(ctx, node, patch); err != nil {
-			logger.Error(err, "Failed to patch node with repair label/taint")
+			logger.Error(err, "CCM: Failed to patch node with repair label/taint")
 			return ctrl.Result{}, err
 		}
 	}
