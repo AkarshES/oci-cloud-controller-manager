@@ -165,7 +165,11 @@ func (d *FSSControllerDriver) CreateVolume(ctx context.Context, req *csi.CreateV
 	log, response, storageClassParameters, err, done := extractStorageClassParameters(ctx, d, log, dimensionsMap, volumeName, req.GetParameters(), startTime, identityClient)
 
 	if enableOkeSystemTags {
-		if !util.StorageClassWorkloadIdentityCheck(req.GetSecrets(), secretServiceAccountKey, secretServiceAccountNamespaceKey) && util.IsCommonTagPresent(d.config.Tags) {
+		hasWorkloadIdentity := util.StorageClassWorkloadIdentityCheck(req.GetSecrets(), secretServiceAccountKey, secretServiceAccountNamespaceKey)
+
+		if hasWorkloadIdentity {
+			log.Info("principal type is workload identity. Skip addition of common tags to the volume")
+		} else if util.IsCommonTagPresent(d.config.Tags) {
 			storageClassParameters.scTags = util.MergeTagConfig(storageClassParameters.scTags, d.config.Tags.Common)
 		}
 	}
