@@ -3694,3 +3694,107 @@ func TestShouldUpdateIpVersionTranslation(t *testing.T) {
 	}
 
 }
+
+func TestHasReservedIPsChanged(t *testing.T) {
+	tests := []struct {
+		name string
+		spec *LBSpec
+		lb   *client.GenericLoadBalancer
+		want bool
+	}{
+		{
+			name: "No reserved IPs in spec and LB",
+			spec: &LBSpec{},
+			lb: &client.GenericLoadBalancer{
+				IpAddresses: []client.GenericIpAddress{},
+			},
+			want: false,
+		},
+		{
+			name: "Matching reserved IPs",
+			spec: &LBSpec{
+				ReservedIPs: []string{"1.2.3.4"},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpAddresses: []client.GenericIpAddress{
+					{
+						IpAddress: common.String("1.2.3.4"),
+						ReservedIp: &client.GenericReservedIp{
+							Id: common.String("1.2.3.4"),
+						},
+						IsPublic: common.Bool(true),
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Changed reserved IPs",
+			spec: &LBSpec{
+				ReservedIPs: []string{"5.6.7.8"},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpAddresses: []client.GenericIpAddress{
+					{
+						IpAddress: common.String("1.2.3.4"),
+						ReservedIp: &client.GenericReservedIp{
+							Id: common.String("1.2.3.4"),
+						},
+						IsPublic: common.Bool(true),
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Spec uses LoadBalancerIP instead of ReservedIPs",
+			spec: &LBSpec{
+				LoadBalancerIP: "1.2.3.4",
+			},
+			lb: &client.GenericLoadBalancer{
+				IpAddresses: []client.GenericIpAddress{
+					{
+						IpAddress: common.String("1.2.3.4"),
+						ReservedIp: &client.GenericReservedIp{
+							Id: common.String("1.2.3.4"),
+						},
+						IsPublic: common.Bool(true),
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "LB has extra IPs",
+			spec: &LBSpec{
+				ReservedIPs: []string{"1.2.3.4"},
+			},
+			lb: &client.GenericLoadBalancer{
+				IpAddresses: []client.GenericIpAddress{
+					{
+						IpAddress: common.String("1.2.3.4"),
+						ReservedIp: &client.GenericReservedIp{
+							Id: common.String("1.2.3.4"),
+						},
+						IsPublic: common.Bool(true),
+					},
+					{
+						IpAddress: common.String("5.6.7.8"),
+						ReservedIp: &client.GenericReservedIp{
+							Id: common.String("5.6.7.8"),
+						},
+						IsPublic: common.Bool(true),
+					},
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasReservedIPsChanged(tt.spec, tt.lb)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
