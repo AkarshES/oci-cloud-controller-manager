@@ -109,7 +109,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	if node.Labels == nil {
 		node.Labels = make(map[string]string)
 	}
-	labelKey := "oci.oraclecloud.com.problem-detected/" + strings.ToLower(string(condition.Type))
+	labelKey := "oci.oraclecloud.com.problem-detected/" + string(condition.Type)
 	labelFound := false
 	if _, ok := node.Labels[labelKey]; !ok {
 		node.Labels[labelKey] = "true"
