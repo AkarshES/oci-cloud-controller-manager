@@ -477,17 +477,34 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 		}
 	}
 
-	if spec.LoadBalancerIP != "" {
-		reservedIpOCID, err := getReservedIpOcidByIpAddress(ctx, spec.LoadBalancerIP, clb.client.Networking(clb.ociConfig))
-		if err != nil {
-			return nil, "", err
-		}
+	var resolvedReservedIps []client.GenericReservedIp
 
-		details.ReservedIps = []client.GenericReservedIp{
-			client.GenericReservedIp{
-				Id: reservedIpOCID,
-			},
+	if len(spec.ReservedIPs) > 0 {
+		// Convert each reserved IP string to OCID
+		for _, ip := range spec.ReservedIPs {
+			ipOcid, err := getReservedIpOcidByIpAddress(ctx, ip, clb.client.Networking(clb.ociConfig))
+			if err != nil {
+				return nil, "", errors.Wrapf(err, "failed to resolve reserved IP %s", ip)
+			}
+			resolvedReservedIps = append(resolvedReservedIps, client.GenericReservedIp{Id: ipOcid})
 		}
+	} else if spec.LoadBalancerIP != "" {
+		// Fallback to LoadBalancerIP
+		// TODO: https://jira.oci.oraclecorp.com/browse/OKE-39893
+		logger.Warnf("Field LoadBalancerIP is deprecated. Use annotation %s instead.", ServiceAnnotationReservedIPs)
+
+		ipOcid, err := getReservedIpOcidByIpAddress(ctx, spec.LoadBalancerIP, clb.client.Networking(clb.ociConfig))
+		if err != nil {
+			return nil, "", errors.Wrap(err, "failed to resolve LoadBalancerIP")
+		}
+		resolvedReservedIps = []client.GenericReservedIp{
+			{Id: ipOcid},
+		}
+	}
+
+	// Only set if we resolved something
+	if len(resolvedReservedIps) > 0 {
+		details.ReservedIps = resolvedReservedIps
 	}
 
 	if lbType == NLB {
@@ -1096,18 +1113,6 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 	start := time.Now()
 	logger := clb.logger.With("loadBalancerID", lbID, "compartmentID", spec.Compartment, "loadBalancerType", getLoadBalancerType(spec.service), "serviceName", spec.service.Name)
 
-	var actualPublicReservedIP *string
-
-	//identify the public reserved IP in IP addresses list
-	for _, ip := range lb.IpAddresses {
-		if ip.IpAddress == nil {
-			continue // should never happen but appears to when EnsureLoadBalancer is called with 0 nodes.
-		}
-		if ip.ReservedIp != nil && *ip.IsPublic {
-			actualPublicReservedIP = ip.IpAddress
-			break
-		}
-	}
 	lbSubnets, err := getSubnets(ctx, spec.Subnets, clb.client.Networking(nil))
 	if err != nil {
 		return errors.Wrapf(err, "getting load balancer subnets")
@@ -1257,11 +1262,9 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 		}
 	}
 
-	// Check if the reservedIP has changed in spec
-	if spec.LoadBalancerIP != "" || actualPublicReservedIP != nil {
-		if actualPublicReservedIP == nil || *actualPublicReservedIP != spec.LoadBalancerIP {
-			return errors.Errorf("The Load Balancer service reserved IP cannot be updated after the Load Balancer is created.")
-		}
+	// Check if the reservedIPs has changed in spec
+	if hasReservedIPsChanged(spec, lb) {
+		return errors.Errorf("The Load Balancer service reserved IPs cannot be updated after creation.")
 	}
 
 	dimensionsMap := make(map[string]string)

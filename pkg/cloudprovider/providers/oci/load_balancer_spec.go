@@ -212,6 +212,11 @@ const (
 	// Example: `300`
 	// https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/BackendSetDetails
 	ServiceAnnotationLoadBalancerBackendSetBackendMaxConnections = "oci-load-balancer.oraclecloud.com/backendset-backend-max-connections"
+
+	// ServiceAnnotationReservedIPs is used to assign a list of max 2 reserved public IPs (1 IPv4, 1 IPv6) to both LB & NLB
+	// LB experience - https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/CreateLoadBalancerDetails
+	// NLB experience - https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
+	ServiceAnnotationReservedIPs = "oci.oraclecloud.com/reserved-ips"
 )
 
 // NLB specific annotations
@@ -419,6 +424,7 @@ type LBSpec struct {
 	AssignedPrivateIpv4         *string
 	AssignedIpv6                *string
 	IpVersionTranslationConfig  *client.IpVersionTranslationConfig
+	ReservedIPs                 []string
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -530,6 +536,11 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
+	reservedIPs, err := getReservedIPs(svc)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LBSpec{
 		Type:                        lbType,
 		Name:                        GetLoadBalancerName(svc),
@@ -561,6 +572,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		AssignedPrivateIpv4:         assignedPrivateIpv4,
 		AssignedIpv6:                assignedIpv6,
 		IpVersionTranslationConfig:  ipVersionTranslationConfig,
+		ReservedIPs:                 reservedIPs,
 	}, nil
 }
 
@@ -2122,4 +2134,34 @@ func isNat46Enabled(svc *v1.Service) bool {
 		}
 	}
 	return false
+}
+
+// parses the reserved IP annotation and returns a list of reserved IPs (IPv4 and/or IPv6)
+//  1. Splits the annotation value by commas
+//  2. Trims spaces
+//  3. Removes duplicates
+//  4. Validates that at most 2 IPs are provided
+//
+// Returns an error if more than 2 IPs are specified or if any entry is empty.
+// If the annotation is not present or empty, it returns nil.
+func getReservedIPs(svc *v1.Service) ([]string, error) {
+
+	reservedIPsAnnotation, ok := svc.Annotations[ServiceAnnotationReservedIPs]
+	if !ok || reservedIPsAnnotation == "" {
+		return nil, nil
+	}
+
+	reservedIPList := RemoveDuplicatesFromList(strings.Split(strings.ReplaceAll(reservedIPsAnnotation, " ", ""), ","))
+
+	if len(reservedIPList) > 2 {
+		return nil, fmt.Errorf("invalid number of Reserved IPs (Max: 2) provided for annotation: %s", ServiceAnnotationReservedIPs)
+	}
+
+	for _, ip := range reservedIPList {
+		if ip == "" {
+			return nil, fmt.Errorf("empty Reserved IP provided for annotation: %s", ServiceAnnotationReservedIPs)
+		}
+	}
+
+	return reservedIPList, nil
 }

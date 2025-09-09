@@ -1019,3 +1019,23 @@ func shouldUpdateIpVersionTranslation(lb *client.GenericLoadBalancer, spec *LBSp
 	}
 	return false
 }
+
+// Compares the desired reserved IPs in the LBSpec against the actual reserved IPs.
+func hasReservedIPsChanged(spec *LBSpec, lb *client.GenericLoadBalancer) bool {
+	// Determine desired reserved IPs (from annotation or LoadBalancerIP)
+	var desired []string
+	if len(spec.ReservedIPs) > 0 {
+		desired = spec.ReservedIPs
+	} else if spec.LoadBalancerIP != "" {
+		desired = []string{spec.LoadBalancerIP}
+	}
+
+	var actual []string
+	for _, ip := range lb.IpAddresses {
+		if ip.IpAddress != nil && ip.ReservedIp != nil && *ip.IsPublic {
+			actual = append(actual, *ip.IpAddress)
+		}
+	}
+
+	return !equalStringSlicesIgnoreOrder(desired, actual)
+}

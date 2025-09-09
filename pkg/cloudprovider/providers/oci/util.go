@@ -236,3 +236,21 @@ func getResourceTrackingSystemTagsFromConfig(logger *zap.SugaredLogger, initialT
 	logger.Warn("tag config doesn't consist resource tracking tags")
 	return nil
 }
+
+// Used to comapre that the actual and desired reserved IPs for updateLoadBalancer operation
+func equalStringSlicesIgnoreOrder(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	amap := make(map[string]int)
+	for _, v := range a {
+		amap[v]++
+	}
+	for _, v := range b {
+		if amap[v] == 0 {
+			return false
+		}
+		amap[v]--
+	}
+	return true
+}

@@ -15698,3 +15698,94 @@ func TestIsNat46Enabled(t *testing.T) {
 	}
 
 }
+
+func TestGetReservedIPs(t *testing.T) {
+	tests := map[string]struct {
+		annotations map[string]string
+		wantIPs     []string
+		wantErr     bool
+	}{
+		"no annotation": {
+			annotations: map[string]string{},
+			wantIPs:     nil,
+			wantErr:     false,
+		},
+		"empty annotation": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "",
+			},
+			wantIPs: nil,
+			wantErr: false,
+		},
+		"single IPv4": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "10.0.0.1",
+			},
+			wantIPs: []string{"10.0.0.1"},
+			wantErr: false,
+		},
+		"single IPv6": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "2001:db8::1",
+			},
+			wantIPs: []string{"2001:db8::1"},
+			wantErr: false,
+		},
+		"two IPs (v4 + v6)": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "10.0.0.1,2001:db8::1",
+			},
+			wantIPs: []string{"10.0.0.1", "2001:db8::1"},
+			wantErr: false,
+		},
+		"duplicates removed": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "10.0.0.1,10.0.0.1",
+			},
+			wantIPs: []string{"10.0.0.1"},
+			wantErr: false,
+		},
+		"too many IPs": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "10.0.0.1,10.0.0.2,10.0.0.3",
+			},
+			wantIPs: nil,
+			wantErr: true,
+		},
+		"empty entry after comma": {
+			annotations: map[string]string{
+				ServiceAnnotationReservedIPs: "10.0.0.1,",
+			},
+			wantIPs: nil,
+			wantErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			svc := &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "testservice",
+					Namespace:   "default",
+					Annotations: tt.annotations,
+				},
+			}
+
+			got, err := getReservedIPs(svc)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.wantIPs) {
+				t.Errorf("expected %v, got %v", tt.wantIPs, got)
+			}
+		})
+	}
+}
