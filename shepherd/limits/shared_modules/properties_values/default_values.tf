@@ -18,7 +18,6 @@ locals {
         "v1.31" : "v1.31-c009ab5e5a7-76@sha256:2c37ec55ec3c3106461c308611c8f853446a18d6ca0f6456b7b3503cc719a94d",
         "v1.32" : "v1.32-59689274696-43@sha256:29410f43180782930c9a84892dc643eba47b6e4f1e99e341ceebbd8c1dddef66",
         "v1.33" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
-        "v1.34" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3"
       }
     }
   }
@@ -38,7 +37,6 @@ locals {
         "v1.31" : "v1.31-4e30e28b828-80-csi@sha256:bf55f642531ebcb3e8ec09c3adeb9507552733df58e9fc6b7692bc241d5df2ad",
         "v1.32" : "v1.32-2c5fcd2e853-46-csi@sha256:fb9e892af78589a74bf8a85fa47af4de66cb97a5fbe33846a5e4380f97c024ec",
         "v1.33" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
-        "v1.34" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
       }
     }
   }
@@ -244,6 +242,7 @@ locals {
             "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+            "v1.34" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
           }
         ))
       }
@@ -563,7 +562,8 @@ locals {
             "v1.19": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
-            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689"
+            "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
+            "v1.34": "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
           }
         ))
       }
