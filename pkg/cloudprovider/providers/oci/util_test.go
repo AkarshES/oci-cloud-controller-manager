@@ -15,12 +15,12 @@
 package oci
 
 import (
-	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
 	"os"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/oracle/oci-cloud-controller-manager/pkg/logging"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 
@@ -354,6 +354,73 @@ func TestGetIntegerFromEnv(t *testing.T) {
 				t.FailNow()
 			} else {
 				t.Logf("expected: %+v, and actual GetIntegerFromEnv => %+v", testCase.expected, actual)
+			}
+		})
+	}
+}
+
+func TestEqualStringSlicesIgnoreOrder(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        []string
+		b        []string
+		expected bool
+	}{
+		{
+			name:     "both empty",
+			a:        []string{},
+			b:        []string{},
+			expected: true,
+		},
+		{
+			name:     "same elements same order",
+			a:        []string{"ip1", "ip2"},
+			b:        []string{"ip1", "ip2"},
+			expected: true,
+		},
+		{
+			name:     "same elements different order",
+			a:        []string{"ip1", "ip2"},
+			b:        []string{"ip2", "ip1"},
+			expected: true,
+		},
+		{
+			name:     "different length",
+			a:        []string{"ip1"},
+			b:        []string{"ip1", "ip2"},
+			expected: false,
+		},
+		{
+			name:     "different elements",
+			a:        []string{"ip1", "ip2"},
+			b:        []string{"ip3", "ip4"},
+			expected: false,
+		},
+		{
+			name:     "partially overlapping",
+			a:        []string{"ip1", "ip2"},
+			b:        []string{"ip2", "ip3"},
+			expected: false,
+		},
+		{
+			name:     "with duplicates - same multiset",
+			a:        []string{"ip1", "ip1", "ip2"},
+			b:        []string{"ip2", "ip1", "ip1"},
+			expected: true,
+		},
+		{
+			name:     "with duplicates - different multiplicity",
+			a:        []string{"ip1", "ip1", "ip2"},
+			b:        []string{"ip1", "ip2", "ip2"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := equalStringSlicesIgnoreOrder(tt.a, tt.b)
+			if got != tt.expected {
+				t.Errorf("equalStringSlicesIgnoreOrder(%v, %v) = %v; want %v", tt.a, tt.b, got, tt.expected)
 			}
 		})
 	}
