@@ -13,6 +13,13 @@ excluded_locations_path.loader.exec_module(excluded_locations_module)
 # Assigning the release schedule and excluded locations
 oke_common_release_schedule = release_schedule_module.oke_common_release_schedule_non_cell_based
 
+# Filtering out pre-prod release targets from the schedule
+oke_common_release_schedule = [
+    schedule
+    for schedule in oke_common_release_schedule
+    if not any(groups.get("labels") == ["pre-prod"] for groups in schedule.get("groups", []))
+]
+
 for bundle in oke_common_release_schedule:
     for group in bundle["groups"]:
         group["et_sequence"] = "true"

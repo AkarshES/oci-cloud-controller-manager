@@ -9,8 +9,7 @@ infra   = meta_variables.get('infra')
 
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
-
-config_id="5c133ea6-0dd7-4f63-8797-ed178d2db098"
+config_id="8fe23f71-2736-408c-800b-56f7c8314ed1"
 
 app_release_template = {
     "alias": "image-push",
@@ -63,27 +62,42 @@ if app:
             {
                 "resolver_type": "static",
                 "artifacts": {
-                    "oke-public-cloud-provider-oci__v1_DOT_31-4e30e28b828-80-csi",
-                    "oke-public-cloud-provider-oci__v1_DOT_32-2c5fcd2e853-46-csi",
-                    "oke-public-cloud-provider-oci__v1_DOT_33-87690329d0a-20-csi",
+                    "oke-public-cloud-provider-oci__v1_DOT_28-79d4f40b682-84",
+                    "oke-public-cloud-provider-oci__v1_DOT_29-393f7c992a6-112",
+                    "oke-public-cloud-provider-oci__v1_DOT_30-b38c1eb59d9-122",
+                    "oke-public-cloud-provider-oci__v1_DOT_31-a6832b543c2-89",
+                    "oke-public-cloud-provider-oci__v1_DOT_32-fd1b5537713-59",
+                    "oke-public-cloud-provider-oci__v1_DOT_33-1fb97431d5a-29",
                     "release-validator-ccm-csi"
                 },
                 "resolver_params": {
                     "static_versions": {
-                        "oke-public-cloud-provider-oci__v1_DOT_31-4e30e28b828-80-csi": {
-                            "version": "v1.31-4e30e28b828-80-csi",
+                        "oke-public-cloud-provider-oci__v1_DOT_28-79d4f40b682-84": {
+                            "version": "v1.28-79d4f40b682-84",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_32-2c5fcd2e853-46-csi": {
-                            "version": "v1.32-2c5fcd2e853-46-csi",
+                        "oke-public-cloud-provider-oci__v1_DOT_29-393f7c992a6-112": {
+                            "version": "v1.29-393f7c992a6-112",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_33-87690329d0a-20-csi": {
-                            "version": "v1.33-87690329d0a-20-csi",
+                        "oke-public-cloud-provider-oci__v1_DOT_30-b38c1eb59d9-122": {
+                            "version": "v1.30-b38c1eb59d9-122",
+                            "summary": "CPO image to be pushed for release"
+                        },
+                        "oke-public-cloud-provider-oci__v1_DOT_31-a6832b543c2-89": {
+                            "version": "v1.31-a6832b543c2-89",
+                            "summary": "CPO image to be pushed for release"
+                        },
+                        "oke-public-cloud-provider-oci__v1_DOT_32-fd1b5537713-59": {
+                            "version": "v1.32-fd1b5537713-59",
+                            "summary": "CPO image to be pushed for release"
+                        },
+                        "oke-public-cloud-provider-oci__v1_DOT_33-1fb97431d5a-29": {
+                            "version": "v1.33-1fb97431d5a-29",
                             "summary": "CPO image to be pushed for release"
                         },
                         "release-validator-ccm-csi": {
-                            "version": "0833a431093_111",
+                            "version": "fec5a28ad9b_129",
                             "summary": "Release validator POP image to be pushed for release"
                         },
                     }

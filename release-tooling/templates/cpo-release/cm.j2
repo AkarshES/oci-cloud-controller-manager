@@ -351,45 +351,9 @@
     {code}
 
     h3. (i)oke-ccm-csi[Infrastructure]release
-    h4. Pre check for infrastructure releases
-    ||Step||Process||
-    |1.|Login to oke-native-steward tenancy :[https://devops.oci.oraclecorp.com/runbooks/APS/artifact-push-service-aps/oke-native-steward-tenancies]|
-    |2.|Before execution, login to steward tenancy to ensure below listed images are present.
-    find the tenancy-id using below runbook for oke-native-steward in your respective realm
-    [https://devops.oci.oraclecorp.com/runbooks/APS/artifact-push-service-aps/oke-native-steward-tenancies]|
-    |3.|Make sure you have oci-cli configured with boat access:[https://devops.oci.oraclecorp.com/runbooks/ONSROPS/onsrops-how-tos/onsrops-how-to-setup-and-configure-oci-cli]
-    edit the region and tenancy id as required|
-    |4.|Edit the region and tenancy id as required and execute commands|
-    |5.|After executing each command, please verify that display-name and digest matches with corresponding sample output shared from integ.|
 
-    {code:java}
-    # Execute these oci cli commands on local system which has oci-cli access
-    export TENANCY_ID=<tenancy-id-from-above-runbook>
-    export REGION=<region>
+    Once the respective application release completed successfully to push the images
 
-    sh script.sh -t $TENANCY_ID -i "v1.31-4e30e28b828-80-csi" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.32-2c5fcd2e853-46-csi" -r $REGION
-    sh script.sh -t $TENANCY_ID -i "v1.33-87690329d0a-20-csi" -r $REGION
-    {code}
-
-    *Example Output*
-    {code:java}
-    export TENANCY_ID=ocid1.tenancy.oc1..aaaaaaaafslvxmi2x2p2tgzxv3fgyzogwfzjjpypfvp2zvck2wk6t3bocnqa
-    export REGION=us-ashburn-1
-    export IMAGE_TAG=v1.29-0a03da73b3b-50 $ ./script.sh -t $TENANCY_ID -i $IMAGE_TAG -r $REGION
-    ### SAMPLE OUTPUT ###
-
-    tenancy id ocid1.tenancy.oc1..aaaaaaaafslvxmi2x2p2tgzxv3fgyzogwfzjjpypfvp2zvck2wk6t3bocnqa
-    image tag v1.29-0a03da73b3b-50
-    region us-ashburn-1
-    "oke-public-cloud-provider-oci-linux_x86_64" "v1.29-0a03da73b3b-50"
-    "oke-public-cloud-provider-oci-linux_arm64_v8" "v1.29-0a03da73b3b-50"
-    "oke-public-cloud-provider-oci" "v1.29-0a03da73b3b-50"
-
-    ### SAMPLE OUTPUT ###
-    {code}
-
-    Once we have confirmation of all the images being present, we can move ahead to execute mapping-update release.
     h4. Execution of infrastructure releases
     |1|Please go to your devops portal, search for the "oke" project under shepherd and use the*oke-ccm-csi*flock|
     |2|Find the release name-*BetaHandmade*|
@@ -494,7 +458,7 @@
     ||Order||Grafana Dashboard||What to monitor ?||
     |1|[OKE Data Plane Canary|https://grafana.oci.oraclecorp.com/d/420420/oke-canary-metrics-data-plane-canary]
     [OKE Control Plane Canary|https://grafana.oci.oraclecorp.com/d/OpQiFB6Zz/oke-cluster-create-delete-canary?]| * Validate that canary does not fail in the grafana, or canary alarms do not fire. * Refer screenshots in the bottom of this section if needed.|
-    |2|[Cloud Provider Oci Monitoring|https://grafana.oci.oraclecorp.com/d/eaDdAjE7k/cpo-monitoring-calls-made-via-kmi?panelId=28&fullscreen&orgId=1&refresh=1m&from=now-3h&to=now-1m]| * This dashboard indicates the health of the CCM container running on the KMIs. Make sure that there is no steady increase in the restart count of CCM containers|
+    |2|[Cloud Provider Oci Monitoring|https://grafana.oci.oraclecorp.com/d/eaDdAjE7k/cpo-monitoring-calls-made-via-kmi?orgId=1&refresh=30m]| * This dashboard indicates the health of the CCM container running on the KMIs. Make sure that there is no steady increase in the restart count of CCM containers|
     |3|[CSI Block Volume Regional Monitor Grafana|https://grafana.oci.oraclecorp.com/d/RoO1I0w7k/cpo-monitoring-volumes?orgId=1&from=now-12h&to=now-1m&var-realm=oc1&var-granularity=30m&var-MQLRegion=us-ashburn-1&var-fleet=prod-oke-clusters-IAD-dataplane&var-volume_ocid=&refresh=15m]
     [CSI FSS Regional Monitor|https://grafana.oci.oraclecorp.com/d/u6e8QL9Vz/cpo-monitoring-file-storage-service?orgId=1&refresh=15m&from=now-24h&to=now-1m&var-realm=oc1&var-granularity=10m&var-MQLRegion=us-ashburn-1&var-fleet=prod-oke-clusters-IAD-dataplane&var-volume_ocid=&var-mt_ocid=&var-fs_ocid=&var-exp_ocid=]|*Monitor Spike in 5XX errors for CSI Block Volume and FSS operations in grafana panels if there is significant spike please proceed to rollback.|
     |4|[MP Workflows|https://grafana.oci.oraclecorp.com/d/oG0GFvpGk/oke-management-plane-worker-operations?viewPanel=501&orgId=1&from=now-7d&to=now]| * Monitor the alarm queue for the MP reconcile/workflow latency alarms and that the alarm does not fire.|
