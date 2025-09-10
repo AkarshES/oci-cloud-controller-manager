@@ -140,13 +140,13 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		}
 	}
 
-	// Action 4: Trigger the repair action (terminate or reboot).
-	if string(condition.Type) == "GPUCountMismatch" && taintFound {
-		logger.Info("GPUCountMismatch condition detected on already tainted node. Triggering terminate action.", "node", node.Name)
-		workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
-		logger.Info("CCM: Terminate instance workrequest id: " + workrequestId)
-		return ctrl.Result{}, nil
-	}
+	// Action 4: Trigger the repair action (terminate).
+	// if string(condition.Type) == "GPUCountMismatch" && taintFound {
+	// 	logger.Info("GPUCountMismatch condition detected on already tainted node. Triggering terminate action.", "node", node.Name)
+	// 	workrequestId, _ := r.OCIClient.Compute().TerminateInstance(ctx, node.Spec.ProviderID)
+	// 	logger.Info("CCM: Terminate instance workrequest id: " + workrequestId)
+	// 	return ctrl.Result{}, nil
+	// }
 
 	r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), "Node condition "+string(condition.Type)+" is now: True, triggering repair action")
 	logger.Info("CCM: Condition triggered repair action", "condition", string(condition.Type), "node", node.Name)
