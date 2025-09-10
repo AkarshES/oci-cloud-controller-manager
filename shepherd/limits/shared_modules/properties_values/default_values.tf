@@ -461,6 +461,15 @@ locals {
           }
         ))
       }
+
+      "prd.oc23" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "default" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+            "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+          }
+        ))
+      }
     }
 
     // CSI Image Mappings
