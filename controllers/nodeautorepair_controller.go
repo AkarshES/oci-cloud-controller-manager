@@ -93,7 +93,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // It returns the first matching unhealthy condition, or nil if the node is healthy.
 func findUnhealthyCondition(node *v1.Node) *v1.NodeCondition {
 	for _, condition := range node.Status.Conditions {
-		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; ok && (conditionStatus == string(condition.Status) || strings.ToLower(string(condition.Status)) == "unknown") {
+		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; ok && (conditionStatus == string(condition.Status)) {
 			return &condition
 		}
 	}
