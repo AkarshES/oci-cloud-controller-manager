@@ -42,7 +42,7 @@ var CONDITIONS map[string]string = map[string]string{
 }
 
 var REPAIR_TAINT v1.Taint = v1.Taint{
-	Key:    "oci.oraclecloud.com/nodeAutoRepairScheduled",
+	Key:    "oci.oraclecloud.com/node-auto-repair-scheduled",
 	Value:  "true",
 	Effect: v1.TaintEffectNoSchedule,
 }
