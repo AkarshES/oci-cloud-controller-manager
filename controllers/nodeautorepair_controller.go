@@ -105,21 +105,14 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	patch := client.MergeFrom(node.DeepCopy())
 	var needsPatch bool
 
-	// Get dry run label
-	var repairEnabled bool
-	var repairEnabledLabel string = "oci.oraclecloud.com/node-auto-repair-enabled"
-	if val, ok := node.Labels[repairEnabledLabel]; ok && val == "true" {
-		repairEnabled = true
-	}
-
 	// Action 1: Add repair label if it doesn't exist.
 	if node.Labels == nil {
 		node.Labels = make(map[string]string)
 	}
-	labelKey := "oci.oraclecloud.com/node-problem-detected"
+	labelKey := "oci.oraclecloud.com.problem-detected/" + string(condition.Type)
 	labelFound := false
 	if _, ok := node.Labels[labelKey]; !ok {
-		node.Labels[labelKey] = string(condition.Type)
+		node.Labels[labelKey] = "true"
 		// logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
 		needsPatch = true
 		labelFound = true
@@ -155,14 +148,10 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// 	return ctrl.Result{}, nil
 	// }
 
-	var eventMessage string = "[Node Auto Repair]: Node condition " + string(condition.Type) + " is now: True, OKE is triggering - REBOOT - repair action"
-	if !repairEnabled {
-		eventMessage += "(in dry run mode)"
-	}
-	r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), eventMessage)
+	r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), "Node condition "+string(condition.Type)+" is now: True, triggering repair action")
 	logger.Info("CCM: Condition triggered repair action", "condition", string(condition.Type), "node", node.Name)
 
-	if labelFound && repairEnabled {
+	if labelFound {
 		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
 			Spec: norv1beta1.NodeOperationRuleSpec{
 				NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
@@ -174,8 +163,8 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		logger.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
 	}
 
-	logger.Info("CCM: Requeuing request for periodic check after 10m.")
-	return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
+	logger.Info("CCM: Requeuing request for periodic check after 15m.")
+	return ctrl.Result{RequeueAfter: 15 * time.Minute}, nil
 }
 
 // cleanupRepairArtifacts checks a healthy node for leftover repair items and removes them.
@@ -185,7 +174,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 
 	// 1. Clean up repair labels.
 	for key := range node.Labels {
-		if strings.HasPrefix(key, "oci.oraclecloud.com/node-problem-detected") {
+		if strings.HasPrefix(key, "oci.oraclecloud.com.problem-detected/") {
 			logger.Info("Node is healthy, removing repair label", "node", node.Name, "label", key)
 			delete(node.Labels, key)
 			needsPatch = true
