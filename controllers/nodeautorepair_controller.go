@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -27,7 +28,10 @@ import (
 )
 
 const (
-	narName string = "narName"
+	narName                    string = "narName"
+	repairProblemDetectedLabel string = "oci.oraclecloud.com/node-problem-detected"
+	repairEnabledLabel         string = "oci.oraclecloud.com/node-auto-repair-enabled"
+	repairFrequencyLabel       string = "oci.oraclecloud.com/node-auto-repair-freq"
 )
 
 var CONDITIONS map[string]string = map[string]string{
@@ -107,7 +111,6 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	// Get dry run label
 	var repairEnabled bool
-	var repairEnabledLabel string = "oci.oraclecloud.com/node-auto-repair-enabled"
 	if val, ok := node.Labels[repairEnabledLabel]; ok && val == "true" {
 		repairEnabled = true
 	}
@@ -116,9 +119,9 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	if node.Labels == nil {
 		node.Labels = make(map[string]string)
 	}
-	labelKey := "oci.oraclecloud.com/node-problem-detected"
-	if _, ok := node.Labels[labelKey]; !ok {
-		node.Labels[labelKey] = string(condition.Type)
+
+	if _, ok := node.Labels[repairProblemDetectedLabel]; !ok {
+		node.Labels[repairProblemDetectedLabel] = string(condition.Type)
 		// logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
 		needsPatch = true
 	}
@@ -173,8 +176,9 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		logger.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
 	}
 
-	logger.Info("CCM: Requeuing request for periodic check after 10m.")
-	return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
+	requeDuration := getRequeueDuration(logger, node)
+	logger.Info("CCM: Requeuing request for periodic check after " + requeDuration.String())
+	return ctrl.Result{RequeueAfter: requeDuration}, nil
 }
 
 // cleanupRepairArtifacts checks a healthy node for leftover repair items and removes them.
@@ -184,7 +188,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 
 	// 1. Clean up repair labels.
 	for key := range node.Labels {
-		if strings.HasPrefix(key, "oci.oraclecloud.com/node-problem-detected") {
+		if strings.HasPrefix(key, repairProblemDetectedLabel) {
 			logger.Info("Node is healthy, removing repair label", "node", node.Name, "label", key)
 			delete(node.Labels, key)
 			needsPatch = true
@@ -282,6 +286,24 @@ func getConditionMap(conditions []v1.NodeCondition) map[v1.NodeConditionType]v1.
 		conditionMap[condition.Type] = condition
 	}
 	return conditionMap
+}
+
+func getRequeueDuration(logger logr.Logger, node *v1.Node) time.Duration {
+	// Define the default requeue duration
+	requeueDuration := 10 * time.Minute
+
+	if val, ok := node.Labels[repairFrequencyLabel]; ok {
+		// Parse the string value to an integer (base 10, 64-bit)
+		if parsedValue, err := strconv.ParseInt(val, 10, 64); err == nil && parsedValue > 0 {
+			// If parsing is successful and the value is positive, use it
+			requeueDuration = time.Duration(parsedValue) * time.Minute
+		} else {
+			// Log a warning if the label value is invalid, but continue with the default
+			logger.Info("CCM: Invalid value for repair frequency label on node: " + node.Name + " Frequency Lable has a value: " + val)
+		}
+	}
+
+	return requeueDuration
 }
 
 func (p ConditionChangedPredicate) Create(e event.CreateEvent) bool {
