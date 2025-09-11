@@ -112,8 +112,8 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	labelKey := "oci.oraclecloud.com.problem-detected/" + string(condition.Type)
 	labelFound := false
 	if _, ok := node.Labels[labelKey]; !ok {
+		logger.Info("CCM: Adding label to unhealthy node", "node", node.Labels)
 		node.Labels[labelKey] = "true"
-		// logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
 		needsPatch = true
 		labelFound = true
 	}
