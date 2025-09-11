@@ -28,10 +28,12 @@ import (
 )
 
 const (
-	narName                    string = "narName"
-	repairProblemDetectedLabel string = "oci.oraclecloud.com/node-problem-detected"
-	repairEnabledLabel         string = "oci.oraclecloud.com/node-auto-repair-enabled"
-	repairFrequencyLabel       string = "oci.oraclecloud.com/node-auto-repair-freq"
+	narName                    string         = "narName"
+	repairProblemDetectedLabel string         = "oci.oraclecloud.com/node-problem-detected"
+	repairEnabledLabel         string         = "oci.oraclecloud.com/node-auto-repair-enabled"
+	repairFrequencyLabel       string         = "oci.oraclecloud.com/node-auto-repair-freq"
+	REPAIR_TAINT_KEY           string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
+	REPAIR_TAINT_EFFECT        v1.TaintEffect = v1.TaintEffectNoSchedule
 )
 
 var CONDITIONS map[string]string = map[string]string{
@@ -39,12 +41,6 @@ var CONDITIONS map[string]string = map[string]string{
 	"GPUCount":        "True",
 	"GPUCdfpCable":    "True",
 	"GPURowRemap":     "True",
-}
-
-var REPAIR_TAINT v1.Taint = v1.Taint{
-	Key:    "oci.oraclecloud.com/node-auto-repair-scheduled",
-	Value:  "true",
-	Effect: v1.TaintEffectNoSchedule,
 }
 
 type NodeAutoRepairReconciler struct {
@@ -129,13 +125,14 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// Action 2: Add repair taint if it doesn't exist.
 	taintFound := false
 	for _, taint := range node.Spec.Taints {
-		if taint.Key == REPAIR_TAINT.Key && taint.Effect == REPAIR_TAINT.Effect {
+		if taint.Key == REPAIR_TAINT_KEY && taint.Effect == REPAIR_TAINT_EFFECT {
 			taintFound = true
 			break
 		}
 	}
 	if !taintFound {
-		node.Spec.Taints = append(node.Spec.Taints, REPAIR_TAINT)
+		repairTaint := createRepairTaint()
+		node.Spec.Taints = append(node.Spec.Taints, repairTaint)
 		// logger.Info("CCM: Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
 		needsPatch = true
 	}
@@ -199,7 +196,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	var taintsToKeep []v1.Taint
 	var taintToRemove bool
 	for _, taint := range node.Spec.Taints {
-		if taint.Key == REPAIR_TAINT.Key && taint.Effect == REPAIR_TAINT.Effect {
+		if taint.Key == REPAIR_TAINT_KEY && taint.Effect == REPAIR_TAINT_EFFECT {
 			taintToRemove = true
 		} else {
 			taintsToKeep = append(taintsToKeep, taint)
@@ -207,7 +204,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	}
 
 	if taintToRemove {
-		logger.Info("Node is healthy, removing repair taint", "node", node.Name, "taint", REPAIR_TAINT.Key)
+		logger.Info("Node is healthy, removing repair taint", "node", node.Name, "taint", REPAIR_TAINT_KEY)
 		node.Spec.Taints = taintsToKeep
 		needsPatch = true
 	}
@@ -308,4 +305,16 @@ func getRequeueDuration(logger logr.Logger, node *v1.Node) time.Duration {
 
 func (p ConditionChangedPredicate) Create(e event.CreateEvent) bool {
 	return true
+}
+
+// createRepairTaint creates a new Taint object with a timestamp as its value.
+func createRepairTaint() v1.Taint {
+	// Get the current time and format it as a string
+	timestamp := time.Now().Format(time.RFC3339)
+
+	return v1.Taint{
+		Key:    REPAIR_TAINT_KEY,
+		Value:  timestamp, // Value is now a dynamic timestamp
+		Effect: REPAIR_TAINT_EFFECT,
+	}
 }
