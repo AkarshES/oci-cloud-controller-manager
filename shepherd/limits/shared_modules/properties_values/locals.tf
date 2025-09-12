@@ -8,6 +8,15 @@ locals {
   oci_cnp_dev_override = {
   }
 
+  // !!! Do not play with fire, only used by ci-cd pipeline
+  oci_cnp_dev_ccm_override = {
+    "v1.34" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
+  }
+  // !!! Do not play with fire, only used by ci-cd pipeline
+  oci_cnp_dev_csi_override = {
+    "v1.34" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
+  }
+
   tenancy_property_overrides = {
     "oc1" = {
       "ccm-image-version-mapping" = {
@@ -18,7 +27,7 @@ locals {
           {
             regions      = ["phx"]
             env          = "integ"
-            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.oci_cnp_dev_override))
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.oci_cnp_dev_ccm_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
           }
         ]
@@ -31,7 +40,7 @@ locals {
           {
             regions      = ["phx"]
             env          = "integ"
-            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.oci_cnp_dev_override))
+            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.oci_cnp_dev_csi_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
           },
           /*
