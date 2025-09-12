@@ -83,7 +83,7 @@ type NodeAutoRepairReconciler struct {
 func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log := zap.L().Sugar()
 	log.Info("Setting up NAR controller with manager")
-	r.Recorder = mgr.GetEventRecorderFor("nodeAutoRepair")
+	r.Recorder = mgr.GetEventRecorderFor("node-auto-repair-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Node{}, builder.WithPredicates(ConditionChangedPredicate{log: log})).
@@ -107,7 +107,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Check if any unhealthy conditions were found.
 	if len(unhealthyConditions) > 0 {
 		// Handle all unhealthy conditions at once.
-		logger.Info("CCM: Node is unhealthy, starting repair process", "conditions", len(unhealthyConditions))
+		logger.Info("CCM: Node is unhealthy, starting repair process", "conditionsCount", len(unhealthyConditions))
 		return r.handleUnhealthyNode(ctx, logger, node, unhealthyConditions)
 	}
 
@@ -202,7 +202,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
 
 	// Log a single, combined message.
-	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", problemTypes, "problems", problemReasons)
+	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", strings.Join(problemTypes, ", "), "problems", strings.Join(problemReasons, ", "))
 
 	if repairEnabled {
 		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
