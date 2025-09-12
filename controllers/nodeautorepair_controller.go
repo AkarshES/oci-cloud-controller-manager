@@ -131,7 +131,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		}
 	}
 	if !taintFound {
-		repairTaint := createRepairTaint()
+		repairTaint := CreateRepairTaint()
 		node.Spec.Taints = append(node.Spec.Taints, repairTaint)
 		// logger.Info("CCM: Adding taint to unhealthy node", "node", node.Name, "taint", REPAIR_TAINT.Key)
 		needsPatch = true
@@ -308,9 +308,13 @@ func (p ConditionChangedPredicate) Create(e event.CreateEvent) bool {
 }
 
 // createRepairTaint creates a new Taint object with a timestamp as its value.
-func createRepairTaint() v1.Taint {
+func CreateRepairTaint() v1.Taint {
 	// Get the current time and format it as a string
-	timestamp := time.Now().Format(time.RFC3339)
+	now := time.Now().UTC()
+	const k8sTaintTimeFormat = "2006-01-02-15-04-05"
+
+	// Format using a reference string
+	timestamp := now.Format(k8sTaintTimeFormat)
 
 	return v1.Taint{
 		Key:    REPAIR_TAINT_KEY,
