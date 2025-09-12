@@ -153,7 +153,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// 	return ctrl.Result{}, nil
 	// }
 
-	var eventMessage string = "[Node Auto Repair]: Node condition " + string(condition.Type) + " is now: True, OKE is triggering - REBOOT - repair action"
+	var eventMessage string = "[Node Auto Repair]: Node condition " + string(condition.Type) + " is now: " + string(condition.Status) + ", OKE is triggering - REBOOT - repair action"
 	if !repairEnabled {
 		eventMessage += "(in dry run mode)"
 	}
