@@ -92,12 +92,6 @@ func (c *client) UpdateFileSystem(ctx context.Context, details fss.UpdateFileSys
 
 	incRequestCounter(err, updateVerb, fileSystemResource)
 
-	if resp.OpcRequestId != nil {
-		c.logger.With("service", "fss", "verb", updateVerb, "resource", fileSystemResource).
-			With("volumeName", *(details.DisplayName), "OpcRequestId", *(resp.OpcRequestId)).With("statusCode", util.GetHttpStatusCode(err)).
-			Info("OPC Request ID recorded for UpdateFileSystem call.")
-	}
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
