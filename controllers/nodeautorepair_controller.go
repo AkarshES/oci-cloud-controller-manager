@@ -92,41 +92,44 @@ func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // Reconcile is the main controller loop, now acting as an orchestrator.
+// Reconcile is the main controller loop.
 func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
-	// Use the logger from the context, as requested.
-	logger := log.FromContext(ctx)
-	logger = logger.WithValues(narName, "NAR")
+	logger := log.FromContext(ctx).WithValues(narName, "NAR")
 
-	// 1. Fetch the Node object.
 	node := &v1.Node{}
 	if err := r.Client.Get(ctx, req.NamespacedName, node); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// 2. Check if the node has an unhealthy condition.
-	if unhealthyCondition := findUnhealthyCondition(node); unhealthyCondition != nil {
-		// 2a. If unhealthy, execute the repair logic.
-		logger.Info("CCM: Node is unhealthy, starting repair process", "condition", unhealthyCondition.Type)
-		return r.handleUnhealthyNode(ctx, logger, node, unhealthyCondition)
+	// Find all unhealthy conditions.
+	unhealthyConditions := findUnhealthyConditions(node)
+
+	// Check if any unhealthy conditions were found.
+	if len(unhealthyConditions) > 0 {
+		// Handle all unhealthy conditions at once.
+		logger.Info("CCM: Node is unhealthy, starting repair process", "conditions", len(unhealthyConditions))
+		return r.handleUnhealthyNode(ctx, logger, node, unhealthyConditions)
 	}
 
-	// 3. If healthy, execute the cleanup logic for any previous repairs.
+	// If no unhealthy conditions, clean up.
 	return r.cleanupRepairArtifacts(ctx, logger, node)
 }
 
-// findUnhealthyCondition checks if a node has a condition that warrants repair.
-// It returns the first matching unhealthy condition, or nil if the node is healthy.
-func findUnhealthyCondition(node *v1.Node) *v1.NodeCondition {
+// findUnhealthyConditions checks if a node has any conditions that warrant repair.
+// It returns a slice of all matching unhealthy conditions, or an empty slice if the node is healthy.
+func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
+	var unhealthyConditions []*v1.NodeCondition
 	for _, condition := range node.Status.Conditions {
-		if conditionStatus, ok := CONDITIONS[string(condition.Type)]; ok && (conditionStatus == string(condition.Status)) {
-			return &condition
+		// Check if the condition type exists in our map and its status matches the expected value ("True").
+		if expectedStatus, ok := CONDITIONS[string(condition.Type)]; ok && string(condition.Status) == expectedStatus {
+			unhealthyConditions = append(unhealthyConditions, condition.DeepCopy())
 		}
 	}
-	return nil
+	return unhealthyConditions
 }
 
 // handleUnhealthyNode performs all actions when a node is found to be unhealthy.
-func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, condition *v1.NodeCondition) (ctrl.Result, error) {
+func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
 	patch := client.MergeFrom(node.DeepCopy())
 	var needsPatch bool
 
@@ -141,9 +144,19 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		node.Labels = make(map[string]string)
 	}
 
-	if _, ok := node.Labels[repairProblemDetectedLabel]; !ok {
-		node.Labels[repairProblemDetectedLabel] = string(condition.Type)
-		// logger.Info("CCM: Adding label to unhealthy node", "node", node.Name, "label", labelKey)
+	// Step 1: Add repair label and taint, aggregating all conditions.
+	// Use a string builder to create a single aggregated label message.
+	problemTypes := []string{}
+	problemReasons := []string{}
+	for _, cond := range conditions {
+		problemTypes = append(problemTypes, string(cond.Type))
+		problemReasons = append(problemReasons, string(cond.Type))
+	}
+	aggregatedLabelValue := strings.Join(problemReasons, ",")
+
+	// Action 1: Add a single, aggregated repair label if it doesn't exist or is different.
+	if oldLabelValue, ok := node.Labels[repairProblemDetectedLabel]; !ok || oldLabelValue != aggregatedLabelValue {
+		node.Labels[repairProblemDetectedLabel] = aggregatedLabelValue
 		needsPatch = true
 	}
 
@@ -178,12 +191,18 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// 	return ctrl.Result{}, nil
 	// }
 
-	var eventMessage string = "[Node Auto Repair]: Node condition " + string(condition.Type) + " is now: " + string(condition.Status) + ", OKE is triggering - REBOOT - repair action"
+	// Step 2: Record a single, combined event and log message.
+	eventMessage := "[Node Auto Repair]: Node conditions are unhealthy: " + strings.Join(problemTypes, ", ") + ", OKE is triggering - REBOOT - repair action"
 	if !repairEnabled {
-		eventMessage += "(in dry run mode)"
+		eventMessage += " (in dry run mode)"
 	}
-	r.Recorder.Event(node, v1.EventTypeWarning, string(condition.Type), eventMessage)
-	logger.Info("CCM: Condition triggered repair action", "condition", string(condition.Type), "node", node.Name)
+	r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
+	eventMessage = "[Node Auto Repair]: Node problems are: " + strings.Join(problemReasons, ", ")
+
+	r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
+
+	// Log a single, combined message.
+	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", problemTypes, "problems", problemReasons)
 
 	if repairEnabled {
 		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
