@@ -35,7 +35,6 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
-	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
 	"github.com/pkg/errors"
 	helper "k8s.io/cloud-provider/service/helpers"
 	net2 "k8s.io/utils/net"
@@ -52,8 +51,8 @@ const (
 	IPv4                      = string(client.GenericIPv4)
 	IPv6                      = string(client.GenericIPv6)
 	IPv4AndIPv6               = string("IPv4_AND_IPv6")
-	NAT46                     = networkloadbalancer.NetworkLoadBalancerIpVersionTranslationNat46
-	DISABLED                  = networkloadbalancer.NetworkLoadBalancerIpVersionTranslationDisabled
+	NAT46                     = "NAT46"
+	DISABLED                  = "DISABLED"
 )
 
 const (
@@ -217,6 +216,9 @@ const (
 	// LB experience - https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/CreateLoadBalancerDetails
 	// NLB experience - https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
 	ServiceAnnotationReservedIPs = "oci.oraclecloud.com/reserved-ips"
+
+	// ServiceAnnotationLoadBalancerCertificateOcid is the service annotation for providing the OCI certificate OCID
+	ServiceAnnotationLoadBalancerCertificateOcid = "service.beta.kubernetes.io/oci-load-balancer-tls-certificate"
 )
 
 // NLB specific annotations
@@ -351,6 +353,7 @@ type SSLConfig struct {
 
 	BackendSetSSLSecretName      string
 	BackendSetSSLSecretNamespace string
+	ListenerPostSSLMap           map[int]string
 
 	sslSecretReader
 }
@@ -391,6 +394,23 @@ func NewSSLConfig(secretListenerString string, secretBackendSetString string, se
 		BackendSetSSLSecretNamespace: backendSecretNamespace,
 		sslSecretReader:              ssr,
 	}
+}
+
+type SSLConfigBuilder struct {
+	sslConfig *SSLConfig
+}
+
+func (s *SSLConfigBuilder) WithListenerTls(listenerTls map[int]string) *SSLConfigBuilder {
+	if listenerTls != nil && len(listenerTls) > 0 {
+		if s.sslConfig != nil {
+			s.sslConfig = &SSLConfig{}
+		}
+		s.sslConfig.ListenerPostSSLMap = listenerTls
+	}
+	return s
+}
+func (s *SSLConfigBuilder) Build() *SSLConfig {
+	return s.sslConfig
 }
 
 // LBSpec holds the data required to build a OCI load balancer from a
@@ -1373,7 +1393,7 @@ func GetSSLConfiguration(cfg *SSLConfig, name string, port int, sslConfigAnnotat
 }
 
 func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurationAnnotation string) (*client.GenericSslConfigurationDetails, error) {
-	if cfg == nil || !cfg.Ports.Has(port) || len(name) == 0 {
+	if cfg == nil || !cfg.Ports.Has(port) || len(name) == 0 || cfg.ListenerPostSSLMap[port] != "" {
 		return nil, nil
 	}
 	// TODO: fast-follow to pass the sslconfiguration object directly to loadbalancer
@@ -1385,10 +1405,20 @@ func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurati
 			return nil, errors.Wrap(err, "failed to parse SSL Configuration annotation")
 		}
 	}
-	genericSSLConfigurationDetails := &client.GenericSslConfigurationDetails{
-		CertificateName:       &name,
-		VerifyDepth:           common.Int(0),
-		VerifyPeerCertificate: common.Bool(false),
+	genericSSLConfigurationDetails := &client.GenericSslConfigurationDetails{}
+	if len(name) > 0 {
+		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
+			CertificateName:       &name,
+			VerifyDepth:           common.Int(0),
+			VerifyPeerCertificate: common.Bool(false),
+		}
+	}
+	if cfg.ListenerPostSSLMap[port] != "" {
+		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
+			CertificateIds:        []string{cfg.ListenerPostSSLMap[port]},
+			VerifyDepth:           common.Int(0),
+			VerifyPeerCertificate: common.Bool(false),
+		}
 	}
 	if extractCipherSuite != nil {
 		genericSSLConfigurationDetails.CipherSuiteName = extractCipherSuite.CipherSuiteName
@@ -2134,6 +2164,14 @@ func isNat46Enabled(svc *v1.Service) bool {
 		}
 	}
 	return false
+}
+
+func getTlsCertificateOCID(svc *v1.Service) (name string, e error) {
+	certificateOcid, ok := svc.Annotations[ServiceAnnotationLoadBalancerCertificateOcid]
+	if !ok || certificateOcid == "" {
+		return "", fmt.Errorf("Invalid Certificate OCID: [%s] provided with anotation: %s", certificateOcid, ServiceAnnotationLoadBalancerCertificateOcid)
+	}
+	return certificateOcid, nil
 }
 
 // parses the reserved IP annotation and returns a list of reserved IPs (IPv4 and/or IPv6)
