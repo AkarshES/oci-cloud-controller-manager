@@ -18,15 +18,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	authv1 "k8s.io/api/authentication/v1"
-	"k8s.io/utils/pointer"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	authv1 "k8s.io/api/authentication/v1"
+	"k8s.io/utils/pointer"
 
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
 

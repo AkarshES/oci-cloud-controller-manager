@@ -779,7 +779,11 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 	if err != nil {
 		return nil, err
 	}
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID, ipAddressToOcidMap)
+	var backendNsgIdsFromConfig []string
+	if cp.config.LoadBalancer != nil {
+		backendNsgIdsFromConfig = cp.config.LoadBalancer.BackendNsgIds
+	}
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID, backendNsgIdsFromConfig, ipAddressToOcidMap)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -1656,7 +1660,11 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		return err
 	}
 
-	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID, ipAddressToOcidMap)
+	var backendNsgIdsFromConfig []string
+	if cp.config.LoadBalancer != nil {
+		backendNsgIdsFromConfig = cp.config.LoadBalancer.BackendNsgIds
+	}
+	spec, err := NewLBSpec(logger, service, provisionedSvcNodes, managedPods, virtualPods, lbSubnetIds, sslConfig, cp.securityListManagerFactory, ipVersions, cp.config.Tags, lb, cp.config.CompartmentID, backendNsgIdsFromConfig, ipAddressToOcidMap)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("Failed to derive LBSpec")
 		errorType = util.GetError(err)
@@ -1989,11 +1997,17 @@ func (clb *CloudLoadBalancerProvider) cleanupSecurityRulesForLoadBalancerDelete(
 		return errors.Wrap(err, "failed to get Security Rule management mode")
 	}
 
-	backendNsgIds, err := getManagedBackendNSG(service)
+	var backendNsgIdsFromConfig []string
+	if cp.config.LoadBalancer != nil {
+		backendNsgIdsFromConfig = cp.config.LoadBalancer.BackendNsgIds
+	}
+
+	backendNsgIds, err := getManagedBackendNSG(service, backendNsgIdsFromConfig)
 	if err != nil {
 		logger.With(zap.Error(err)).Error("failed to get backend Nsgs from spec")
 		return errors.Wrap(err, "failed to get backend Nsgs from spec")
 	}
+
 	var securityListManager securityListManager
 	if securityRuleManagerMode == NSG {
 		if managedNsg != nil {
