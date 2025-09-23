@@ -180,9 +180,9 @@ const (
 	// specifying the security rule management mode ("SL-All", "SL-Frontend", "NSG", "None") that configures how security lists are managed by the CCM
 	ServiceAnnotationLoadBalancerSecurityRuleManagementMode = "oci.oraclecloud.com/security-rule-management-mode"
 
-	// ServiceAnnotationBackendSecurityRuleManagement is a service annotation to denote management of backend Network Security Group(s)
+	// ServiceAnnotationBackendSecurityGroupForRuleManagement is a service annotation to denote management of backend Network Security Group(s)
 	// ingress / egress security rules for a given kubernetes service could be either LB or NLB
-	ServiceAnnotationBackendSecurityRuleManagement = "oci.oraclecloud.com/oci-backend-network-security-group"
+	ServiceAnnotationBackendSecurityGroupForRuleManagement = "oci.oraclecloud.com/oci-backend-network-security-group"
 
 	// ServiceAnnotationLoadbalancerListenerSSLConfig is a service annotation allows you to set the cipher suite on the listener
 	ServiceAnnotationLoadbalancerListenerSSLConfig = "oci.oraclecloud.com/oci-load-balancer-listener-ssl-config"
@@ -431,7 +431,7 @@ type LBSpec struct {
 }
 
 // NewLBSpec creates a LB Spec from a Kubernetes service and a slice of nodes.
-func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, subnets []string, sslConfig *SSLConfig, secListFactory securityListManagerFactory, versions *IpVersions, initialLBTags *config.InitialTags, existingLB *client.GenericLoadBalancer, clusterCompartment string, ipAddressToOcidMap map[string]string) (*LBSpec, error) {
+func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v1.Node, managedPods []*v1.Pod, virtualPods []*v1.Pod, subnets []string, sslConfig *SSLConfig, secListFactory securityListManagerFactory, versions *IpVersions, initialLBTags *config.InitialTags, existingLB *client.GenericLoadBalancer, clusterCompartment string, backendNsgIdsFromConfig []string, ipAddressToOcidMap map[string]string) (*LBSpec, error) {
 	if err := validateService(svc); err != nil {
 		return nil, errors.Wrap(err, "invalid service")
 	}
@@ -508,14 +508,12 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
-	backendNsgOcids, err := getManagedBackendNSG(svc)
+	backendNsgOcids, err := getManagedBackendNSG(svc, backendNsgIdsFromConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	if managedNsg != nil && ruleManagementMode == RuleManagementModeNsg && len(backendNsgOcids) != 0 {
-		managedNsg.backendNsgId = backendNsgOcids
-	}
+	managedNsg.backendNsgId = backendNsgOcids
 
 	ingressIpMode, err := getIngressIpMode(svc)
 	if err != nil {
@@ -683,19 +681,28 @@ func getRuleManagementMode(svc *v1.Service) (string, *ManagedNetworkSecurityGrou
 	return ManagementModeNone, &nsg, nil
 }
 
-func getManagedBackendNSG(svc *v1.Service) ([]string, error) {
+func getManagedBackendNSG(svc *v1.Service, backendNsgIdsFromConfig []string) ([]string, error) {
 	backendNsgList := make([]string, 0)
 	var networkSecurityGroupIds string
 	var nsgAnnotationString string
 	var ok bool
-	networkSecurityGroupIds, ok = svc.Annotations[ServiceAnnotationBackendSecurityRuleManagement]
-	nsgAnnotationString = ServiceAnnotationBackendSecurityRuleManagement
-	if !ok || networkSecurityGroupIds == "" {
+	ruleManagementMode, _, err := getRuleManagementMode(svc)
+	if err != nil {
+		return nil, err
+	}
+
+	if ruleManagementMode != RuleManagementModeNsg {
 		return backendNsgList, nil
 	}
-	numOfNsgIds := 0
+
+	networkSecurityGroupIds, ok = svc.Annotations[ServiceAnnotationBackendSecurityGroupForRuleManagement]
+	nsgAnnotationString = ServiceAnnotationBackendSecurityGroupForRuleManagement
+	if !ok || networkSecurityGroupIds == "" {
+		return backendNsgIdsFromConfig, nil
+	}
+
+	backendNsgList = make([]string, 0)
 	for _, nsgOCID := range RemoveDuplicatesFromList(strings.Split(strings.ReplaceAll(networkSecurityGroupIds, " ", ""), ",")) {
-		numOfNsgIds++
 		if nsgOCID != "" {
 			backendNsgList = append(backendNsgList, nsgOCID)
 			continue
