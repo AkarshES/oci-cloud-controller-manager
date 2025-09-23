@@ -5848,7 +5848,7 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				npnEnabled = false
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -7174,7 +7174,7 @@ func TestNewLBSpecForTags(t *testing.T) {
 			slManagerFactory := func(mode string) securityListManager {
 				return newSecurityListManagerNOOP()
 			}
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, tc.sslConfig, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -7359,7 +7359,7 @@ func TestNewLBSpecSingleAD(t *testing.T) {
 				return newSecurityListManagerNOOP()
 			}
 
-			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
+			result, err := NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil, nil)
 			if err != nil {
 				t.Error(err)
 			}
@@ -8282,7 +8282,7 @@ func TestNewLBSpecFailure(t *testing.T) {
 				slManagerFactory := func(mode string) securityListManager {
 					return newSecurityListManagerNOOP()
 				}
-				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil)
+				_, err = NewLBSpec(logger.Sugar(), tc.service, tc.nodes, tc.managedPods, tc.virtualPods, subnets, nil, slManagerFactory, tc.IpVersions, tc.clusterTags, nil, cp.config.CompartmentID, nil, nil)
 			}
 			if err == nil || err.Error() != tc.expectedErrMsg {
 				t.Errorf("Expected error with message %q but got %q", tc.expectedErrMsg, err)
@@ -11312,20 +11312,23 @@ func Test_getRuleManagementMode(t *testing.T) {
 
 func Test_getBackendNetworkSecurityGroups(t *testing.T) {
 	testCases := map[string]struct {
-		service *v1.Service
-		nsgList []string
-		err     error
+		service                 *v1.Service
+		nsgList                 []string
+		backendNsgIdsFromConfig []string
+		err                     error
 	}{
 		"empty ServiceAnnotationLoadBalancerNetworkSecurityGroups annotation": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						ServiceAnnotationBackendSecurityRuleManagement: "",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "",
 					},
 				},
 			},
-			nsgList: []string{},
-			err:     nil,
+			nsgList:                 []string{},
+			backendNsgIdsFromConfig: []string{},
+			err:                     nil,
 		},
 		"no ServiceAnnotationBackendSecurityRuleManagement annotation": {
 			service: &v1.Service{
@@ -11333,47 +11336,91 @@ func Test_getBackendNetworkSecurityGroups(t *testing.T) {
 					Annotations: map[string]string{},
 				},
 			},
-			nsgList: []string{},
-			err:     nil,
+			nsgList:                 []string{},
+			backendNsgIdsFromConfig: []string{},
+			err:                     nil,
 		},
 		"ServiceAnnotationBackendSecurityRuleManagement update annotation": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						ServiceAnnotationBackendSecurityRuleManagement: "ocid1.networksecuritygroup.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "ocid1.networksecuritygroup.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					},
 				},
 			},
-			nsgList: []string{"ocid1.networksecuritygroup.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-			err:     nil,
+			nsgList:                 []string{"ocid1.networksecuritygroup.oc1.iad.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+			backendNsgIdsFromConfig: []string{},
+			err:                     nil,
 		},
 		"ServiceAnnotationBackendSecurityRuleManagement more than 5": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						ServiceAnnotationBackendSecurityRuleManagement: "ocid1,ocid2,ocid3,ocid4,ocid5,ocid6",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "ocid1,ocid2,ocid3,ocid4,ocid5,ocid6",
 					},
 				},
 			},
-			nsgList: []string{"ocid1", "ocid2", "ocid3", "ocid4", "ocid5", "ocid6"},
-			err:     nil,
+			nsgList:                 []string{"ocid1", "ocid2", "ocid3", "ocid4", "ocid5", "ocid6"},
+			backendNsgIdsFromConfig: []string{},
+			err:                     nil,
 		},
 		"ServiceAnnotationBackendSecurityRuleManagement duplicate NSG OCIDS": {
 			service: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						ServiceAnnotationBackendSecurityRuleManagement: "ocid1,ocid2, ocid1",
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "ocid1,ocid2, ocid1",
 					},
 				},
 			},
-			nsgList: []string{"ocid1", "ocid2"},
-			err:     nil,
+			nsgList:                 []string{"ocid1", "ocid2"},
+			backendNsgIdsFromConfig: []string{},
+			err:                     nil,
+		},
+		"ServiceAnnotationBackendSecurityRuleManagement NSG provided in config and annotation": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "ocid1,ocid2, ocid1",
+					},
+				},
+			},
+			nsgList:                 []string{"ocid1", "ocid2"},
+			backendNsgIdsFromConfig: []string{},
+			err:                     nil,
+		},
+		"ServiceAnnotationBackendSecurityRuleManagement NSG provided only in config": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+			},
+			nsgList:                 []string{"ocid3"},
+			backendNsgIdsFromConfig: []string{"ocid3"},
+			err:                     nil,
+		},
+		"ServiceAnnotationBackendSecurityRuleManagement NSG in config is nil": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+			},
+			nsgList:                 nil,
+			backendNsgIdsFromConfig: nil,
+			err:                     nil,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			nsgList, err := getManagedBackendNSG(tc.service)
+			nsgList, err := getManagedBackendNSG(tc.service, tc.backendNsgIdsFromConfig)
 			if err != nil && err.Error() != tc.err.Error() {
 				t.Errorf("Expected  NSG List error\n%+v\nbut got\n%+v", tc.err, err)
 			}
@@ -15785,6 +15832,157 @@ func TestGetReservedIPs(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.wantIPs) {
 				t.Errorf("expected %v, got %v", tt.wantIPs, got)
+
+			}
+		})
+	}
+}
+
+func TestNewLBSpecBackendNsgIds(t *testing.T) {
+	enableOkeSystemTags = true
+	testCases := map[string]struct {
+		name                    string
+		service                 *v1.Service
+		backendNsgIdsFromConfig []string
+		expectedBackendNsgIds   []string
+	}{
+		"only annotation provided": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "nsg1,nsg2",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			backendNsgIdsFromConfig: nil,
+			expectedBackendNsgIds:   []string{"nsg1", "nsg2"},
+		},
+		"only provided via config": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			backendNsgIdsFromConfig: []string{"nsg3", "nsg4"},
+			expectedBackendNsgIds:   []string{"nsg3", "nsg4"},
+		},
+		"provided in both config and annotation": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+						ServiceAnnotationBackendSecurityGroupForRuleManagement:  "nsg1,nsg2",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			backendNsgIdsFromConfig: []string{"nsg3", "nsg4"},
+			expectedBackendNsgIds:   []string{"nsg1", "nsg2"},
+		},
+		"no backendNsgIds provided": {
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			backendNsgIdsFromConfig: nil,
+			expectedBackendNsgIds:   nil,
+		},
+	}
+
+	cp := &CloudLoadBalancerProvider{
+		client: MockOCIClient{},
+		config: &providercfg.Config{CompartmentID: "testCompartment"},
+		logger: zap.L().Sugar(),
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			logger := zap.L()
+			cp.config = &providercfg.Config{
+				LoadBalancer: &providercfg.LoadBalancerConfig{
+					Subnet1: "one",
+					Subnet2: "two",
+				},
+			}
+			subnets, err := cp.getLoadBalancerSubnets(context.Background(), tc.service)
+			if err != nil {
+				t.Error(err)
+			}
+			slManagerFactory := func(mode string) securityListManager {
+				return newSecurityListManagerNOOP()
+			}
+
+			result, err := NewLBSpec(logger.Sugar(), tc.service, []*v1.Node{}, []*v1.Pod{}, []*v1.Pod{}, subnets, nil, slManagerFactory, &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			}, nil, nil, cp.config.CompartmentID, tc.backendNsgIdsFromConfig, nil)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if result.ManagedNetworkSecurityGroup == nil {
+				t.Errorf("Expected ManagedNetworkSecurityGroup to be set")
+			} else if !reflect.DeepEqual(result.ManagedNetworkSecurityGroup.backendNsgId, tc.expectedBackendNsgIds) {
+				t.Errorf("Expected backendNsgIds %v, got %v", tc.expectedBackendNsgIds, result.ManagedNetworkSecurityGroup.backendNsgId)
 			}
 		})
 	}

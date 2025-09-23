@@ -328,7 +328,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 			"lb",
 			map[string]string{
 				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
-				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
+				cloudprovider.ServiceAnnotationBackendSecurityGroupForRuleManagement:  f.BackendNsgOcids,
 			},
 		},
 		{
@@ -336,7 +336,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 			map[string]string{
 				cloudprovider.ServiceAnnotationLoadBalancerType:                       "nlb",
 				cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode: "NSG",
-				cloudprovider.ServiceAnnotationBackendSecurityRuleManagement:          f.BackendNsgOcids,
+				cloudprovider.ServiceAnnotationBackendSecurityGroupForRuleManagement:  f.BackendNsgOcids,
 			},
 		},
 	}

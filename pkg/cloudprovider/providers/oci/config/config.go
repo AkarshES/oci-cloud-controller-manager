@@ -72,6 +72,10 @@ const (
 
 // LoadBalancerConfig holds the configuration options for OCI load balancers.
 type LoadBalancerConfig struct {
+	// list of NSGs associated to LB backends for which necessary
+	// ingress/egress rules should be managed
+	BackendNsgIds []string `yaml:"backendNsgIds"`
+
 	// Disabled disables the creation of a load balancer.
 	Disabled bool `yaml:"disabled"`
 
