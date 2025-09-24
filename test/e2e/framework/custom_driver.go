@@ -80,7 +80,7 @@ func HelmInstall(clusterKubeconfigPath string, customHandle string) {
 		releaseNamespace,
 		os.Getenv("HELM_DRIVER"),
 		func(format string, v ...interface{}) {
-			fmt.Sprintf(format, v...)
+			_ = fmt.Sprintf(format, v...)
 		},
 	)
 	if err != nil {
@@ -150,7 +150,7 @@ func CreateInstancePrincipalSecret(clientset *kubernetes.Clientset, compartment 
 	}
 }
 
-func LabelNodesAsControlPlane(clientset *kubernetes.Clientset){
+func LabelNodesAsControlPlane(clientset *kubernetes.Clientset) {
 	ctx := context.Background()
 
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})

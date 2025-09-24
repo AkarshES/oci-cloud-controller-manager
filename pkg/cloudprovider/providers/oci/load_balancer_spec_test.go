@@ -8902,8 +8902,8 @@ func Test_getBackends(t *testing.T) {
 						Status: v1.PodStatus{
 							PodIP: "0.0.0.0",
 							PodIPs: []v1.PodIP{
-								{"0.0.0.0"},
-								{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+								{IP: "0.0.0.0"},
+								{IP: "2001:0000:130F:0000:0000:09C0:876A:130B"},
 							},
 						},
 					},
@@ -8916,7 +8916,7 @@ func Test_getBackends(t *testing.T) {
 						Status: v1.PodStatus{
 							PodIP: "0.0.0.1",
 							PodIPs: []v1.PodIP{
-								{"0.0.0.1"},
+								{IP: "0.0.0.1"},
 							},
 						},
 					},
@@ -8993,7 +8993,7 @@ func Test_getBackends(t *testing.T) {
 						Status: v1.PodStatus{
 							PodIP: "0.0.0.2",
 							PodIPs: []v1.PodIP{
-								{"0.0.0.2"},
+								{IP: "0.0.0.2"},
 							},
 						},
 					},
@@ -9001,7 +9001,7 @@ func Test_getBackends(t *testing.T) {
 						Status: v1.PodStatus{
 							PodIP: "0.0.0.4",
 							PodIPs: []v1.PodIP{
-								{"0.0.0.4"},
+								{IP: "0.0.0.4"},
 							},
 						},
 					},
@@ -9014,8 +9014,8 @@ func Test_getBackends(t *testing.T) {
 						Status: v1.PodStatus{
 							PodIP: "0.0.0.3",
 							PodIPs: []v1.PodIP{
-								{"0.0.0.3"},
-								{"2001:0000:130F:0000:0000:09C0:876A:130B"},
+								{IP: "0.0.0.3"},
+								{IP: "2001:0000:130F:0000:0000:09C0:876A:130B"},
 							},
 						},
 					},

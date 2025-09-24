@@ -1598,7 +1598,7 @@ func (j *PVCTestJig) CheckVolumePerformanceLevel(bs ocicore.BlockstorageClient, 
 	actual := volume.VpusPerGB
 
 	if *actual != expectedPerformanceLevel {
-		Failf("Expected volume performance level to be %s but got %s", expectedPerformanceLevel, actual)
+		Failf("Expected volume performance level to be %d but got %d", expectedPerformanceLevel, actual)
 	}
 }
 

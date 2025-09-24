@@ -189,10 +189,10 @@ func Test_hasReadinessGate(t *testing.T) {
 				Spec: v1.PodSpec{
 					ReadinessGates: []v1.PodReadinessGate{
 						{
-							v1.PodConditionType("podReadinessCondition1"),
+							ConditionType: v1.PodConditionType("podReadinessCondition1"),
 						},
 						{
-							v1.PodConditionType("podReadinessCondition2"),
+							ConditionType: v1.PodConditionType("podReadinessCondition2"),
 						},
 					},
 				},
@@ -206,10 +206,10 @@ func Test_hasReadinessGate(t *testing.T) {
 				Spec: v1.PodSpec{
 					ReadinessGates: []v1.PodReadinessGate{
 						{
-							v1.PodConditionType("podReadinessCondition1"),
+							ConditionType: v1.PodConditionType("podReadinessCondition1"),
 						},
 						{
-							v1.PodConditionType("podReadinessCondition2"),
+							ConditionType: v1.PodConditionType("podReadinessCondition2"),
 						},
 					},
 				},

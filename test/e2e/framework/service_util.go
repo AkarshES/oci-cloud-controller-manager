@@ -486,7 +486,7 @@ func (j *ServiceTestJig) UpdateService(namespace, name string, update func(*v1.S
 func (j *ServiceTestJig) UpdateServiceOrFail(namespace, name string, update func(*v1.Service)) *v1.Service {
 	svc, err := j.UpdateService(namespace, name, update)
 	if err != nil {
-		Failf(err.Error())
+		Failf("%v", err.Error())
 	}
 	return svc
 }
@@ -730,7 +730,7 @@ func (j *ServiceTestJig) RunOrFail(namespace string, tweak func(rc *v1.Replicati
 func (j *ServiceTestJig) UpdateReplicationControllerOrFail(namespace, name string, update func(controller *v1.ReplicationController)) *v1.ReplicationController {
 	rc, err := j.updateReplicationController(namespace, name, update)
 	if err != nil {
-		Failf(err.Error())
+		Failf("%v", err.Error())
 	}
 	pods, err := j.waitForPodsCreated(namespace, int(*(rc.Spec.Replicas)))
 	if err != nil {
@@ -1501,7 +1501,7 @@ func ValidateSSLConfiguration(tcpService *v1.Service, loadBalancer *client.Gener
 		if *loadBalancer.Listeners[listenername].Port == sslEnabledPorts[0] {
 			expectedSSL, err := cloudprovider.GetSSLConfiguration(sslConfig, sslConfig.BackendSetSSLSecretName, sslEnabledPorts[0], listenerSslConfigAnnotation)
 			if err != nil {
-				return false, fmt.Errorf(err.Error())
+				return false, fmt.Errorf("%v", err.Error())
 			}
 			fmt.Println("Listener Actual SSL Config for ", sslEnabledPorts[0], ":", *listener.SslConfiguration.CertificateName)
 			fmt.Println("Listener Expected SSL Config for ", sslEnabledPorts[0], ":", *expectedSSL.CertificateName)
@@ -1530,7 +1530,7 @@ func ValidateSSLConfiguration(tcpService *v1.Service, loadBalancer *client.Gener
 		if *loadBalancer.Listeners[backendSetName].Port == sslEnabledPorts[0] {
 			expectedSSL, err := cloudprovider.GetSSLConfiguration(sslConfig, sslConfig.BackendSetSSLSecretName, sslEnabledPorts[0], backendSslConfigAnnotation)
 			if err != nil {
-				return false, fmt.Errorf(err.Error())
+				return false, fmt.Errorf("%v", err.Error())
 			}
 			fmt.Println("BackendSet Actual SSL Config for ", sslEnabledPorts[0], ":", *backendSet.SslConfiguration.CertificateName)
 			fmt.Println("BackendSet Expected SSL Config for ", sslEnabledPorts[0], ":", *expectedSSL.CertificateName)

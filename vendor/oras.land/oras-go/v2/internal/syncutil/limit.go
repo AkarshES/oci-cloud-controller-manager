@@ -67,41 +67,18 @@ type GoFunc[T any] func(ctx context.Context, region *LimitedRegion, t T) error
 
 // Go concurrently invokes fn on items.
 func Go[T any](ctx context.Context, limiter *semaphore.Weighted, fn GoFunc[T], items ...T) error {
-	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(nil)
-
 	eg, egCtx := errgroup.WithContext(ctx)
 	for _, item := range items {
-		region := LimitRegion(egCtx, limiter)
+		region := LimitRegion(ctx, limiter)
 		if err := region.Start(); err != nil {
-			cancel(err)
-			// break loop instead of returning to allow previously scheduled
-			// goroutines to finish their deferred region.End() calls
-			break
+			return err
 		}
-
-		eg.Go(func(t T, lr *LimitedRegion) func() error {
+		eg.Go(func(t T) func() error {
 			return func() error {
-				defer lr.End()
-
-				select {
-				case <-egCtx.Done():
-					// skip the task if the context is already cancelled
-					return nil
-				default:
-				}
-
-				if err := fn(egCtx, lr, t); err != nil {
-					cancel(err)
-					return err
-				}
-				return nil
+				defer region.End()
+				return fn(egCtx, region, t)
 			}
-		}(item, region))
+		}(item))
 	}
-
-	if err := eg.Wait(); err != nil {
-		cancel(err)
-	}
-	return context.Cause(ctx)
+	return eg.Wait()
 }
