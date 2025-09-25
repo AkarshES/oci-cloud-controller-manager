@@ -59,7 +59,7 @@ index 0ec921655..77934b38f 100644
 +	VolumeAttributesClass: {
 +		{Version: version.MustParse("1.29"), Default: false, PreRelease: featuregate.Alpha},
 +		{Version: version.MustParse("1.31"), Default: false, PreRelease: featuregate.Beta},
-+		{Version: version.MustParse("1.34"), Default: false, PreRelease: featuregate.GA},
++		{Version: version.MustParse("1.34"), Default: true, PreRelease: featuregate.GA},
 +	},
  }
 diff --git a/vendor/github.com/kubernetes-csi/external-resizer/pkg/features/features.go b/vendor/github.com/kubernetes-csi/external-resizer/pkg/features/features.go
