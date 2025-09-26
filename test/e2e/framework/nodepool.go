@@ -610,7 +610,7 @@ func (f *Framework) ScaleNodePool(np *oke.NodePool, nodeCount int) {
 		},
 	})
 	if err != nil {
-		Failf("Error while scaling Node Pool %n", *(np.Id))
+		Failf("Error while scaling Node Pool %v", *(np.Id))
 	}
 	f.WaitForActiveStateInNodePool(*np.Id)
 }
