@@ -1943,23 +1943,58 @@ func TestValidateVnicAttachmentsAreInAttachedState(t *testing.T) {
 func TestGetSecondaryIpsByVNICs(t *testing.T) {
 	testCases := []struct {
 		name                  string
-		ipFamilies            []string
+		nodeIpFamilies        []string
 		existingSecondaryVnic []SubnetVnic
 		output                map[string]*vnicSecondaryAddresses
 		err                   error
 	}{
 		{
-			name:       "List call IPv4 and IPv6",
-			ipFamilies: []string{IPv4, IPv6},
+			name:           "List call IPv4 and IPv6",
+			nodeIpFamilies: []string{IPv4, IPv6},
 			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
 				Id: common.String("vnic1"),
 			}}},
 			output: map[string]*vnicSecondaryAddresses{
 				"vnic1": {
-					V6:       ipv6s["vnic1"],
-					V4:       privateIps["vnic1"],
-					hostIpv6: nil,
-					hostIpv4: nil,
+					V6:         ipv6s["vnic1"],
+					V4:         privateIps["vnic1"],
+					hostIpv6:   nil,
+					hostIpv4:   nil,
+					ipFamilies: []string{IPv4, IPv6},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:           "List call IPv4 only",
+			nodeIpFamilies: []string{IPv4},
+			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
+				Id: common.String("vnic1"),
+			}}},
+			output: map[string]*vnicSecondaryAddresses{
+				"vnic1": {
+					V6:         []core.Ipv6{},
+					V4:         privateIps["vnic1"],
+					hostIpv6:   nil,
+					hostIpv4:   nil,
+					ipFamilies: []string{IPv4},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:           "List call IPv6 only",
+			nodeIpFamilies: []string{IPv6},
+			existingSecondaryVnic: []SubnetVnic{{Vnic: &core.Vnic{
+				Id: common.String("vnic1"),
+			}}},
+			output: map[string]*vnicSecondaryAddresses{
+				"vnic1": {
+					V6:         ipv6s["vnic1"],
+					V4:         []core.PrivateIp{},
+					hostIpv6:   nil,
+					hostIpv4:   nil,
+					ipFamilies: []string{IPv6},
 				},
 			},
 			err: nil,
@@ -1974,7 +2009,7 @@ func TestGetSecondaryIpsByVNICs(t *testing.T) {
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic)
+			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic, tt.nodeIpFamilies)
 			if err != nil && err.Error() != tt.err.Error() {
 				t.Errorf("got error %s, expected %s", err, tt.err)
 			}
