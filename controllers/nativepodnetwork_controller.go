@@ -490,7 +490,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	nodeName := getNodeNameFromPrimaryVnic(primaryVnic, nodeIpFamilies)
 
 	log.Info(FetchingPrivateIPsForSecondaryVNICs)
-	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs)
+	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, nodeIpFamilies)
 	if err != nil {
 		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
@@ -589,7 +589,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("existingSecondaryVNICs", existingSecondaryVNICs).
 		WithValues("countOfExistingSecondaryVNICs", len(existingSecondaryVNICs)).
 		Info(FetchedExistingSecondaryVNICsForInstance)
-	existingSecondaryIpsbyVNIC, err = r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs)
+	existingSecondaryIpsbyVNIC, err = r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, nodeIpFamilies)
 	if err != nil {
 		failReason = "ListPrivateIPsFailed"
 		r.handleError(ctx, req, err, "ListPrivateIP")
@@ -740,7 +740,7 @@ func (r *NativePodNetworkReconciler) getPrimaryAndSecondaryVNICs(ctx context.Con
 }
 
 // get the list of secondary private ips allocated on the given VNIC
-func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context, existingSecondaryVNICs []SubnetVnic) (map[string]*vnicSecondaryAddresses, error) {
+func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context, existingSecondaryVNICs []SubnetVnic, nodeIpFamilies []string) (map[string]*vnicSecondaryAddresses, error) {
 	ipsByVNICs := make(map[string]*vnicSecondaryAddresses)
 	log := log.FromContext(ctx)
 	for _, secondary := range existingSecondaryVNICs {
@@ -748,24 +748,25 @@ func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context,
 		var ipFamiliesPerVnic []string
 		log := log.WithValues("vnicId", *secondary.Vnic.Id)
 		var err error
-
-		vnicSecondaryAddresses.V4, err = r.OCIClient.Networking(nil).ListPrivateIps(ctx, *secondary.Vnic.Id)
-		if err != nil {
-			log.Error(err, "failed to list secondary IPv4 IPs for VNIC")
-			return nil, err
+		if len(nodeIpFamilies) == 0 || contains(nodeIpFamilies, IPv4) {
+			vnicSecondaryAddresses.V4, err = r.OCIClient.Networking(nil).ListPrivateIps(ctx, *secondary.Vnic.Id)
+			if err != nil {
+				log.Error(err, "failed to list secondary IPv4 IPs for VNIC")
+				return nil, err
+			}
+			if len(vnicSecondaryAddresses.V4) > 0 {
+				ipFamiliesPerVnic = append(ipFamiliesPerVnic, IPv4)
+			}
 		}
-
-		if len(vnicSecondaryAddresses.V4) > 0 {
-			ipFamiliesPerVnic = append(ipFamiliesPerVnic, IPv4)
-		}
-
-		vnicSecondaryAddresses.V6, err = r.OCIClient.Networking(nil).ListIpv6s(ctx, *secondary.Vnic.Id)
-		if err != nil {
-			log.Error(err, "failed to list secondary IPv6 IPs for VNIC")
-			return nil, err
-		}
-		if len(vnicSecondaryAddresses.V6) > 0 {
-			ipFamiliesPerVnic = append(ipFamiliesPerVnic, IPv6)
+		if contains(nodeIpFamilies, IPv6) {
+			vnicSecondaryAddresses.V6, err = r.OCIClient.Networking(nil).ListIpv6s(ctx, *secondary.Vnic.Id)
+			if err != nil {
+				log.Error(err, "failed to list secondary IPv6 IPs for VNIC")
+				return nil, err
+			}
+			if len(vnicSecondaryAddresses.V6) > 0 {
+				ipFamiliesPerVnic = append(ipFamiliesPerVnic, IPv6)
+			}
 		}
 		vnicSecondaryAddresses.ipFamilies = ipFamiliesPerVnic
 
@@ -842,8 +843,9 @@ func contains(slice []string, searchString string) bool {
 // exclude the primary IPs in the list of private IPs on VNIC
 func filterPrimaryIp(ips *vnicSecondaryAddresses) *vnicSecondaryAddresses {
 	Ips := &vnicSecondaryAddresses{
-		V6: []core.Ipv6{},
-		V4: []core.PrivateIp{},
+		V4:         []core.PrivateIp{},
+		V6:         []core.Ipv6{},
+		ipFamilies: ips.ipFamilies,
 	}
 	for _, ip := range ips.V4 {
 		// ignore primary IP
