@@ -682,7 +682,7 @@ func TruncateError(err error, maxBytes int) error {
 	errorMsg = err.Error()
 	bytesMsg := []byte(errorMsg)
 	if len(bytesMsg) <= maxBytes {
-		return errors.New(errorMsg)
+		return err
 	}
 
 	// Prepare truncation with suffix due to error being larger than maxBytes. Returns truncated error if maxBytes are less than 3(suffix length).
