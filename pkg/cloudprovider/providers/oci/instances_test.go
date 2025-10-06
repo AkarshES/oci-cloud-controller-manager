@@ -209,6 +209,109 @@ var (
 			Id:            common.String("ocid1.ipv6-gua-ipv4-instance"),
 			CompartmentId: common.String("ipv6-gua-ipv4-instance"),
 		},
+		"karpenter-with-flex": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-with-flex"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("karpenter-with-flex"),
+			ShapeConfig: &core.InstanceShapeConfig{
+				Ocpus:                   common.Float32(2),
+				MemoryInGBs:             common.Float32(16),
+				BaselineOcpuUtilization: core.InstanceShapeConfigBaselineOcpuUtilization2,
+			},
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
+		"ocid1.karpenter-with-flex-noncached": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-with-flex"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("karpenter-with-flex"),
+			ShapeConfig: &core.InstanceShapeConfig{
+				Ocpus:                   common.Float32(2),
+				MemoryInGBs:             common.Float32(16),
+				BaselineOcpuUtilization: core.InstanceShapeConfigBaselineOcpuUtilization2,
+			},
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
+		"karpenter-without-flex": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-without-flex"),
+			Shape:         common.String("VM.Standard1.2"),
+			DisplayName:   common.String("karpenter-without-flex"),
+			ShapeConfig: &core.InstanceShapeConfig{
+				Ocpus:                   common.Float32(2),
+				MemoryInGBs:             common.Float32(16),
+				BaselineOcpuUtilization: core.InstanceShapeConfigBaselineOcpuUtilization2,
+			},
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
+		"non-karpenter-with-flex": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.non-karpenter-with-flex"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("non-karpenter-with-flex"),
+		},
+		"karpenter-with-flex-missing-shape-config": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-with-flex-missing-shape-config"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("karpenter-with-flex-missing-shape-config"),
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
+		"karpenter-with-flex-missing-ocpu": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-with-flex-missing-ocpu"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("karpenter-with-flex-missing-ocpu"),
+			ShapeConfig: &core.InstanceShapeConfig{
+				MemoryInGBs:             common.Float32(16),
+				BaselineOcpuUtilization: core.InstanceShapeConfigBaselineOcpuUtilization2,
+			},
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
+		"karpenter-with-flex-missing-mem": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-with-flex-missing-mem"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("karpenter-with-flex-missing-mem"),
+			ShapeConfig: &core.InstanceShapeConfig{
+				Ocpus:                   common.Float32(2),
+				BaselineOcpuUtilization: core.InstanceShapeConfigBaselineOcpuUtilization2,
+			},
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
+		"karpenter-with-flex-missing-baseline": {
+			CompartmentId: common.String("compartment1"),
+			Id:            common.String("ocid1.karpenter-with-flex-missing-baseline"),
+			Shape:         common.String("VM.Standard.E3.Flex"),
+			DisplayName:   common.String("karpenter-with-flex-missing-baseline"),
+			ShapeConfig: &core.InstanceShapeConfig{
+				Ocpus:       common.Float32(2),
+				MemoryInGBs: common.Float32(16),
+			},
+			FreeformTags: map[string]string{
+				KarpenterNodePoolFreeFormTagKey:  "foo",
+				KarpenterNodeClassFreeFormTagKey: "bar",
+			},
+		},
 	}
 	subnets = map[string]*core.Subnet{
 		"subnetwithdnslabel": {
@@ -498,6 +601,17 @@ var (
 			},
 			Spec: v1.NodeSpec{
 				ProviderID: "ocid1.instance-id-ipv6",
+			},
+		},
+		"karpenter-with-flex": {
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					CompartmentIDAnnotation: "default",
+				},
+				Name: "karpenter",
+			},
+			Spec: v1.NodeSpec{
+				ProviderID: "ocid1.karpenter-with-flex",
 			},
 		},
 	}
@@ -1731,6 +1845,12 @@ func TestInstanceType(t *testing.T) {
 			out:  "VM.Standard1.2",
 			err:  nil,
 		},
+		{
+			name: "check node shape of instance not in cache",
+			in:   "karpenter-with-flex",
+			out:  "VM.Standard.E3.Flex.2o.16g.1_2b",
+			err:  nil,
+		},
 	}
 
 	cp := &CloudProvider{
@@ -1837,6 +1957,54 @@ func TestInstanceTypeByProviderID(t *testing.T) {
 			name: "provider id with provider prefix for virtual node",
 			in:   providerPrefix + "ocid1.virtualnode.oc1.iad.default",
 			out:  "",
+			err:  nil,
+		},
+		{
+			name: "Karpenter node with FLEX shape",
+			in:   "ocid1.karpenter-with-flex",
+			out:  "VM.Standard.E3.Flex.2o.16g.1_2b",
+			err:  nil,
+		},
+		{
+			name: "Karpenter node with FLEX shape not cached",
+			in:   "ocid1.karpenter-with-flex-noncached",
+			out:  "VM.Standard.E3.Flex.2o.16g.1_2b",
+			err:  nil,
+		},
+		{
+			name: "Karpenter node without FLEX shape",
+			in:   "ocid1.karpenter-without-flex",
+			out:  "VM.Standard1.2",
+			err:  nil,
+		},
+		{
+			name: "Non Karpenter node FLEX shape",
+			in:   "ocid1.non-karpenter-with-flex",
+			out:  "VM.Standard.E3.Flex",
+			err:  nil,
+		},
+		{
+			name: "Karpenter with FLEX shape but missing shapeConfig",
+			in:   "ocid1.karpenter-with-flex-missing-shape-config",
+			out:  "VM.Standard.E3.Flex",
+			err:  nil,
+		},
+		{
+			name: "Karpenter with FLEX shape but missing ocpus",
+			in:   "ocid1.karpenter-with-flex-missing-ocpu",
+			out:  "VM.Standard.E3.Flex",
+			err:  nil,
+		},
+		{
+			name: "Karpenter with FLEX shape but missing mem",
+			in:   "ocid1.karpenter-with-flex-missing-mem",
+			out:  "VM.Standard.E3.Flex",
+			err:  nil,
+		},
+		{
+			name: "Karpenter with FLEX shape but missing mem",
+			in:   "ocid1.karpenter-with-flex-missing-baseline",
+			out:  "VM.Standard.E3.Flex",
 			err:  nil,
 		},
 	}
