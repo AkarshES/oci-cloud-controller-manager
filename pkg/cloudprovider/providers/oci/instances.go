@@ -17,7 +17,6 @@ package oci
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"net"
 	"strings"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,9 +32,12 @@ import (
 )
 
 const (
-	VirtualNodePoolIdAnnotation = "oci.oraclecloud.com/virtual-node-pool-id"
-	IPv4NodeIPFamilyLabel       = "oci.oraclecloud.com/ip-family-ipv4"
-	IPv6NodeIPFamilyLabel       = "oci.oraclecloud.com/ip-family-ipv6"
+	VirtualNodePoolIdAnnotation      = "oci.oraclecloud.com/virtual-node-pool-id"
+	IPv4NodeIPFamilyLabel            = "oci.oraclecloud.com/ip-family-ipv4"
+	IPv6NodeIPFamilyLabel            = "oci.oraclecloud.com/ip-family-ipv6"
+	KarpenterNodePoolFreeFormTagKey  = "KarpenterNodePool"
+	KarpenterNodeClassFreeFormTagKey = "KarpenterNodeClass"
+	FlexShapeSuffix                  = "FLEX"
 )
 
 var _ cloudprovider.Instances = &CloudProvider{}
@@ -293,7 +296,8 @@ func (cp *CloudProvider) InstanceType(ctx context.Context, name types.NodeName) 
 	if err != nil {
 		return "", errors.Wrap(err, "GetInstanceByNodeName")
 	}
-	return *inst.Shape, nil
+
+	return getKarpenterFlexInstanceTypeOrDefault(inst), nil
 }
 
 // InstanceTypeByProviderID returns the type of the specified instance.
@@ -315,7 +319,7 @@ func (cp *CloudProvider) InstanceTypeByProviderID(ctx context.Context, providerI
 		return "", errors.Wrap(err, "error fetching instance from instanceCache, will retry")
 	}
 	if exists {
-		return *item.(*core.Instance).Shape, nil
+		return getKarpenterFlexInstanceTypeOrDefault(item.(*core.Instance)), nil
 	}
 	cp.logger.Debug("Unable to find the instance information from instanceCache. Calling OCI API")
 	inst, err := cp.client.Compute().GetInstance(ctx, resourceID)
@@ -325,7 +329,7 @@ func (cp *CloudProvider) InstanceTypeByProviderID(ctx context.Context, providerI
 	if err := cp.instanceCache.Add(inst); err != nil {
 		return "", errors.Wrap(err, "failed to add instance in instanceCache")
 	}
-	return *inst.Shape, nil
+	return getKarpenterFlexInstanceTypeOrDefault(inst), nil
 }
 
 // AddSSHKeyToAllInstances adds an SSH public key as a legal identity for all instances
@@ -507,4 +511,47 @@ func (cp *CloudProvider) getLoggerWithNodeDetails(name types.NodeName) (*zap.Sug
 		shouldLogWithProviderId = true
 	}
 	return logger.With("ProviderID", fmt.Sprintf("%s", node.Spec.ProviderID)), shouldLogWithProviderId
+}
+
+//isFlexShape checks if a shape is flex
+func isFlexShape(shapeName string) bool {
+	shapeNameCap := strings.ToUpper(shapeName)
+	if strings.HasSuffix(shapeNameCap, FlexShapeSuffix) {
+		return true
+	}
+	return false
+}
+
+//isKarpenterNode checks if a node is launched by Karpenter
+func isKarpenterNode(instance *core.Instance) bool {
+	if instance.FreeformTags != nil {
+		_, nodePoolTagOk := instance.FreeformTags[KarpenterNodePoolFreeFormTagKey]
+		_, nodeClassTagOk := instance.FreeformTags[KarpenterNodeClassFreeFormTagKey]
+		if nodePoolTagOk && nodeClassTagOk {
+			return true
+		}
+	}
+	return false
+}
+
+//getKarpenterFlexInstanceTypeOrDefault decorate the flex shapes in Karpenter with ocpu, memory and burstable config
+func getKarpenterFlexInstanceTypeOrDefault(inst *core.Instance) string {
+	if !isFlexShape(*inst.Shape) || !isKarpenterNode(inst) || inst.ShapeConfig == nil ||
+		inst.ShapeConfig.Ocpus == nil || inst.ShapeConfig.MemoryInGBs == nil ||
+		inst.ShapeConfig.BaselineOcpuUtilization == "" {
+		return *inst.Shape
+	}
+	//For Flex shape karpenter nodes shape will be in the for mat VM.Standard.E5.Flex.1o.16g.1_8b, where 1 is ocpu,
+	//16 is memory and 1_8 is burstable config
+	segments := []string{*inst.Shape}
+	segments = append(segments, fmt.Sprintf("%.0fo", *inst.ShapeConfig.Ocpus))
+	segments = append(segments, fmt.Sprintf("%.0fg", *inst.ShapeConfig.MemoryInGBs))
+	baselineFull := string(inst.ShapeConfig.BaselineOcpuUtilization)
+	baselineShort := baselineFull
+	if strings.HasPrefix(baselineFull, "BASELINE_") {
+		baselineShort = strings.TrimPrefix(baselineFull, "BASELINE_")
+	}
+	segments = append(segments, baselineShort+"b")
+	instanceType := strings.Join(segments, ".")
+	return instanceType
 }
