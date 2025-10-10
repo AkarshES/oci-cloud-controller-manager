@@ -10,11 +10,9 @@ locals {
 
   // !!! Do not play with fire, only used by ci-cd pipeline
   oci_cnp_dev_ccm_override = {
-    "v1.34" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
   }
   // !!! Do not play with fire, only used by ci-cd pipeline
   oci_cnp_dev_csi_override = {
-    "v1.34" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
   }
 
   tenancy_property_overrides = {
