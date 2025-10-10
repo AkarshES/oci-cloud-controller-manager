@@ -1547,6 +1547,10 @@ func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string
 // MockComputeClient mocks Compute client implementation
 type MockComputeClient struct{}
 
+func (c *MockComputeClient) GetPrimaryVNICFromCacheByInstance(instanceID string) *core.Vnic {
+	return nil
+}
+
 func (c *MockComputeClient) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
 	return nil, nil
 }

@@ -658,6 +658,10 @@ type MockComputeClient struct {
 	compute util.MockOCIComputeClient
 }
 
+func (c *MockComputeClient) GetPrimaryVNICFromCacheByInstance(instanceID string) *core.Vnic {
+	return nil
+}
+
 // GetInstance gets information about the specified instance.
 func (c *MockComputeClient) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
 	if instance, ok := instances[id]; ok {

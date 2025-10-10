@@ -231,10 +231,11 @@ type client struct {
 	requestMetadata common.RequestMetadata
 	rateLimiter     RateLimiter
 
-	subnetCache                  cache.Store
-	instanceIdToPrimaryVnicCache sync.Map
-	configProviderCache          cache.Store
-	logger                       *zap.SugaredLogger
+	subnetCache                         cache.Store
+	instanceIdToPrimaryVnicIDCache      sync.Map
+	instanceIdToPrimaryVnicDetailsCache sync.Map
+	configProviderCache                 cache.Store
+	logger                              *zap.SugaredLogger
 }
 
 func setupBaseClient(log *zap.SugaredLogger, client *common.BaseClient, signer common.HTTPRequestSigner, interceptor common.RequestInterceptor, endpointOverrideEnvVar string) {
