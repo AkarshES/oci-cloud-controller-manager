@@ -462,15 +462,20 @@ func (cp *CloudProvider) virtualNodeExistsByResourceID(ctx context.Context, reso
 	return !client.IsVirtualNodeInTerminalState(virtualNode), nil
 }
 
-func (cp *CloudProvider) getIPv6IdByAddress(ctx context.Context, ipv6Address, nodeId string) (string, error) {
-
+func (cp *CloudProvider) getIPv6IdByAddress(ctx context.Context, ipv6Address, nodeId string, logger *zap.SugaredLogger) (string, error) {
+	var primaryVnic *core.Vnic
 	nodeCompartmentId, err := cp.getCompartmentIDByInstanceID(nodeId)
 	if err != nil {
 		return "", err
 	}
-	primaryVnic, err := cp.client.Compute().GetPrimaryVNICForInstance(ctx, nodeCompartmentId, nodeId)
-	if err != nil {
-		return "", err
+	// cache Primary vnic <-> instance id
+	primaryVnic = cp.client.Compute().GetPrimaryVNICFromCacheByInstance(nodeId)
+	if primaryVnic == nil {
+		logger.Info("cache miss for GetPrimaryVNICFromCacheByInstance")
+		primaryVnic, err = cp.client.Compute().GetPrimaryVNICForInstance(ctx, nodeCompartmentId, nodeId)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// an instance has to have a primary vnic. primaryVnic is non-nil when err is nil

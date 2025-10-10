@@ -295,6 +295,7 @@ func getSubnetsForNodes(ctx context.Context, nodes []*v1.Node, networkClient cli
 		subnetOCIDs = sets.NewString()
 		subnets     []*core.Subnet
 		ipSet       = sets.New[client.IpAddresses]()
+		vnic        *core.Vnic
 	)
 
 	for _, node := range nodes {
@@ -344,10 +345,13 @@ func getSubnetsForNodes(ctx context.Context, nodes []*v1.Node, networkClient cli
 		if !ok {
 			return nil, errors.Errorf("%q annotation not present on node %q", CompartmentIDAnnotation, node.Name)
 		}
-
-		vnic, err := networkClient.Compute().GetPrimaryVNICForInstance(ctx, compartmentID, id)
-		if err != nil {
-			return nil, err
+		vnic = networkClient.Compute().GetPrimaryVNICFromCacheByInstance(id)
+		if vnic == nil {
+			// cache miss
+			vnic, err = networkClient.Compute().GetPrimaryVNICForInstance(ctx, compartmentID, id)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		ipAddresses := client.IpAddresses{}
@@ -775,7 +779,7 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		return nil, err
 	}
 
-	ipAddressToOcidMap, err := cp.getIpAddressOcidMap(ctx, provisionedSvcNodes)
+	ipAddressToOcidMap, err := cp.getIpAddressOcidMap(ctx, provisionedSvcNodes, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -1540,7 +1544,7 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 	if err != nil {
 		return err
 	}
-	ipAddressToOcidMap, err := cp.getIpAddressOcidMap(ctx, provisionedSvcNodes)
+	ipAddressToOcidMap, err := cp.getIpAddressOcidMap(ctx, provisionedSvcNodes, logger)
 	if err != nil {
 		return err
 	}
@@ -2640,7 +2644,7 @@ func hasCustomNodePorts(service *v1.Service) bool {
 // getIpAddressOcidMap returns a map of IP address <-> ocid of IP address, for all the IPs on the primary vnics of the nodes
 // used to construct backends for the managed Nodes.
 // TODO: the method should handle for virtualNodes, ManagedPods ..
-func (cp *CloudProvider) getIpAddressOcidMap(ctx context.Context, provisionedSvcNodes []*v1.Node) (map[string]string, error) {
+func (cp *CloudProvider) getIpAddressOcidMap(ctx context.Context, provisionedSvcNodes []*v1.Node, logger *zap.SugaredLogger) (map[string]string, error) {
 	ipAddressOcidMap := make(map[string]string)
 	var addresses []v1.NodeAddress
 	for _, node := range provisionedSvcNodes {
@@ -2659,7 +2663,7 @@ func (cp *CloudProvider) getIpAddressOcidMap(ctx context.Context, provisionedSvc
 				ipAddressOcidMap[address.Address] = id
 			}
 			if net.IsIPv6String(address.Address) {
-				ipv6Id, err := cp.getIPv6IdByAddress(ctx, address.Address, id)
+				ipv6Id, err := cp.getIPv6IdByAddress(ctx, address.Address, id, logger)
 				if err != nil {
 					return nil, err
 				}

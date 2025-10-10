@@ -239,6 +239,10 @@ func (c *MockFileStorageClient) AwaitMountTargetActive(ctx context.Context, logg
 
 type MockComputeClient struct{}
 
+func (c *MockComputeClient) GetPrimaryVNICFromCacheByInstance(instanceID string) *core.Vnic {
+	return nil
+}
+
 // GetInstance gets information about the specified instance.
 func (c *MockComputeClient) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
 	return nil, nil

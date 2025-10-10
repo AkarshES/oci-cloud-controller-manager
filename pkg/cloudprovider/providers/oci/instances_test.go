@@ -1062,6 +1062,9 @@ func (MockComputeClient) GetInstanceByNodeName(ctx context.Context, compartmentI
 func (MockComputeClient) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error) {
 	return instanceVnics[instanceID], nil
 }
+func (c MockComputeClient) GetPrimaryVNICFromCacheByInstance(instanceID string) *core.Vnic {
+	return nil
+}
 
 func (c *MockComputeClient) ListVnicAttachments(ctx context.Context, compartmentID, instanceID string) ([]core.VnicAttachment, error) {
 	return nil, nil
