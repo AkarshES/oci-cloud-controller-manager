@@ -34,6 +34,7 @@ type ComputeInterface interface {
 	GetInstanceByNodeName(ctx context.Context, compartmentID, vcnID, nodeName string) (*core.Instance, error)
 
 	GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error)
+	GetPrimaryVNICFromCacheByInstance(instanceID string) *core.Vnic
 
 	ListVnicAttachments(ctx context.Context, compartmentID, instanceID string) (response []core.VnicAttachment, err error)
 	AttachVnic(ctx context.Context, opts AttachVnicOptions) (response core.VnicAttachment, err error)
@@ -57,7 +58,8 @@ func (c *client) GetInstance(ctx context.Context, id string) (*core.Instance, er
 	}
 
 	if IsInstanceInTerminalState(&resp.Instance) {
-		c.instanceIdToPrimaryVnicCache.Delete(resp.Instance.Id)
+		c.instanceIdToPrimaryVnicIDCache.Delete(resp.Instance.Id)
+		c.instanceIdToPrimaryVnicDetailsCache.Delete(resp.Instance.Id)
 	}
 
 	return &resp.Instance, nil
@@ -118,7 +120,7 @@ func (c *client) listVNICAttachments(ctx context.Context, req core.ListVnicAttac
 func (c *client) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, instanceID string) (*core.Vnic, error) {
 	logger := c.logger.With("instanceID", instanceID, "compartmentID", compartmentID)
 
-	if primaryVnicId, exists := c.instanceIdToPrimaryVnicCache.Load(instanceID); exists {
+	if primaryVnicId, exists := c.instanceIdToPrimaryVnicIDCache.Load(instanceID); exists {
 		vnic, err := c.GetVNIC(ctx, primaryVnicId.(string))
 		if err != nil {
 			return nil, err
@@ -158,7 +160,8 @@ func (c *client) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, i
 				return nil, err
 			}
 			if vnic.IsPrimary != nil && *vnic.IsPrimary {
-				c.instanceIdToPrimaryVnicCache.Store(instanceID, *attachment.VnicId)
+				c.instanceIdToPrimaryVnicIDCache.Store(instanceID, *attachment.VnicId)
+				c.instanceIdToPrimaryVnicDetailsCache.Store(instanceID, vnic)
 				return vnic, nil
 			}
 		}
@@ -168,6 +171,16 @@ func (c *client) GetPrimaryVNICForInstance(ctx context.Context, compartmentID, i
 		}
 	}
 	return nil, errors.WithStack(errNotFound)
+}
+
+func (c *client) GetPrimaryVNICFromCacheByInstance(instanceID string) *core.Vnic {
+	if primaryVnic, exists := c.instanceIdToPrimaryVnicIDCache.Load(instanceID); exists {
+		pVnic, ok := primaryVnic.(*core.Vnic)
+		if ok && pVnic != nil {
+			return pVnic
+		}
+	}
+	return nil
 }
 
 func (c *client) GetInstanceByNodeName(ctx context.Context, compartmentID, vcnID, nodeName string) (*core.Instance, error) {
