@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/oracle/oci-go-sdk/v65/networkloadbalancer"
 	"go.uber.org/zap"
 	"golang.org/x/exp/maps"
 	v1 "k8s.io/api/core/v1"
@@ -51,8 +52,8 @@ const (
 	IPv4                      = string(client.GenericIPv4)
 	IPv6                      = string(client.GenericIPv6)
 	IPv4AndIPv6               = string("IPv4_AND_IPv6")
-	NAT46                     = "NAT46"
-	DISABLED                  = "DISABLED"
+	NAT46                     = networkloadbalancer.NetworkLoadBalancerIpVersionTranslationNat46
+	DISABLED                  = networkloadbalancer.NetworkLoadBalancerIpVersionTranslationDisabled
 )
 
 const (
@@ -396,23 +397,6 @@ func NewSSLConfig(secretListenerString string, secretBackendSetString string, se
 	}
 }
 
-type SSLConfigBuilder struct {
-	sslConfig *SSLConfig
-}
-
-func (s *SSLConfigBuilder) WithListenerTls(listenerTls map[int]string) *SSLConfigBuilder {
-	if listenerTls != nil && len(listenerTls) > 0 {
-		if s.sslConfig != nil {
-			s.sslConfig = &SSLConfig{}
-		}
-		s.sslConfig.ListenerPostSSLMap = listenerTls
-	}
-	return s
-}
-func (s *SSLConfigBuilder) Build() *SSLConfig {
-	return s.sslConfig
-}
-
 // LBSpec holds the data required to build a OCI load balancer from a
 // kubernetes service.
 type LBSpec struct {
@@ -485,6 +469,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	listeners, err := getListeners(svc, sslConfig, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
+	logger.Infof("Listerner expected %+v", listeners)
 	if err != nil {
 		return nil, err
 	}
@@ -1393,7 +1378,10 @@ func GetSSLConfiguration(cfg *SSLConfig, name string, port int, sslConfigAnnotat
 }
 
 func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurationAnnotation string) (*client.GenericSslConfigurationDetails, error) {
-	if cfg == nil || !cfg.Ports.Has(port) || len(name) == 0 || cfg.ListenerPostSSLMap[port] != "" {
+	if cfg == nil || !cfg.Ports.Has(port) {
+		return nil, nil
+	}
+	if len(name) == 0 && cfg.ListenerPostSSLMap[port] == "" {
 		return nil, nil
 	}
 	// TODO: fast-follow to pass the sslconfiguration object directly to loadbalancer
@@ -1486,7 +1474,7 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 		var secretName string
 		var err error
 		var sslConfiguration *client.GenericSslConfigurationDetails
-		if sslCfg != nil && len(sslCfg.ListenerSSLSecretName) != 0 {
+		if sslCfg != nil && (len(sslCfg.ListenerSSLSecretName) != 0 || len(sslCfg.ListenerPostSSLMap) != 0) {
 			secretName = sslCfg.ListenerSSLSecretName
 			listenerCipherSuiteAnnotation, _ := svc.Annotations[ServiceAnnotationLoadbalancerListenerSSLConfig]
 			sslConfiguration, err = getSSLConfiguration(sslCfg, secretName, port, listenerCipherSuiteAnnotation)
