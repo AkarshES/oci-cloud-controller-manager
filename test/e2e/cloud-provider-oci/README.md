@@ -113,7 +113,7 @@ The three BV expand tests need the cluster version and nodepool version to be 1.
 ## Additional Debug Options when running tests on existing cluster
 
 Additional seclist count based sanity checks can be applied during e2e testing
-by providing the appropriate seclist ocids. Both must be supplied.
+by providing the appropriate seclist certOcids. Both must be supplied.
 If you wish to use the tests in debug mode and want to look at the namespaces created by tests you can provide the
 option to keep the namespaces
 

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
+	"github.com/oracle/oci-go-sdk/v65/certificatesmanagement"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
 	"github.com/oracle/oci-go-sdk/v65/compartments"
@@ -65,6 +66,7 @@ type Interface interface {
 	Identity(*OCIClientConfig) IdentityInterface
 	ContainerEngine() ContainerEngineInterface
 	NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *OCIClientConfig) Interface
+	CertManager() CertificateManagerInterface
 }
 
 type OCIClientConfig struct {
@@ -215,15 +217,16 @@ type compartmentClient interface {
 }
 
 type client struct {
-	compute             computeClient
-	network             virtualNetworkClient
-	loadbalancer        GenericLoadBalancerInterface
-	networkloadbalancer GenericLoadBalancerInterface
-	filestorage         filestorageClient
-	bs                  blockstorageClient
-	identity            identityClient
-	containerEngine     containerEngineClient
-	compartment         compartmentClient
+	compute                      computeClient
+	network                      virtualNetworkClient
+	loadbalancer                 GenericLoadBalancerInterface
+	networkloadbalancer          GenericLoadBalancerInterface
+	filestorage                  filestorageClient
+	bs                           blockstorageClient
+	identity                     identityClient
+	containerEngine              containerEngineClient
+	compartment                  compartmentClient
+	certificatesManagementClient certificatesmanagement.CertificatesManagementClient
 
 	requestMetadata common.RequestMetadata
 	rateLimiter     RateLimiter
@@ -390,17 +393,23 @@ func New(logger *zap.SugaredLogger, cp common.ConfigurationProvider, opRateLimit
 
 	loadbalancer := NewLBClient(lb, requestMetadata, opRateLimiter)
 	networkloadbalancer := NewNLBClient(nlb, requestMetadata, opRateLimiter)
+	// Create Certificate Management tclient
+	certificateClient, err := certificatesmanagement.NewCertificatesManagementClientWithConfigurationProvider(cp)
+	if err != nil {
+		return nil, errors.Wrap(err, "configuration failed for NewCertificatesManagementClientWithConfigurationProvider")
+	}
 
 	c := &client{
-		compute:             &compute,
-		network:             &network,
-		identity:            &identity,
-		loadbalancer:        loadbalancer,
-		networkloadbalancer: networkloadbalancer,
-		bs:                  &bs,
-		filestorage:         &fss,
-		containerEngine:     &containerEngine,
-		compartment:         &compartment,
+		compute:                      &compute,
+		network:                      &network,
+		identity:                     &identity,
+		loadbalancer:                 loadbalancer,
+		networkloadbalancer:          networkloadbalancer,
+		bs:                           &bs,
+		filestorage:                  &fss,
+		containerEngine:              &containerEngine,
+		compartment:                  &compartment,
+		certificatesManagementClient: certificateClient,
 
 		rateLimiter:     *opRateLimiter,
 		requestMetadata: requestMetadata,
@@ -651,6 +660,8 @@ func (c *client) FSS(ociClientConfig *OCIClientConfig) FileStorageInterface {
 func (c *client) ContainerEngine() ContainerEngineInterface {
 	return c
 }
+
+func (c *client) CertManager() CertificateManagerInterface { return c }
 
 func configureCustomTransport(logger *zap.SugaredLogger, baseClient *common.BaseClient) error {
 	// no-op for internal

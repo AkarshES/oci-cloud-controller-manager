@@ -1538,6 +1538,7 @@ var _ = Describe("Listener only enabled TLS", func() {
 			tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
 			sharedfw.Logf("TCP node port: %d", tcpNodePort)
 
+			// Check LB IP is assigned
 			if requestedIP != "" && sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0]) != requestedIP {
 				sharedfw.Failf("unexpected TCP Status.LoadBalancer.Ingress (expected %s, got %s)", requestedIP, sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0]))
 			}
@@ -4388,6 +4389,96 @@ var _ = Describe("SKE - LB Properties", func() {
 				tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
 				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
 			}
+		})
+	})
+})
+
+var _ = Describe("Listener only enabled Cert OCID", func() {
+
+	baseName := "listener-service"
+	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
+
+	Context("[cloudprovider][ccm][lb][cert]", func() {
+		It("should be possible to create and mutate a Service type:LoadBalancer [Canary]", func() {
+			serviceName := "listener-tls-lb-test"
+			ns := f.Namespace.Name
+			jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+			sslConfigMapName := "ssl-certificate-config-map"
+			sharedfw.Logf("Cert OCID: %s", setupF.CertOCID)
+			_, err := f.ClientSet.CoreV1().ConfigMaps(ns).Create(context.Background(), &v1.ConfigMap{
+				Data: map[string]string{
+					"443": fmt.Sprintf("[\"%v\"]", setupF.CertOCID),
+				},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      sslConfigMapName,
+					Namespace: ns,
+				},
+			}, metav1.CreateOptions{})
+			sharedfw.ExpectNoError(err)
+			loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+			if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+				loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+			}
+
+			requestedIP := ""
+
+			tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeLoadBalancer
+				s.Spec.LoadBalancerIP = requestedIP
+				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
+					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:       "443",
+					cloudprovider.ServiceAnnotationLoadBalancerCertificateMap: sslConfigMapName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:       "true",
+				}
+			})
+
+			svcPort := int(tcpService.Spec.Ports[0].Port)
+
+			By("creating a pod to be part of the TCP service " + serviceName)
+			jig.RunOrFail(ns, nil)
+
+			By("waiting for the TCP service to have a load balancer")
+			// Wait for the load balancer to be created asynchronously
+			tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+			sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+			//  Add cert specific check -> Check if certificate association is created
+			name, err := setupF.GetCertificateAssociation(setupF.CertOCID)
+			sharedfw.Logf("Certificate Association: %d", name)
+			sharedfw.ExpectNoError(err)
+			Expect(name).NotTo(BeEmpty(), "Expecting an association")
+
+			tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+			sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+			By("changing TCP service back to type=ClusterIP")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeClusterIP
+				s.Spec.Ports[0].NodePort = 0
+				s.Spec.Ports[1].NodePort = 0
+			})
+
+			// Wait for the load balancer to be destroyed asynchronously
+			tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+			err = f.ClientSet.CoreV1().ConfigMaps(ns).Delete(context.Background(), sslConfigMapName, metav1.DeleteOptions{})
+			sharedfw.ExpectNoError(err)
 		})
 	})
 })
