@@ -108,6 +108,10 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	} else {
 		sharedfw.Logf("Cluster creation skipped. Running tests with existing cluster.")
 	}
+	if setupF.EnableCertCreation {
+		sharedfw.Logf("Cert creation is enabled. Creating a new certificate with auth Id provided.")
+		setupF.CertOCID = setupF.GetOrCreateCertificate()
+	}
 	return nil
 }, func(data []byte) {
 	setupF = sharedfw.New()

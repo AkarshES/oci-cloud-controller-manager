@@ -17,9 +17,11 @@ package block
 import (
 	"context"
 	"fmt"
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	"testing"
 	"time"
+
+	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
+	"github.com/oracle/oci-go-sdk/v65/certificatesmanagement"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -433,6 +435,17 @@ func (p *MockProvisionerClient) FSS(ociClientConfig *client.OCIClientConfig) cli
 
 func (p *MockProvisionerClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {
 	return &MockProvisionerClient{}
+}
+
+func (p *MockProvisionerClient) CertManager() client.CertificateManagerInterface {
+	return MockCertificateManagerClient{}
+}
+
+type MockCertificateManagerClient struct{}
+
+func (m MockCertificateManagerClient) GetValidCertificate(ctx context.Context, id string) (*certificatesmanagement.Certificate, error) {
+	//TODO implement me
+	return nil, nil
 }
 
 // Context mocks client Context implementation

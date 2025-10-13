@@ -25,6 +25,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
+	"github.com/oracle/oci-go-sdk/v65/certificatesmanagement"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	errors2 "github.com/pkg/errors"
@@ -1422,6 +1423,17 @@ func (c MockOCIClient) Identity(ociClientConfig *client.OCIClientConfig) client.
 
 func (c MockOCIClient) ContainerEngine() client.ContainerEngineInterface {
 	return nil
+}
+
+func (MockOCIClient) CertManager() client.CertificateManagerInterface {
+	return MockCertificateManagerClient{}
+}
+
+type MockCertificateManagerClient struct{}
+
+func (m MockCertificateManagerClient) GetValidCertificate(ctx context.Context, id string) (*certificatesmanagement.Certificate, error) {
+	//TODO implement me
+	return nil, nil
 }
 
 func (MockOCIClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType string, ociClientConfig *client.OCIClientConfig) client.Interface {

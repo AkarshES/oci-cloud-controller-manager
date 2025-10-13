@@ -1030,6 +1030,10 @@ func (MockOCIClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType
 	return MockOCIClient{}
 }
 
+func (MockOCIClient) CertManager() client.CertificateManagerInterface {
+	return MockCertificateManagerClient{}
+}
+
 // MockComputeClient mocks Compute client implementation
 type MockComputeClient struct{}
 

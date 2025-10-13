@@ -344,6 +344,7 @@ func StartOciServiceControllerWrapper(initContext cloudControllerManager.Control
 func startOciServiceController(ctx context.Context, initContext cloudControllerManager.ControllerInitContext, completedConfig *config.CompletedConfig, cloud cloudprovider.Interface) (controller.Interface, bool, error) {
 
 	// Start the service controller
+	// Add new Shared informer for configmap
 	serviceController, err := NewServiceController(
 		cloud,
 		completedConfig.ClientBuilder.ClientOrDie(initContext.ClientName),
@@ -352,6 +353,7 @@ func startOciServiceController(ctx context.Context, initContext cloudControllerM
 		completedConfig.SharedInformers.Discovery().V1().EndpointSlices(),
 		completedConfig.ComponentConfig.KubeCloudShared.ClusterName,
 		endpointSliceUpdatesBatchPeriod,
+		completedConfig.SharedInformers.Core().V1().ConfigMaps(),
 		utilfeature.DefaultFeatureGate,
 	)
 	if err != nil {

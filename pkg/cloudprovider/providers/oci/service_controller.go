@@ -131,6 +131,8 @@ type ServiceController struct {
 	nodeLister                      corelisters.NodeLister
 	nodeListerSynced                cache.InformerSynced
 	endpointSliceListerSynced       cache.InformerSynced
+	configMapLister                 corelisters.ConfigMapLister
+	configMapListerSynced           cache.InformerSynced
 	endpointSliceUpdatesBatchPeriod time.Duration
 	clusterName                     string
 	// services that need to be synced
@@ -174,6 +176,7 @@ func NewServiceController(
 	endpointSliceInformer discoveryinformers.EndpointSliceInformer,
 	clusterName string,
 	endpointSliceUpdatesBatchPeriod time.Duration,
+	configMapInformer coreinformers.ConfigMapInformer,
 	featureGate featuregate.FeatureGate,
 ) (*ServiceController, error) {
 	opts := record.CorrelatorOptions{SpamKeyFunc: getNewSpamKey}
@@ -299,11 +302,62 @@ func NewServiceController(
 	)
 	s.endpointSliceListerSynced = endpointSliceInformer.Informer().HasSynced
 
+	// Register informer of configMap update
+	configMapInformer.Informer().AddEventHandlerWithResyncPeriod(
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(cur interface{}) {
+				// New Cert is added to an existing service with certificate map annotation present
+				newCert, ok := cur.(*v1.ConfigMap)
+				if !ok {
+					return
+				}
+				s.syncServiceInNamespace(newCert.Namespace, newCert.Name)
+			},
+			UpdateFunc: func(old, cur interface{}) {
+				// Update to an existing configMap already associated with a service
+				oldMap, ok := old.(*v1.ConfigMap)
+				if !ok {
+					return
+				}
+
+				newMap, ok := cur.(*v1.ConfigMap)
+				if !ok {
+					return
+				}
+
+				if !reflect.DeepEqual(oldMap.Data, newMap.Data) {
+					// trigger a service sync
+					s.syncServiceInNamespace(oldMap.Namespace, oldMap.Name)
+				}
+			},
+			DeleteFunc: func(old interface{}) {
+				// No update required by service controller
+				// Protect against accidental deletion of the configMap
+			},
+		},
+		time.Duration(0),
+	)
+	s.configMapLister = configMapInformer.Lister()
+	s.configMapListerSynced = configMapInformer.Informer().HasSynced
+
 	if err := s.init(); err != nil {
 		return nil, err
 	}
 
 	return s, nil
+}
+
+// syncServiceInNamespace find services present in the namespace, check if there is any cert annotation present, then sync the service
+func (s *ServiceController) syncServiceInNamespace(namespace string, configMap string) {
+	// List services in same namespace as given
+	allServices, _ := s.serviceLister.Services(namespace).List(labels.Everything())
+	for _, svc := range allServices {
+		// if the service needs load balancer and has the configMap present in annotation
+		certMap, ok := svc.Annotations[ServiceAnnotationLoadBalancerCertificateMap]
+		if ok && certMap == configMap && svc.Spec.Type == v1.ServiceTypeLoadBalancer {
+			s.enqueueService(svc)
+		}
+	}
 }
 
 // needFullSyncAndUnmark returns the value and needFullSync and marks the field to false.
@@ -1104,7 +1158,6 @@ func (s *ServiceController) syncService(ctx context.Context, key string) error {
 	default:
 		err = s.processServiceCreateOrUpdate(ctx, service, key)
 	}
-
 	return err
 }
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
+	"github.com/oracle/oci-go-sdk/v65/certificatesmanagement"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -876,6 +877,17 @@ func NewClientProvisioner(pcData client.Interface, storageBlock *MockBlockStorag
 		return &MockProvisionerClient{Storage: storageBlock}
 	}
 	return &MockFSSProvisionerClient{Storage: storageFile}
+}
+
+func (MockProvisionerClient) CertManager() client.CertificateManagerInterface {
+	return MockCertificateManagerClient{}
+}
+
+type MockCertificateManagerClient struct{}
+
+func (m MockCertificateManagerClient) GetValidCertificate(ctx context.Context, id string) (*certificatesmanagement.Certificate, error) {
+	//TODO implement me
+	return nil, nil
 }
 
 func TestControllerDriver_CreateVolume(t *testing.T) {
