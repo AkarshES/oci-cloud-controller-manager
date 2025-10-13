@@ -128,6 +128,10 @@ function check_environment () {
         check-env "CLUSTER_TYPE"          $CLUSTER_TYPE
         check-env "CNI_TYPE"              $CNI_TYPE
     fi
+    ENABLE_CERT_CREATION=${ENABLE_CERT_CREATION:-"true"}
+    if [ "$ENABLE_CERT_CREATION" == "false" ]; then
+        check-env "CERT_OCID" CERT_OCID
+    fi
 }
 
 function set_image_pull_repo_and_delete_namespace_flag () {
@@ -284,7 +288,11 @@ function run_e2e_tests() {
                 --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
                 --cni-type=${CNI_TYPE} \
                 --podsubnet=${POD_SUBNET} \
-                --maxpodspernode=${MAX_PODS_PER_NODE}
+                --maxpodspernode=${MAX_PODS_PER_NODE}\
+                --cert-ocid=${CERT_OCID}\
+                --enable-cert-creation=${ENABLE_CERT_CREATION}\
+                --cert-authority-ocid=${CERT_AUTHORITY_OCID}\
+                --kms-key-id=${KMS_KEY_ID}
     fi
     retval=$?
     rm -f "$OCI_KEY_FILE"
@@ -328,7 +336,11 @@ function run_e2e_tests_existing_cluster() {
                 --add-oke-system-tags=${ADD_OKE_SYSTEM_TAGS} \
                 --cni-type=${CNI_TYPE} \
                 --podsubnet=${POD_SUBNET} \
-                --maxpodspernode=${MAX_PODS_PER_NODE}
+                --maxpodspernode=${MAX_PODS_PER_NODE}\
+                --cert-ocid=${CERT_OCID}\
+                --enable-cert-creation=${ENABLE_CERT_CREATION}\
+                --cert-authority-ocid=${CERT_AUTHORITY_OCID}\
+                --kms-key-id=${KMS_KEY_ID}
     else
         echo "initiating"
         ginkgo -v -progress --trace -nodes=${E2E_NODE_COUNT} "${FOCUS_OPT}" "${FOCUS_SKIP_OPT}" "${FOCUS_FP_OPT}"  \

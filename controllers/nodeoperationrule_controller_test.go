@@ -20,6 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"reflect"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
 	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -33,12 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"net/http"
-	"reflect"
-	"strings"
-	"sync"
-	"testing"
-	"time"
 )
 
 func TestUpdateResultToList(t *testing.T) {
@@ -3333,6 +3334,10 @@ func (c OciClientMock) Identity(config *client.OCIClientConfig) client.IdentityI
 
 func (c OciClientMock) ContainerEngine() client.ContainerEngineInterface {
 	return &ContainerEngineMock{}
+}
+
+func (c OciClientMock) CertManager() client.CertificateManagerInterface {
+	return &MockCertificateManagerClient{}
 }
 
 type ContainerEngineMock struct {

@@ -218,6 +218,18 @@ const (
 	// NLB experience - https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
 	ServiceAnnotationReservedIPs = "oci.oraclecloud.com/reserved-ips"
 
+	// ServiceAnnotationLoadBalancerCertificateMap is the service annotation for providing the certificate map to be applied with service load balancer
+	// Expected config map data to be in this format
+	// "data": { "type": "object", "description": "Key-value pairs. Values must be UTF-8 strings.",
+	// "additionalProperties": {
+	// "type": "array",
+	// "items": { "type": "string" }
+	//  } },
+	// Example:
+	// data:
+	//  "443": "[\"ocid1.certificate.oc1.ocid\",\"ocid1.certificate.oc1.iad.ocid\"]"
+	ServiceAnnotationLoadBalancerCertificateMap = "oci-load-balancer.oraclecloud.com/tls-certificate-map"
+
 	// ServiceAnnotationSecurityAttributes allows the user to pass ZPR security attributes to be attached to a LB/NLB.
 	// Value is a JSON object containing key-value pairs scoped to a ZPR namespace similar to defined tags.
 	// ZPR https://docs.oracle.com/en-us/iaas/Content/zero-trust-packet-routing/home.htm
@@ -353,6 +365,11 @@ func (ssr noopSSLSecretReader) readSSLSecret(ns, name string) (sslSecret *certif
 	return nil, nil
 }
 
+type CertAuthOcids struct {
+	CertificateOcid string
+	AuthorityOcid   string
+}
+
 // SSLConfig is a description of a SSL certificate.
 type SSLConfig struct {
 	Ports sets.Int
@@ -362,6 +379,7 @@ type SSLConfig struct {
 
 	BackendSetSSLSecretName      string
 	BackendSetSSLSecretNamespace string
+	ListenerPortSSLMap           map[int][]CertAuthOcids
 
 	sslSecretReader
 }
@@ -477,6 +495,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	listeners, err := getListeners(svc, sslConfig, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
+	logger.Infof("Expected Listener %+v", listeners)
 	if err != nil {
 		return nil, err
 	}
@@ -1025,10 +1044,10 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 		var secretName string
 		var sslConfiguration *client.GenericSslConfigurationDetails
 
-		if sslCfg != nil && len(sslCfg.BackendSetSSLSecretName) != 0 && getLoadBalancerType(svc) == LB {
+		if sslCfg != nil && getLoadBalancerType(svc) == LB && (len(sslCfg.BackendSetSSLSecretName) != 0) {
 			secretName = sslCfg.BackendSetSSLSecretName
 			backendSetSSLConfig, _ := svc.Annotations[ServiceAnnotationLoadbalancerBackendSetSSLConfig]
-			sslConfiguration, err = getSSLConfiguration(sslCfg, secretName, int(servicePort.Port), backendSetSSLConfig)
+			sslConfiguration, err = getSSLConfiguration(sslCfg, secretName, int(servicePort.Port), backendSetSSLConfig, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -1083,7 +1102,6 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 			backendSets[backendSetName] = genericBackendSetDetails
 		}
 	}
-	logger.Infof("Final backend sets in spec %+v", backendSets)
 	return backendSets, nil
 }
 
@@ -1410,15 +1428,19 @@ func getInstantFailover(svc *v1.Service) (*bool, error) {
 }
 
 func GetSSLConfiguration(cfg *SSLConfig, name string, port int, sslConfigAnnotation string) (*client.GenericSslConfigurationDetails, error) {
-	sslConfig, err := getSSLConfiguration(cfg, name, port, sslConfigAnnotation)
+	sslConfig, err := getSSLConfiguration(cfg, name, port, sslConfigAnnotation, nil)
 	if err != nil {
 		return nil, err
 	}
 	return sslConfig, nil
 }
 
-func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurationAnnotation string) (*client.GenericSslConfigurationDetails, error) {
-	if cfg == nil || !cfg.Ports.Has(port) || len(name) == 0 {
+func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurationAnnotation string, portToCertOCIDMap map[int][]CertAuthOcids) (*client.GenericSslConfigurationDetails, error) {
+	if cfg == nil || !cfg.Ports.Has(port) {
+		return nil, nil
+	}
+	// Either secret name or certificate OCID should be present for SSL configuration
+	if len(name) == 0 && len(portToCertOCIDMap) == 0 {
 		return nil, nil
 	}
 	// TODO: fast-follow to pass the sslconfiguration object directly to loadbalancer
@@ -1430,16 +1452,30 @@ func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurati
 			return nil, errors.Wrap(err, "failed to parse SSL Configuration annotation")
 		}
 	}
-	genericSSLConfigurationDetails := &client.GenericSslConfigurationDetails{
-		CertificateName:       &name,
-		VerifyDepth:           common.Int(0),
-		VerifyPeerCertificate: common.Bool(false),
+	genericSSLConfigurationDetails := &client.GenericSslConfigurationDetails{}
+	// CertificateIds and Certificate Alias can not be used together
+	if len(name) > 0 {
+		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
+			VerifyDepth:           common.Int(0),
+			VerifyPeerCertificate: common.Bool(false),
+			CertificateName:       &name,
+		}
+	} else if portToCertOCIDMap != nil && len(portToCertOCIDMap[port]) > 0 {
+		// Extract the CertOcids as a string
+		var certOcids []string
+		for _, entry := range portToCertOCIDMap[port] {
+			certOcids = append(certOcids, entry.CertificateOcid)
+		}
+		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
+			VerifyDepth:           common.Int(0),
+			VerifyPeerCertificate: common.Bool(false),
+			CertificateIds:        certOcids,
+		}
 	}
 	if extractCipherSuite != nil {
 		genericSSLConfigurationDetails.CipherSuiteName = extractCipherSuite.CipherSuiteName
 		genericSSLConfigurationDetails.Protocols = extractCipherSuite.Protocols
 	}
-
 	return genericSSLConfigurationDetails, nil
 }
 
@@ -1501,10 +1537,10 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 		var secretName string
 		var err error
 		var sslConfiguration *client.GenericSslConfigurationDetails
-		if sslCfg != nil && len(sslCfg.ListenerSSLSecretName) != 0 {
+		if sslCfg != nil && (len(sslCfg.ListenerSSLSecretName) != 0 || len(sslCfg.ListenerPortSSLMap) != 0) {
 			secretName = sslCfg.ListenerSSLSecretName
 			listenerCipherSuiteAnnotation, _ := svc.Annotations[ServiceAnnotationLoadbalancerListenerSSLConfig]
-			sslConfiguration, err = getSSLConfiguration(sslCfg, secretName, port, listenerCipherSuiteAnnotation)
+			sslConfiguration, err = getSSLConfiguration(sslCfg, secretName, port, listenerCipherSuiteAnnotation, sslCfg.ListenerPortSSLMap)
 			if err != nil {
 				return nil, err
 			}
@@ -2209,6 +2245,14 @@ func getReservedIPs(svc *v1.Service) ([]string, error) {
 	}
 
 	return reservedIPList, nil
+}
+
+func getListenerTlsCertificateConfigMapName(svc *v1.Service) (name string, e error) {
+	certMap, ok := svc.Annotations[ServiceAnnotationLoadBalancerCertificateMap]
+	if !ok || certMap == "" {
+		return "", fmt.Errorf("invalid certificate map: [%s] provided with annotation: %s", certMap, ServiceAnnotationLoadBalancerCertificateMap)
+	}
+	return certMap, nil
 }
 
 // getSecurityAttributes checks presence of SA service annotations and whether the value is the expected map of maps

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/oracle/oci-go-sdk/v65/certificatesmanagement"
 	imageutils "k8s.io/kubernetes/test/utils/image"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
@@ -141,7 +142,10 @@ var (
 	maxPodsPerNode                int
 	cniType                       string
 	cniTypeEnum                   oke.ClusterPodNetworkOptionDetailsCniTypeEnum
-	nodeMetadata				  map[string]string
+	nodeMetadata                  map[string]string
+	certOcid                      string // OCId of the certificate to be added with LB service
+	enableCertificateCreation     bool   // Boolean indicator of the certificate needs to be created. (Currently in same compartment as cluster)
+	certAuthorityOcid             string
 )
 
 func init() {
@@ -221,6 +225,9 @@ func init() {
 	flag.StringVar(&cniType, "cni-type", "FLANNEL_OVERLAY", "CNI type can be FLANNEL_OVERLAY or OCI_VCN_IP_NATIVE")
 	flag.BoolVar(&enableParallelRun, "enable-parallel-run", true, "Enables parallel running of test suite")
 	flag.BoolVar(&addOkeSystemTags, "add-oke-system-tags", true, "Adds oke system tags to new and existing loadbalancers and storage resources")
+	flag.StringVar(&certOcid, "cert-ocid", "", "Certificate OCID to use for Loadbalancer Service listener")
+	flag.BoolVar(&enableCertificateCreation, "enable-cert-creation", false, "Whether or Not the test should a new certificate before test run")
+	flag.StringVar(&certAuthorityOcid, "cert-authority-ocid", "", "Authority Id to be used to create the Certificate to use for Loadbalancer Service listener")
 }
 
 func getDefaultOCIUser() OCIUser {
@@ -254,9 +261,10 @@ const MAX_PODS_PER_NODE = 12
 // Framework is the context of the text execution.
 type Framework struct {
 	//Note: Reusing framework will not work for OBO requests(check interceptor) with changing users and hence it is recommended to use new framework for each context for obo scenarios.
-	computeClient  *core.ComputeClient
-	clustersClient *oke.ContainerEngineClient
-	identityClient *identity.IdentityClient
+	computeClient     *core.ComputeClient
+	clustersClient    *oke.ContainerEngineClient
+	identityClient    *identity.IdentityClient
+	certificateClient *certificatesmanagement.CertificatesManagementClient
 
 	context context.Context
 	timeout time.Duration
@@ -393,6 +401,10 @@ type Framework struct {
 	IsPostUpgrade           bool
 	ClusterOcid             string
 	AddOkeSystemTags        bool
+	CertOCID                string
+	EnableCertCreation      bool
+	CertAuthorityOCID       string
+	KMSKeyOCIDForCA         string
 }
 
 // New creates a new a framework that holds the context of the test
@@ -484,7 +496,11 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		AddOkeSystemTags:              addOkeSystemTags,
 		ClusterOcid:                   ClusterID,
 		CniType:                       cniTypeEnum,
-		NodeMetadata: 				   nodeMetadata,
+		NodeMetadata:                  nodeMetadata,
+		CertOCID:                      certOcid,
+		EnableCertCreation:            enableCertificateCreation,
+		CertAuthorityOCID:             certAuthorityOcid,
+		KMSKeyOCIDForCA:               kmsKeyID,
 	}
 
 	f.EnableCreateCluster = enableCreateCluster
@@ -730,6 +746,11 @@ func (f *Framework) Initialize() {
 		Expect(err).NotTo(HaveOccurred())
 		f.identityClient = &identityClient
 
+		// Register a certificate management client
+		certificatesClient, err := certificatesmanagement.NewCertificatesManagementClientWithConfigurationProvider(userConfigProvider)
+		Expect(err).NotTo(HaveOccurred())
+		f.certificateClient = &certificatesClient
+
 		// Determine which cluster k8s versions are supported for this OKE Release
 		clusterOptions := f.GetClusterOptions("all")
 		versions := filterVersionsToLatestMinor(clusterOptions.KubernetesVersions)
@@ -811,6 +832,14 @@ func (f *Framework) Initialize() {
 		maxPodsPerNode = MAX_PODS_PER_NODE
 	}
 	Logf("maxPodsPerNode is: %s", f.MaxPodsPerNode)
+	f.CertOCID = certOcid
+	f.EnableCertCreation = enableCertificateCreation
+	if f.EnableCertCreation {
+		f.CertAuthorityOCID = certOcid
+		f.KMSKeyOCIDForCA = kmsKeyID
+		Logf("CertAuthorityOCID is: %s", f.CertAuthorityOCID)
+	}
+	Logf("CertOCID: %s, EnableCertificateCreation : %s", f.CertOCID, f.EnableCertCreation)
 }
 
 // getK8sVersionValue returns the version value according to version index
@@ -880,6 +909,14 @@ func (f *Framework) CleanAll(waitForDeleted bool) {
 			f.DeleteCluster(*cluster.Id, waitForDeleted)
 		}
 	}
+	Logf("Cleaning invalid cert authority in compartment1 '%s' ", f.Compartment1)
+	if f.CertAuthorityOCID != "" {
+		_, state := f.GetCA()
+		if state != certificatesmanagement.CertificateAuthorityLifecycleStateActive {
+			f.DeleteCertificateAuthority()
+		}
+	}
+
 }
 
 // CreateClusterKubeconfigContent gets a valid 'kubeconfig' file for the target
@@ -1063,4 +1100,8 @@ func getFSSProvisionerName(handle string) string {
 		return handle + "." + provisioner
 	}
 	return provisioner
+}
+
+func (f *Framework) GetCertOcid() string {
+	return f.CertOCID
 }
