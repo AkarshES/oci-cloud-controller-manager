@@ -1,6 +1,6 @@
 locals {
   // Update the pop version corresponding to the pop build for app release
-  pop_version = "65dc008b885_138"
+  pop_version = "70a75589c26_141"
 
   // Update the ccm image sha value here for updating CCM versions for respective k8s versions across all realms
   ccm_default_mapping = {
@@ -14,11 +14,11 @@ locals {
         "v1.27" : "v1.27-7e9bf7a9189-52@sha256:fd510337e52ef609ffb86953ef080b3f2fa1a19a0647f65dfbd2c1dfbda0df7a",
         "v1.28" : "v1.28-79d4f40b682-84@sha256:d8e0957a384781955a1e6b1dfb5498fa8ffb585face9a407486692ca685343fa",
         "v1.29" : "v1.29-393f7c992a6-112@sha256:cfc0512abe6e31a1e6020e45ebd7e79f89dc8f7bf5edc2655757762d5c662886",
-        "v1.30" : "v1.30-b38c1eb59d9-122@sha256:8d9bdc648e85a02e74599c965bca488c4ed04193356ed666fda2be28b7f6f3c6",
-        "v1.31" : "v1.31-a6832b543c2-89@sha256:3a07aeefee957255d20ce57276e43250c77f0365515d713faaaaf35e00761f13",
-        "v1.32" : "v1.32-fd1b5537713-59@sha256:0e1b38c3956d7a8cfa36138828568e64a8633bfec1809a3ebeeba41a77cda48e",
-        "v1.33" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
-        "v1.34" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
+        "v1.30" : "v1.30-c435522d651-125@sha256:3035c0f0f0c3d31fa6ca1e0db6e7bf9a1122160cca9848001381927c941e3fd4",
+        "v1.31" : "v1.31-a6420995e6f-99@sha256:7b0de551f2a0c634c7ef434ac18e229662c4441fe38c251f93651811dee194fd",
+        "v1.32" : "v1.32-b09589d7c0e-66@sha256:d373ffb19a60eeda987c4841d38c0cd26de63405495bdb5da658f6ff3ee8ad81",
+        "v1.33" : "v1.33-34743d2a1f2-36@sha256:9d1f3eb7e7c8c7876ba62c7d9ca0ba92bbfed97c13799efa8ef75beb3cdd442c",
+        "v1.34" : "v1.34-8f0fbf7e71e-9@sha256:83a9edce1f90b214327ca0003e5c0a5204e3805f64009f8c8981db5d174f37c4",
       }
     }
   }
@@ -38,7 +38,7 @@ locals {
         "v1.31" : "v1.31-4e30e28b828-80-csi@sha256:bf55f642531ebcb3e8ec09c3adeb9507552733df58e9fc6b7692bc241d5df2ad",
         "v1.32" : "v1.32-2c5fcd2e853-46-csi@sha256:fb9e892af78589a74bf8a85fa47af4de66cb97a5fbe33846a5e4380f97c024ec",
         "v1.33" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
-        "v1.34" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
+        "v1.34" : "v1.34-8f0fbf7e71e-9-csi@sha256:2eca76b52bc3198f86b839c199f67476100bc614e401dec25ac0a2310f609c28",
       }
     }
   }
@@ -244,18 +244,10 @@ locals {
             "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
-            "v1.34" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
           }
         ))
       }
 
-      "prd.region1" = {
-        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
-          {
-            "v1.34" : "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
-          }
-        ))
-      }
 
       "prd.oc8" = {
         "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
@@ -561,7 +553,6 @@ locals {
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
-            "v1.34": "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
           },
           local.csi_upstream_k8s_new_version_test.default.all
         ))
@@ -588,15 +579,6 @@ locals {
             "v1.20": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.21": "oke-multiarch-1.19-73d694a-238@sha256:7215c4dcaeae4f199e82939a8a3dc73e519b00d0ac3714350b22002f8ae4f7aa",
             "v1.22": "oke-multiarch-1.22-d0bafe8-232@sha256:4697113594971e55df52d9e72dda7c381b431ec11d8d4622d82c7fafeb6c2689",
-            "v1.34": "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
-          }
-        ))
-      }
-
-      "prd.region1" = {
-        "all" : jsonencode(merge(local.csi_default_mapping.default.all,
-          {
-            "v1.34": "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
           }
         ))
       }
