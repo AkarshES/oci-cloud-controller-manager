@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2025, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -6,11 +6,11 @@
 //
 // Use the Core Services API to manage resources such as virtual cloud networks (VCNs),
 // compute instances, and block storage volumes. For more information, see the console
-// documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
-// Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
-// Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// documentation for the Networking (https://docs.oracle.com/iaas/Content/Network/Concepts/overview.htm),
+// Compute (https://docs.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
+// Block Volume (https://docs.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
 // The required permissions are documented in the
-// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
+// Details for the Core Services (https://docs.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -71,7 +71,7 @@ func newComputeClientFromBaseClient(baseClient common.BaseClient, configProvider
 
 // SetRegion overrides the region of this client.
 func (client *ComputeClient) SetRegion(region string) {
-	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://{dualStack?ds.:}iaas.{region}.{dualStack?oci.:}{secondLevelDomain}", "iaas")
+	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://iaas.{region}.{dualStack?ds.oci.:}{secondLevelDomain}", "iaas")
 }
 
 // SetConfigurationProvider sets the configuration provider including the region, returns an error if is not valid
@@ -93,12 +93,6 @@ func (client *ComputeClient) setConfigurationProvider(configProvider common.Conf
 // ConfigurationProvider the ConfigurationProvider used in this client, or null if none set
 func (client *ComputeClient) ConfigurationProvider() *common.ConfigurationProvider {
 	return client.config
-}
-
-// EnableDualStackEndpoints Determines whether dual stack endpoint should be used or not.
-// Default value is false
-func (client *ComputeClient) EnableDualStackEndpoints(enableDualStack bool) {
-	client.BaseClient.EnableDualStackEndpoints(enableDualStack)
 }
 
 // AcceptShieldedIntegrityPolicy Accept the changes to the PCR values in the measured boot report.
@@ -143,13 +137,6 @@ func (client ComputeClient) acceptShieldedIntegrityPolicy(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response AcceptShieldedIntegrityPolicyResponse
 	var httpResponse *http.Response
@@ -203,13 +190,6 @@ func (client ComputeClient) addImageShapeCompatibilityEntry(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response AddImageShapeCompatibilityEntryResponse
 	var httpResponse *http.Response
@@ -269,13 +249,6 @@ func (client ComputeClient) attachBootVolume(ctx context.Context, request common
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response AttachBootVolumeResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -293,7 +266,7 @@ func (client ComputeClient) attachBootVolume(ctx context.Context, request common
 
 // AttachVnic Creates a secondary VNIC and attaches it to the specified instance.
 // For more information about secondary VNICs, see
-// Virtual Network Interface Cards (VNICs) (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/managingVNICs.htm).
+// Virtual Network Interface Cards (VNICs) (https://docs.oracle.com/iaas/Content/Network/Tasks/managingVNICs.htm).
 func (client ComputeClient) AttachVnic(ctx context.Context, request AttachVnicRequest) (response AttachVnicResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -335,13 +308,6 @@ func (client ComputeClient) attachVnic(ctx context.Context, request common.OCIRe
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response AttachVnicResponse
 	var httpResponse *http.Response
@@ -400,13 +366,6 @@ func (client ComputeClient) attachVolume(ctx context.Context, request common.OCI
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response AttachVolumeResponse
 	var httpResponse *http.Response
@@ -480,13 +439,6 @@ func (client ComputeClient) captureConsoleHistory(ctx context.Context, request c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CaptureConsoleHistoryResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -504,7 +456,7 @@ func (client ComputeClient) captureConsoleHistory(ctx context.Context, request c
 
 // ChangeComputeCapacityReservationCompartment Moves a compute capacity reservation into a different compartment. For information about
 // moving resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 func (client ComputeClient) ChangeComputeCapacityReservationCompartment(ctx context.Context, request ChangeComputeCapacityReservationCompartmentRequest) (response ChangeComputeCapacityReservationCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -547,13 +499,6 @@ func (client ComputeClient) changeComputeCapacityReservationCompartment(ctx cont
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeComputeCapacityReservationCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -570,7 +515,7 @@ func (client ComputeClient) changeComputeCapacityReservationCompartment(ctx cont
 }
 
 // ChangeComputeCapacityTopologyCompartment Moves a compute capacity topology into a different compartment. For information about moving resources between
-// compartments, see Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// compartments, see Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // A default retry strategy applies to this operation ChangeComputeCapacityTopologyCompartment()
 func (client ComputeClient) ChangeComputeCapacityTopologyCompartment(ctx context.Context, request ChangeComputeCapacityTopologyCompartmentRequest) (response ChangeComputeCapacityTopologyCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -614,13 +559,6 @@ func (client ComputeClient) changeComputeCapacityTopologyCompartment(ctx context
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeComputeCapacityTopologyCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -637,9 +575,9 @@ func (client ComputeClient) changeComputeCapacityTopologyCompartment(ctx context
 }
 
 // ChangeComputeClusterCompartment Moves a compute cluster into a different compartment within the same tenancy.
-// A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a remote direct memory access (RDMA) network group.
+// A compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a remote direct memory access (RDMA) network group.
 // For information about moving resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 func (client ComputeClient) ChangeComputeClusterCompartment(ctx context.Context, request ChangeComputeClusterCompartmentRequest) (response ChangeComputeClusterCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -682,13 +620,6 @@ func (client ComputeClient) changeComputeClusterCompartment(ctx context.Context,
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeComputeClusterCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -704,8 +635,128 @@ func (client ComputeClient) changeComputeClusterCompartment(ctx context.Context,
 	return response, err
 }
 
+// ChangeComputeGpuMemoryClusterCompartment Moves a compute GPU memory cluster into a different compartment. For information about moving resources between
+// compartments, see Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// A default retry strategy applies to this operation ChangeComputeGpuMemoryClusterCompartment()
+func (client ComputeClient) ChangeComputeGpuMemoryClusterCompartment(ctx context.Context, request ChangeComputeGpuMemoryClusterCompartmentRequest) (response ChangeComputeGpuMemoryClusterCompartmentResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.changeComputeGpuMemoryClusterCompartment, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ChangeComputeGpuMemoryClusterCompartmentResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ChangeComputeGpuMemoryClusterCompartmentResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ChangeComputeGpuMemoryClusterCompartmentResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ChangeComputeGpuMemoryClusterCompartmentResponse")
+	}
+	return
+}
+
+// changeComputeGpuMemoryClusterCompartment implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) changeComputeGpuMemoryClusterCompartment(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/computeGpuMemoryClusters/{computeGpuMemoryClusterId}/actions/changeCompartment", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ChangeComputeGpuMemoryClusterCompartmentResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryCluster/ChangeComputeGpuMemoryClusterCompartment"
+		err = common.PostProcessServiceError(err, "Compute", "ChangeComputeGpuMemoryClusterCompartment", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ChangeComputeGpuMemoryFabricCompartment Moves a compute GPU memory fabric into a different compartment. For information about moving resources between
+// compartments, see Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// A default retry strategy applies to this operation ChangeComputeGpuMemoryFabricCompartment()
+func (client ComputeClient) ChangeComputeGpuMemoryFabricCompartment(ctx context.Context, request ChangeComputeGpuMemoryFabricCompartmentRequest) (response ChangeComputeGpuMemoryFabricCompartmentResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.changeComputeGpuMemoryFabricCompartment, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ChangeComputeGpuMemoryFabricCompartmentResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ChangeComputeGpuMemoryFabricCompartmentResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ChangeComputeGpuMemoryFabricCompartmentResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ChangeComputeGpuMemoryFabricCompartmentResponse")
+	}
+	return
+}
+
+// changeComputeGpuMemoryFabricCompartment implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) changeComputeGpuMemoryFabricCompartment(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/computeGpuMemoryFabrics/{computeGpuMemoryFabricId}/actions/changeCompartment", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ChangeComputeGpuMemoryFabricCompartmentResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryFabric/ChangeComputeGpuMemoryFabricCompartment"
+		err = common.PostProcessServiceError(err, "Compute", "ChangeComputeGpuMemoryFabricCompartment", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
 // ChangeComputeHostCompartment Moves a compute host into a different compartment. For information about moving resources between
-// compartments, see Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// compartments, see Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // A default retry strategy applies to this operation ChangeComputeHostCompartment()
 func (client ComputeClient) ChangeComputeHostCompartment(ctx context.Context, request ChangeComputeHostCompartmentRequest) (response ChangeComputeHostCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -749,13 +800,6 @@ func (client ComputeClient) changeComputeHostCompartment(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeComputeHostCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -774,7 +818,7 @@ func (client ComputeClient) changeComputeHostCompartment(ctx context.Context, re
 // ChangeComputeImageCapabilitySchemaCompartment Moves a compute image capability schema into a different compartment within the same tenancy.
 // For information about moving resources between compartments, see
 //
-//	Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+//	Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 //
 // A default retry strategy applies to this operation ChangeComputeImageCapabilitySchemaCompartment()
 func (client ComputeClient) ChangeComputeImageCapabilitySchemaCompartment(ctx context.Context, request ChangeComputeImageCapabilitySchemaCompartmentRequest) (response ChangeComputeImageCapabilitySchemaCompartmentResponse, err error) {
@@ -818,13 +862,6 @@ func (client ComputeClient) changeComputeImageCapabilitySchemaCompartment(ctx co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ChangeComputeImageCapabilitySchemaCompartmentResponse
 	var httpResponse *http.Response
@@ -884,13 +921,6 @@ func (client ComputeClient) changeDedicatedVmHostCompartment(ctx context.Context
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeDedicatedVmHostCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -908,7 +938,7 @@ func (client ComputeClient) changeDedicatedVmHostCompartment(ctx context.Context
 
 // ChangeImageCompartment Moves an image into a different compartment within the same tenancy. For information about moving
 // resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // A default retry strategy applies to this operation ChangeImageCompartment()
 func (client ComputeClient) ChangeImageCompartment(ctx context.Context, request ChangeImageCompartmentRequest) (response ChangeImageCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -952,13 +982,6 @@ func (client ComputeClient) changeImageCompartment(ctx context.Context, request 
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeImageCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -976,7 +999,7 @@ func (client ComputeClient) changeImageCompartment(ctx context.Context, request 
 
 // ChangeInstanceCompartment Moves an instance into a different compartment within the same tenancy. For information about
 // moving resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // When you move an instance to a different compartment, associated resources such as boot volumes and VNICs
 // are not moved.
 func (client ComputeClient) ChangeInstanceCompartment(ctx context.Context, request ChangeInstanceCompartmentRequest) (response ChangeInstanceCompartmentResponse, err error) {
@@ -1020,13 +1043,6 @@ func (client ComputeClient) changeInstanceCompartment(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ChangeInstanceCompartmentResponse
 	var httpResponse *http.Response
@@ -1087,13 +1103,6 @@ func (client ComputeClient) createAppCatalogSubscription(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateAppCatalogSubscriptionResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1152,13 +1161,6 @@ func (client ComputeClient) createBigDataBmToVmInstanceMigration(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response CreateBigDataBmToVmInstanceMigrationResponse
 	var httpResponse *http.Response
@@ -1223,13 +1225,6 @@ func (client ComputeClient) createComputeCapacityReport(ctx context.Context, req
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateComputeCapacityReportResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1249,7 +1244,7 @@ func (client ComputeClient) createComputeCapacityReport(ctx context.Context, req
 // Compute capacity reservations let you reserve instances in a compartment.
 // When you launch an instance using this reservation, you are assured that you have enough space for your instance,
 // and you won't get out of capacity errors.
-// For more information, see Reserved Capacity (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/reserve-capacity.htm).
+// For more information, see Reserved Capacity (https://docs.oracle.com/iaas/Content/Compute/Tasks/reserve-capacity.htm).
 func (client ComputeClient) CreateComputeCapacityReservation(ctx context.Context, request CreateComputeCapacityReservationRequest) (response CreateComputeCapacityReservationResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -1291,13 +1286,6 @@ func (client ComputeClient) createComputeCapacityReservation(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response CreateComputeCapacityReservationResponse
 	var httpResponse *http.Response
@@ -1361,13 +1349,6 @@ func (client ComputeClient) createComputeCapacityTopology(ctx context.Context, r
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateComputeCapacityTopologyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1383,7 +1364,7 @@ func (client ComputeClient) createComputeCapacityTopology(ctx context.Context, r
 	return response, err
 }
 
-// CreateComputeCluster Creates an empty compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm). A compute cluster
+// CreateComputeCluster Creates an empty compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm). A compute cluster
 // is a remote direct memory access (RDMA) network group.
 // After the compute cluster is created, you can use the compute cluster's OCID with the
 // LaunchInstance operation to create instances in the compute cluster.
@@ -1434,13 +1415,6 @@ func (client ComputeClient) createComputeCluster(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateComputeClusterResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1449,6 +1423,65 @@ func (client ComputeClient) createComputeCluster(ctx context.Context, request co
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeCluster/CreateComputeCluster"
 		err = common.PostProcessServiceError(err, "Compute", "CreateComputeCluster", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// CreateComputeGpuMemoryCluster Create a compute GPU memory cluster instance on a specific compute GPU memory fabric
+// A default retry strategy applies to this operation CreateComputeGpuMemoryCluster()
+func (client ComputeClient) CreateComputeGpuMemoryCluster(ctx context.Context, request CreateComputeGpuMemoryClusterRequest) (response CreateComputeGpuMemoryClusterResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.createComputeGpuMemoryCluster, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = CreateComputeGpuMemoryClusterResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = CreateComputeGpuMemoryClusterResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(CreateComputeGpuMemoryClusterResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into CreateComputeGpuMemoryClusterResponse")
+	}
+	return
+}
+
+// createComputeGpuMemoryCluster implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) createComputeGpuMemoryCluster(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPost, "/computeGpuMemoryClusters", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response CreateComputeGpuMemoryClusterResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryCluster/CreateComputeGpuMemoryCluster"
+		err = common.PostProcessServiceError(err, "Compute", "CreateComputeGpuMemoryCluster", apiReferenceLink)
 		return response, err
 	}
 
@@ -1500,13 +1533,6 @@ func (client ComputeClient) createComputeImageCapabilitySchema(ctx context.Conte
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateComputeImageCapabilitySchemaResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1525,7 +1551,7 @@ func (client ComputeClient) createComputeImageCapabilitySchema(ctx context.Conte
 // CreateDedicatedVmHost Creates a new dedicated virtual machine host in the specified compartment and the specified availability domain.
 // Dedicated virtual machine hosts enable you to run your Compute virtual machine (VM) instances on dedicated servers
 // that are a single tenant and not shared with other customers.
-// For more information, see Dedicated Virtual Machine Hosts (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/dedicatedvmhosts.htm).
+// For more information, see Dedicated Virtual Machine Hosts (https://docs.oracle.com/iaas/Content/Compute/Concepts/dedicatedvmhosts.htm).
 func (client ComputeClient) CreateDedicatedVmHost(ctx context.Context, request CreateDedicatedVmHostRequest) (response CreateDedicatedVmHostResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -1567,13 +1593,6 @@ func (client ComputeClient) createDedicatedVmHost(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response CreateDedicatedVmHostResponse
 	var httpResponse *http.Response
@@ -1636,13 +1655,6 @@ func (client ComputeClient) createFirmwareReport(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateFirmwareReportResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1661,17 +1673,17 @@ func (client ComputeClient) createFirmwareReport(ctx context.Context, request co
 // CreateImage Creates a boot disk image for the specified instance or imports an exported image from the Oracle Cloud Infrastructure Object Storage service.
 // When creating a new image, you must provide the OCID of the instance you want to use as the basis for the image, and
 // the OCID of the compartment containing that instance. For more information about images,
-// see Managing Custom Images (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingcustomimages.htm).
+// see Managing Custom Images (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingcustomimages.htm).
 // When importing an exported image from Object Storage, you specify the source information
 // in ImageSourceDetails.
 // When importing an image based on the namespace, bucket name, and object name,
 // use ImageSourceViaObjectStorageTupleDetails.
 // When importing an image based on the Object Storage URL, use
 // ImageSourceViaObjectStorageUriDetails.
-// See Object Storage URLs (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm#URLs) and Using Pre-Authenticated Requests (https://docs.cloud.oracle.com/iaas/Content/Object/Tasks/usingpreauthenticatedrequests.htm)
+// See Object Storage URLs (https://docs.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm#URLs) and Using Pre-Authenticated Requests (https://docs.oracle.com/iaas/Content/Object/Tasks/usingpreauthenticatedrequests.htm)
 // for constructing URLs for image import/export.
 // For more information about importing exported images, see
-// Image Import/Export (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm).
+// Image Import/Export (https://docs.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm).
 // You may optionally specify a *display name* for the image, which is simply a friendly name or description.
 // It does not have to be unique, and you can change it. See UpdateImage.
 // Avoid entering confidential information.
@@ -1718,13 +1730,6 @@ func (client ComputeClient) createImage(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateImageResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1743,7 +1748,7 @@ func (client ComputeClient) createImage(ctx context.Context, request common.OCIR
 // CreateInstanceConsoleConnection Creates a new console connection to the specified instance.
 // After the console connection has been created and is available,
 // you connect to the console using SSH.
-// For more information about instance console connections, see Troubleshooting Instances Using Instance Console Connections (https://docs.cloud.oracle.com/iaas/Content/Compute/References/serialconsole.htm).
+// For more information about instance console connections, see Troubleshooting Instances Using Instance Console Connections (https://docs.oracle.com/iaas/Content/Compute/References/serialconsole.htm).
 func (client ComputeClient) CreateInstanceConsoleConnection(ctx context.Context, request CreateInstanceConsoleConnectionRequest) (response CreateInstanceConsoleConnectionResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -1785,13 +1790,6 @@ func (client ComputeClient) createInstanceConsoleConnection(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response CreateInstanceConsoleConnectionResponse
 	var httpResponse *http.Response
@@ -1858,13 +1856,6 @@ func (client ComputeClient) createInstanceScreenshot(ctx context.Context, reques
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateInstanceScreenshotResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1918,13 +1909,6 @@ func (client ComputeClient) deleteAppCatalogSubscription(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DeleteAppCatalogSubscriptionResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1977,13 +1961,6 @@ func (client ComputeClient) deleteComputeCapacityReservation(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response DeleteComputeCapacityReservationResponse
 	var httpResponse *http.Response
@@ -2039,13 +2016,6 @@ func (client ComputeClient) deleteComputeCapacityTopology(ctx context.Context, r
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DeleteComputeCapacityTopologyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2061,7 +2031,7 @@ func (client ComputeClient) deleteComputeCapacityTopology(ctx context.Context, r
 	return response, err
 }
 
-// DeleteComputeCluster Deletes a compute cluster. A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a
+// DeleteComputeCluster Deletes a compute cluster. A compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a
 // remote direct memory access (RDMA) network group.
 // Before you delete a compute cluster, first delete all instances in the cluster by using
 // the TerminateInstance operation.
@@ -2102,13 +2072,6 @@ func (client ComputeClient) deleteComputeCluster(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DeleteComputeClusterResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2117,6 +2080,60 @@ func (client ComputeClient) deleteComputeCluster(ctx context.Context, request co
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeCluster/DeleteComputeCluster"
 		err = common.PostProcessServiceError(err, "Compute", "DeleteComputeCluster", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// DeleteComputeGpuMemoryCluster Terminates and deletes the specified compute GPU memory cluster and underlying instances.
+// A default retry strategy applies to this operation DeleteComputeGpuMemoryCluster()
+func (client ComputeClient) DeleteComputeGpuMemoryCluster(ctx context.Context, request DeleteComputeGpuMemoryClusterRequest) (response DeleteComputeGpuMemoryClusterResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.deleteComputeGpuMemoryCluster, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = DeleteComputeGpuMemoryClusterResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = DeleteComputeGpuMemoryClusterResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(DeleteComputeGpuMemoryClusterResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into DeleteComputeGpuMemoryClusterResponse")
+	}
+	return
+}
+
+// deleteComputeGpuMemoryCluster implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) deleteComputeGpuMemoryCluster(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodDelete, "/computeGpuMemoryClusters/{computeGpuMemoryClusterId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response DeleteComputeGpuMemoryClusterResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryCluster/DeleteComputeGpuMemoryCluster"
+		err = common.PostProcessServiceError(err, "Compute", "DeleteComputeGpuMemoryCluster", apiReferenceLink)
 		return response, err
 	}
 
@@ -2161,13 +2178,6 @@ func (client ComputeClient) deleteComputeImageCapabilitySchema(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response DeleteComputeImageCapabilitySchemaResponse
 	var httpResponse *http.Response
@@ -2221,13 +2231,6 @@ func (client ComputeClient) deleteConsoleHistory(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response DeleteConsoleHistoryResponse
 	var httpResponse *http.Response
@@ -2284,13 +2287,6 @@ func (client ComputeClient) deleteDedicatedVmHost(ctx context.Context, request c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DeleteDedicatedVmHostResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2345,13 +2341,6 @@ func (client ComputeClient) deleteFirmwareReport(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DeleteFirmwareReportResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2405,13 +2394,6 @@ func (client ComputeClient) deleteImage(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DeleteImageResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2464,13 +2446,6 @@ func (client ComputeClient) deleteInstanceConsoleConnection(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response DeleteInstanceConsoleConnectionResponse
 	var httpResponse *http.Response
@@ -2527,13 +2502,6 @@ func (client ComputeClient) detachBootVolume(ctx context.Context, request common
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DetachBootVolumeResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2555,7 +2523,7 @@ func (client ComputeClient) detachBootVolume(ctx context.Context, request common
 // and secondary) are automatically detached and deleted.
 // **Important:** If the VNIC has a
 // PrivateIp that is the
-// target of a route rule (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/managingroutetables.htm#privateip),
+// target of a route rule (https://docs.oracle.com/iaas/Content/Network/Tasks/managingroutetables.htm#privateip),
 // deleting the VNIC causes that route rule to blackhole and the traffic
 // will be dropped.
 func (client ComputeClient) DetachVnic(ctx context.Context, request DetachVnicRequest) (response DetachVnicResponse, err error) {
@@ -2594,13 +2562,6 @@ func (client ComputeClient) detachVnic(ctx context.Context, request common.OCIRe
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response DetachVnicResponse
 	var httpResponse *http.Response
@@ -2657,13 +2618,6 @@ func (client ComputeClient) detachVolume(ctx context.Context, request common.OCI
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DetachVolumeResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2681,10 +2635,10 @@ func (client ComputeClient) detachVolume(ctx context.Context, request common.OCI
 
 // ExportImage Exports the specified image to the Oracle Cloud Infrastructure Object Storage service. You can use the Object Storage URL,
 // or the namespace, bucket name, and object name when specifying the location to export to.
-// For more information about exporting images, see Image Import/Export (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm).
+// For more information about exporting images, see Image Import/Export (https://docs.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm).
 // To perform an image export, you need write access to the Object Storage bucket for the image,
-// see Let Users Write Objects to Object Storage Buckets (https://docs.cloud.oracle.com/iaas/Content/Identity/Concepts/commonpolicies.htm#Let4).
-// See Object Storage URLs (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm#URLs) and Using Pre-Authenticated Requests (https://docs.cloud.oracle.com/iaas/Content/Object/Tasks/usingpreauthenticatedrequests.htm)
+// see Let Users Write Objects to Object Storage Buckets (https://docs.oracle.com/iaas/Content/Identity/Concepts/commonpolicies.htm#Let4).
+// See Object Storage URLs (https://docs.oracle.com/iaas/Content/Compute/Tasks/imageimportexport.htm#URLs) and Using Pre-Authenticated Requests (https://docs.oracle.com/iaas/Content/Object/Tasks/usingpreauthenticatedrequests.htm)
 // for constructing URLs for image import/export.
 // A default retry strategy applies to this operation ExportImage()
 func (client ComputeClient) ExportImage(ctx context.Context, request ExportImageRequest) (response ExportImageResponse, err error) {
@@ -2728,13 +2682,6 @@ func (client ComputeClient) exportImage(ctx context.Context, request common.OCIR
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ExportImageResponse
 	var httpResponse *http.Response
@@ -2790,13 +2737,6 @@ func (client ComputeClient) getAppCatalogListing(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetAppCatalogListingResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2850,13 +2790,6 @@ func (client ComputeClient) getAppCatalogListingAgreements(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetAppCatalogListingAgreementsResponse
 	var httpResponse *http.Response
@@ -2912,13 +2845,6 @@ func (client ComputeClient) getAppCatalogListingResourceVersion(ctx context.Cont
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetAppCatalogListingResourceVersionResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2973,13 +2899,6 @@ func (client ComputeClient) getBigDataBmToVmInstanceMigration(ctx context.Contex
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetBigDataBmToVmInstanceMigrationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3033,13 +2952,6 @@ func (client ComputeClient) getBootVolumeAttachment(ctx context.Context, request
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetBootVolumeAttachmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3092,13 +3004,6 @@ func (client ComputeClient) getComputeCapacityReservation(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetComputeCapacityReservationResponse
 	var httpResponse *http.Response
@@ -3154,13 +3059,6 @@ func (client ComputeClient) getComputeCapacityTopology(ctx context.Context, requ
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetComputeCapacityTopologyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3176,7 +3074,7 @@ func (client ComputeClient) getComputeCapacityTopology(ctx context.Context, requ
 	return response, err
 }
 
-// GetComputeCluster Gets information about a compute cluster. A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm)
+// GetComputeCluster Gets information about a compute cluster. A compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm)
 // is a remote direct memory access (RDMA) network group.
 func (client ComputeClient) GetComputeCluster(ctx context.Context, request GetComputeClusterRequest) (response GetComputeClusterResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -3214,13 +3112,6 @@ func (client ComputeClient) getComputeCluster(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetComputeClusterResponse
 	var httpResponse *http.Response
@@ -3276,13 +3167,6 @@ func (client ComputeClient) getComputeGlobalImageCapabilitySchema(ctx context.Co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetComputeGlobalImageCapabilitySchemaResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3337,13 +3221,6 @@ func (client ComputeClient) getComputeGlobalImageCapabilitySchemaVersion(ctx con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetComputeGlobalImageCapabilitySchemaVersionResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3352,6 +3229,113 @@ func (client ComputeClient) getComputeGlobalImageCapabilitySchemaVersion(ctx con
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGlobalImageCapabilitySchemaVersion/GetComputeGlobalImageCapabilitySchemaVersion"
 		err = common.PostProcessServiceError(err, "Compute", "GetComputeGlobalImageCapabilitySchemaVersion", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// GetComputeGpuMemoryCluster Gets information about the specified compute GPU memory cluster
+func (client ComputeClient) GetComputeGpuMemoryCluster(ctx context.Context, request GetComputeGpuMemoryClusterRequest) (response GetComputeGpuMemoryClusterResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.NoRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getComputeGpuMemoryCluster, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetComputeGpuMemoryClusterResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetComputeGpuMemoryClusterResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetComputeGpuMemoryClusterResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetComputeGpuMemoryClusterResponse")
+	}
+	return
+}
+
+// getComputeGpuMemoryCluster implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) getComputeGpuMemoryCluster(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/computeGpuMemoryClusters/{computeGpuMemoryClusterId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response GetComputeGpuMemoryClusterResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryCluster/GetComputeGpuMemoryCluster"
+		err = common.PostProcessServiceError(err, "Compute", "GetComputeGpuMemoryCluster", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// GetComputeGpuMemoryFabric Gets information about the specified compute GPU memory fabric
+// A default retry strategy applies to this operation GetComputeGpuMemoryFabric()
+func (client ComputeClient) GetComputeGpuMemoryFabric(ctx context.Context, request GetComputeGpuMemoryFabricRequest) (response GetComputeGpuMemoryFabricResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.getComputeGpuMemoryFabric, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = GetComputeGpuMemoryFabricResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = GetComputeGpuMemoryFabricResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(GetComputeGpuMemoryFabricResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into GetComputeGpuMemoryFabricResponse")
+	}
+	return
+}
+
+// getComputeGpuMemoryFabric implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) getComputeGpuMemoryFabric(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/computeGpuMemoryFabrics/{computeGpuMemoryFabricId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response GetComputeGpuMemoryFabricResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryFabric/GetComputeGpuMemoryFabric"
+		err = common.PostProcessServiceError(err, "Compute", "GetComputeGpuMemoryFabric", apiReferenceLink)
 		return response, err
 	}
 
@@ -3397,13 +3381,6 @@ func (client ComputeClient) getComputeHost(ctx context.Context, request common.O
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetComputeHostResponse
 	var httpResponse *http.Response
@@ -3458,13 +3435,6 @@ func (client ComputeClient) getComputeImageCapabilitySchema(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetComputeImageCapabilitySchemaResponse
 	var httpResponse *http.Response
@@ -3521,13 +3491,6 @@ func (client ComputeClient) getConsoleHistory(ctx context.Context, request commo
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetConsoleHistoryResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3583,13 +3546,6 @@ func (client ComputeClient) getConsoleHistoryContent(ctx context.Context, reques
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetConsoleHistoryContentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3642,13 +3598,6 @@ func (client ComputeClient) getDedicatedVmHost(ctx context.Context, request comm
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetDedicatedVmHostResponse
 	var httpResponse *http.Response
@@ -3704,13 +3653,6 @@ func (client ComputeClient) getFirmwareReport(ctx context.Context, request commo
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetFirmwareReportResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3765,13 +3707,6 @@ func (client ComputeClient) getImage(ctx context.Context, request common.OCIRequ
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetImageResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3825,13 +3760,6 @@ func (client ComputeClient) getImageShapeCompatibilityEntry(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetImageShapeCompatibilityEntryResponse
 	var httpResponse *http.Response
@@ -3888,13 +3816,6 @@ func (client ComputeClient) getInstance(ctx context.Context, request common.OCIR
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetInstanceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -3947,13 +3868,6 @@ func (client ComputeClient) getInstanceConsoleConnection(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetInstanceConsoleConnectionResponse
 	var httpResponse *http.Response
@@ -4008,13 +3922,6 @@ func (client ComputeClient) getInstanceMaintenanceEvent(ctx context.Context, req
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetInstanceMaintenanceEventResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4031,7 +3938,7 @@ func (client ComputeClient) getInstanceMaintenanceEvent(ctx context.Context, req
 }
 
 // GetInstanceMaintenanceReboot Gets the maximum possible date that a maintenance reboot can be extended. For more information, see
-// Infrastructure Maintenance (https://docs.cloud.oracle.com/iaas/Content/Compute/References/infrastructure-maintenance.htm).
+// Infrastructure Maintenance (https://docs.oracle.com/iaas/Content/Compute/References/infrastructure-maintenance.htm).
 func (client ComputeClient) GetInstanceMaintenanceReboot(ctx context.Context, request GetInstanceMaintenanceRebootRequest) (response GetInstanceMaintenanceRebootResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -4068,13 +3975,6 @@ func (client ComputeClient) getInstanceMaintenanceReboot(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetInstanceMaintenanceRebootResponse
 	var httpResponse *http.Response
@@ -4129,13 +4029,6 @@ func (client ComputeClient) getInstanceScreenshot(ctx context.Context, request c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetInstanceScreenshotResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4189,13 +4082,6 @@ func (client ComputeClient) getInstanceScreenshotContent(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetInstanceScreenshotContentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4247,13 +4133,6 @@ func (client ComputeClient) getMeasuredBootReport(ctx context.Context, request c
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetMeasuredBootReportResponse
 	var httpResponse *http.Response
@@ -4308,13 +4187,6 @@ func (client ComputeClient) getVnicAttachment(ctx context.Context, request commo
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetVnicAttachmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4367,13 +4239,6 @@ func (client ComputeClient) getVolumeAttachment(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetVolumeAttachmentResponse
 	var httpResponse *http.Response
@@ -4429,13 +4294,6 @@ func (client ComputeClient) getWindowsInstanceInitialCredentials(ctx context.Con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetWindowsInstanceInitialCredentialsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4469,22 +4327,22 @@ func (client ComputeClient) getWindowsInstanceInitialCredentials(ctx context.Con
 // OS to crash and then reboot. Before you send a diagnostic interrupt, you must configure the instance to generate a
 // crash dump file when it crashes. The crash dump captures information about the state of the OS at the time of
 // the crash. After the OS restarts, you can analyze the crash dump to diagnose the issue. For more information, see
-// Sending a Diagnostic Interrupt (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/sendingdiagnosticinterrupt.htm).
+// Sending a Diagnostic Interrupt (https://docs.oracle.com/iaas/Content/Compute/Tasks/sendingdiagnosticinterrupt.htm).
 //   - **EXTENDSCHEDULEDSTOP** - Extends the scheduled stop time of instance.
 //   - **VALIDATELIVEMIGRATE** - Live migrate the instance to validate impact on the customer workload.
 //     Live migrating an instance moves it to a different physical host while the instance is running.
 //
 // - **DIAGNOSTICREBOOT** - Powers off the instance, rebuilds it, and then powers it back on.
 // Before you send a diagnostic reboot, restart the instance's OS, confirm that the instance and networking settings are configured
-// correctly, and try other troubleshooting steps (https://docs.cloud.oracle.com/iaas/Content/Compute/References/troubleshooting-compute-instances.htm).
+// correctly, and try other troubleshooting steps (https://docs.oracle.com/iaas/Content/Compute/References/troubleshooting-compute-instances.htm).
 // Use diagnostic reboot as a final attempt to troubleshoot an unreachable instance. For virtual machine (VM) instances only.
-// For more information, see Performing a Diagnostic Reboot (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/diagnostic-reboot.htm).
+// For more information, see Performing a Diagnostic Reboot (https://docs.oracle.com/iaas/Content/Compute/Tasks/diagnostic-reboot.htm).
 //
 // - **REBOOTMIGRATE** - Powers off the instance, moves it to new hardware, and then powers it back on. For more information, see
-// Infrastructure Maintenance (https://docs.cloud.oracle.com/iaas/Content/Compute/References/infrastructure-maintenance.htm).
+// Infrastructure Maintenance (https://docs.oracle.com/iaas/Content/Compute/References/infrastructure-maintenance.htm).
 //
 // For more information about managing instance lifecycle states, see
-// Stopping and Starting an Instance (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/restartinginstance.htm).
+// Stopping and Starting an Instance (https://docs.oracle.com/iaas/Content/Compute/Tasks/restartinginstance.htm).
 func (client ComputeClient) InstanceAction(ctx context.Context, request InstanceActionRequest) (response InstanceActionResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -4527,13 +4385,6 @@ func (client ComputeClient) instanceAction(ctx context.Context, request common.O
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response InstanceActionResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4551,11 +4402,11 @@ func (client ComputeClient) instanceAction(ctx context.Context, request common.O
 
 // LaunchInstance Creates a new instance in the specified compartment and the specified availability domain.
 // For general information about instances, see
-// Overview of the Compute Service (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm).
+// Overview of the Compute Service (https://docs.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm).
 // For information about access control and compartments, see
-// Overview of the IAM Service (https://docs.cloud.oracle.com/iaas/Content/Identity/Concepts/overview.htm).
+// Overview of the IAM Service (https://docs.oracle.com/iaas/Content/Identity/Concepts/overview.htm).
 // For information about availability domains, see
-// Regions and Availability Domains (https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm).
+// Regions and Availability Domains (https://docs.oracle.com/iaas/Content/General/Concepts/regions.htm).
 // To get a list of availability domains, use the `ListAvailabilityDomains` operation
 // in the Identity and Access Management Service API.
 // All Oracle Cloud Infrastructure resources, including instances, get an Oracle-assigned,
@@ -4573,7 +4424,7 @@ func (client ComputeClient) instanceAction(ctx context.Context, request common.O
 // operation to get the VNIC ID for the instance, and then call
 // GetVnic with the VNIC ID.
 // You can later add secondary VNICs to an instance. For more information, see
-// Virtual Network Interface Cards (VNICs) (https://docs.cloud.oracle.com/iaas/Content/Network/Tasks/managingVNICs.htm).
+// Virtual Network Interface Cards (VNICs) (https://docs.oracle.com/iaas/Content/Network/Tasks/managingVNICs.htm).
 // To launch an instance from a Marketplace image listing, you must provide the image ID of the
 // listing resource version that you want, but you also must subscribe to the listing before you try
 // to launch the instance. To subscribe to the listing, use the GetAppCatalogListingAgreements
@@ -4631,13 +4482,6 @@ func (client ComputeClient) launchInstance(ctx context.Context, request common.O
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response LaunchInstanceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4691,13 +4535,6 @@ func (client ComputeClient) listAppCatalogListingResourceVersions(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListAppCatalogListingResourceVersionsResponse
 	var httpResponse *http.Response
@@ -4753,13 +4590,6 @@ func (client ComputeClient) listAppCatalogListings(ctx context.Context, request 
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListAppCatalogListingsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4813,13 +4643,6 @@ func (client ComputeClient) listAppCatalogSubscriptions(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListAppCatalogSubscriptionsResponse
 	var httpResponse *http.Response
@@ -4875,13 +4698,6 @@ func (client ComputeClient) listBigDataBmToVmInstanceMigrations(ctx context.Cont
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListBigDataBmToVmInstanceMigrationsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4936,13 +4752,6 @@ func (client ComputeClient) listBootVolumeAttachments(ctx context.Context, reque
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListBootVolumeAttachmentsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -4996,13 +4805,6 @@ func (client ComputeClient) listComputeCapacityReservationInstanceShapes(ctx con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeCapacityReservationInstanceShapesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5055,13 +4857,6 @@ func (client ComputeClient) listComputeCapacityReservationInstances(ctx context.
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListComputeCapacityReservationInstancesResponse
 	var httpResponse *http.Response
@@ -5118,13 +4913,6 @@ func (client ComputeClient) listComputeCapacityReservations(ctx context.Context,
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeCapacityReservationsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5180,13 +4968,6 @@ func (client ComputeClient) listComputeCapacityTopologies(ctx context.Context, r
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeCapacityTopologiesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5240,13 +5021,6 @@ func (client ComputeClient) listComputeCapacityTopologyComputeBareMetalHosts(ctx
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListComputeCapacityTopologyComputeBareMetalHostsResponse
 	var httpResponse *http.Response
@@ -5302,13 +5076,6 @@ func (client ComputeClient) listComputeCapacityTopologyComputeHpcIslands(ctx con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeCapacityTopologyComputeHpcIslandsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5363,13 +5130,6 @@ func (client ComputeClient) listComputeCapacityTopologyComputeNetworkBlocks(ctx 
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeCapacityTopologyComputeNetworkBlocksResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5386,7 +5146,7 @@ func (client ComputeClient) listComputeCapacityTopologyComputeNetworkBlocks(ctx 
 }
 
 // ListComputeClusters Lists the compute clusters in the specified compartment.
-// A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a remote direct memory access (RDMA) network group.
+// A compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a remote direct memory access (RDMA) network group.
 func (client ComputeClient) ListComputeClusters(ctx context.Context, request ListComputeClustersRequest) (response ListComputeClustersResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -5423,13 +5183,6 @@ func (client ComputeClient) listComputeClusters(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListComputeClustersResponse
 	var httpResponse *http.Response
@@ -5485,13 +5238,6 @@ func (client ComputeClient) listComputeGlobalImageCapabilitySchemaVersions(ctx c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeGlobalImageCapabilitySchemaVersionsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5546,13 +5292,6 @@ func (client ComputeClient) listComputeGlobalImageCapabilitySchemas(ctx context.
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeGlobalImageCapabilitySchemasResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5561,6 +5300,168 @@ func (client ComputeClient) listComputeGlobalImageCapabilitySchemas(ctx context.
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGlobalImageCapabilitySchemaSummary/ListComputeGlobalImageCapabilitySchemas"
 		err = common.PostProcessServiceError(err, "Compute", "ListComputeGlobalImageCapabilitySchemas", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ListComputeGpuMemoryClusterInstances List all of the GPU memory cluster instances.
+// A default retry strategy applies to this operation ListComputeGpuMemoryClusterInstances()
+func (client ComputeClient) ListComputeGpuMemoryClusterInstances(ctx context.Context, request ListComputeGpuMemoryClusterInstancesRequest) (response ListComputeGpuMemoryClusterInstancesResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listComputeGpuMemoryClusterInstances, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListComputeGpuMemoryClusterInstancesResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListComputeGpuMemoryClusterInstancesResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListComputeGpuMemoryClusterInstancesResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListComputeGpuMemoryClusterInstancesResponse")
+	}
+	return
+}
+
+// listComputeGpuMemoryClusterInstances implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) listComputeGpuMemoryClusterInstances(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/computeGpuMemoryClusters/{computeGpuMemoryClusterId}/instances", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListComputeGpuMemoryClusterInstancesResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryClusterInstanceSummary/ListComputeGpuMemoryClusterInstances"
+		err = common.PostProcessServiceError(err, "Compute", "ListComputeGpuMemoryClusterInstances", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ListComputeGpuMemoryClusters List all of the compute GPU memory clusters.
+// A default retry strategy applies to this operation ListComputeGpuMemoryClusters()
+func (client ComputeClient) ListComputeGpuMemoryClusters(ctx context.Context, request ListComputeGpuMemoryClustersRequest) (response ListComputeGpuMemoryClustersResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listComputeGpuMemoryClusters, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListComputeGpuMemoryClustersResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListComputeGpuMemoryClustersResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListComputeGpuMemoryClustersResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListComputeGpuMemoryClustersResponse")
+	}
+	return
+}
+
+// listComputeGpuMemoryClusters implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) listComputeGpuMemoryClusters(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/computeGpuMemoryClusters", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListComputeGpuMemoryClustersResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryClusterCollection/ListComputeGpuMemoryClusters"
+		err = common.PostProcessServiceError(err, "Compute", "ListComputeGpuMemoryClusters", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// ListComputeGpuMemoryFabrics Lists the compute GPU memory fabrics that match the specified criteria and compartmentId.
+// A default retry strategy applies to this operation ListComputeGpuMemoryFabrics()
+func (client ComputeClient) ListComputeGpuMemoryFabrics(ctx context.Context, request ListComputeGpuMemoryFabricsRequest) (response ListComputeGpuMemoryFabricsResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+	ociResponse, err = common.Retry(ctx, request, client.listComputeGpuMemoryFabrics, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = ListComputeGpuMemoryFabricsResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = ListComputeGpuMemoryFabricsResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(ListComputeGpuMemoryFabricsResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into ListComputeGpuMemoryFabricsResponse")
+	}
+	return
+}
+
+// listComputeGpuMemoryFabrics implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) listComputeGpuMemoryFabrics(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodGet, "/computeGpuMemoryFabrics", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response ListComputeGpuMemoryFabricsResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryFabric/ListComputeGpuMemoryFabrics"
+		err = common.PostProcessServiceError(err, "Compute", "ListComputeGpuMemoryFabrics", apiReferenceLink)
 		return response, err
 	}
 
@@ -5606,13 +5507,6 @@ func (client ComputeClient) listComputeHosts(ctx context.Context, request common
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListComputeHostsResponse
 	var httpResponse *http.Response
@@ -5668,13 +5562,6 @@ func (client ComputeClient) listComputeImageCapabilitySchemas(ctx context.Contex
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListComputeImageCapabilitySchemasResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5727,13 +5614,6 @@ func (client ComputeClient) listConsoleHistories(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListConsoleHistoriesResponse
 	var httpResponse *http.Response
@@ -5789,13 +5669,6 @@ func (client ComputeClient) listDedicatedVmHostInstanceShapes(ctx context.Contex
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListDedicatedVmHostInstanceShapesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5849,13 +5722,6 @@ func (client ComputeClient) listDedicatedVmHostInstances(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListDedicatedVmHostInstancesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -5908,13 +5774,6 @@ func (client ComputeClient) listDedicatedVmHostShapes(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListDedicatedVmHostShapesResponse
 	var httpResponse *http.Response
@@ -5971,13 +5830,6 @@ func (client ComputeClient) listDedicatedVmHosts(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListDedicatedVmHostsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6031,13 +5883,6 @@ func (client ComputeClient) listFirmwareReports(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListFirmwareReportsResponse
 	var httpResponse *http.Response
@@ -6093,13 +5938,6 @@ func (client ComputeClient) listImageShapeCompatibilityEntries(ctx context.Conte
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListImageShapeCompatibilityEntriesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6116,8 +5954,8 @@ func (client ComputeClient) listImageShapeCompatibilityEntries(ctx context.Conte
 }
 
 // ListImages Lists a subset of images available in the specified compartment, including
-// platform images (https://docs.cloud.oracle.com/iaas/Content/Compute/References/images.htm) and
-// custom images (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingcustomimages.htm).
+// platform images (https://docs.oracle.com/iaas/Content/Compute/References/images.htm) and
+// custom images (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingcustomimages.htm).
 // The list of platform images includes the three most recently published versions
 // of each major distribution. The list does not support filtering based on image tags.
 // The list of images returned is ordered to first show the recent platform images,
@@ -6162,13 +6000,6 @@ func (client ComputeClient) listImages(ctx context.Context, request common.OCIRe
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListImagesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6185,7 +6016,7 @@ func (client ComputeClient) listImages(ctx context.Context, request common.OCIRe
 }
 
 // ListInstanceConsoleConnections Lists the console connections for the specified compartment or instance.
-// For more information about instance console connections, see Troubleshooting Instances Using Instance Console Connections (https://docs.cloud.oracle.com/iaas/Content/Compute/References/serialconsole.htm).
+// For more information about instance console connections, see Troubleshooting Instances Using Instance Console Connections (https://docs.oracle.com/iaas/Content/Compute/References/serialconsole.htm).
 func (client ComputeClient) ListInstanceConsoleConnections(ctx context.Context, request ListInstanceConsoleConnectionsRequest) (response ListInstanceConsoleConnectionsResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -6222,13 +6053,6 @@ func (client ComputeClient) listInstanceConsoleConnections(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListInstanceConsoleConnectionsResponse
 	var httpResponse *http.Response
@@ -6282,13 +6106,6 @@ func (client ComputeClient) listInstanceDevices(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListInstanceDevicesResponse
 	var httpResponse *http.Response
@@ -6344,13 +6161,6 @@ func (client ComputeClient) listInstanceFirmwareHistories(ctx context.Context, r
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListInstanceFirmwareHistoriesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6405,13 +6215,6 @@ func (client ComputeClient) listInstanceFirmwares(ctx context.Context, request c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListInstanceFirmwaresResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6465,13 +6268,6 @@ func (client ComputeClient) listInstanceMaintenanceEvents(ctx context.Context, r
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListInstanceMaintenanceEventsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6524,13 +6320,6 @@ func (client ComputeClient) listInstanceScreenshots(ctx context.Context, request
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListInstanceScreenshotsResponse
 	var httpResponse *http.Response
@@ -6589,13 +6378,6 @@ func (client ComputeClient) listInstances(ctx context.Context, request common.OC
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListInstancesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6649,13 +6431,6 @@ func (client ComputeClient) listShapes(ctx context.Context, request common.OCIRe
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListShapesResponse
 	var httpResponse *http.Response
@@ -6711,13 +6486,6 @@ func (client ComputeClient) listVnicAttachments(ctx context.Context, request com
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListVnicAttachmentsResponse
 	var httpResponse *http.Response
@@ -6791,13 +6559,6 @@ func (client ComputeClient) listVolumeAttachments(ctx context.Context, request c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListVolumeAttachmentsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -6850,13 +6611,6 @@ func (client ComputeClient) removeImageShapeCompatibilityEntry(ctx context.Conte
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response RemoveImageShapeCompatibilityEntryResponse
 	var httpResponse *http.Response
@@ -6916,13 +6670,6 @@ func (client ComputeClient) retryBigDataBmToVmInstanceMigration(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response RetryBigDataBmToVmInstanceMigrationResponse
 	var httpResponse *http.Response
@@ -6985,13 +6732,6 @@ func (client ComputeClient) terminateInstance(ctx context.Context, request commo
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response TerminateInstanceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7051,13 +6791,6 @@ func (client ComputeClient) updateBigDataBmToVmInstanceMigration(ctx context.Con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateBigDataBmToVmInstanceMigrationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7113,13 +6846,6 @@ func (client ComputeClient) updateComputeCapacityReservation(ctx context.Context
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateComputeCapacityReservationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7174,13 +6900,6 @@ func (client ComputeClient) updateComputeCapacityTopology(ctx context.Context, r
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateComputeCapacityTopologyResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7196,7 +6915,7 @@ func (client ComputeClient) updateComputeCapacityTopology(ctx context.Context, r
 	return response, err
 }
 
-// UpdateComputeCluster Updates a compute cluster. A compute cluster (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a
+// UpdateComputeCluster Updates a compute cluster. A compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) is a
 // remote direct memory access (RDMA) network group.
 // To create instances within a compute cluster, use the LaunchInstance
 // operation.
@@ -7244,13 +6963,6 @@ func (client ComputeClient) updateComputeCluster(ctx context.Context, request co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateComputeClusterResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7259,6 +6971,124 @@ func (client ComputeClient) updateComputeCluster(ctx context.Context, request co
 	if err != nil {
 		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeCluster/UpdateComputeCluster"
 		err = common.PostProcessServiceError(err, "Compute", "UpdateComputeCluster", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// UpdateComputeGpuMemoryCluster Updates a compute gpu memory cluster resource.
+// A default retry strategy applies to this operation UpdateComputeGpuMemoryCluster()
+func (client ComputeClient) UpdateComputeGpuMemoryCluster(ctx context.Context, request UpdateComputeGpuMemoryClusterRequest) (response UpdateComputeGpuMemoryClusterResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.updateComputeGpuMemoryCluster, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = UpdateComputeGpuMemoryClusterResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = UpdateComputeGpuMemoryClusterResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(UpdateComputeGpuMemoryClusterResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into UpdateComputeGpuMemoryClusterResponse")
+	}
+	return
+}
+
+// updateComputeGpuMemoryCluster implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) updateComputeGpuMemoryCluster(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPut, "/computeGpuMemoryClusters/{computeGpuMemoryClusterId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response UpdateComputeGpuMemoryClusterResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryCluster/UpdateComputeGpuMemoryCluster"
+		err = common.PostProcessServiceError(err, "Compute", "UpdateComputeGpuMemoryCluster", apiReferenceLink)
+		return response, err
+	}
+
+	err = common.UnmarshalResponse(httpResponse, &response)
+	return response, err
+}
+
+// UpdateComputeGpuMemoryFabric Customer can update displayName and tags for compute GPU memory fabric record
+// A default retry strategy applies to this operation UpdateComputeGpuMemoryFabric()
+func (client ComputeClient) UpdateComputeGpuMemoryFabric(ctx context.Context, request UpdateComputeGpuMemoryFabricRequest) (response UpdateComputeGpuMemoryFabricResponse, err error) {
+	var ociResponse common.OCIResponse
+	policy := common.DefaultRetryPolicy()
+	if client.RetryPolicy() != nil {
+		policy = *client.RetryPolicy()
+	}
+	if request.RetryPolicy() != nil {
+		policy = *request.RetryPolicy()
+	}
+
+	if !(request.OpcRetryToken != nil && *request.OpcRetryToken != "") {
+		request.OpcRetryToken = common.String(common.RetryToken())
+	}
+
+	ociResponse, err = common.Retry(ctx, request, client.updateComputeGpuMemoryFabric, policy)
+	if err != nil {
+		if ociResponse != nil {
+			if httpResponse := ociResponse.HTTPResponse(); httpResponse != nil {
+				opcRequestId := httpResponse.Header.Get("opc-request-id")
+				response = UpdateComputeGpuMemoryFabricResponse{RawResponse: httpResponse, OpcRequestId: &opcRequestId}
+			} else {
+				response = UpdateComputeGpuMemoryFabricResponse{}
+			}
+		}
+		return
+	}
+	if convertedResponse, ok := ociResponse.(UpdateComputeGpuMemoryFabricResponse); ok {
+		response = convertedResponse
+	} else {
+		err = fmt.Errorf("failed to convert OCIResponse into UpdateComputeGpuMemoryFabricResponse")
+	}
+	return
+}
+
+// updateComputeGpuMemoryFabric implements the OCIOperation interface (enables retrying operations)
+func (client ComputeClient) updateComputeGpuMemoryFabric(ctx context.Context, request common.OCIRequest, binaryReqBody *common.OCIReadSeekCloser, extraHeaders map[string]string) (common.OCIResponse, error) {
+
+	httpRequest, err := request.HTTPRequest(http.MethodPut, "/computeGpuMemoryFabrics/{computeGpuMemoryFabricId}", binaryReqBody, extraHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	var response UpdateComputeGpuMemoryFabricResponse
+	var httpResponse *http.Response
+	httpResponse, err = client.Call(ctx, &httpRequest)
+	defer common.CloseBodyIfValid(httpResponse)
+	response.RawResponse = httpResponse
+	if err != nil {
+		apiReferenceLink := "https://docs.oracle.com/iaas/api/#/en/iaas/20160918/ComputeGpuMemoryFabric/UpdateComputeGpuMemoryFabric"
+		err = common.PostProcessServiceError(err, "Compute", "UpdateComputeGpuMemoryFabric", apiReferenceLink)
 		return response, err
 	}
 
@@ -7304,13 +7134,6 @@ func (client ComputeClient) updateComputeHost(ctx context.Context, request commo
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateComputeHostResponse
 	var httpResponse *http.Response
@@ -7365,13 +7188,6 @@ func (client ComputeClient) updateComputeImageCapabilitySchema(ctx context.Conte
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateComputeImageCapabilitySchemaResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7424,13 +7240,6 @@ func (client ComputeClient) updateConsoleHistory(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateConsoleHistoryResponse
 	var httpResponse *http.Response
@@ -7491,13 +7300,6 @@ func (client ComputeClient) updateDedicatedVmHost(ctx context.Context, request c
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateDedicatedVmHostResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7551,13 +7353,6 @@ func (client ComputeClient) updateFirmwareReport(ctx context.Context, request co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateFirmwareReportResponse
 	var httpResponse *http.Response
@@ -7616,13 +7411,6 @@ func (client ComputeClient) updateImage(ctx context.Context, request common.OCIR
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateImageResponse
 	var httpResponse *http.Response
@@ -7686,13 +7474,6 @@ func (client ComputeClient) updateInstance(ctx context.Context, request common.O
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateInstanceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7745,13 +7526,6 @@ func (client ComputeClient) updateInstanceConsoleConnection(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateInstanceConsoleConnectionResponse
 	var httpResponse *http.Response
@@ -7812,13 +7586,6 @@ func (client ComputeClient) updateInstanceMaintenanceEvent(ctx context.Context, 
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateInstanceMaintenanceEventResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -7871,13 +7638,6 @@ func (client ComputeClient) updateVolumeAttachment(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateVolumeAttachmentResponse
 	var httpResponse *http.Response

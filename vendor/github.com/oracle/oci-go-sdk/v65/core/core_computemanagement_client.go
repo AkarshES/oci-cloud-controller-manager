@@ -1,4 +1,4 @@
-// Copyright (c) 2016, 2018, 2024, Oracle and/or its affiliates.  All rights reserved.
+// Copyright (c) 2016, 2018, 2025, Oracle and/or its affiliates.  All rights reserved.
 // This software is dual-licensed to you under the Universal Permissive License (UPL) 1.0 as shown at https://oss.oracle.com/licenses/upl or Apache License 2.0 as shown at http://www.apache.org/licenses/LICENSE-2.0. You may choose either license.
 // Code generated. DO NOT EDIT.
 
@@ -6,11 +6,11 @@
 //
 // Use the Core Services API to manage resources such as virtual cloud networks (VCNs),
 // compute instances, and block storage volumes. For more information, see the console
-// documentation for the Networking (https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/overview.htm),
-// Compute (https://docs.cloud.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
-// Block Volume (https://docs.cloud.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
+// documentation for the Networking (https://docs.oracle.com/iaas/Content/Network/Concepts/overview.htm),
+// Compute (https://docs.oracle.com/iaas/Content/Compute/Concepts/computeoverview.htm), and
+// Block Volume (https://docs.oracle.com/iaas/Content/Block/Concepts/overview.htm) services.
 // The required permissions are documented in the
-// Details for the Core Services (https://docs.cloud.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
+// Details for the Core Services (https://docs.oracle.com/iaas/Content/Identity/Reference/corepolicyreference.htm) article.
 //
 
 package core
@@ -73,7 +73,7 @@ func newComputeManagementClientFromBaseClient(baseClient common.BaseClient, conf
 
 // SetRegion overrides the region of this client.
 func (client *ComputeManagementClient) SetRegion(region string) {
-	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://{dualStack?ds.:}iaas.{region}.{dualStack?oci.:}{secondLevelDomain}", "iaas")
+	client.Host, _ = common.StringToRegion(region).EndpointForTemplateDottedRegion("iaas", "https://iaas.{region}.{dualStack?ds.oci.:}{secondLevelDomain}", "iaas")
 }
 
 // SetConfigurationProvider sets the configuration provider including the region, returns an error if is not valid
@@ -97,15 +97,9 @@ func (client *ComputeManagementClient) ConfigurationProvider() *common.Configura
 	return client.config
 }
 
-// EnableDualStackEndpoints Determines whether dual stack endpoint should be used or not.
-// Default value is false
-func (client *ComputeManagementClient) EnableDualStackEndpoints(enableDualStack bool) {
-	client.BaseClient.EnableDualStackEndpoints(enableDualStack)
-}
-
 // AttachInstancePoolInstance Attaches an instance to an instance pool. For information about the prerequisites
 // that an instance must meet before you can attach it to a pool, see
-// Attaching an Instance to an Instance Pool (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/updatinginstancepool.htm#attach-instance).
+// Attaching an Instance to an Instance Pool (https://docs.oracle.com/iaas/Content/Compute/Tasks/updatinginstancepool.htm#attach-instance).
 func (client ComputeManagementClient) AttachInstancePoolInstance(ctx context.Context, request AttachInstancePoolInstanceRequest) (response AttachInstancePoolInstanceResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -147,13 +141,6 @@ func (client ComputeManagementClient) attachInstancePoolInstance(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response AttachInstancePoolInstanceResponse
 	var httpResponse *http.Response
@@ -213,13 +200,6 @@ func (client ComputeManagementClient) attachLoadBalancer(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response AttachLoadBalancerResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -235,10 +215,10 @@ func (client ComputeManagementClient) attachLoadBalancer(ctx context.Context, re
 	return response, err
 }
 
-// ChangeClusterNetworkCompartment Moves a cluster network with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm)
+// ChangeClusterNetworkCompartment Moves a cluster network with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm)
 // into a different compartment within the same tenancy. For
 // information about moving resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // When you move a cluster network to a different compartment, associated resources such as the instances
 // in the cluster network, boot volumes, and VNICs are not moved.
 func (client ComputeManagementClient) ChangeClusterNetworkCompartment(ctx context.Context, request ChangeClusterNetworkCompartmentRequest) (response ChangeClusterNetworkCompartmentResponse, err error) {
@@ -283,13 +263,6 @@ func (client ComputeManagementClient) changeClusterNetworkCompartment(ctx contex
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeClusterNetworkCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -307,7 +280,7 @@ func (client ComputeManagementClient) changeClusterNetworkCompartment(ctx contex
 
 // ChangeInstanceConfigurationCompartment Moves an instance configuration into a different compartment within the same tenancy.
 // For information about moving resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // When you move an instance configuration to a different compartment, associated resources such as
 // instance pools are not moved.
 // **Important:** Most of the properties for an existing instance configuration, including the compartment,
@@ -315,7 +288,7 @@ func (client ComputeManagementClient) changeClusterNetworkCompartment(ctx contex
 // to a different compartment, you will not be able to use the instance configuration to manage instance pools
 // in the new compartment. If you want to update an instance configuration to point to a different compartment,
 // you should instead create a new instance configuration in the target compartment using
-// CreateInstanceConfiguration (https://docs.cloud.oracle.com/iaas/api/#/en/iaas/20160918/InstanceConfiguration/CreateInstanceConfiguration).
+// CreateInstanceConfiguration (https://docs.oracle.com/iaas/api/#/en/iaas/20160918/InstanceConfiguration/CreateInstanceConfiguration).
 func (client ComputeManagementClient) ChangeInstanceConfigurationCompartment(ctx context.Context, request ChangeInstanceConfigurationCompartmentRequest) (response ChangeInstanceConfigurationCompartmentResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -358,13 +331,6 @@ func (client ComputeManagementClient) changeInstanceConfigurationCompartment(ctx
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeInstanceConfigurationCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -382,7 +348,7 @@ func (client ComputeManagementClient) changeInstanceConfigurationCompartment(ctx
 
 // ChangeInstancePoolCompartment Moves an instance pool into a different compartment within the same tenancy. For
 // information about moving resources between compartments, see
-// Moving Resources to a Different Compartment (https://docs.cloud.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
+// Moving Resources to a Different Compartment (https://docs.oracle.com/iaas/Content/Identity/Tasks/managingcompartments.htm#moveRes).
 // When you move an instance pool to a different compartment, associated resources such as the instances in
 // the pool, boot volumes, VNICs, and autoscaling configurations are not moved.
 func (client ComputeManagementClient) ChangeInstancePoolCompartment(ctx context.Context, request ChangeInstancePoolCompartmentRequest) (response ChangeInstancePoolCompartmentResponse, err error) {
@@ -427,13 +393,6 @@ func (client ComputeManagementClient) changeInstancePoolCompartment(ctx context.
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ChangeInstancePoolCompartmentResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -449,7 +408,7 @@ func (client ComputeManagementClient) changeInstancePoolCompartment(ctx context.
 	return response, err
 }
 
-// CreateClusterNetwork Creates a cluster network with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
+// CreateClusterNetwork Creates a cluster network with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
 // A cluster network is a group of high performance computing (HPC), GPU, or optimized bare metal
 // instances that are connected with an ultra low-latency remote direct memory access (RDMA) network.
 // Cluster networks with instance pools use instance pools to manage groups of identical instances.
@@ -502,13 +461,6 @@ func (client ComputeManagementClient) createClusterNetwork(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response CreateClusterNetworkResponse
 	var httpResponse *http.Response
@@ -568,13 +520,6 @@ func (client ComputeManagementClient) createInstanceConfiguration(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response CreateInstanceConfigurationResponse
 	var httpResponse *http.Response
@@ -637,13 +582,6 @@ func (client ComputeManagementClient) createInstancePool(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response CreateInstancePoolResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -696,13 +634,6 @@ func (client ComputeManagementClient) deleteInstanceConfiguration(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response DeleteInstanceConfigurationResponse
 	var httpResponse *http.Response
@@ -762,13 +693,6 @@ func (client ComputeManagementClient) detachInstancePoolInstance(ctx context.Con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DetachInstancePoolInstanceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -827,13 +751,6 @@ func (client ComputeManagementClient) detachLoadBalancer(ctx context.Context, re
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response DetachLoadBalancerResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -849,7 +766,7 @@ func (client ComputeManagementClient) detachLoadBalancer(ctx context.Context, re
 	return response, err
 }
 
-// GetClusterNetwork Gets information about a cluster network with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
+// GetClusterNetwork Gets information about a cluster network with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
 func (client ComputeManagementClient) GetClusterNetwork(ctx context.Context, request GetClusterNetworkRequest) (response GetClusterNetworkResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -886,13 +803,6 @@ func (client ComputeManagementClient) getClusterNetwork(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetClusterNetworkResponse
 	var httpResponse *http.Response
@@ -947,13 +857,6 @@ func (client ComputeManagementClient) getInstanceConfiguration(ctx context.Conte
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetInstanceConfigurationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1006,13 +909,6 @@ func (client ComputeManagementClient) getInstancePool(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetInstancePoolResponse
 	var httpResponse *http.Response
@@ -1067,13 +963,6 @@ func (client ComputeManagementClient) getInstancePoolInstance(ctx context.Contex
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response GetInstancePoolInstanceResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1126,13 +1015,6 @@ func (client ComputeManagementClient) getInstancePoolLoadBalancerAttachment(ctx 
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response GetInstancePoolLoadBalancerAttachmentResponse
 	var httpResponse *http.Response
@@ -1200,13 +1082,6 @@ func (client ComputeManagementClient) launchInstanceConfiguration(ctx context.Co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response LaunchInstanceConfigurationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1222,7 +1097,7 @@ func (client ComputeManagementClient) launchInstanceConfiguration(ctx context.Co
 	return response, err
 }
 
-// ListClusterNetworkInstances Lists the instances in a cluster network with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
+// ListClusterNetworkInstances Lists the instances in a cluster network with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
 func (client ComputeManagementClient) ListClusterNetworkInstances(ctx context.Context, request ListClusterNetworkInstancesRequest) (response ListClusterNetworkInstancesResponse, err error) {
 	var ociResponse common.OCIResponse
 	policy := common.NoRetryPolicy()
@@ -1260,13 +1135,6 @@ func (client ComputeManagementClient) listClusterNetworkInstances(ctx context.Co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListClusterNetworkInstancesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1282,7 +1150,7 @@ func (client ComputeManagementClient) listClusterNetworkInstances(ctx context.Co
 	return response, err
 }
 
-// ListClusterNetworks Lists the cluster networks with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm)
+// ListClusterNetworks Lists the cluster networks with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm)
 // in the specified compartment.
 func (client ComputeManagementClient) ListClusterNetworks(ctx context.Context, request ListClusterNetworksRequest) (response ListClusterNetworksResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -1320,13 +1188,6 @@ func (client ComputeManagementClient) listClusterNetworks(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListClusterNetworksResponse
 	var httpResponse *http.Response
@@ -1381,13 +1242,6 @@ func (client ComputeManagementClient) listInstanceConfigurations(ctx context.Con
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListInstanceConfigurationsResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1441,13 +1295,6 @@ func (client ComputeManagementClient) listInstancePoolInstances(ctx context.Cont
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response ListInstancePoolInstancesResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1500,13 +1347,6 @@ func (client ComputeManagementClient) listInstancePools(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ListInstancePoolsResponse
 	var httpResponse *http.Response
@@ -1566,13 +1406,6 @@ func (client ComputeManagementClient) resetInstancePool(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response ResetInstancePoolResponse
 	var httpResponse *http.Response
@@ -1635,13 +1468,6 @@ func (client ComputeManagementClient) softresetInstancePool(ctx context.Context,
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response SoftresetInstancePoolResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1703,13 +1529,6 @@ func (client ComputeManagementClient) softstopInstancePool(ctx context.Context, 
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response SoftstopInstancePoolResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1768,13 +1587,6 @@ func (client ComputeManagementClient) startInstancePool(ctx context.Context, req
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response StartInstancePoolResponse
 	var httpResponse *http.Response
@@ -1835,13 +1647,6 @@ func (client ComputeManagementClient) stopInstancePool(ctx context.Context, requ
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response StopInstancePoolResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1857,7 +1662,7 @@ func (client ComputeManagementClient) stopInstancePool(ctx context.Context, requ
 	return response, err
 }
 
-// TerminateClusterNetwork Deletes (terminates) a cluster network with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
+// TerminateClusterNetwork Deletes (terminates) a cluster network with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
 // When you delete a cluster network, all of its resources are permanently deleted,
 // including associated instances and instance pools.
 func (client ComputeManagementClient) TerminateClusterNetwork(ctx context.Context, request TerminateClusterNetworkRequest) (response TerminateClusterNetworkResponse, err error) {
@@ -1896,13 +1701,6 @@ func (client ComputeManagementClient) terminateClusterNetwork(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response TerminateClusterNetworkResponse
 	var httpResponse *http.Response
@@ -1962,13 +1760,6 @@ func (client ComputeManagementClient) terminateInstancePool(ctx context.Context,
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response TerminateInstancePoolResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -1984,7 +1775,7 @@ func (client ComputeManagementClient) terminateInstancePool(ctx context.Context,
 	return response, err
 }
 
-// UpdateClusterNetwork Updates a cluster network with instance pools (https://docs.cloud.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
+// UpdateClusterNetwork Updates a cluster network with instance pools (https://docs.oracle.com/iaas/Content/Compute/Tasks/managingclusternetworks.htm).
 // The OCID of the cluster network remains the same.
 func (client ComputeManagementClient) UpdateClusterNetwork(ctx context.Context, request UpdateClusterNetworkRequest) (response UpdateClusterNetworkResponse, err error) {
 	var ociResponse common.OCIResponse
@@ -2027,13 +1818,6 @@ func (client ComputeManagementClient) updateClusterNetwork(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateClusterNetworkResponse
 	var httpResponse *http.Response
@@ -2093,13 +1877,6 @@ func (client ComputeManagementClient) updateInstanceConfiguration(ctx context.Co
 		return nil, err
 	}
 
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
-
 	var response UpdateInstanceConfigurationResponse
 	var httpResponse *http.Response
 	httpResponse, err = client.Call(ctx, &httpRequest)
@@ -2158,13 +1935,6 @@ func (client ComputeManagementClient) updateInstancePool(ctx context.Context, re
 	if err != nil {
 		return nil, err
 	}
-
-	host := client.Host
-	common.UpdateEndpointTemplateForOptions(&client.BaseClient)
-	common.SetMissingTemplateParams(&client.BaseClient)
-	defer func() {
-		client.Host = host
-	}()
 
 	var response UpdateInstancePoolResponse
 	var httpResponse *http.Response
