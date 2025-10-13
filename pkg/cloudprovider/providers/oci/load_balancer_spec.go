@@ -217,6 +217,9 @@ const (
 	// LB experience - https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/CreateLoadBalancerDetails
 	// NLB experience - https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
 	ServiceAnnotationReservedIPs = "oci.oraclecloud.com/reserved-ips"
+
+	// ServiceAnnotationLoadBalancerCertificateOcid is the service annotation for providing the OCI certificate OCID
+	ServiceAnnotationLoadBalancerCertificateOcid = "service.beta.kubernetes.io/oci-load-balancer-tls-certificate"
 )
 
 // NLB specific annotations
@@ -351,6 +354,7 @@ type SSLConfig struct {
 
 	BackendSetSSLSecretName      string
 	BackendSetSSLSecretNamespace string
+	ListenerPortSSLMap           map[int]string
 
 	sslSecretReader
 }
@@ -465,6 +469,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	listeners, err := getListeners(svc, sslConfig, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
+	logger.Debugf("Listerner expected %+v", listeners)
 	if err != nil {
 		return nil, err
 	}
@@ -1373,7 +1378,11 @@ func GetSSLConfiguration(cfg *SSLConfig, name string, port int, sslConfigAnnotat
 }
 
 func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurationAnnotation string) (*client.GenericSslConfigurationDetails, error) {
-	if cfg == nil || !cfg.Ports.Has(port) || len(name) == 0 {
+	if cfg == nil || !cfg.Ports.Has(port) {
+		return nil, nil
+	}
+	// Either secret name or certificate OCID should be present for SSL configuration
+	if len(name) == 0 && (len(cfg.ListenerPortSSLMap) == 0 || (len(cfg.ListenerPortSSLMap[port]) != 0 && cfg.ListenerPortSSLMap[port] == "")) {
 		return nil, nil
 	}
 	// TODO: fast-follow to pass the sslconfiguration object directly to loadbalancer
@@ -1385,10 +1394,20 @@ func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurati
 			return nil, errors.Wrap(err, "failed to parse SSL Configuration annotation")
 		}
 	}
-	genericSSLConfigurationDetails := &client.GenericSslConfigurationDetails{
-		CertificateName:       &name,
-		VerifyDepth:           common.Int(0),
-		VerifyPeerCertificate: common.Bool(false),
+	genericSSLConfigurationDetails := &client.GenericSslConfigurationDetails{}
+	if len(name) > 0 {
+		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
+			CertificateName:       &name,
+			VerifyDepth:           common.Int(0),
+			VerifyPeerCertificate: common.Bool(false),
+		}
+	}
+	if cfg.ListenerPortSSLMap[port] != "" {
+		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
+			CertificateIds:        []string{cfg.ListenerPortSSLMap[port]},
+			VerifyDepth:           common.Int(0),
+			VerifyPeerCertificate: common.Bool(false),
+		}
 	}
 	if extractCipherSuite != nil {
 		genericSSLConfigurationDetails.CipherSuiteName = extractCipherSuite.CipherSuiteName
@@ -1456,7 +1475,7 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 		var secretName string
 		var err error
 		var sslConfiguration *client.GenericSslConfigurationDetails
-		if sslCfg != nil && len(sslCfg.ListenerSSLSecretName) != 0 {
+		if sslCfg != nil && (len(sslCfg.ListenerSSLSecretName) != 0 || len(sslCfg.ListenerPortSSLMap) != 0) {
 			secretName = sslCfg.ListenerSSLSecretName
 			listenerCipherSuiteAnnotation, _ := svc.Annotations[ServiceAnnotationLoadbalancerListenerSSLConfig]
 			sslConfiguration, err = getSSLConfiguration(sslCfg, secretName, port, listenerCipherSuiteAnnotation)
@@ -2164,4 +2183,31 @@ func getReservedIPs(svc *v1.Service) ([]string, error) {
 	}
 
 	return reservedIPList, nil
+}
+
+func getTlsCertificateOCID(svc *v1.Service) (name string, e error) {
+	certificateOcid, ok := svc.Annotations[ServiceAnnotationLoadBalancerCertificateOcid]
+	if !ok || certificateOcid == "" {
+		return "", fmt.Errorf("Invalid Certificate OCID: [%s] provided with anotation: %s", certificateOcid, ServiceAnnotationLoadBalancerCertificateOcid)
+	}
+	return certificateOcid, nil
+}
+
+func updateSSLConfigFromCertOCID(sslConfig *SSLConfig, service *v1.Service) (*SSLConfig, error) {
+	// SSL Config update with listeners port sslConfigurationDetails as certificate OCID
+	if _, ok := service.Annotations[ServiceAnnotationLoadBalancerCertificateOcid]; ok {
+		ports, err := getSSLEnabledPorts(service)
+		if err != nil {
+			return nil, err
+		}
+		ocid, _ := getTlsCertificateOCID(service)
+		listenerTlsConfigMap := make(map[int]string)
+		for _, port := range ports {
+			// CertificateIds are supported in oci sdk version v65
+			listenerTlsConfigMap[port] = ocid
+		}
+		// Update Listener TLS in SSL Config
+		sslConfig.ListenerPortSSLMap = listenerTlsConfigMap
+	}
+	return sslConfig, nil
 }

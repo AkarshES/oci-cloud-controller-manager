@@ -748,6 +748,10 @@ func (cp *CloudProvider) EnsureLoadBalancer(ctx context.Context, clusterName str
 		secretListenerString := service.Annotations[ServiceAnnotationLoadBalancerTLSSecret]
 		secretBackendSetString := service.Annotations[ServiceAnnotationLoadBalancerTLSBackendSetSecret]
 		sslConfig = NewSSLConfig(secretListenerString, secretBackendSetString, service, ports, cp)
+		// Update SSLConfig from certificate OCID
+		if sslConfig, err = updateSSLConfigFromCertOCID(sslConfig, service); err != nil {
+			logger.With(zap.Error(err)).Error("Failed to update SSL certificate.")
+		}
 	}
 	lbSubnetIds, err := lbProvider.getLoadBalancerSubnets(ctx, service)
 	if err != nil {
@@ -1628,6 +1632,10 @@ func (cp *CloudProvider) UpdateLoadBalancer(ctx context.Context, clusterName str
 		secretListenerString := service.Annotations[ServiceAnnotationLoadBalancerTLSSecret]
 		secretBackendSetString := service.Annotations[ServiceAnnotationLoadBalancerTLSBackendSetSecret]
 		sslConfig = NewSSLConfig(secretListenerString, secretBackendSetString, service, ports, cp)
+		// Update SSLConfig from certificate OCID
+		if sslConfig, err = updateSSLConfigFromCertOCID(sslConfig, service); err != nil {
+			logger.With(zap.Error(err)).Error("Failed to update SSL certificate.")
+		}
 	}
 
 	lbSubnetIds, err := lbProvider.getLoadBalancerSubnets(ctx, service)
