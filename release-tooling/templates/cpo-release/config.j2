@@ -1,50 +1,48 @@
-{% set property = 'csi-image-version-mapping' %}
-{% set k8s_versions = '1.28, 1.29, 1.30, 1.31, 1.32, 1.33' %}
-{% set l1_peer_reviewer = '[~dhananjay.nagargoje@oracle.com]' %}
-{% set l1_manager_reviewer = '[~mrunal.pagnis@oracle.com]' %}
+{% set property = 'ccm-image-version-mapping' %}
+{% set k8s_versions = '1.30, 1.31, 1.32, 1.33, 1.34' %}
+{% set l1_peer_reviewer = '[~lalit.s.singh@oracle.com]' %}
+{% set l1_manager_reviewer = '[~rohit.chaware@oracle.com]' %}
 {% set l2_peer_reviewer = '[~akarsh.ellore.sreenath@oracle.com]' %}
 {% set l2_manager_reviewer = '[~sachin.goel@oracle.com]' %}
-{% set changelog = '[CPO Release 1.14.0 changelog|https://confluence.oraclecorp.com/confluence/display/OCIOKE/OKE+CPO+Release+-+Version+%3A+v1.14.0]' %}
-{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1822/overview]' %}
-{% set e2e_ticket = '[E2E results|https://jira.oci.oraclecorp.com/browse/OKE-39472]' %}
-{% set app_release_name = 'GammaTurtle' %}
-{% set app_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/8fe23f71-2736-408c-800b-56f7c8314ed1]' %}
-{% set infra_release_name = 'GammaSmart' %}
-{% set infra_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/8fe23f71-2736-408c-800b-56f7c8314ed1]' %}
-{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/DI9hcX' %}
-{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/nvaBiU' %}
-{% set infra_rollback_release_name = 'GammaOrganic' %}
+{% set changelog = '[CPO Release 1.15.1 changelog|]' %}
+{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1889/overview]' %}
+{% set e2e_ticket = '[E2E results|https://jira.oci.oraclecorp.com/browse/OKE-40198]' %}
+{% set app_release_name = 'GammaRaspberry' %}
+{% set app_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/31a7ca97-4a5d-4426-846b-2f2f710fadc6]' %}
+{% set infra_release_name = 'GammaSurprised' %}
+{% set infra_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/31a7ca97-4a5d-4426-846b-2f2f710fadc6]' %}
+{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/Fidvhi' %}
+{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/JfH3qr' %}
+{% set infra_rollback_release_name = 'GammaSmart' %}
 {% set infra_rollback_test_link = 'https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/releases/7840635a-0185-4605-98ba-906e4eb849f6' %}
-{% set infra_rollback_config = '5c133ea6-0dd7-4f63-8797-ed178d2db098' %}
-{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/t/AesrvX' %}
-{% set infra_rollback_commit = '56c0ab26' %}
-{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/56c0ab263307cc159c911a195b7b800c7a5dc940' %}
+{% set infra_rollback_config = '8fe23f71-2736-408c-800b-56f7c8314ed1' %}
+{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/8fe23f71-2736-408c-800b-56f7c8314ed1' %}
+{% set infra_rollback_commit = '58ddded205abd372e0f4517c4a28a2ac0580dc19' %}
+{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/58ddded205abd372e0f4517c4a28a2ac0580dc19' %}
 
 {% macro images_list() %}
-    "oke-public-cloud-provider-oci": "v1.28-79d4f40b682-84",
-    "oke-public-cloud-provider-oci": "v1.29-393f7c992a6-112",
-    "oke-public-cloud-provider-oci": "v1.30-b38c1eb59d9-122",
-    "oke-public-cloud-provider-oci": "v1.31-a6832b543c2-89",
-    "oke-public-cloud-provider-oci": "v1.32-fd1b5537713-59",
-    "oke-public-cloud-provider-oci": "v1.33-1fb97431d5a-29",
+    oke-public-cloud-provider-oci:v1.30-c435522d651-125
+    oke-public-cloud-provider-oci:v1.31-a6420995e6f-99
+    oke-public-cloud-provider-oci:v1.32-b09589d7c0e-66
+    oke-public-cloud-provider-oci:v1.33-34743d2a1f2-36
+    oke-public-cloud-provider-oci:v1.34-8f0fbf7e71e-9
+    oke-public-cloud-provider-oci:v1.34-8f0fbf7e71e-9-csi
 {%- endmacro %}
 
 {% macro mapping_changes() %}
-    "v1.28" : "v1.28-79d4f40b682-84@sha256:d8e0957a384781955a1e6b1dfb5498fa8ffb585face9a407486692ca685343fa",
-    "v1.29" : "v1.29-393f7c992a6-112@sha256:cfc0512abe6e31a1e6020e45ebd7e79f89dc8f7bf5edc2655757762d5c662886",
-    "v1.30" : "v1.30-b38c1eb59d9-122@sha256:8d9bdc648e85a02e74599c965bca488c4ed04193356ed666fda2be28b7f6f3c6",
-    "v1.31" : "v1.31-a6832b543c2-89@sha256:3a07aeefee957255d20ce57276e43250c77f0365515d713faaaaf35e00761f13",
-    "v1.32" : "v1.32-fd1b5537713-59@sha256:0e1b38c3956d7a8cfa36138828568e64a8633bfec1809a3ebeeba41a77cda48e",
-    "v1.33" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8"
+    "v1.30" : "v1.30-c435522d651-125@sha256:3035c0f0f0c3d31fa6ca1e0db6e7bf9a1122160cca9848001381927c941e3fd4",
+    "v1.31" : "v1.31-a6420995e6f-99@sha256:7b0de551f2a0c634c7ef434ac18e229662c4441fe38c251f93651811dee194fd",
+    "v1.32" : "v1.32-b09589d7c0e-66@sha256:d373ffb19a60eeda987c4841d38c0cd26de63405495bdb5da658f6ff3ee8ad81",
+    "v1.33" : "v1.33-34743d2a1f2-36@sha256:9d1f3eb7e7c8c7876ba62c7d9ca0ba92bbfed97c13799efa8ef75beb3cdd442c",
+    "v1.34" : "v1.34-8f0fbf7e71e-9@sha256:83a9edce1f90b214327ca0003e5c0a5204e3805f64009f8c8981db5d174f37c4",
 {%- endmacro %}
 
 {% macro rollback_mapping() %}
-    "v1.28": "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
-    "v1.29": "v1.29-0f63a5020b8-110@sha256:466c7d32860ef68c4c98feba232409bf1580c732ee23fd3294ce59e2653bd125",
-    "v1.30": "v1.30-faf8d3457bc-116@sha256:dd8374eb5f76ca6ef34e54b91e84685cde18c0ddd317c88226abafaf146b1fa9",
-    "v1.31": "v1.31-c009ab5e5a7-76@sha256:2c37ec55ec3c3106461c308611c8f853446a18d6ca0f6456b7b3503cc719a94d",
-    "v1.32": "v1.32-59689274696-43@sha256:29410f43180782930c9a84892dc643eba47b6e4f1e99e341ceebbd8c1dddef66",
-    "v1.33": "v1.33-f7750ce0b4d-17@sha256:a6936d3535e17b93a725d1470d73131760d667b140ae7727d78cde9e55d84db3",
+    "v1.30" : "v1.30-b38c1eb59d9-122@sha256:8d9bdc648e85a02e74599c965bca488c4ed04193356ed666fda2be28b7f6f3c6",
+    "v1.31" : "v1.31-a6832b543c2-89@sha256:3a07aeefee957255d20ce57276e43250c77f0365515d713faaaaf35e00761f13",
+    "v1.32" : "v1.32-fd1b5537713-59@sha256:0e1b38c3956d7a8cfa36138828568e64a8633bfec1809a3ebeeba41a77cda48e",
+    "v1.33" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
+    "v1.34" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
 {%- endmacro %}
 
 {% set change_locations = [
