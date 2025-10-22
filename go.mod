@@ -56,7 +56,6 @@ require (
 	github.com/kubernetes-csi/external-attacher v0.0.0-20241219151210-16acc03adce9 //v4.8.0
 	github.com/kubernetes-csi/external-provisioner/v5 v5.2.0 //v5.2.0
 	github.com/kubernetes-csi/external-resizer v1.13.1
-	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
 	github.com/oracle/oci-go-sdk/v65 v65.89.3-p
@@ -94,7 +93,7 @@ require (
 	bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19
 	github.com/go-logr/logr v1.4.2
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
-	github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
+	github.com/kubernetes-csi/external-snapshotter/v8 v8.2.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/sync v0.11.0
 	golang.org/x/time v0.9.0
