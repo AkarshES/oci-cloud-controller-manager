@@ -49,11 +49,10 @@ require (
 	github.com/container-storage-interface/spec v1.11.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/golang/protobuf v1.5.4
-	github.com/kubernetes-csi/csi-lib-utils v0.21.0
+	github.com/kubernetes-csi/csi-lib-utils v0.22.0
 	github.com/kubernetes-csi/external-attacher v0.0.0-20250226125434-edc3ddc185aa //v4.8.1
 	github.com/kubernetes-csi/external-provisioner/v5 v5.2.0 //v5.2.0
 	github.com/kubernetes-csi/external-resizer v1.13.2
-	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
 	github.com/oracle/oci-go-sdk/v65 v65.96.0-p
@@ -90,7 +89,7 @@ require (
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
-	github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
+	github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/sync v0.15.0
 	golang.org/x/time v0.11.0
@@ -154,7 +153,6 @@ require (
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect

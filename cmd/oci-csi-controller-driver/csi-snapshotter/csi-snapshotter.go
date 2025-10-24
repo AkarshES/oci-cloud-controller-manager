@@ -27,11 +27,11 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/metrics"
 	csirpc "github.com/kubernetes-csi/csi-lib-utils/rpc"
 	"github.com/kubernetes-csi/external-resizer/pkg/util"
-	clientset "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned"
-	snapshotscheme "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/scheme"
-	informers "github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions"
-	controller "github.com/kubernetes-csi/external-snapshotter/v6/pkg/sidecar-controller"
-	"github.com/kubernetes-csi/external-snapshotter/v6/pkg/snapshotter"
+	clientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
+	snapshotscheme "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned/scheme"
+	informers "github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions"
+	controller "github.com/kubernetes-csi/external-snapshotter/v8/pkg/sidecar-controller"
+	"github.com/kubernetes-csi/external-snapshotter/v8/pkg/snapshotter"
 	"google.golang.org/grpc"
 	coreinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -41,7 +41,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	"github.com/kubernetes-csi/external-snapshotter/v6/pkg/group_snapshotter"
+	"github.com/kubernetes-csi/external-snapshotter/v8/pkg/group_snapshotter"
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-controller-driver/csioptions"
 )
 
@@ -149,11 +149,11 @@ func StartCSISnapshotter(csioptions csioptions.CSIOptions, stopCh chan struct{})
 		csioptions.GroupSnapshotNamePrefix,
 		csioptions.GroupSnapshotNameUUIDLength,
 		extraCreateMetadata,
-		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](retryIntervalStart, retryIntervalMax),
 		*enableVolumeGroupSnapshots,
-		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotContents(),
-		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotClasses(),
-		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
+		factory.Groupsnapshot().V1beta1().VolumeGroupSnapshotContents(),
+		factory.Groupsnapshot().V1beta1().VolumeGroupSnapshotClasses(),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](retryIntervalStart, retryIntervalMax),
 	)
 
 	run := func(ctx context.Context) {

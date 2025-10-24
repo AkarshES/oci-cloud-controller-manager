@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/kubernetes-csi/csi-lib-utils/leaderelection"
-	informers "github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions"
-	controller "github.com/kubernetes-csi/external-snapshotter/v6/pkg/common-controller"
-	"github.com/kubernetes-csi/external-snapshotter/v6/pkg/metrics"
+	informers "github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions"
+	controller "github.com/kubernetes-csi/external-snapshotter/v8/pkg/common-controller"
+	"github.com/kubernetes-csi/external-snapshotter/v8/pkg/metrics"
 	coreinformers "k8s.io/client-go/informers"
 	v1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -74,17 +74,18 @@ func StartSnapshotController(csioptions csioptions.CSIOptions, stopCh chan struc
 		factory.Snapshot().V1().VolumeSnapshots(),
 		factory.Snapshot().V1().VolumeSnapshotContents(),
 		factory.Snapshot().V1().VolumeSnapshotClasses(),
-		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshots(),
-		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotContents(),
-		factory.Groupsnapshot().V1alpha1().VolumeGroupSnapshotClasses(),
+		factory.Groupsnapshot().V1beta1().VolumeGroupSnapshots(),
+		factory.Groupsnapshot().V1beta1().VolumeGroupSnapshotContents(),
+		factory.Groupsnapshot().V1beta1().VolumeGroupSnapshotClasses(),
 		coreFactory.Core().V1().PersistentVolumeClaims(),
+		coreFactory.Core().V1().PersistentVolumes(),
 		nodeInformer,
 		metricsManager,
 		csioptions.Resync,
-		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
-		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
-		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
-		workqueue.NewItemExponentialFailureRateLimiter(retryIntervalStart, retryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](retryIntervalStart, retryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](retryIntervalStart, retryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](retryIntervalStart, retryIntervalMax),
+		workqueue.NewTypedItemExponentialFailureRateLimiter[string](retryIntervalStart, retryIntervalMax),
 		false,
 		false,
 		*enableVolumeGroupSnapshots,
