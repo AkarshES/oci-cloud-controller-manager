@@ -234,10 +234,6 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/google/go-querystring v1.0.0
 ## explicit
 github.com/google/go-querystring/query
-# github.com/google/gofuzz v1.2.0
-## explicit; go 1.12
-github.com/google/gofuzz
-github.com/google/gofuzz/bytesource
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
@@ -309,8 +305,8 @@ github.com/klauspost/compress/internal/le
 github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
-# github.com/kubernetes-csi/csi-lib-utils v0.21.0
-## explicit; go 1.23.1
+# github.com/kubernetes-csi/csi-lib-utils v0.22.0
+## explicit; go 1.24.0
 github.com/kubernetes-csi/csi-lib-utils/accessmodes
 github.com/kubernetes-csi/csi-lib-utils/connection
 github.com/kubernetes-csi/csi-lib-utils/leaderelection
@@ -337,22 +333,6 @@ github.com/kubernetes-csi/external-resizer/pkg/modifier
 github.com/kubernetes-csi/external-resizer/pkg/modifycontroller
 github.com/kubernetes-csi/external-resizer/pkg/resizer
 github.com/kubernetes-csi/external-resizer/pkg/util
-# github.com/kubernetes-csi/external-snapshotter/client/v6 v6.3.0
-## explicit; go 1.20
-github.com/kubernetes-csi/external-snapshotter/client/v6/apis/volumegroupsnapshot/v1alpha1
-github.com/kubernetes-csi/external-snapshotter/client/v6/apis/volumesnapshot/v1
-github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned
-github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/scheme
-github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/typed/volumegroupsnapshot/v1alpha1
-github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/typed/volumesnapshot/v1
-github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions
-github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/internalinterfaces
-github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumegroupsnapshot
-github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumegroupsnapshot/v1alpha1
-github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumesnapshot
-github.com/kubernetes-csi/external-snapshotter/client/v6/informers/externalversions/volumesnapshot/v1
-github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumegroupsnapshot/v1alpha1
-github.com/kubernetes-csi/external-snapshotter/client/v6/listers/volumesnapshot/v1
 # github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 ## explicit; go 1.22.0
 github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumegroupsnapshot/v1beta1
@@ -361,15 +341,22 @@ github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned
 github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned/scheme
 github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned/typed/volumegroupsnapshot/v1beta1
 github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned/typed/volumesnapshot/v1
-# github.com/kubernetes-csi/external-snapshotter/v6 v6.3.4
-## explicit; go 1.20
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/common-controller
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/group_snapshotter
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/metrics
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/sidecar-controller
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/snapshotter
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/utils
-github.com/kubernetes-csi/external-snapshotter/v6/pkg/validation-webhook
+github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions
+github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions/internalinterfaces
+github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions/volumegroupsnapshot
+github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions/volumegroupsnapshot/v1beta1
+github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions/volumesnapshot
+github.com/kubernetes-csi/external-snapshotter/client/v8/informers/externalversions/volumesnapshot/v1
+github.com/kubernetes-csi/external-snapshotter/client/v8/listers/volumegroupsnapshot/v1beta1
+github.com/kubernetes-csi/external-snapshotter/client/v8/listers/volumesnapshot/v1
+# github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0
+## explicit; go 1.24.0
+github.com/kubernetes-csi/external-snapshotter/v8/pkg/common-controller
+github.com/kubernetes-csi/external-snapshotter/v8/pkg/group_snapshotter
+github.com/kubernetes-csi/external-snapshotter/v8/pkg/metrics
+github.com/kubernetes-csi/external-snapshotter/v8/pkg/sidecar-controller
+github.com/kubernetes-csi/external-snapshotter/v8/pkg/snapshotter
+github.com/kubernetes-csi/external-snapshotter/v8/pkg/utils
 # github.com/kylelemons/godebug v1.1.0
 ## explicit; go 1.11
 github.com/kylelemons/godebug/diff
