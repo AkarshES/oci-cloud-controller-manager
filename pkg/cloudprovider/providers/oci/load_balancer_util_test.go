@@ -2535,6 +2535,78 @@ func TestHasBackendSetChanged(t *testing.T) {
 			expected: true,
 		},
 		{
+			name: "Set IsInstantFailoverEnabled",
+			desired: client.GenericBackendSetDetails{
+				IsInstantFailoverEnabled: common.Bool(true),
+				Policy:                   common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			actual: client.GenericBackendSetDetails{
+				IsInstantFailoverEnabled: nil,
+				Policy:                   common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "IsInstantFailoverEnabled change",
+			desired: client.GenericBackendSetDetails{
+				IsInstantFailoverEnabled: common.Bool(true),
+				Policy:                   common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			actual: client.GenericBackendSetDetails{
+				IsInstantFailoverEnabled: common.Bool(false),
+				Policy:                   common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "no change - IsInstantFailoverEnabled set",
+			desired: client.GenericBackendSetDetails{
+				IsInstantFailoverEnabled: common.Bool(true),
+				Policy:                   common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			actual: client.GenericBackendSetDetails{
+				IsInstantFailoverEnabled: common.Bool(true),
+				Policy:                   common.String("policy"),
+				Backends: []client.GenericBackend{
+					{
+						IpAddress: common.String("0.0.0.0"),
+						Port:      common.Int(20),
+					},
+				},
+			},
+			expected: false,
+		},
+		{
 			name: "Set IsPreserveSource",
 			desired: client.GenericBackendSetDetails{
 				IsPreserveSource: nil,
