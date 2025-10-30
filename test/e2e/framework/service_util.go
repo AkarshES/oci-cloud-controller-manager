@@ -1042,6 +1042,22 @@ func (f *CloudProviderFramework) WaitForLoadBalancerShapeChange(lb *client.Gener
 	return nil
 }
 
+// WaitForNLBBackendSetFailoverChange polls for NLB Backend Set Instant Failover configuration comparing it to the expected
+func (f *CloudProviderFramework) WaitForNLBBackendSetFailoverChange(lb *client.GenericLoadBalancer, bs string, expected bool) error {
+	condition := func() (bool, error) {
+		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), "nlb", nil).GetLoadBalancer(context.TODO(), *lb.Id)
+		if err != nil {
+			return false, err
+		}
+		actual := updatedLB.BackendSets[bs].IsInstantFailoverEnabled
+		return actual != nil && *actual == expected, nil
+	}
+	if err := wait.Poll(15*time.Second, OCILBWRUpdateTimeout, condition); err != nil {
+		return fmt.Errorf("failed to update Instant Failover configuration, error: %s", err.Error())
+	}
+	return nil
+}
+
 func testHealthCheckConfig(loadBalancer *client.GenericLoadBalancer, retries int, timeout int, interval int) (bool, error) {
 	if loadBalancer != nil && len(loadBalancer.BackendSets) != 0 {
 		for _, backendSet := range loadBalancer.BackendSets {

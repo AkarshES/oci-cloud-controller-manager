@@ -308,6 +308,10 @@ const (
 	// ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix is a service annotation to specify NAT46 CIDR prefix
 	// Optional field for NAT46 use case. If specified, the CIDR of length /80 will be derived internally and used for NATing. ex: fd42:9baf:1e77:0011:0000:0000:0000:0000/80
 	ServiceAnnotationNetworkLoadBalancerNat46Ipv6CidrPrefix = "oci-network-load-balancer.oraclecloud.com/nat46-ipv6-cidr-prefix"
+
+	// ServiceAnnotationNetworkLoadBalancerIsInstantFailoverEnabled is a service annotation to redirect existing traffic to a healthy backend server
+	// if the current backend server becomes unhealthy https://docs.oracle.com/en-us/iaas/Content/NetworkLoadBalancer/NetworkLoadBalancers/create-network-load-balancer.htm
+	ServiceAnnotationNetworkLoadBalancerIsInstantFailoverEnabled = "oci-network-load-balancer.oraclecloud.com/is-instant-failover-enabled"
 )
 
 // Virtual Node Annotations
@@ -1027,16 +1031,22 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 			return nil, err
 		}
 
+		instantFailover, err := getInstantFailover(svc)
+		if err != nil {
+			return nil, err
+		}
+
 		var genericBackendSetDetails client.GenericBackendSetDetails
 		// create only v6 BackendSet when NAT46 is enabled.
 		// skip creating Backend Set with other versions.
 		genericBackendSetDetails = client.GenericBackendSetDetails{
-			Name:                  common.String(backendSetName),
-			Policy:                &loadbalancerPolicy,
-			HealthChecker:         healthChecker,
-			IsPreserveSource:      &isPreserveSource,
-			BackendMaxConnections: backendMaxConnections,
-			SslConfiguration:      sslConfiguration,
+			Name:                     common.String(backendSetName),
+			Policy:                   &loadbalancerPolicy,
+			HealthChecker:            healthChecker,
+			IsInstantFailoverEnabled: instantFailover,
+			IsPreserveSource:         &isPreserveSource,
+			BackendMaxConnections:    backendMaxConnections,
+			SslConfiguration:         sslConfiguration,
 		}
 		if nat46Enabled {
 			if strings.Contains(backendSetName, IPv6) && contains(listenerBackendIpVersion, IPv6) {
@@ -1369,6 +1379,20 @@ func getBackendSetBackendMaxConnections(svc *v1.Service) (value *int, err error)
 		value = common.Int(backendMaxConnections)
 	}
 	return
+}
+
+func getInstantFailover(svc *v1.Service) (*bool, error) {
+	var err error
+	instantFailover := false
+
+	if getLoadBalancerType(svc) == NLB {
+		if val, ok := svc.Annotations[ServiceAnnotationNetworkLoadBalancerIsInstantFailoverEnabled]; ok {
+			if instantFailover, err = strconv.ParseBool(val); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &instantFailover, nil
 }
 
 func GetSSLConfiguration(cfg *SSLConfig, name string, port int, sslConfigAnnotation string) (*client.GenericSslConfigurationDetails, error) {
