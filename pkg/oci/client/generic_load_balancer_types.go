@@ -21,8 +21,9 @@ type GenericBackendSetDetails struct {
 	BackendMaxConnections *int
 	SslConfiguration      *GenericSslConfigurationDetails
 	// Only needed for NLB
-	IsPreserveSource *bool
-	IpVersion        *GenericIpVersion
+	IsInstantFailoverEnabled *bool
+	IsPreserveSource         *bool
+	IpVersion                *GenericIpVersion
 }
 
 type GenericIpVersion string

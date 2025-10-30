@@ -1877,6 +1877,113 @@ var _ = Describe("Configure preservation of source IP in NLB", func() {
 	})
 })
 
+var _ = Describe("NLB instant failover", func() {
+
+	baseName := "instant-failover"
+	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
+
+	Context("[cloudprovider][ccm][lb][nlb-instant-failover]", func() {
+		It("should be possible configure instant failover in NLB", func() {
+			By("Setup service with failover enabled")
+			serviceName := "e2e-instant-failover"
+			ns := f.Namespace.Name
+
+			jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+			loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+			if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+				loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+			}
+
+			requestedIP := ""
+
+			tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeLoadBalancer
+				s.Spec.LoadBalancerIP = requestedIP
+				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
+					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:                            "nlb",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerIsInstantFailoverEnabled: "true",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:                        "true",
+				}
+				s.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
+				s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
+			})
+
+			By("creating a pod to be part of the TCP service " + serviceName)
+			jig.RunOrFail(ns, nil)
+
+			By("waiting for the TCP service to have a load balancer")
+			// Wait for the load balancer to be created asynchronously
+			tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+			sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+			lbName := cloudprovider.GetLoadBalancerName(tcpService)
+			sharedfw.Logf("LB Name is %s", lbName)
+			ctx := context.TODO()
+			compartmentId := ""
+			if setupF.Compartment1 != "" {
+				compartmentId = setupF.Compartment1
+			} else if f.CloudProviderConfig.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.CompartmentID
+			} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+			} else {
+				sharedfw.Failf("Compartment Id undefined.")
+			}
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "nlb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			sharedfw.ExpectNoError(err)
+
+			By("Validate instant failover in the backend set is as expected")
+			Expect(loadBalancer.BackendSets["TCP-80"].IsInstantFailoverEnabled).NotTo(BeNil())
+			Expect(loadBalancer.BackendSets["TCP-443"].IsInstantFailoverEnabled).NotTo(BeNil())
+			Expect(*loadBalancer.BackendSets["TCP-80"].IsInstantFailoverEnabled).To(BeTrue())
+			Expect(*loadBalancer.BackendSets["TCP-443"].IsInstantFailoverEnabled).To(BeTrue())
+
+			By("Instant failover can be disabled")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:     "nlb",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				}
+			})
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			By("Validate instant failover in the backend NOT set is as expected")
+			err = f.WaitForNLBBackendSetFailoverChange(loadBalancer, "TCP-80", false)
+			sharedfw.ExpectNoError(err)
+			err = f.WaitForNLBBackendSetFailoverChange(loadBalancer, "TCP-443", false)
+			sharedfw.ExpectNoError(err)
+
+			By("Instant failover can be re-enabled")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:                            "nlb",
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerIsInstantFailoverEnabled: "true",
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:                        "true",
+				}
+			})
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			By("Validate instant failover in the backend set is as expected")
+			err = f.WaitForNLBBackendSetFailoverChange(loadBalancer, "TCP-80", true)
+			sharedfw.ExpectNoError(err)
+			err = f.WaitForNLBBackendSetFailoverChange(loadBalancer, "TCP-443", true)
+			sharedfw.ExpectNoError(err)
+		})
+	})
+})
+
 var _ = Describe("LB Properties", func() {
 	baseName := "lb-properties"
 	f := sharedfw.NewDefaultFramework(baseName)

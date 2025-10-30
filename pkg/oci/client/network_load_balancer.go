@@ -262,11 +262,12 @@ func (c *networkLoadbalancer) CreateBackendSet(ctx context.Context, lbID string,
 		return "", RateLimitError(true, "CreateBackendSet")
 	}
 	createBackendSetDetails := networkloadbalancer.CreateBackendSetDetails{
-		Name:             &name,
-		Backends:         backendsToBackendDetails(details.Backends),
-		IsPreserveSource: details.IsPreserveSource,
-		HealthChecker:    healthCheckerToHealthCheckerDetails(details.HealthChecker),
-		Policy:           networkloadbalancer.NetworkLoadBalancingPolicyEnum(*details.Policy),
+		Name:                     &name,
+		Backends:                 backendsToBackendDetails(details.Backends),
+		IsInstantFailoverEnabled: details.IsInstantFailoverEnabled,
+		IsPreserveSource:         details.IsPreserveSource,
+		HealthChecker:            healthCheckerToHealthCheckerDetails(details.HealthChecker),
+		Policy:                   networkloadbalancer.NetworkLoadBalancingPolicyEnum(*details.Policy),
 	}
 
 	if details.IpVersion != nil {
@@ -302,10 +303,11 @@ func (c *networkLoadbalancer) UpdateBackendSet(ctx context.Context, lbID string,
 	}
 
 	updateBackendSetDetails := networkloadbalancer.UpdateBackendSetDetails{
-		Backends:         backendsToBackendDetails(details.Backends),
-		IsPreserveSource: details.IsPreserveSource,
-		HealthChecker:    healthCheckerToHealthCheckerDetails(details.HealthChecker),
-		Policy:           details.Policy,
+		Backends:                 backendsToBackendDetails(details.Backends),
+		IsInstantFailoverEnabled: details.IsInstantFailoverEnabled,
+		IsPreserveSource:         details.IsPreserveSource,
+		HealthChecker:            healthCheckerToHealthCheckerDetails(details.HealthChecker),
+		Policy:                   details.Policy,
 	}
 
 	if details.IpVersion != nil {
@@ -713,11 +715,12 @@ func (c *networkLoadbalancer) backendSetsToGenericBackendSetDetails(backendSets 
 				ResponseData:      v.HealthChecker.ResponseData,
 				Dns:               v.HealthChecker.Dns,
 			},
-			Name:             v.Name,
-			Policy:           &policyString,
-			Backends:         c.backendDetailsToGenericBackendDetails(v.Backends),
-			IsPreserveSource: v.IsPreserveSource,
-			IpVersion:        &ipVersion,
+			Name:                     v.Name,
+			Policy:                   &policyString,
+			Backends:                 c.backendDetailsToGenericBackendDetails(v.Backends),
+			IsInstantFailoverEnabled: v.IsInstantFailoverEnabled,
+			IsPreserveSource:         v.IsPreserveSource,
+			IpVersion:                &ipVersion,
 		}
 	}
 
@@ -815,9 +818,10 @@ func (c *networkLoadbalancer) genericBackendSetDetailsToBackendSets(backendSets 
 				ResponseData:      v.HealthChecker.ResponseData,
 				Dns:               v.HealthChecker.Dns,
 			},
-			Policy:           networkloadbalancer.NetworkLoadBalancingPolicyEnum(*v.Policy),
-			Backends:         c.genericBackendDetailsToBackendDetails(v.Backends),
-			IsPreserveSource: v.IsPreserveSource,
+			Policy:                   networkloadbalancer.NetworkLoadBalancingPolicyEnum(*v.Policy),
+			Backends:                 c.genericBackendDetailsToBackendDetails(v.Backends),
+			IsInstantFailoverEnabled: v.IsInstantFailoverEnabled,
+			IsPreserveSource:         v.IsPreserveSource,
 		}
 		if v.IpVersion != nil {
 			switch *v.IpVersion {
