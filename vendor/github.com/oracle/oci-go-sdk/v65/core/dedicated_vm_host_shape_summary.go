@@ -25,11 +25,14 @@ import (
 type DedicatedVmHostShapeSummary struct {
 
 	// The name of the dedicated VM host shape. You can enumerate all available shapes by calling
-	// dedicatedVmHostShapes.
+	// ListDedicatedVmHostShapes.
 	DedicatedVmHostShape *string `mandatory:"true" json:"dedicatedVmHostShape"`
 
 	// The shape's availability domain.
 	AvailabilityDomain *string `mandatory:"false" json:"availabilityDomain"`
+
+	// A list of capacity configs that are supported by this dedicated VM host shape.
+	CapacityConfigs []CapacityConfig `mandatory:"false" json:"capacityConfigs"`
 }
 
 func (m DedicatedVmHostShapeSummary) String() string {
@@ -43,7 +46,7 @@ func (m DedicatedVmHostShapeSummary) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

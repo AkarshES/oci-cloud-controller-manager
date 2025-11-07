@@ -114,6 +114,12 @@ const (
 	RegionAPDelhi1 Region = "ap-delhi-1"
 	//RegionSARiodejaneiro2 region Riodejaneiro
 	RegionSARiodejaneiro2 Region = "sa-riodejaneiro-2"
+	//RegionAPChennai1 region Chennai
+	RegionAPChennai1 Region = "ap-chennai-1"
+	//RegionEUTurin1 region Turin
+	RegionEUTurin1 Region = "eu-turin-1"
+	//RegionUSColumbus1 region Columbus
+	RegionUSColumbus1 Region = "us-columbus-1"
 	//RegionUSLangley1 region Langley
 	RegionUSLangley1 Region = "us-langley-1"
 	//RegionUSLuke1 region Luke
@@ -270,6 +276,9 @@ var shortNameRegion = map[string]Region{
 	"drz": RegionUSShawnee1,
 	"onm": RegionAPDelhi1,
 	"swq": RegionSARiodejaneiro2,
+	"des": RegionAPChennai1,
+	"nrq": RegionEUTurin1,
+	"vkz": RegionUSColumbus1,
 	"lfi": RegionUSLangley1,
 	"luf": RegionUSLuke1,
 	"ric": RegionUSGovAshburn1,
@@ -408,6 +417,9 @@ var regionRealm = map[Region]string{
 	RegionUSShawnee1:      "oc1",
 	RegionAPDelhi1:        "oc1",
 	RegionSARiodejaneiro2: "oc1",
+	RegionAPChennai1:      "oc1",
+	RegionEUTurin1:        "oc1",
+	RegionUSColumbus1:     "oc1",
 
 	RegionUSLangley1: "oc2",
 	RegionUSLuke1:    "oc2",

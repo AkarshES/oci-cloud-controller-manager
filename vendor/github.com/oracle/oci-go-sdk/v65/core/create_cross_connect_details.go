@@ -71,6 +71,12 @@ type CreateCrossConnectDetails struct {
 	CustomerReferenceName *string `mandatory:"false" json:"customerReferenceName"`
 
 	MacsecProperties *CreateMacsecProperties `mandatory:"false" json:"macsecProperties"`
+
+	// The name of the FastConnect device where this cross-connect is installed.
+	OciPhysicalDeviceName *string `mandatory:"false" json:"ociPhysicalDeviceName"`
+
+	// The name of the FastConnect interface where this cross-connect is installed.
+	InterfaceName *string `mandatory:"false" json:"interfaceName"`
 }
 
 func (m CreateCrossConnectDetails) String() string {
@@ -84,7 +90,7 @@ func (m CreateCrossConnectDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

@@ -88,6 +88,9 @@ type CrossConnect struct {
 	// The FastConnect device that terminates the logical connection.
 	// This device might be different than the device that terminates the physical connection.
 	OciLogicalDeviceName *string `mandatory:"false" json:"ociLogicalDeviceName"`
+
+	// The name of the FastConnect interface where this cross-connect is installed.
+	InterfaceName *string `mandatory:"false" json:"interfaceName"`
 }
 
 func (m CrossConnect) String() string {
@@ -104,7 +107,7 @@ func (m CrossConnect) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetCrossConnectLifecycleStateEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

@@ -31,6 +31,13 @@ type UpdateLoadBalancerDetails struct {
 	//   Example: "ipMode":"IPV6"
 	IpMode UpdateLoadBalancerDetailsIpModeEnum `mandatory:"false" json:"ipMode,omitempty"`
 
+	// Used to disambiguate which subnet prefix should be used to create an IPv6 LB.
+	// Example: "2002::1234:abcd:ffff:c0a8:101/64"
+	Ipv6SubnetCidr *string `mandatory:"false" json:"ipv6SubnetCidr"`
+
+	// An array of reserved Ips.
+	ReservedIps []ReservedIp `mandatory:"false" json:"reservedIps"`
+
 	// Whether or not the load balancer has delete protection enabled.
 	// If "true", the loadbalancer will be protected against deletion if configured to accept traffic.
 	// If "false", the loadbalancer will not be protected against deletion.
@@ -91,7 +98,7 @@ func (m UpdateLoadBalancerDetails) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for IpMode: %s. Supported values are: %s.", m.IpMode, strings.Join(GetUpdateLoadBalancerDetailsIpModeEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

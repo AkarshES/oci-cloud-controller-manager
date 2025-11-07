@@ -122,6 +122,9 @@ type Shape struct {
 
 	// The list of shapes and shape details (if applicable) that Oracle recommends that you use as an alternative to the current shape.
 	RecommendedAlternatives []ShapeAlternativeObject `mandatory:"false" json:"recommendedAlternatives"`
+
+	// The list of platform names that can be used for this shapes
+	PlatformNames []string `mandatory:"false" json:"platformNames"`
 }
 
 func (m Shape) String() string {
@@ -144,7 +147,7 @@ func (m Shape) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for BillingType: %s. Supported values are: %s.", m.BillingType, strings.Join(GetShapeBillingTypeEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

@@ -4,7 +4,7 @@ go 1.24.0
 
 replace (
 	github.com/docker/docker => github.com/docker/engine v0.0.0-20181106193140-f5749085e9cb
-	github.com/oracle/oci-go-sdk/v65 => oci.private.devops.scmservice.us-phoenix-1.oci.oracleiaas.com/namespaces/axuxirvibvvo/projects/SDK/repositories/oci-go-sdk.git/v65 v65.96.0-p
+	github.com/oracle/oci-go-sdk/v65 => oci.private.devops.scmservice.us-phoenix-1.oci.oracleiaas.com/namespaces/axuxirvibvvo/projects/SDK/repositories/oci-go-sdk.git/v65 v65.104.0-p
 	k8s.io/api => k8s.io/api v0.34.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.34.1
 	k8s.io/apimachinery => k8s.io/apimachinery v0.34.1
@@ -55,7 +55,6 @@ require (
 	github.com/kubernetes-csi/external-resizer v1.13.2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
-	github.com/oracle/oci-go-sdk/v65 v65.96.0-p
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/spf13/cobra v1.9.1
@@ -90,6 +89,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0
+	github.com/oracle/oci-go-sdk/v65 v65.2.0
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/sync v0.16.0
 	golang.org/x/time v0.12.0
