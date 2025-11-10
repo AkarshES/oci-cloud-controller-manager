@@ -71,6 +71,12 @@ type LdapBindAccount struct {
 	// Version of the password secret in the Vault to use.
 	PasswordSecretVersion *int `mandatory:"false" json:"passwordSecretVersion"`
 
+	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the trusted certificate for the LDAP server in the Vault .
+	TrustedCertificateSecretId *string `mandatory:"false" json:"trustedCertificateSecretId"`
+
+	// Version of the trusted certificate secret in the Vault to use.
+	TrustedCertificateSecretVersion *int `mandatory:"false" json:"trustedCertificateSecretVersion"`
+
 	// The current state of this outbound connector.
 	LifecycleState OutboundConnectorLifecycleStateEnum `mandatory:"true" json:"lifecycleState"`
 }
@@ -139,7 +145,7 @@ func (m LdapBindAccount) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetOutboundConnectorLifecycleStateEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

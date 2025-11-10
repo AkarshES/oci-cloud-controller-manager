@@ -62,6 +62,31 @@ func (request UpdateInternalServiceVnicShardRequest) BinaryRequestBody() (*commo
 
 }
 
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request UpdateInternalServiceVnicShardRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["serviceVnicFleetName"] != nil {
+		templateParam := mandatoryParamMap["serviceVnicFleetName"]
+		for _, template := range templateParam {
+			replacementParam := *request.ServiceVnicFleetName
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
+	if mandatoryParamMap["serviceVnicShardName"] != nil {
+		templateParam := mandatoryParamMap["serviceVnicShardName"]
+		for _, template := range templateParam {
+			replacementParam := *request.ServiceVnicShardName
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
+}
+
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
 func (request UpdateInternalServiceVnicShardRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
@@ -73,7 +98,7 @@ func (request UpdateInternalServiceVnicShardRequest) RetryPolicy() *common.Retry
 func (request UpdateInternalServiceVnicShardRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

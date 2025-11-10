@@ -21,7 +21,7 @@ import (
 	"strings"
 )
 
-// CapacityBin Total and remaining CPU & memory capacity for each capacity bucket.
+// CapacityBin Total and remaining CPU and memory capacity for each capacity bucket.
 type CapacityBin struct {
 
 	// Zero-based index for the corresponding capacity bucket.
@@ -54,7 +54,7 @@ func (m CapacityBin) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

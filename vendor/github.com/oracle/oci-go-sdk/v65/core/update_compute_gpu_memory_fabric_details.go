@@ -37,6 +37,8 @@ type UpdateComputeGpuMemoryFabricDetails struct {
 	// A user-friendly name. Does not have to be unique, and it's changeable.
 	// Avoid entering confidential information.
 	DisplayName *string `mandatory:"false" json:"displayName"`
+
+	MemoryFabricPreferences *MemoryFabricPreferencesDescriptor `mandatory:"false" json:"memoryFabricPreferences"`
 }
 
 func (m UpdateComputeGpuMemoryFabricDetails) String() string {
@@ -50,7 +52,7 @@ func (m UpdateComputeGpuMemoryFabricDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

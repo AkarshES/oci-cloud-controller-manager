@@ -34,6 +34,15 @@ type InstanceConfigurationLaunchInstanceDetails struct {
 	// The OCID of the compute capacity reservation this instance is launched under.
 	CapacityReservationId *string `mandatory:"false" json:"capacityReservationId"`
 
+	// Whether to enable AI enterprise on the instance.
+	IsAIEnterpriseEnabled *bool `mandatory:"false" json:"isAIEnterpriseEnabled"`
+
+	PlacementConstraintDetails InstanceConfigurationPlacementConstraintDetails `mandatory:"false" json:"placementConstraintDetails"`
+
+	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of the
+	// compute cluster (https://docs.oracle.com/iaas/Content/Compute/Tasks/compute-clusters.htm) that the instance will be created in.
+	ComputeClusterId *string `mandatory:"false" json:"computeClusterId"`
+
 	// The OCID of the compartment containing the instance.
 	// Instances created from instance configurations are placed in the same compartment
 	// as the instance that was used to create the instance configuration.
@@ -206,7 +215,7 @@ func (m InstanceConfigurationLaunchInstanceDetails) ValidateEnumValue() (bool, e
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for PreferredMaintenanceAction: %s. Supported values are: %s.", m.PreferredMaintenanceAction, strings.Join(GetInstanceConfigurationLaunchInstanceDetailsPreferredMaintenanceActionEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
@@ -216,6 +225,9 @@ func (m *InstanceConfigurationLaunchInstanceDetails) UnmarshalJSON(data []byte) 
 	model := struct {
 		AvailabilityDomain             *string                                                                  `json:"availabilityDomain"`
 		CapacityReservationId          *string                                                                  `json:"capacityReservationId"`
+		IsAIEnterpriseEnabled          *bool                                                                    `json:"isAIEnterpriseEnabled"`
+		PlacementConstraintDetails     instanceconfigurationplacementconstraintdetails                          `json:"placementConstraintDetails"`
+		ComputeClusterId               *string                                                                  `json:"computeClusterId"`
 		CompartmentId                  *string                                                                  `json:"compartmentId"`
 		ClusterPlacementGroupId        *string                                                                  `json:"clusterPlacementGroupId"`
 		CreateVnicDetails              *InstanceConfigurationCreateVnicDetails                                  `json:"createVnicDetails"`
@@ -251,6 +263,20 @@ func (m *InstanceConfigurationLaunchInstanceDetails) UnmarshalJSON(data []byte) 
 	m.AvailabilityDomain = model.AvailabilityDomain
 
 	m.CapacityReservationId = model.CapacityReservationId
+
+	m.IsAIEnterpriseEnabled = model.IsAIEnterpriseEnabled
+
+	nn, e = model.PlacementConstraintDetails.UnmarshalPolymorphicJSON(model.PlacementConstraintDetails.JsonData)
+	if e != nil {
+		return
+	}
+	if nn != nil {
+		m.PlacementConstraintDetails = nn.(InstanceConfigurationPlacementConstraintDetails)
+	} else {
+		m.PlacementConstraintDetails = nil
+	}
+
+	m.ComputeClusterId = model.ComputeClusterId
 
 	m.CompartmentId = model.CompartmentId
 

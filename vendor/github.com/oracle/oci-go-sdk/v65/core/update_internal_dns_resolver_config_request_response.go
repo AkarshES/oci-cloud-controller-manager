@@ -55,6 +55,21 @@ func (request UpdateInternalDnsResolverConfigRequest) BinaryRequestBody() (*comm
 
 }
 
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request UpdateInternalDnsResolverConfigRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["internalDnsResolverId"] != nil {
+		templateParam := mandatoryParamMap["internalDnsResolverId"]
+		for _, template := range templateParam {
+			replacementParam := *request.InternalDnsResolverId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
+}
+
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
 func (request UpdateInternalDnsResolverConfigRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
@@ -66,7 +81,7 @@ func (request UpdateInternalDnsResolverConfigRequest) RetryPolicy() *common.Retr
 func (request UpdateInternalDnsResolverConfigRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
