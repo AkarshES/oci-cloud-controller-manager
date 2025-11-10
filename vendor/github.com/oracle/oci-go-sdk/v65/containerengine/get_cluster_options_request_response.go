@@ -20,6 +20,9 @@ type GetClusterOptionsRequest struct {
 	// The OCID of the compartment.
 	CompartmentId *string `mandatory:"false" contributesTo:"query" name:"compartmentId"`
 
+	// Option to show all kubernetes patch versions
+	ShouldListAllPatchVersions *bool `mandatory:"false" contributesTo:"query" name:"shouldListAllPatchVersions"`
+
 	// Unique Oracle-assigned identifier for the request. If you need to contact
 	// Oracle about a particular request, please provide the request ID.
 	OpcRequestId *string `mandatory:"false" contributesTo:"header" name:"opc-request-id"`
@@ -76,7 +79,7 @@ func (request GetClusterOptionsRequest) RetryPolicy() *common.RetryPolicy {
 func (request GetClusterOptionsRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

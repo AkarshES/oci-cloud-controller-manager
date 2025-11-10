@@ -18,38 +18,35 @@ import (
 	"strings"
 )
 
-// NodeConfigSourceFromInstanceConfigDetails Configure nodes from existing InstanceConfiguration object.
-type NodeConfigSourceFromInstanceConfigDetails struct {
-
-	// The ocid of the InstanceConfiguration for the nodepool
-	InstanceConfigurationId *string `mandatory:"true" json:"instanceConfigurationId"`
+// LeastUsedAttachmentSchedulingPolicy Default Cluster Namespace scheduling policy. Least used attachment is selected by this policy.
+type LeastUsedAttachmentSchedulingPolicy struct {
 }
 
-func (m NodeConfigSourceFromInstanceConfigDetails) String() string {
+func (m LeastUsedAttachmentSchedulingPolicy) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m NodeConfigSourceFromInstanceConfigDetails) ValidateEnumValue() (bool, error) {
+func (m LeastUsedAttachmentSchedulingPolicy) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
 
 // MarshalJSON marshals to json representation
-func (m NodeConfigSourceFromInstanceConfigDetails) MarshalJSON() (buff []byte, e error) {
-	type MarshalTypeNodeConfigSourceFromInstanceConfigDetails NodeConfigSourceFromInstanceConfigDetails
+func (m LeastUsedAttachmentSchedulingPolicy) MarshalJSON() (buff []byte, e error) {
+	type MarshalTypeLeastUsedAttachmentSchedulingPolicy LeastUsedAttachmentSchedulingPolicy
 	s := struct {
-		DiscriminatorParam string `json:"configurationSource"`
-		MarshalTypeNodeConfigSourceFromInstanceConfigDetails
+		DiscriminatorParam string `json:"type"`
+		MarshalTypeLeastUsedAttachmentSchedulingPolicy
 	}{
-		"INSTANCE_CONFIG",
-		(MarshalTypeNodeConfigSourceFromInstanceConfigDetails)(m),
+		"LEAST_USED_ATTACHMENT",
+		(MarshalTypeLeastUsedAttachmentSchedulingPolicy)(m),
 	}
 
 	return json.Marshal(&s)

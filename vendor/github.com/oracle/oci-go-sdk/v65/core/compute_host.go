@@ -78,6 +78,12 @@ type ComputeHost struct {
 
 	RecycleDetails *RecycleDetails `mandatory:"false" json:"recycleDetails"`
 
+	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) for the Customer-unique firmware bundle associated with the Host.
+	FirmwareBundleId *string `mandatory:"false" json:"firmwareBundleId"`
+
+	// The platform of the host
+	Platform *string `mandatory:"false" json:"platform"`
+
 	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) for Customer-unique Network Block
 	NetworkBlockId *string `mandatory:"false" json:"networkBlockId"`
 
@@ -138,7 +144,7 @@ func (m ComputeHost) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for ConfigurationState: %s. Supported values are: %s.", m.ConfigurationState, strings.Join(GetConfigurationStateEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

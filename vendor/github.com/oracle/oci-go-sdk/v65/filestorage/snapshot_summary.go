@@ -41,6 +41,8 @@ type SnapshotSummary struct {
 	// Locks associated with this resource.
 	Locks []ResourceLock `mandatory:"false" json:"locks"`
 
+	LockDurationDetails *LockDurationDetails `mandatory:"false" json:"lockDurationDetails"`
+
 	// Specifies the generation type of the snapshot.
 	SnapshotType SnapshotSummarySnapshotTypeEnum `mandatory:"false" json:"snapshotType,omitempty"`
 
@@ -103,7 +105,7 @@ func (m SnapshotSummary) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for SnapshotType: %s. Supported values are: %s.", m.SnapshotType, strings.Join(GetSnapshotSummarySnapshotTypeEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

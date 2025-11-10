@@ -60,6 +60,13 @@ type CreateDedicatedVmHostDetails struct {
 	FreeformTags map[string]string `mandatory:"false" json:"freeformTags"`
 
 	PlacementConstraintDetails PlacementConstraintDetails `mandatory:"false" json:"placementConstraintDetails"`
+
+	// The capacity configuration selected to be configured for the Dedicated Virtual Machine host.
+	// Run ListDedicatedVmHostShapes API first to see the capacity configuration options.
+	CapacityConfig *string `mandatory:"false" json:"capacityConfig"`
+
+	// Specifies if the Dedicated Virtual Machine Host (DVMH) is restricted to running only Confidential VMs. If `true`, only Confidential VMs can be launched. If `false`, Confidential VMs cannot be launched.
+	IsMemoryEncryptionEnabled *bool `mandatory:"false" json:"isMemoryEncryptionEnabled"`
 }
 
 func (m CreateDedicatedVmHostDetails) String() string {
@@ -73,7 +80,7 @@ func (m CreateDedicatedVmHostDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
@@ -86,6 +93,8 @@ func (m *CreateDedicatedVmHostDetails) UnmarshalJSON(data []byte) (e error) {
 		FaultDomain                *string                           `json:"faultDomain"`
 		FreeformTags               map[string]string                 `json:"freeformTags"`
 		PlacementConstraintDetails placementconstraintdetails        `json:"placementConstraintDetails"`
+		CapacityConfig             *string                           `json:"capacityConfig"`
+		IsMemoryEncryptionEnabled  *bool                             `json:"isMemoryEncryptionEnabled"`
 		AvailabilityDomain         *string                           `json:"availabilityDomain"`
 		CompartmentId              *string                           `json:"compartmentId"`
 		DedicatedVmHostShape       *string                           `json:"dedicatedVmHostShape"`
@@ -113,6 +122,10 @@ func (m *CreateDedicatedVmHostDetails) UnmarshalJSON(data []byte) (e error) {
 	} else {
 		m.PlacementConstraintDetails = nil
 	}
+
+	m.CapacityConfig = model.CapacityConfig
+
+	m.IsMemoryEncryptionEnabled = model.IsMemoryEncryptionEnabled
 
 	m.AvailabilityDomain = model.AvailabilityDomain
 

@@ -58,6 +58,8 @@ type SnapshotSchedule struct {
 	// Used only for YEARLY snapshot schedules.
 	// If not set, the system chooses a value at creation time.
 	Month SnapshotScheduleMonthEnum `mandatory:"false" json:"month,omitempty"`
+
+	LockDurationDetails *LockDurationDetails `mandatory:"false" json:"lockDurationDetails"`
 }
 
 func (m SnapshotSchedule) String() string {
@@ -83,7 +85,7 @@ func (m SnapshotSchedule) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for Month: %s. Supported values are: %s.", m.Month, strings.Join(GetSnapshotScheduleMonthEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
