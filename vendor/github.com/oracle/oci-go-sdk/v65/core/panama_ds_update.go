@@ -107,6 +107,10 @@ func (m *panamadsupdate) UnmarshalPolymorphicJSON(data []byte) (interface{}, err
 		mm := DrgRouteLimitUpdate{}
 		err = json.Unmarshal(data, &mm)
 		return mm, err
+	case "DrgNatRuleUpdate":
+		mm := DrgNatRuleUpdate{}
+		err = json.Unmarshal(data, &mm)
+		return mm, err
 	default:
 		common.Logf("Received unsupported enum value for PanamaDSUpdate: %s.", m.Type)
 		return *m, nil
@@ -139,7 +143,7 @@ func (m panamadsupdate) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

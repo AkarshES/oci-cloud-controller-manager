@@ -107,10 +107,10 @@ type Vcn struct {
 	VcnDomainName *string `mandatory:"false" json:"vcnDomainName"`
 
 	// Indicates whether traffic within the VCN is encrypted.
-	// For more information, see VN Encryption (https://docs.oracle.com/iaas/Content/Network/Tasks/Overview_of_VCNs_and_Subnets.htm#encryption).
+	// For more information, see VN Encryption (https://docs.oracle.com/iaas/Content/gov-cloud/govinfo.htm#govinfo_topic_LAN-encryption).
 	IsEncrypted *bool `mandatory:"false" json:"isEncrypted"`
 
-	// Indicates whether Zpr Only Mode is enforced.
+	// Indicates whether ZPR Only mode is enforced.
 	IsZprOnly *bool `mandatory:"false" json:"isZprOnly"`
 }
 
@@ -128,7 +128,7 @@ func (m Vcn) ValidateEnumValue() (bool, error) {
 	}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

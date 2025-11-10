@@ -86,6 +86,9 @@ type ComputeHostSummary struct {
 	// The public OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) for the Virtual Machine or Bare Metal instance
 	InstanceId *string `mandatory:"false" json:"instanceId"`
 
+	// The platform of the host
+	Platform *string `mandatory:"false" json:"platform"`
+
 	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) for the Capacity Reserver that is currently on host
 	CapacityReservationId *string `mandatory:"false" json:"capacityReservationId"`
 
@@ -121,7 +124,7 @@ func (m ComputeHostSummary) ValidateEnumValue() (bool, error) {
 	}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

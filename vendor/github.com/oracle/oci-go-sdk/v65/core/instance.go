@@ -77,6 +77,9 @@ type Instance struct {
 
 	PlacementConstraintDetails PlacementConstraintDetails `mandatory:"false" json:"placementConstraintDetails"`
 
+	// Whether AI enterprise is enabled on the instance.
+	IsAIEnterpriseEnabled *bool `mandatory:"false" json:"isAIEnterpriseEnabled"`
+
 	// The OCID of the cluster placement group of the instance.
 	ClusterPlacementGroupId *string `mandatory:"false" json:"clusterPlacementGroupId"`
 
@@ -231,7 +234,7 @@ func (m Instance) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for PreferredMaintenanceAction: %s. Supported values are: %s.", m.PreferredMaintenanceAction, strings.Join(GetInstancePreferredMaintenanceActionEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
@@ -241,6 +244,7 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 	model := struct {
 		CapacityReservationId      *string                                `json:"capacityReservationId"`
 		PlacementConstraintDetails placementconstraintdetails             `json:"placementConstraintDetails"`
+		IsAIEnterpriseEnabled      *bool                                  `json:"isAIEnterpriseEnabled"`
 		ClusterPlacementGroupId    *string                                `json:"clusterPlacementGroupId"`
 		DedicatedVmHostId          *string                                `json:"dedicatedVmHostId"`
 		DefinedTags                map[string]map[string]interface{}      `json:"definedTags"`
@@ -294,6 +298,8 @@ func (m *Instance) UnmarshalJSON(data []byte) (e error) {
 	} else {
 		m.PlacementConstraintDetails = nil
 	}
+
+	m.IsAIEnterpriseEnabled = model.IsAIEnterpriseEnabled
 
 	m.ClusterPlacementGroupId = model.ClusterPlacementGroupId
 

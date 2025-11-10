@@ -59,6 +59,21 @@ func (request UpdatePrivateEndpointRequest) BinaryRequestBody() (*common.OCIRead
 
 }
 
+// ReplaceMandatoryParamInPath replaces the mandatory parameter in the path with the value provided.
+// Not all services are supporting this feature and this method will be a no-op for those services.
+func (request UpdatePrivateEndpointRequest) ReplaceMandatoryParamInPath(client *common.BaseClient, mandatoryParamMap map[string][]common.TemplateParamForPerRealmEndpoint) {
+	if mandatoryParamMap["privateEndpointId"] != nil {
+		templateParam := mandatoryParamMap["privateEndpointId"]
+		for _, template := range templateParam {
+			replacementParam := *request.PrivateEndpointId
+			if template.EndsWithDot {
+				replacementParam = replacementParam + "."
+			}
+			client.Host = strings.Replace(client.Host, template.Template, replacementParam, -1)
+		}
+	}
+}
+
 // RetryPolicy implements the OCIRetryableRequest interface. This retrieves the specified retry policy.
 func (request UpdatePrivateEndpointRequest) RetryPolicy() *common.RetryPolicy {
 	return request.RequestMetadata.RetryPolicy
@@ -70,7 +85,7 @@ func (request UpdatePrivateEndpointRequest) RetryPolicy() *common.RetryPolicy {
 func (request UpdatePrivateEndpointRequest) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

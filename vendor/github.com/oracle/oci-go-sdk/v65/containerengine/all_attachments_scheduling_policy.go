@@ -12,27 +12,42 @@
 package containerengine
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"strings"
 )
 
-// InstanceConfiguration Describes the instance configuration for Nodepool
-type InstanceConfiguration struct {
+// AllAttachmentsSchedulingPolicy Policy to schedule a namespace on every cluster attachment for the profile
+type AllAttachmentsSchedulingPolicy struct {
 }
 
-func (m InstanceConfiguration) String() string {
+func (m AllAttachmentsSchedulingPolicy) String() string {
 	return common.PointerString(m)
 }
 
 // ValidateEnumValue returns an error when providing an unsupported enum value
 // This function is being called during constructing API request process
 // Not recommended for calling this function directly
-func (m InstanceConfiguration) ValidateEnumValue() (bool, error) {
+func (m AllAttachmentsSchedulingPolicy) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
+}
+
+// MarshalJSON marshals to json representation
+func (m AllAttachmentsSchedulingPolicy) MarshalJSON() (buff []byte, e error) {
+	type MarshalTypeAllAttachmentsSchedulingPolicy AllAttachmentsSchedulingPolicy
+	s := struct {
+		DiscriminatorParam string `json:"type"`
+		MarshalTypeAllAttachmentsSchedulingPolicy
+	}{
+		"ALL_ATTACHMENTS",
+		(MarshalTypeAllAttachmentsSchedulingPolicy)(m),
+	}
+
+	return json.Marshal(&s)
 }

@@ -209,6 +209,8 @@ type InternalVnic struct {
 	// The OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm) of `Cluster Placement Group` to be used
 	// for the ServiceVnic placement.
 	CpgId *string `mandatory:"false" json:"cpgId"`
+
+	HealthCheckMetaData *HealthCheckMetaData `mandatory:"false" json:"healthCheckMetaData"`
 }
 
 func (m InternalVnic) String() string {
@@ -228,7 +230,7 @@ func (m InternalVnic) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for Lifetime: %s. Supported values are: %s.", m.Lifetime, strings.Join(GetInternalVnicLifetimeEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

@@ -26,6 +26,9 @@ type UpdateInternalDnsResolverConfigDetails struct {
 
 	// The EcmpGroup's OCID Oracle ID (OCID (https://docs.oracle.com/iaas/Content/General/Concepts/identifiers.htm)) associated to the given DnsResolver.
 	EcmpGroupId *string `mandatory:"false" json:"ecmpGroupId"`
+
+	// The overlayIp associated to the given DnsResovler.
+	DnsOverlayIp *string `mandatory:"false" json:"dnsOverlayIp"`
 }
 
 func (m UpdateInternalDnsResolverConfigDetails) String() string {
@@ -39,7 +42,7 @@ func (m UpdateInternalDnsResolverConfigDetails) ValidateEnumValue() (bool, error
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
