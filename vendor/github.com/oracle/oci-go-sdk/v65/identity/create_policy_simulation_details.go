@@ -30,6 +30,9 @@ type CreatePolicySimulationDetails struct {
 	UpdatedPoliciesPath *ObjectStorageFileDownloadLocation `mandatory:"true" json:"updatedPoliciesPath"`
 
 	OutputFilesPath *ObjectStorageFileUploadLocation `mandatory:"true" json:"outputFilesPath"`
+
+	// principalId for whom the Policy Simulation task is being run.
+	PrincipalId *string `mandatory:"false" json:"principalId"`
 }
 
 func (m CreatePolicySimulationDetails) String() string {
@@ -43,7 +46,7 @@ func (m CreatePolicySimulationDetails) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

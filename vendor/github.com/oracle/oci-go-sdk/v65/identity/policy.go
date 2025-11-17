@@ -72,7 +72,7 @@ type Policy struct {
 	// Example: `{"Operations": {"CostCenter": "42"}}`
 	DefinedTags map[string]map[string]interface{} `mandatory:"false" json:"definedTags"`
 
-	// Locks associated with this resource.
+	// Locks associated with this resource.This can be used only after your tenancy is whitelisted for this feature.
 	Locks []ResourceLockPolicy `mandatory:"false" json:"locks"`
 }
 
@@ -90,7 +90,7 @@ func (m Policy) ValidateEnumValue() (bool, error) {
 	}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

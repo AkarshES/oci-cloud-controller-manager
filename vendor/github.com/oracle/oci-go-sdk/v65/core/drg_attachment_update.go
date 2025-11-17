@@ -72,6 +72,12 @@ type DrgAttachmentUpdate struct {
 	// Indicates whether the DRG is whitelisted for Substrate Access DRG
 	IsSubstrateAccess *bool `mandatory:"false" json:"isSubstrateAccess"`
 
+	// The OCID for the DRG NAT Policy associated with the DRG Attachment
+	DrgNatPolicyId *string `mandatory:"false" json:"drgNatPolicyId"`
+
+	// The label given to the associated DRG NAT Policy
+	DrgNatPolicyLabel *int `mandatory:"false" json:"drgNatPolicyLabel"`
+
 	// The type of the attachment.
 	DrgAttachmentType DrgAttachmentUpdateDrgAttachmentTypeEnum `mandatory:"false" json:"drgAttachmentType,omitempty"`
 
@@ -111,7 +117,7 @@ func (m DrgAttachmentUpdate) ValidateEnumValue() (bool, error) {
 	}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

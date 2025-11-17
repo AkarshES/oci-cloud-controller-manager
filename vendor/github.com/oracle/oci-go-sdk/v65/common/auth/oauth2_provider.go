@@ -37,7 +37,7 @@ func NewOAuth2ConfigurationProvider(configProvider common.ConfigurationProvider,
 	}, nil
 }
 
-// KeyID checks if the current security token, and retrieves a new token from Auth Service if not
+// KeyID checks if the current security token is valid, and retrieves a new token from Auth Service if not
 func (p OAuth2ConfigurationProvider) KeyID() (string, error) {
 	var securityToken string
 	var err error
@@ -50,7 +50,11 @@ func (p OAuth2ConfigurationProvider) KeyID() (string, error) {
 
 // PrivateRSAKey returns the private key of the session key supplier created for the OAuth Provider
 func (p OAuth2ConfigurationProvider) PrivateRSAKey() (privateKey *rsa.PrivateKey, err error) {
-	return p.sessionKeySupplier.PrivateKey(), nil
+	if privateKey, err = p.federationClient.PrivateKey(); err != nil {
+		err = fmt.Errorf("failed to get private key: %s", err.Error())
+		return nil, err
+	}
+	return privateKey, nil
 }
 
 func (p OAuth2ConfigurationProvider) SecurityToken() (string, error) {

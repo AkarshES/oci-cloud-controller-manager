@@ -59,6 +59,12 @@ type Subnet struct {
 	// Example: `10.0.1.0/24`
 	CidrBlock *string `mandatory:"false" json:"cidrBlock"`
 
+	// The list of all IPv4 CIDR blocks for the subnet that meets the following criteria:
+	// - Ipv4 CIDR blocks must be valid.
+	// - Multiple Ipv4 CIDR blocks must not overlap each other or the on-premises network CIDR block.
+	// - The number of prefixes must not exceed the limit of IPv4 prefixes allowed to a subnet.
+	Ipv4CidrBlocks []string `mandatory:"false" json:"ipv4CidrBlocks"`
+
 	// Defined tags for this resource. Each key is predefined and scoped to a
 	// namespace. For more information, see Resource Tags (https://docs.oracle.com/iaas/Content/General/Concepts/resourcetags.htm).
 	// Example: `{"Operations": {"CostCenter": "42"}}`
@@ -170,7 +176,7 @@ func (m Subnet) ValidateEnumValue() (bool, error) {
 	}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

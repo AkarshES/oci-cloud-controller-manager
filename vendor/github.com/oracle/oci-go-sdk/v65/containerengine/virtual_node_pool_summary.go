@@ -35,8 +35,14 @@ type VirtualNodePoolSummary struct {
 	// The version of Kubernetes running on the nodes in the node pool.
 	KubernetesVersion *string `mandatory:"true" json:"kubernetesVersion"`
 
+	// The number of Virtual Nodes that should be in the Virtual Node Pool. The placement configurations determine where these virtual nodes are placed.
+	Size *int `mandatory:"true" json:"size"`
+
 	// The list of placement configurations which determines where Virtual Nodes will be provisioned across as it relates to the subnet and availability domains. The size attribute determines how many we evenly spread across these placement configurations
 	PlacementConfigurations []PlacementConfiguration `mandatory:"true" json:"placementConfigurations"`
+
+	// The pod configuration for pods run on virtual nodes of this virtual node pool.
+	PodConfiguration *PodConfiguration `mandatory:"true" json:"podConfiguration"`
 
 	// Whether or not to enable automatic kubernetes upgrades on virtual node pool.
 	IsAutomaticKubernetesUpgradeEnabled *bool `mandatory:"false" json:"isAutomaticKubernetesUpgradeEnabled"`
@@ -47,14 +53,8 @@ type VirtualNodePoolSummary struct {
 	// A taint is a collection of <key, value, effect>. These taints will be applied to the Virtual Nodes of this Virtual Node Pool for Kubernetes scheduling.
 	Taints []Taint `mandatory:"false" json:"taints"`
 
-	// The number of Virtual Nodes that should be in the Virtual Node Pool. The placement configurations determine where these virtual nodes are placed.
-	Size *int `mandatory:"false" json:"size"`
-
 	// List of network security group id's applied to the Virtual Node VNIC.
 	NsgIds []string `mandatory:"false" json:"nsgIds"`
-
-	// The pod configuration for pods run on virtual nodes of this virtual node pool.
-	PodConfiguration *PodConfiguration `mandatory:"false" json:"podConfiguration"`
 
 	// The state of the Virtual Node Pool.
 	LifecycleState VirtualNodePoolLifecycleStateEnum `mandatory:"false" json:"lifecycleState,omitempty"`
@@ -101,7 +101,7 @@ func (m VirtualNodePoolSummary) ValidateEnumValue() (bool, error) {
 		errMessage = append(errMessage, fmt.Sprintf("unsupported enum value for LifecycleState: %s. Supported values are: %s.", m.LifecycleState, strings.Join(GetVirtualNodePoolLifecycleStateEnumStringValues(), ",")))
 	}
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

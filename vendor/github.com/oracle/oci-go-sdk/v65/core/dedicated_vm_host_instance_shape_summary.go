@@ -29,6 +29,8 @@ type DedicatedVmHostInstanceShapeSummary struct {
 
 	// The shape's availability domain.
 	AvailabilityDomain *string `mandatory:"false" json:"availabilityDomain"`
+
+	SupportedCapabilities *SupportedCapabilities `mandatory:"false" json:"supportedCapabilities"`
 }
 
 func (m DedicatedVmHostInstanceShapeSummary) String() string {
@@ -42,7 +44,7 @@ func (m DedicatedVmHostInstanceShapeSummary) ValidateEnumValue() (bool, error) {
 	errMessage := []string{}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }

@@ -62,6 +62,9 @@ type DedicatedVmHostSummary struct {
 	// Example: `FAULT-DOMAIN-1`
 	FaultDomain *string `mandatory:"false" json:"faultDomain"`
 
+	// Specifies if the Dedicated Virtual Machine Host is restricted to running only Confidential VMs. If `true`, only Confidential VMs can be launched. If `false`, Confidential VMs cannot be launched.
+	IsMemoryEncryptionEnabled *bool `mandatory:"false" json:"isMemoryEncryptionEnabled"`
+
 	// The current total memory of the dedicated VM host, in GBs.
 	TotalMemoryInGBs *float32 `mandatory:"false" json:"totalMemoryInGBs"`
 
@@ -83,7 +86,7 @@ func (m DedicatedVmHostSummary) ValidateEnumValue() (bool, error) {
 	}
 
 	if len(errMessage) > 0 {
-		return true, fmt.Errorf(strings.Join(errMessage, "\n"))
+		return true, fmt.Errorf("%s", strings.Join(errMessage, "\n"))
 	}
 	return false, nil
 }
