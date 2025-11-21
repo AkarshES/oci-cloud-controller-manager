@@ -16,9 +16,10 @@ package client
 
 import (
 	"context"
-	"go.uber.org/zap"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -179,6 +180,7 @@ func (c *loadbalancerClientStruct) CreateLoadBalancer(ctx context.Context, detai
 		FreeformTags:            details.FreeformTags,
 		DefinedTags:             details.DefinedTags,
 		RuleSets:                details.RuleSets,
+		SecurityAttributes:      details.SecurityAttributes,
 	}
 
 	// IpMode for OCI Load balancers can only be set at Create
@@ -680,8 +682,9 @@ func (c *loadbalancerClientStruct) UpdateLoadBalancer(ctx context.Context, lbID 
 
 	resp, err := c.loadbalancer.UpdateLoadBalancer(ctx, loadbalancer.UpdateLoadBalancerRequest{
 		UpdateLoadBalancerDetails: loadbalancer.UpdateLoadBalancerDetails{
-			FreeformTags: details.FreeformTags,
-			DefinedTags:  details.DefinedTags,
+			FreeformTags:       details.FreeformTags,
+			DefinedTags:        details.DefinedTags,
+			SecurityAttributes: details.SecurityAttributes,
 		},
 		LoadBalancerId:  &lbID,
 		RequestMetadata: c.requestMetadata,
@@ -722,6 +725,7 @@ func (c *loadbalancerClientStruct) loadbalancerToGenericLoadbalancer(lb *loadbal
 		FreeformTags:            lb.FreeformTags,
 		DefinedTags:             lb.DefinedTags,
 		RuleSets:                ruleSets,
+		SecurityAttributes:      lb.SecurityAttributes,
 		SystemTags:              lb.SystemTags,
 	}
 }

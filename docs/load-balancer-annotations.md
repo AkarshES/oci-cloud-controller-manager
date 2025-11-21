@@ -52,6 +52,7 @@ spec:
 | `oci.oraclecloud.com/initial-freeform-tags-override`                         | Specifies one or more Freeform tags to apply to the OCI Load Balancer.                                                                                                                                                                                                           | `N/A`                                            |
 | `oci.oraclecloud.com/node-label-selector`                                    | Specifies which nodes to add as a backend to the OCI Load Balancer.                                                                                                                                                                                                              | `N/A`                                            |
 | `oci.oraclecloud.com/oci-load-balancer-rule-sets`                            | [Rule Sets][11] configuration. A JSON object mapping strings to RuleSetDetails objects as specified in [OCI API documentation][12]. All rule sets will be attached to all configured listeners.                                                                                  | `N/A`                                            |
+| `oci.oraclecloud.com/security-attributes`                                    | [Zero Packet Routing(ZPR)](13) tags for the managed LB/NLB. A JSON object containing key-value pairs scoped to a namespace. See [API docs][14] for details. IAM policy for cluster principal to use SA namespace required. Payload needs `"mode": "enforce"` alongside the value | `N/A`                                            |
 
 
 Note:
@@ -108,3 +109,5 @@ Note:
 [10]: https://docs.oracle.com/en-us/iaas/Content/Balance/Concepts/balanceoverview.htm
 [11]: https://docs.oracle.com/en-us/iaas/Content/Balance/Tasks/managingrulesets.htm
 [12]: https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/RuleSetDetails
+[13]: https://docs.oracle.com/en-us/iaas/Content/zero-trust-packet-routing/home.htm
+[14]: https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/UpdateNetworkLoadBalancerDetails

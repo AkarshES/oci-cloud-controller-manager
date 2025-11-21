@@ -1261,6 +1261,7 @@ func (c *MockLoadBalancerClient) DeleteListener(ctx context.Context, lbID, name 
 }
 
 var updateLoadBalancerErrors = map[string]error{
+	"":                  errors.New("provided LB ID is empty"),
 	"work request fail": errors.New("internal server error"),
 }
 
@@ -1279,6 +1280,9 @@ func (c *MockLoadBalancerClient) DeleteRuleSet(ctx context.Context, lbID string,
 func (c *MockLoadBalancerClient) UpdateLoadBalancer(ctx context.Context, lbID string, details *client.GenericUpdateLoadBalancerDetails) (string, error) {
 	if err, ok := updateLoadBalancerErrors[lbID]; ok {
 		return "", err
+	}
+	if wrID, ok := updateNetworkSecurityGroupsLBsWorkRequests[lbID]; ok {
+		return wrID, nil
 	}
 
 	return "", nil

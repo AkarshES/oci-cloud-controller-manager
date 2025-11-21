@@ -3437,3 +3437,98 @@ func TestHasCustomNodePorts(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateLoadBalancerSecurityAttributres(t *testing.T) {
+	var tests = map[string]struct {
+		spec         *client.GenericUpdateLoadBalancerDetails
+		loadbalancer *client.GenericLoadBalancer
+		wantErr      error
+	}{
+		"lb id is missing": {
+			spec: &client.GenericUpdateLoadBalancerDetails{
+				SecurityAttributes: map[string]map[string]interface{}{
+					"Oracle-ZPR": {
+						"MaxEgressCount": map[string]interface{}{
+							"value":     "42",
+							"mode":      "audit",
+							"usagetype": "zpr",
+						},
+					},
+				},
+			},
+			loadbalancer: &client.GenericLoadBalancer{
+				Id:          common.String(""),
+				DisplayName: common.String("privateLB"),
+			},
+			wantErr: errors.New("failed to create UpdateLoadBalancer request: provided LB ID is empty"),
+		},
+		"failed to create workrequest": {
+			spec: &client.GenericUpdateLoadBalancerDetails{
+				SecurityAttributes: map[string]map[string]interface{}{
+					"Oracle-ZPR": {
+						"MaxEgressCount": map[string]interface{}{
+							"value":     "42",
+							"mode":      "audit",
+							"usagetype": "zpr",
+						},
+					},
+				},
+			},
+			loadbalancer: &client.GenericLoadBalancer{
+				Id:          common.String("work request fail"),
+				DisplayName: common.String("privateLB"),
+			},
+			wantErr: errors.New("failed to create UpdateLoadBalancer request: internal server error"),
+		},
+		"failed to get workrequest": {
+			spec: &client.GenericUpdateLoadBalancerDetails{
+				SecurityAttributes: map[string]map[string]interface{}{
+					"Oracle-ZPR": {
+						"MaxEgressCount": map[string]interface{}{
+							"value":     "42",
+							"mode":      "audit",
+							"usagetype": "zpr",
+						},
+					},
+				},
+			},
+			loadbalancer: &client.GenericLoadBalancer{
+				Id:          common.String("failedToGetUpdateNetworkSecurityGroupsWorkRequest"),
+				DisplayName: common.String("privateLB"),
+			},
+			wantErr: errors.New("failed to await UpdateLoadBalancer workrequest: internal server error for get workrequest call"),
+		},
+		"Update SA of an existing LB": {
+			spec: &client.GenericUpdateLoadBalancerDetails{
+				SecurityAttributes: map[string]map[string]interface{}{
+					"Oracle-ZPR": {
+						"MaxEgressCount": map[string]interface{}{
+							"value":     "42",
+							"mode":      "audit",
+							"usagetype": "zpr",
+						},
+					},
+				},
+			},
+			loadbalancer: &client.GenericLoadBalancer{
+				Id:          common.String("ocid1"),
+				DisplayName: common.String("privateLB"),
+			},
+			wantErr: nil,
+		},
+	}
+	cp := &CloudLoadBalancerProvider{
+		lbClient: &MockLoadBalancerClient{},
+		client:   MockOCIClient{},
+		logger:   zap.S(),
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := cp.updateLoadBalancerSecurityAttributes(context.Background(), tt.loadbalancer, tt.spec)
+			if !assertError(err, tt.wantErr) {
+				t.Errorf("Expected error = %v, but got %v", tt.wantErr, err)
+				return
+			}
+		})
+	}
+}

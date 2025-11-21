@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"reflect"
 	"slices"
@@ -1058,6 +1059,21 @@ func (f *CloudProviderFramework) WaitForNLBBackendSetFailoverChange(lb *client.G
 	return nil
 }
 
+// WaitForLoadBalancerSecurityAttributeChange polls for Security Attribures configuration of a load balancer to reach the expected state
+func (f *CloudProviderFramework) WaitForLoadBalancerSecurityAttributeChange(lb *client.GenericLoadBalancer, lbType, saNs, sa string, val interface{}) error {
+	condition := func() (bool, error) {
+		updatedLB, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancer(context.TODO(), *lb.Id)
+		if err != nil {
+			return false, err
+		}
+		return ValidateSecurityAttributes(updatedLB, saNs, sa, val), nil
+	}
+	if err := wait.Poll(15*time.Second, OCILBWRUpdateTimeout, condition); err != nil {
+		return fmt.Errorf("failed to update Rule Sets configuration, error: %s", err.Error())
+	}
+	return nil
+}
+
 func testHealthCheckConfig(loadBalancer *client.GenericLoadBalancer, retries int, timeout int, interval int) (bool, error) {
 	if loadBalancer != nil && len(loadBalancer.BackendSets) != 0 {
 		for _, backendSet := range loadBalancer.BackendSets {
@@ -1602,4 +1618,35 @@ func ValidateRuleSetConfiguration(lb *client.GenericLoadBalancer, name string, r
 	}
 
 	return true, nil
+}
+
+// ValidateSecurityAttributes checks if lb.SecurityAttributes[saNs][sa] == val. Pass saNs = "" to check for no SAs present.
+func ValidateSecurityAttributes(lb *client.GenericLoadBalancer, saNs, sa string, val interface{}) bool {
+	if lb.SecurityAttributes == nil {
+		Logf("LB security attributes is nil")
+		return saNs == ""
+	}
+
+	k := slices.Collect(maps.Keys(lb.SecurityAttributes))
+	Logf("Security attribute namespaces present on LB: %v", k)
+
+	if saNs == "" && len(k) == 0 {
+		return true
+	}
+
+	ns, ok := lb.SecurityAttributes[saNs]
+	if !ok {
+		Logf("Security attribute namespace %s not present on LB", saNs)
+		return false
+	}
+
+	actual, ok := ns[sa]
+	if !ok {
+		Logf("Security attribute %s not present in security attribute namespace %s ", sa, saNs)
+		return false
+	}
+
+	Logf("Security attributes: current: %v, waiting for %v", actual, val)
+
+	return reflect.DeepEqual(actual, val)
 }
