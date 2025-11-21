@@ -458,6 +458,7 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 		DefinedTags:             spec.DefinedTags,
 		IpVersion:               spec.IpVersions.LbEndpointIpVersion,
 		RuleSets:                spec.RuleSets,
+		SecurityAttributes:      spec.SecurityAttributes,
 	}
 	// do not block creation if the defined tag limit is reached. defer LB to tracked by backfilling
 	if len(details.DefinedTags) > MaxDefinedTagPerResource {
@@ -1218,6 +1219,18 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 	nsgChanged := hasLoadBalancerNetworkSecurityGroupsChanged(ctx, lb.NetworkSecurityGroupIds, spec.NetworkSecurityGroupIds)
 	if nsgChanged {
 		err = clb.updateLoadBalancerNetworkSecurityGroups(ctx, lb, spec)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Check if the customer managed LB security attributes have changed
+	if !reflect.DeepEqual(lb.SecurityAttributes, spec.SecurityAttributes) {
+		details := &client.GenericUpdateLoadBalancerDetails{
+			SecurityAttributes: spec.SecurityAttributes,
+		}
+
+		err = clb.updateLoadBalancerSecurityAttributes(ctx, lb, details)
 		if err != nil {
 			return err
 		}
@@ -2226,6 +2239,24 @@ func (clb *CloudLoadBalancerProvider) updateLoadbalancerIpVersionTranslation(ctx
 		return errors.Wrap(err, "failed to await UpdateLoadBalancer workrequest")
 	}
 	clb.logger.Infof("UpdateLoadBalancer workrequest to update %s IP version translation mode completed successfully", *lb.Id)
+	return nil
+}
+
+func (clb *CloudLoadBalancerProvider) updateLoadBalancerSecurityAttributes(ctx context.Context, lb *client.GenericLoadBalancer, details *client.GenericUpdateLoadBalancerDetails) error {
+	if details.SecurityAttributes == nil {
+		details.SecurityAttributes = make(map[string]map[string]interface{})
+	}
+	wrID, err := clb.lbClient.UpdateLoadBalancer(ctx, *lb.Id, details)
+	if err != nil {
+		return errors.Wrap(err, "failed to create UpdateLoadBalancer request")
+	}
+	logger := clb.logger.With("existingSecurityAttributes", lb.SecurityAttributes, "newSecurityAttributes", details.SecurityAttributes)
+	logger.Infof("Awaiting UpdateLoadBalancer workrequest to update ZPR security attriburtes %s", wrID)
+	_, err = clb.lbClient.AwaitWorkRequest(ctx, wrID)
+	if err != nil {
+		return errors.Wrap(err, "failed to await UpdateLoadBalancer workrequest")
+	}
+	logger.Infof("UpdateLoadBalancer workrequest to update %s endpoint ZPR security attriburtes completed successfully", *lb.Id)
 	return nil
 }
 

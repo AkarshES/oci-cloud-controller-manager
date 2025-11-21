@@ -152,6 +152,7 @@ func (c *networkLoadbalancer) CreateLoadBalancer(ctx context.Context, details *G
 		CpgId:                       details.CpgId,
 		AssignedPrivateIpv4:         details.AssignedPrivateIpv4,
 		AssignedIpv6:                details.AssignedIpv6,
+		SecurityAttributes:          details.SecurityAttributes,
 	}
 
 	if details.IpVersion != nil {
@@ -542,6 +543,9 @@ func (c *networkLoadbalancer) UpdateLoadBalancer(ctx context.Context, lbID strin
 	if details.DefinedTags != nil {
 		updateNetworkLoadbalancerDetails.DefinedTags = details.DefinedTags
 	}
+	if details.SecurityAttributes != nil {
+		updateNetworkLoadbalancerDetails.SecurityAttributes = details.SecurityAttributes
+	}
 	if details.IpVersion != nil {
 		switch *details.IpVersion {
 		case GenericIPv4:
@@ -624,6 +628,7 @@ func (c *networkLoadbalancer) networkLoadbalancerToGenericLoadbalancer(nlb *netw
 			IpVersionTranslationMode: nlb.IpVersionTranslation,
 			Nat46Ipv6CidrPrefix:      nlb.Nat46Ipv6CidrPrefix,
 		},
+		SecurityAttributes: nlb.SecurityAttributes,
 	}
 }
 
