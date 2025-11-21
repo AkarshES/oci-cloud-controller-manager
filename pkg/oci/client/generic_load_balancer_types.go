@@ -119,7 +119,9 @@ type GenericCreateLoadBalancerDetails struct {
 	// Internal. Only supported by NLB
 	CpgId *string
 
-	RuleSets map[string]loadbalancer.RuleSetDetails
+	RuleSets           map[string]loadbalancer.RuleSetDetails
+	SecurityAttributes map[string]map[string]interface{}
+
 	// Supported only in NLB
 	AssignedPrivateIpv4 *string
 	AssignedIpv6        *string
@@ -170,6 +172,7 @@ type GenericLoadBalancer struct {
 	BackendSets             map[string]GenericBackendSetDetails
 	RuleSets                map[string]loadbalancer.RuleSetDetails
 	IpVersion               *GenericIpVersion
+	SecurityAttribures      map[string]map[string]interface{}
 
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}
@@ -208,8 +211,9 @@ type GenericBackendSetHealth struct {
 }
 
 type GenericUpdateLoadBalancerDetails struct {
-	IpVersion    *GenericIpVersion
-	FreeformTags map[string]string
-	DefinedTags  map[string]map[string]interface{}
+	IpVersion          *GenericIpVersion
+	FreeformTags       map[string]string
+	DefinedTags        map[string]map[string]interface{}
+	SecurityAttributes map[string]map[string]interface{}
 	*IpVersionTranslationConfig
 }

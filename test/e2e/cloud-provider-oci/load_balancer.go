@@ -1984,6 +1984,230 @@ var _ = Describe("NLB instant failover", func() {
 	})
 })
 
+var _ = Describe("Zero Packet Routing", func() {
+
+	baseName := "zpr"
+	f := sharedfw.NewDefaultFramework(baseName)
+	BeforeEach(func() {
+		nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet)
+		if len(nodes.Items) != 0 {
+			Skip("Skipping test since virtual nodes exist in the cluster.")
+		}
+	})
+
+	Context("[cloudprovider][ccm][lb][zpr-security-attributes]", func() {
+		It("should be possible configure ZPR in a LB", func() {
+			if sharedfw.CompareVersions(setupF.OkeClusterK8sVersion, "v1.32") < 0 {
+				Skip("Cluster K8s Version " + setupF.OkeClusterK8sVersion + " is less than v1.32, skipping ZPR test")
+			}
+
+			By("Setup service with security attributes")
+			serviceName := "e2e-lb-zpr-sa"
+			ns := f.Namespace.Name
+
+			jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+			loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+			if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+				loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+			}
+
+			requestedIP := ""
+
+			tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeLoadBalancer
+				s.Spec.LoadBalancerIP = requestedIP
+				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
+					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+					cloudprovider.ServiceAnnotationSecurityAttributes:   `{"zpr-test-ns": {"static-attribute": {"value": "red", "mode": "enforce"}}}`,
+				}
+				s.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
+			})
+
+			By("creating a pod to be part of the TCP service " + serviceName)
+			jig.RunOrFail(ns, nil)
+
+			By("waiting for the TCP service to have a load balancer")
+			// Wait for the load balancer to be created asynchronously
+			tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+			sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+			lbName := cloudprovider.GetLoadBalancerName(tcpService)
+			sharedfw.Logf("LB Name is %s", lbName)
+			ctx := context.TODO()
+			compartmentId := ""
+			if setupF.Compartment1 != "" {
+				compartmentId = setupF.Compartment1
+			} else if f.CloudProviderConfig.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.CompartmentID
+			} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+			} else {
+				sharedfw.Failf("Compartment Id undefined.")
+			}
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "lb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			sharedfw.ExpectNoError(err)
+
+			By("Validate ZPR Security attributes")
+			Expect(loadBalancer.SecurityAttribures).NotTo(BeNil())
+			Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]).NotTo(BeNil())
+			Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]["static-attribute"]).NotTo(BeNil())
+			expected := reflect.DeepEqual(loadBalancer.SecurityAttribures["zpr-test-ns"]["static-attribute"],
+				map[string]interface{}{"value": "red", "mode": "enforce"})
+			Expect(expected).To(BeTrue())
+
+			By("ZPR SA can be updated")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+					cloudprovider.ServiceAnnotationSecurityAttributes:   `{"zpr-test-ns": {"static-attribute": {"value": "green", "mode": "enforce"}}}`,
+				}
+			})
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			err = f.WaitForLoadBalancerSecurityAttributeChange(loadBalancer, "lb", "zpr-test-ns", "static-attribute",
+				map[string]interface{}{"value": "green", "mode": "enforce"})
+			sharedfw.ExpectNoError(err)
+
+			By("ZPR SA can be disabled")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				}
+			})
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			err = f.WaitForLoadBalancerSecurityAttributeChange(loadBalancer, "lb", "", "", nil)
+			sharedfw.ExpectNoError(err)
+
+			By("Instant failover can be re-enabled")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+					cloudprovider.ServiceAnnotationSecurityAttributes:   `{"zpr-test-ns": {"static-attribute": {"value": "blue", "mode": "enforce"}}}`,
+				}
+			})
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+			err = f.WaitForLoadBalancerSecurityAttributeChange(loadBalancer, "lb", "zpr-test-ns", "static-attribute",
+				map[string]interface{}{"value": "blue", "mode": "enforce"})
+			sharedfw.ExpectNoError(err)
+		})
+	})
+
+	It("should be possible configure ZPR in a NLB", func() {
+		if sharedfw.CompareVersions(setupF.OkeClusterK8sVersion, "v1.32") < 0 {
+			Skip("Cluster K8s Version " + setupF.OkeClusterK8sVersion + " is less than v1.32, skipping ZPR test")
+		}
+
+		By("Setup service with security attributes")
+		serviceName := "e2e-nlb-zpr-sa"
+		ns := f.Namespace.Name
+
+		jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+		loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+		if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+			loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+		}
+
+		requestedIP := ""
+
+		tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+			s.Spec.Type = v1.ServiceTypeLoadBalancer
+			s.Spec.LoadBalancerIP = requestedIP
+			s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
+				{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+			s.ObjectMeta.Annotations = map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				cloudprovider.ServiceAnnotationSecurityAttributes:   `{"zpr-test-ns": {"list-attribute": {"value": "one", "mode": "enforce"}}}`,
+				cloudprovider.ServiceAnnotationLoadBalancerType:     "nlb",
+			}
+			s.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
+		})
+
+		By("creating a pod to be part of the TCP service " + serviceName)
+		jig.RunOrFail(ns, nil)
+
+		By("waiting for the TCP service to have a load balancer")
+		// Wait for the load balancer to be created asynchronously
+		tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+		jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+		tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+		sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+		lbName := cloudprovider.GetLoadBalancerName(tcpService)
+		sharedfw.Logf("NLB Name is %s", lbName)
+		ctx := context.TODO()
+		compartmentId := ""
+		if setupF.Compartment1 != "" {
+			compartmentId = setupF.Compartment1
+		} else if f.CloudProviderConfig.CompartmentID != "" {
+			compartmentId = f.CloudProviderConfig.CompartmentID
+		} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+			compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+		} else {
+			sharedfw.Failf("Compartment Id undefined.")
+		}
+		loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), "nlb", nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+		sharedfw.ExpectNoError(err)
+
+		By("Validate ZPR Security attributes")
+		Expect(loadBalancer.SecurityAttribures).NotTo(BeNil())
+		Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]).NotTo(BeNil())
+		Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]["list-attribute"]).NotTo(BeNil())
+		expected := reflect.DeepEqual(loadBalancer.SecurityAttribures["zpr-test-ns"]["list-attribute"],
+			map[string]interface{}{"value": "one", "mode": "enforce"})
+		Expect(expected).To(BeTrue())
+
+		By("ZPR SA can be updated")
+		tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+			s.ObjectMeta.Annotations = map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				cloudprovider.ServiceAnnotationLoadBalancerType:     "nlb",
+				cloudprovider.ServiceAnnotationSecurityAttributes:   `{"zpr-test-ns": {"list-attribute": {"value": "two", "mode": "enforce"}}}`,
+			}
+		})
+		jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+		err = f.WaitForLoadBalancerSecurityAttributeChange(loadBalancer, "nlb", "zpr-test-ns", "list-attribute",
+			map[string]interface{}{"value": "two", "mode": "enforce"})
+		sharedfw.ExpectNoError(err)
+
+		By("ZPR SA can be disabled")
+		tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+			s.ObjectMeta.Annotations = map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				cloudprovider.ServiceAnnotationLoadBalancerType:     "nlb",
+			}
+		})
+		jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+		err = f.WaitForLoadBalancerSecurityAttributeChange(loadBalancer, "nlb", "", "", nil)
+		sharedfw.ExpectNoError(err)
+
+		By("Instant failover can be re-enabled")
+		tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+			s.ObjectMeta.Annotations = map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+				cloudprovider.ServiceAnnotationLoadBalancerType:     "nlb",
+				cloudprovider.ServiceAnnotationSecurityAttributes:   `{"zpr-test-ns": {"list-attribute": {"value": "three", "mode": "enforce"}}}`,
+			}
+		})
+		jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+		err = f.WaitForLoadBalancerSecurityAttributeChange(loadBalancer, "nlb", "zpr-test-ns", "list-attribute",
+			map[string]interface{}{"value": "three", "mode": "enforce"})
+		sharedfw.ExpectNoError(err)
+	})
+})
+
 var _ = Describe("LB Properties", func() {
 	baseName := "lb-properties"
 	f := sharedfw.NewDefaultFramework(baseName)

@@ -217,6 +217,13 @@ const (
 	// LB experience - https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/CreateLoadBalancerDetails
 	// NLB experience - https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/CreateNetworkLoadBalancerDetails
 	ServiceAnnotationReservedIPs = "oci.oraclecloud.com/reserved-ips"
+
+	// ServiceAnnotationSecurityAttributes allows the user to pass ZPR security attributes to be attached to a LB/NLB.
+	// Value is a JSON object containing key-value pairs scoped to a ZPR namespace similar to defined tags.
+	// ZPR https://docs.oracle.com/en-us/iaas/Content/zero-trust-packet-routing/home.htm
+	// LB https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/UpdateLoadBalancerDetails
+	// NLB https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/UpdateNetworkLoadBalancerDetails
+	ServiceAnnotationSecurityAttributes = "oci.oraclecloud.com/security-attributes"
 )
 
 // NLB specific annotations
@@ -429,6 +436,7 @@ type LBSpec struct {
 	AssignedIpv6                *string
 	IpVersionTranslationConfig  *client.IpVersionTranslationConfig
 	ReservedIPs                 []string
+	SecurityAttributes          map[string]map[string]interface{}
 
 	service *v1.Service
 	nodes   []*v1.Node
@@ -543,6 +551,11 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		return nil, err
 	}
 
+	securityAttribures, err := getSecurityAttributes(svc)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LBSpec{
 		Type:                        lbType,
 		Name:                        GetLoadBalancerName(svc),
@@ -575,6 +588,7 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 		AssignedIpv6:                assignedIpv6,
 		IpVersionTranslationConfig:  ipVersionTranslationConfig,
 		ReservedIPs:                 reservedIPs,
+		SecurityAttributes:          securityAttribures,
 	}, nil
 }
 
@@ -2195,4 +2209,23 @@ func getReservedIPs(svc *v1.Service) ([]string, error) {
 	}
 
 	return reservedIPList, nil
+}
+
+// getSecurityAttributes checks presence of SA service annotations and whether the value is the expected map of maps
+// sa is nil when annotation missing or empty string
+func getSecurityAttributes(svc *v1.Service) (sa map[string]map[string]interface{}, err error) {
+	val, exists := svc.Annotations[ServiceAnnotationSecurityAttributes]
+	if !exists {
+		return nil, nil
+	}
+
+	if val != "" {
+		sa = make(map[string]map[string]interface{})
+		err := json.Unmarshal([]byte(val), &sa)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse security attributes annotation")
+		}
+	}
+
+	return
 }

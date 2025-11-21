@@ -5937,6 +5937,98 @@ func TestNewLBSpecSuccess(t *testing.T) {
 				},
 			},
 		},
+		"SecurityAttributesNLB": {
+			defaultSubnetOne: "one",
+			IpVersions: &IpVersions{
+				IpFamilies:               []string{IPv4},
+				IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+				LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+				ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+			},
+			service: &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "kube-system",
+					Name:      "testservice",
+					UID:       "test-uid",
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerType:   NLB,
+						ServiceAnnotationSecurityAttributes: `{"Oracle-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit", "usagetype" : "zpr"}}}`,
+					},
+				},
+				Spec: v1.ServiceSpec{
+					IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+					SessionAffinity: v1.ServiceAffinityNone,
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(80),
+						},
+					},
+				},
+			},
+			expected: &LBSpec{
+				Name:     "kube-system/testservice/test-uid",
+				Type:     "nlb",
+				Shape:    "flexible",
+				Internal: false,
+				Subnets:  []string{"one"},
+				Listeners: map[string]client.GenericListener{
+					"TCP-80": {
+						Name:                  common.String("TCP-80"),
+						DefaultBackendSetName: common.String("TCP-80"),
+						Port:                  common.Int(80),
+						Protocol:              common.String("TCP"),
+						IpVersion:             GenericIpVersion(client.GenericIPv4),
+					},
+				},
+				BackendSets: map[string]client.GenericBackendSetDetails{
+					"TCP-80": {
+						Name:     common.String("TCP-80"),
+						Backends: []client.GenericBackend{},
+						HealthChecker: &client.GenericHealthChecker{
+							Protocol:         "HTTP",
+							IsForcePlainText: common.Bool(false),
+							Port:             common.Int(10256),
+							UrlPath:          common.String("/healthz"),
+							Retries:          common.Int(3),
+							TimeoutInMillis:  common.Int(3000),
+							IntervalInMillis: common.Int(10000),
+							ReturnCode:       common.Int(http.StatusOK),
+						},
+						IsInstantFailoverEnabled: common.Bool(false),
+						IsPreserveSource:         common.Bool(false),
+						Policy:                   common.String("FIVE_TUPLE"),
+						IpVersion:                GenericIpVersion(client.GenericIPv4),
+					},
+				},
+				IsPreserveSource:        common.Bool(false),
+				NetworkSecurityGroupIds: []string{},
+				SourceCIDRs:             []string{"0.0.0.0/0"},
+				Ports: map[string]portSpec{
+					"TCP-80": {
+						ListenerPort:      80,
+						HealthCheckerPort: 10256,
+					},
+				},
+				securityListManager:         newSecurityListManagerNOOP(),
+				ManagedNetworkSecurityGroup: &ManagedNetworkSecurityGroup{frontendNsgId: "", backendNsgId: []string{}, nsgRuleManagementMode: ManagementModeNone},
+				IpVersions: &IpVersions{
+					IpFamilies:               []string{IPv4},
+					IpFamilyPolicy:           common.String(string(v1.IPFamilyPolicySingleStack)),
+					LbEndpointIpVersion:      GenericIpVersion(client.GenericIPv4),
+					ListenerBackendIpVersion: []client.GenericIpVersion{client.GenericIPv4},
+				},
+				SecurityAttributes: map[string]map[string]interface{}{
+					"Oracle-ZPR": {
+						"MaxEgressCount": map[string]interface{}{
+							"value":     "42",
+							"mode":      "audit",
+							"usagetype": "zpr",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	cp := &CloudLoadBalancerProvider{
@@ -16220,6 +16312,102 @@ func TestNewLBSpecBackendNsgIds(t *testing.T) {
 				t.Errorf("Expected ManagedNetworkSecurityGroup to be set")
 			} else if !reflect.DeepEqual(result.ManagedNetworkSecurityGroup.backendNsgId, tc.expectedBackendNsgIds) {
 				t.Errorf("Expected backendNsgIds %v, got %v", tc.expectedBackendNsgIds, result.ManagedNetworkSecurityGroup.backendNsgId)
+			}
+		})
+	}
+}
+
+func TestGetSecurityAtributes(t *testing.T) {
+	tests := []struct {
+		name           string
+		svcAnnotations map[string]string
+		expected       map[string]map[string]interface{}
+		wantErr        bool
+	}{
+		{
+			name: "no-annotation",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationLoadBalancerType: NLB,
+			},
+			expected: nil,
+			wantErr:  false,
+		},
+		{
+			name: "empty-string",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationSecurityAttributes: "",
+			},
+			expected: nil,
+			wantErr:  false,
+		},
+		{
+			name: "lb-example",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationSecurityAttributes: `{"Oracle-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit", "usagetype" : "zpr"}}}`,
+			},
+			expected: map[string]map[string]interface{}{
+				"Oracle-ZPR": {
+					"MaxEgressCount": map[string]interface{}{
+						"value":     "42",
+						"mode":      "audit",
+						"usagetype": "zpr",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "single-value",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationSecurityAttributes: `{"ZPR": {"MaxEgressCount": "zpr"}}`,
+			},
+			expected: map[string]map[string]interface{}{
+				"ZPR": {
+					"MaxEgressCount": "zpr",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing-outer-map",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationSecurityAttributes: "not a map",
+			},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name: "missing-inner-map",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationSecurityAttributes: `{"Oracle-ZPR": {"foo"}}`,
+			},
+			expected: nil,
+			wantErr:  true,
+		},
+		{
+			name: "missmatches-parentheses",
+			svcAnnotations: map[string]string{
+				ServiceAnnotationSecurityAttributes: `{"Oracle-ZPR": {"MaxEgressCount": {"value":"42","mode":"audit", "usagetype" : "zpr"}}}}`,
+			},
+			expected: nil,
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := &v1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: tt.svcAnnotations,
+				},
+			}
+			got, err := getSecurityAttributes(svc)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getSecurityAttribures() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.expected) {
+				t.Errorf("getSecurityAttribures = %v, expected %v", got, tt.expected)
 			}
 		})
 	}
