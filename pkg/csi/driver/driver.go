@@ -13,7 +13,6 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
-
 	"github.com/oracle/oci-cloud-controller-manager/cmd/oci-csi-node-driver/nodedriveroptions"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	csi_util "github.com/oracle/oci-cloud-controller-manager/pkg/csi-util"
@@ -21,6 +20,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/instance/metadata"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util/disk"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -116,13 +116,14 @@ type FSSControllerDriver struct {
 
 // NodeDriver implements CSI Node interfaces
 type NodeDriver struct {
-	nodeID       string
-	KubeClient   kubernetes.Interface
-	logger       *zap.SugaredLogger
-	util         *csi_util.Util
-	volumeLocks  *csi_util.VolumeLocks
-	nodeMetadata *csi_util.NodeMetadata
-	csiConfig    *util.CSIConfig
+	nodeID         string
+	KubeClient     kubernetes.Interface
+	logger         *zap.SugaredLogger
+	util           *csi_util.Util
+	volumeLocks    *csi_util.VolumeLocks
+	nodeMetadata   *csi_util.NodeMetadata
+	csiConfig      *util.CSIConfig
+	mounterFactory disk.MounterFactory
 	csi.UnimplementedNodeServer
 }
 
@@ -165,13 +166,14 @@ func newControllerDriver(kubeClientSet kubernetes.Interface, logger *zap.Sugared
 
 func newNodeDriver(nodeID string, nodeMetaData *csi_util.NodeMetadata, kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, csiConfig *util.CSIConfig) NodeDriver {
 	return NodeDriver{
-		nodeID:       nodeID,
-		KubeClient:   kubeClientSet,
-		logger:       logger,
-		util:         &csi_util.Util{Logger: logger},
-		volumeLocks:  csi_util.NewVolumeLocks(),
-		nodeMetadata: nodeMetaData,
-		csiConfig:    csiConfig,
+		nodeID:         nodeID,
+		KubeClient:     kubeClientSet,
+		logger:         logger,
+		util:           &csi_util.Util{Logger: logger},
+		volumeLocks:    csi_util.NewVolumeLocks(),
+		nodeMetadata:   nodeMetaData,
+		csiConfig:      csiConfig,
+		mounterFactory: disk.DefaultMounterFactory,
 	}
 }
 

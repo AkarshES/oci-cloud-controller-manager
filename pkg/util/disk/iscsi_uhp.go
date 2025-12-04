@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	volumeLoginTimeout  = 3 * time.Minute
+	volumeLoginTimeout = 3 * time.Minute
 
-	pathPollIntervalUHP  = 10 * time.Second
+	pathPollIntervalUHP = 10 * time.Second
 
 	CHROOT_BASH_COMMAND = "chroot-bash"
 )
@@ -198,7 +198,7 @@ func (c *iSCSIUHPMounter) DeviceOpened(pathname string) (bool, error) {
 func (c *iSCSIUHPMounter) IsMounted(devicePath string, targetPath string) (bool, error) {
 	notMnt, err := c.mounter.IsLikelyNotMountPoint(targetPath)
 	if err != nil {
-		if os.IsNotExist(err){
+		if os.IsNotExist(err) {
 			return false, nil
 		}
 		return false, fmt.Errorf("failed to check if %s is a mount point: %v", targetPath, err)
@@ -226,7 +226,7 @@ func (c *iSCSIUHPMounter) ISCSILogoutOnFailure() error {
 	return nil
 }
 
-func GetMultipathIscsiDevicePath(ctx context.Context, consistentDevicePath string, logger *zap.SugaredLogger) (string, error) {
+func (c *iSCSIUHPMounter) GetMultipathIscsiDevicePath(ctx context.Context, consistentDevicePath string, logger *zap.SugaredLogger) (string, error) {
 	logger.With("consistentDevicePath", consistentDevicePath).Info("Getting friendly name of multipath device using consistent device path")
 
 	ctxt, cancel := context.WithTimeout(ctx, pathPollTimeout)
@@ -282,4 +282,9 @@ func ReadLink(symbolicLink string, logger *zap.SugaredLogger) (string, error) {
 	}
 
 	return linkedPath, nil
+}
+
+func (c *iSCSIUHPMounter) WaitForDevicePathToExist(ctx context.Context, disk *Disk, logger *zap.SugaredLogger) (string, error) {
+	c.logger.Info("Attachment type ISCSI for UHP. WaitForDevicePathToExist() not needed for UHP ISCSI attachment")
+	return "", nil
 }

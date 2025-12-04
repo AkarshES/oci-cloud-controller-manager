@@ -91,7 +91,7 @@ type Interface interface {
 
 	DeviceOpened(pathname string) (bool, error)
 
-	IsMounted(devicePath string, targetPath string)	(bool, error)
+	IsMounted(devicePath string, targetPath string) (bool, error)
 
 	// updates the queue depth for iSCSI target
 	UpdateQueueDepth() error
@@ -118,6 +118,10 @@ type Interface interface {
 	WaitForPathToExist(path string, maxRetries int) bool
 
 	ISCSILogoutOnFailure() error
+
+	GetMultipathIscsiDevicePath(ctx context.Context, consistentDevicePath string, logger *zap.SugaredLogger) (string, error)
+
+	WaitForDevicePathToExist(ctx context.Context, disk *Disk, logger *zap.SugaredLogger) (string, error)
 }
 
 // iSCSIMounter implements Interface.
@@ -450,6 +454,11 @@ func (c *iSCSIMounter) WaitForVolumeLoginOrTimeout(ctx context.Context, multipat
 	return nil
 }
 
+func (c *iSCSIMounter) GetMultipathIscsiDevicePath(ctx context.Context, consistentDevicePath string, logger *zap.SugaredLogger) (string, error) {
+	c.logger.Info("Attachment type ISCSI. GetMultipathIscsiDevicePath() not needed for iscsi attachment")
+	return "", nil
+}
+
 func (c *iSCSIMounter) FormatAndMount(source string, target string, fstype string, options []string) error {
 	safeMounter := &mount.SafeFormatAndMount{
 		Interface: c.mounter,
@@ -495,7 +504,7 @@ func (c *iSCSIMounter) IsMounted(devicePath string, targetPath string) (bool, er
 	var diskByPath string
 	notMnt, err := c.mounter.IsLikelyNotMountPoint(targetPath)
 	if err != nil {
-		if os.IsNotExist(err){
+		if os.IsNotExist(err) {
 			return false, nil
 		}
 		return false, fmt.Errorf("failed to check if %s is a mount point: %v", targetPath, err)
@@ -610,7 +619,7 @@ func diskByPathsForMountPoint(mountPoint mount.MountPoint, logger *zap.SugaredLo
 			// Sample ISCSI path - ip-169.254.2.14:3260-iscsi-iqn.2015-12.com.oracleiaas:c47b5be3-d2fb-40a5-978b-a793c4ff4806-lun-3
 			// Sample PV path - pci-0000:02:00.0-scsi-0:0:1:2
 			base := filepath.Base(path)
-			if strings.HasPrefix(base, "ip-") && strings.Contains(base, "-iscsi-"){
+			if strings.HasPrefix(base, "ip-") && strings.Contains(base, "-iscsi-") {
 				// include only if ISCSI session active
 				if !isISCSISessionActive(path, logger) {
 					logger.Infof("Ignoring path %s due to no active ISCSI session", path)
@@ -681,7 +690,7 @@ func isISCSISessionActive(path string, logger *zap.SugaredLogger) bool {
 			continue
 		}
 
-		portal := m[1]+":"+m[2]
+		portal := m[1] + ":" + m[2]
 		portalMatch := strings.Contains(line, portal)
 
 		if portalMatch && strings.Contains(line, m[3]) {
@@ -713,7 +722,7 @@ func GetIscsiDevicePath(disk *Disk) (string, error) {
 	return "", fmt.Errorf("cannot find device path")
 }
 
-func WaitForDevicePathToExist(ctx context.Context, disk *Disk, logger *zap.SugaredLogger) (string, error) {
+func (c *iSCSIMounter) WaitForDevicePathToExist(ctx context.Context, disk *Disk, logger *zap.SugaredLogger) (string, error) {
 	logger.With("disk", disk).Info("Waiting for iscsi device path to exist")
 
 	ctxt, cancel := context.WithTimeout(ctx, pathPollTimeout)
