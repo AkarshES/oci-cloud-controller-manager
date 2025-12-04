@@ -87,6 +87,7 @@ require (
 
 require (
 	github.com/go-logr/logr v1.4.2
+	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0
 	github.com/oracle/oci-go-sdk/v65 v65.2.0
