@@ -20,6 +20,7 @@ import (
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/instance/metadata"
+	"github.com/oracle/oci-cloud-controller-manager/pkg/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -121,7 +122,7 @@ type NodeDriver struct {
 	util         *csi_util.Util
 	volumeLocks  *csi_util.VolumeLocks
 	nodeMetadata *csi_util.NodeMetadata
-	csiConfig    *csi_util.CSIConfig
+	csiConfig    *util.CSIConfig
 	csi.UnimplementedNodeServer
 }
 
@@ -162,7 +163,7 @@ func newControllerDriver(kubeClientSet kubernetes.Interface, logger *zap.Sugared
 	}
 }
 
-func newNodeDriver(nodeID string, nodeMetaData *csi_util.NodeMetadata, kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, csiConfig *csi_util.CSIConfig) NodeDriver {
+func newNodeDriver(nodeID string, nodeMetaData *csi_util.NodeMetadata, kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, csiConfig *util.CSIConfig) NodeDriver {
 	return NodeDriver{
 		nodeID:       nodeID,
 		KubeClient:   kubeClientSet,
@@ -244,7 +245,7 @@ func getMetricPusher(metricPusherGetter MetricPusherGetter, logger *zap.SugaredL
 	return metricPusher, nil
 }
 
-func GetNodeDriver(name string, nodeID string, nodeMetadata *csi_util.NodeMetadata, kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, csiConfig *csi_util.CSIConfig) csi.NodeServer {
+func GetNodeDriver(name string, nodeID string, nodeMetadata *csi_util.NodeMetadata, kubeClientSet kubernetes.Interface, logger *zap.SugaredLogger, csiConfig *util.CSIConfig) csi.NodeServer {
 	if name == BlockVolumeDriverName {
 		return BlockVolumeNodeDriver{NodeDriver: newNodeDriver(nodeID, nodeMetadata, kubeClientSet, logger, csiConfig)}
 	}
@@ -264,7 +265,7 @@ func NewNodeDriver(logger *zap.SugaredLogger, nodeOptions nodedriveroptions.Node
 
 	kubeClientSet := csi_util.GetKubeClient(logger, nodeOptions.Master, nodeOptions.Kubeconfig)
 	nodeMetadata := &csi_util.NodeMetadata{}
-	csiConfig := &csi_util.CSIConfig{}
+	csiConfig := &util.CSIConfig{}
 
 	return &Driver{
 		controllerDriver:       nil,
