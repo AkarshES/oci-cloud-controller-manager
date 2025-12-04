@@ -157,3 +157,18 @@ func StorageClassWorkloadIdentityCheck(parameters map[string]string, secretName 
 	}
 	return false
 }
+
+// CSIConfig represents the structure of the ConfigMap data.
+type CSIConfig struct {
+	Lustre   *DriverConfig `yaml:"lustre"`
+	Bv       *DriverConfig `yaml:"bv"`
+	IsLoaded bool
+}
+
+
+// DriverConfig represents driver-specific configurations.
+type DriverConfig struct {
+	SkipNodeUnstage      bool `yaml:"skipNodeUnstage"`
+	SkipLustreParameters bool `yaml:"skipLustreParameters"`
+	SkipBrokenSymLinks   bool `yaml:"skipBrokenSymLinks"`
+}
