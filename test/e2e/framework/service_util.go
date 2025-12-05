@@ -1620,21 +1620,21 @@ func ValidateRuleSetConfiguration(lb *client.GenericLoadBalancer, name string, r
 	return true, nil
 }
 
-// ValidateSecurityAttributes checks if lb.SecurityAttribures[saNs][sa] == val. Pass saNs = "" to check for no SAs present.
+// ValidateSecurityAttributes checks if lb.SecurityAttributes[saNs][sa] == val. Pass saNs = "" to check for no SAs present.
 func ValidateSecurityAttributes(lb *client.GenericLoadBalancer, saNs, sa string, val interface{}) bool {
-	if lb.SecurityAttribures == nil {
+	if lb.SecurityAttributes == nil {
 		Logf("LB security attributes is nil")
 		return saNs == ""
 	}
 
-	k := slices.Collect(maps.Keys(lb.SecurityAttribures))
+	k := slices.Collect(maps.Keys(lb.SecurityAttributes))
 	Logf("Security attribute namespaces present on LB: %v", k)
 
 	if saNs == "" && len(k) == 0 {
 		return true
 	}
 
-	ns, ok := lb.SecurityAttribures[saNs]
+	ns, ok := lb.SecurityAttributes[saNs]
 	if !ok {
 		Logf("Security attribute namespace %s not present on LB", saNs)
 		return false

@@ -2055,10 +2055,10 @@ var _ = Describe("Zero Packet Routing", func() {
 			sharedfw.ExpectNoError(err)
 
 			By("Validate ZPR Security attributes")
-			Expect(loadBalancer.SecurityAttribures).NotTo(BeNil())
-			Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]).NotTo(BeNil())
-			Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]["static-attribute"]).NotTo(BeNil())
-			expected := reflect.DeepEqual(loadBalancer.SecurityAttribures["zpr-test-ns"]["static-attribute"],
+			Expect(loadBalancer.SecurityAttributes).NotTo(BeNil())
+			Expect(loadBalancer.SecurityAttributes["zpr-test-ns"]).NotTo(BeNil())
+			Expect(loadBalancer.SecurityAttributes["zpr-test-ns"]["static-attribute"]).NotTo(BeNil())
+			expected := reflect.DeepEqual(loadBalancer.SecurityAttributes["zpr-test-ns"]["static-attribute"],
 				map[string]interface{}{"value": "red", "mode": "enforce"})
 			Expect(expected).To(BeTrue())
 
@@ -2160,10 +2160,10 @@ var _ = Describe("Zero Packet Routing", func() {
 		sharedfw.ExpectNoError(err)
 
 		By("Validate ZPR Security attributes")
-		Expect(loadBalancer.SecurityAttribures).NotTo(BeNil())
-		Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]).NotTo(BeNil())
-		Expect(loadBalancer.SecurityAttribures["zpr-test-ns"]["list-attribute"]).NotTo(BeNil())
-		expected := reflect.DeepEqual(loadBalancer.SecurityAttribures["zpr-test-ns"]["list-attribute"],
+		Expect(loadBalancer.SecurityAttributes).NotTo(BeNil())
+		Expect(loadBalancer.SecurityAttributes["zpr-test-ns"]).NotTo(BeNil())
+		Expect(loadBalancer.SecurityAttributes["zpr-test-ns"]["list-attribute"]).NotTo(BeNil())
+		expected := reflect.DeepEqual(loadBalancer.SecurityAttributes["zpr-test-ns"]["list-attribute"],
 			map[string]interface{}{"value": "one", "mode": "enforce"})
 		Expect(expected).To(BeTrue())
 

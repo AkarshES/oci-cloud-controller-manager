@@ -172,7 +172,7 @@ type GenericLoadBalancer struct {
 	BackendSets             map[string]GenericBackendSetDetails
 	RuleSets                map[string]loadbalancer.RuleSetDetails
 	IpVersion               *GenericIpVersion
-	SecurityAttribures      map[string]map[string]interface{}
+	SecurityAttributes      map[string]map[string]interface{}
 
 	FreeformTags map[string]string
 	DefinedTags  map[string]map[string]interface{}

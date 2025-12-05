@@ -628,7 +628,7 @@ func (c *networkLoadbalancer) networkLoadbalancerToGenericLoadbalancer(nlb *netw
 			IpVersionTranslationMode: nlb.IpVersionTranslation,
 			Nat46Ipv6CidrPrefix:      nlb.Nat46Ipv6CidrPrefix,
 		},
-		SecurityAttribures: nlb.SecurityAttributes,
+		SecurityAttributes: nlb.SecurityAttributes,
 	}
 }
 

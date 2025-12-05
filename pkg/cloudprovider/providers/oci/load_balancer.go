@@ -1241,7 +1241,7 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancer(ctx context.Context, lb
 	}
 
 	// Check if the customer managed LB security attributes have changed
-	if !reflect.DeepEqual(lb.SecurityAttribures, spec.SecurityAttributes) {
+	if !reflect.DeepEqual(lb.SecurityAttributes, spec.SecurityAttributes) {
 		details := &client.GenericUpdateLoadBalancerDetails{
 			SecurityAttributes: spec.SecurityAttributes,
 		}
@@ -2270,7 +2270,7 @@ func (clb *CloudLoadBalancerProvider) updateLoadBalancerSecurityAttributes(ctx c
 	if err != nil {
 		return errors.Wrap(err, "failed to create UpdateLoadBalancer request")
 	}
-	logger := clb.logger.With("existingSecurityAttributes", lb.SecurityAttribures, "newSecurityAttributes", details.SecurityAttributes)
+	logger := clb.logger.With("existingSecurityAttributes", lb.SecurityAttributes, "newSecurityAttributes", details.SecurityAttributes)
 	logger.Infof("Awaiting UpdateLoadBalancer workrequest to update ZPR security attriburtes %s", wrID)
 	_, err = clb.lbClient.AwaitWorkRequest(ctx, wrID)
 	if err != nil {

@@ -16467,11 +16467,11 @@ func TestGetSecurityAtributes(t *testing.T) {
 			}
 			got, err := getSecurityAttributes(svc)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getSecurityAttribures() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getSecurityAttributes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.expected) {
-				t.Errorf("getSecurityAttribures = %v, expected %v", got, tt.expected)
+				t.Errorf("getSecurityAttributes = %v, expected %v", got, tt.expected)
 			}
 		})
 	}

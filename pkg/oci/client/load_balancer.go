@@ -725,7 +725,7 @@ func (c *loadbalancerClientStruct) loadbalancerToGenericLoadbalancer(lb *loadbal
 		FreeformTags:            lb.FreeformTags,
 		DefinedTags:             lb.DefinedTags,
 		RuleSets:                ruleSets,
-		SecurityAttribures:      lb.SecurityAttributes,
+		SecurityAttributes:      lb.SecurityAttributes,
 		SystemTags:              lb.SystemTags,
 	}
 }
