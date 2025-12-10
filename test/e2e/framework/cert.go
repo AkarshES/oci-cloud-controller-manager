@@ -52,7 +52,7 @@ func (f *Framework) GetOrCreateCertificate() string {
 		},
 	}
 	if certificate, err := f.certificateClient.CreateCertificate(context.Background(), req); err != nil {
-		Logf(fmt.Sprintf("Unable to create certificate due to error %s", err))
+		Logf(fmt.Sprintf("Unable to create certificate due to error %s with message %s", err, err.Error()))
 		return ""
 	} else {
 		// Wait for certificate to be available
@@ -119,7 +119,7 @@ func (f *Framework) DeleteCertificate() {
 			TimeOfDeletion: &common.SDKTime{Time: time.Now().UTC().Add(time.Duration(8) * 24 * time.Hour)},
 		}}
 	if _, err := f.certificateClient.ScheduleCertificateDeletion(context.Background(), req); err != nil {
-		Logf("Error deleting certificate: %v", err)
+		Logf("Error deleting certificate: %v with message %s", err, err.Error())
 	}
 }
 
