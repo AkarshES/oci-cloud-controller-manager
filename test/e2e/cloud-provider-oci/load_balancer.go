@@ -4457,7 +4457,6 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 			tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
 			sharedfw.Logf("TCP node port: %d", tcpNodePort)
 
-			//  Add cert specific check -> Check if certificate association is created
 			name, err := setupF.GetCertificateAssociation(setupF.CertOCID)
 			sharedfw.Logf("Certificate Association: %d", name)
 			sharedfw.ExpectNoError(err)
@@ -4473,6 +4472,33 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 				s.Spec.Ports[1].NodePort = 0
 			})
 
+			By("Update config port to remove the associations")
+			_, upateErr := f.ClientSet.CoreV1().ConfigMaps(ns).Update(context.Background(), &v1.ConfigMap{
+				Data: map[string]string{
+					"8443": fmt.Sprintf("[\"%v\"]", setupF.CertOCID),
+				},
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      sslConfigMapName,
+					Namespace: ns,
+				},
+			}, metav1.UpdateOptions{})
+			sharedfw.ExpectNoError(upateErr)
+			//  Add cert specific check -> Check if certificate association is created
+			pollAndCheckFunc := func() (bool, error) {
+				name, _ := setupF.GetCertificateAssociation(setupF.CertOCID)
+				if name != "" {
+					return false, nil
+				}
+				return true, nil
+			}
+			// Wait for a ramdom window to reflect the service update
+			if err := wait.Poll(30*time.Second, 5*time.Minute, pollAndCheckFunc); err != nil {
+				sharedfw.ExpectNoError(err, "Configmap update did not remove the service association")
+			}
 			// Wait for the load balancer to be destroyed asynchronously
 			tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
 			jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
