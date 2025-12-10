@@ -835,7 +835,7 @@ func (f *Framework) Initialize() {
 	f.CertOCID = certOcid
 	f.EnableCertCreation = enableCertificateCreation
 	if f.EnableCertCreation {
-		f.CertAuthorityOCID = certOcid
+		f.CertAuthorityOCID = certAuthorityOcid
 		f.KMSKeyOCIDForCA = kmsKeyID
 		Logf("CertAuthorityOCID is: %s", f.CertAuthorityOCID)
 	}
