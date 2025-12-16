@@ -169,25 +169,29 @@ func (f *Framework) DeleteCertificateAuthority() {
 	}
 }
 
-func (f *Framework) GetCertificateAssociation(certOCid string) (string, error) {
+func (f *Framework) GetCertificateAssociations(certOCid string) ([]string, error) {
 	// check cert OCID available
 	if cert, err := f.certificateClient.GetCertificate(context.Background(), certificatesmanagement.GetCertificateRequest{
 		CertificateId: common.String(certOCid),
 	}); err != nil {
 		Logf("Error reading certificate %s", err.Error())
-		return "", err
+		return make([]string, 0), err
 	} else {
 		if associations, e := f.certificateClient.ListAssociations(context.Background(), certificatesmanagement.ListAssociationsRequest{
 			CertificatesResourceId: common.String(certOCid),
 			CompartmentId:          cert.CompartmentId,
 		}); e != nil {
 			Logf("Error reading associations found in certificate %s", e.Error())
-			return "", e
+			return make([]string, 0), e
 		} else if len(associations.Items) == 0 {
 			Logf("No associations found in certificate %s", certOCid)
-			return "", fmt.Errorf("no associations found for certificate '%s'", certOCid)
+			return make([]string, 0), fmt.Errorf("no associations found for certificate '%s'", certOCid)
 		} else {
-			return *associations.Items[0].Name, nil
+			names := make([]string, len(associations.Items))
+			for i, association := range associations.Items {
+				names[i] = *association.Name
+			}
+			return names, nil
 		}
 	}
 }

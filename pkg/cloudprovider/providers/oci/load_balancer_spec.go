@@ -495,7 +495,9 @@ func NewLBSpec(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes []*v
 	}
 
 	listeners, err := getListeners(svc, sslConfig, convertOciIpVersionsToOciIpFamilies(versions.ListenerBackendIpVersion))
-	logger.Infof("Expected Listener %+v", listeners)
+	for i, data := range listeners {
+		logger.Debugf("Expected Listener %d ssl config is %+v ", i, data.SslConfiguration)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1440,7 +1442,7 @@ func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurati
 		return nil, nil
 	}
 	// Either secret name or certificate OCID should be present for SSL configuration
-	if len(name) == 0 && len(portToCertOCIDMap) == 0 {
+	if len(name) == 0 && (len(portToCertOCIDMap) == 0 || len(portToCertOCIDMap[port]) == 0) {
 		return nil, nil
 	}
 	// TODO: fast-follow to pass the sslconfiguration object directly to loadbalancer
