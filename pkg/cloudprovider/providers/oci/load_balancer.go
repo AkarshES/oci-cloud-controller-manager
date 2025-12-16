@@ -2798,6 +2798,6 @@ func (cp *CloudProvider) getCertOcidForListenerPort(ctx context.Context, service
 			}
 		}
 	}
-	cp.logger.Infof("found following map %+v for serice %s", portTLSMap, service.Name)
+	cp.logger.Infof("found following map %+v for service %s", portTLSMap, service.Name)
 	return portTLSMap, nil
 }
