@@ -4413,7 +4413,8 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 			sharedfw.Logf("Cert OCID: %s", setupF.CertOCID)
 			_, err := f.ClientSet.CoreV1().ConfigMaps(ns).Create(context.Background(), &v1.ConfigMap{
 				Data: map[string]string{
-					"443": fmt.Sprintf("[\"%v\"]", setupF.CertOCID),
+					"443":  fmt.Sprintf("[\"%v\"]", setupF.CertOCID),
+					"8443": fmt.Sprintf("[\"%v\"]", setupF.CertOCID),
 				},
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "v1",
@@ -4438,7 +4439,7 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 				s.ObjectMeta.Annotations = map[string]string{
-					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:       "443",
+					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:       "443,8443",
 					cloudprovider.ServiceAnnotationLoadBalancerCertificateMap: sslConfigMapName,
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:       "true",
 				}
@@ -4457,7 +4458,7 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 			tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
 			sharedfw.Logf("TCP node port: %d", tcpNodePort)
 
-			name, err := setupF.GetCertificateAssociation(setupF.CertOCID)
+			name, err := setupF.GetCertificateAssociations(setupF.CertOCID)
 			sharedfw.Logf("Certificate Association: %d", name)
 			sharedfw.ExpectNoError(err)
 			Expect(name).NotTo(BeEmpty(), "Expecting an association")
@@ -4473,7 +4474,7 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 			})
 
 			By("Update config port to remove the associations")
-			_, upateErr := f.ClientSet.CoreV1().ConfigMaps(ns).Update(context.Background(), &v1.ConfigMap{
+			_, updateErr := f.ClientSet.CoreV1().ConfigMaps(ns).Update(context.Background(), &v1.ConfigMap{
 				Data: map[string]string{
 					"8443": fmt.Sprintf("[\"%v\"]", setupF.CertOCID),
 				},
@@ -4486,16 +4487,17 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 					Namespace: ns,
 				},
 			}, metav1.UpdateOptions{})
-			sharedfw.ExpectNoError(upateErr)
+			sharedfw.ExpectNoError(updateErr)
 			//  Add cert specific check -> Check if certificate association is created
 			pollAndCheckFunc := func() (bool, error) {
-				name, _ := setupF.GetCertificateAssociation(setupF.CertOCID)
-				if name != "" {
+				name, _ := setupF.GetCertificateAssociations(setupF.CertOCID)
+				if len(name) > 1 {
 					return false, nil
 				}
 				return true, nil
 			}
 			// Wait for a ramdom window to reflect the service update
+			// One of the association should be deleted
 			if err := wait.Poll(30*time.Second, 5*time.Minute, pollAndCheckFunc); err != nil {
 				sharedfw.ExpectNoError(err, "Configmap update did not remove the service association")
 			}
