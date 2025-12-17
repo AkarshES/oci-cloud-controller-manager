@@ -405,6 +405,9 @@ func getNonTerminalInstances(instances []core.Instance) []core.Instance {
 }
 
 func convertTags(tags map[string]map[string]string) map[string]map[string]interface{} {
+	if tags == nil {
+		return nil
+	}
 	result := make(map[string]map[string]interface{}, len(tags))
 	for k, v := range tags {
 		inner := make(map[string]interface{}, len(v))
@@ -416,7 +419,12 @@ func convertTags(tags map[string]map[string]string) map[string]map[string]interf
 	return result
 }
 
+// apiExtensionsJSONToMap converts a map of apiextensionsv1.JSON to a map[string]map[string]interface{}.
+// Returns nil if input is nil.
 func apiExtensionsJSONToMap(in map[string]apiextensionsv1.JSON) map[string]map[string]interface{} {
+	if in == nil {
+		return nil
+	}
 	result := make(map[string]map[string]interface{}, len(in))
 	for k, v := range in {
 		var m map[string]interface{}

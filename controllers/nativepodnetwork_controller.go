@@ -1260,6 +1260,9 @@ func getNodeNameFromPrimaryVnic(ip *core.Vnic, ipFamilies []string) string {
 }
 
 func toOCIIpv6PairDetails(source []npnv1beta1.Ipv6AddressIpv6SubnetCidrPairDetail) []core.Ipv6AddressIpv6SubnetCidrPairDetails {
+	if source == nil {
+		return nil
+	}
 	out := make([]core.Ipv6AddressIpv6SubnetCidrPairDetails, 0, len(source))
 	for _, s := range source {
 		out = append(out, core.Ipv6AddressIpv6SubnetCidrPairDetails{
