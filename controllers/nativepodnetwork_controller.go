@@ -21,11 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/netip"
 	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,8 +59,11 @@ const (
 	CREATE_IPV6         = "CREATE_IPV6"
 	ATTACH_VNIC         = "ATTACH_VNIC"
 	INITIALIZE_NPN_NODE = "INITIALIZE_NPN_NODE"
-	// GVA_DEFAULT_IP_COUNT is set to 16 at OKE-CP
-	GVA_DEFAULT_IP_COUNT = 16
+	// GVA_DEFAULT_IP_COUNT is set to 32 at OKE-CP
+	GVA_DEFAULT_IP_COUNT = 32
+
+	// The max value of ipCount is an arbitrary value of 256. This corresponds to IP CIDR address of block size 256
+	GVA_MAX_IP_COUNT = 256
 	// maxSecondaryIpsPerVNIC
 	// max allocatable IPs per vnic is 32 where one IP will be used as host address
 	// NPN requires one additional IP (from secondary vnic) as host address, it is used to talk with primary VNIC address for the host namespace interface.
@@ -500,7 +505,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log.WithValues("countOfExistingSecondaryIps", totalAllocatedSecondaryIPs).Info(FetchedPrivateIPsForSecondaryVNICs)
 
 	log.Info(ComputingAdditionalIpsByVnic)
-	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, &npn, totalAllocatedSecondaryIPs, nodeIpFamilies, gvaNics)
+	additionalIpsByVnic, err := getAdditionalSecondaryIPsNeededPerVNIC(existingSecondaryIpsbyVNIC, &npn, totalAllocatedSecondaryIPs, nodeIpFamilies, gvaNics, log)
 	if err != nil {
 		failReason, failMessage = "AllocatePrivateIPsFailed", "failed to allocate the required IP addresses"
 		log.WithValues("maxPodCount", *npn.Spec.MaxPodCount).Error(err, failMessage)
@@ -602,7 +607,7 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		Info("Fetched existingSecondaryIp for instance")
 
 	// assign host IP address here per vnic
-	existingSecondaryIpsbyVNIC = assignHostIpAddressForVnic(existingSecondaryIpsbyVNIC, nodeIpFamilies)
+	existingSecondaryIpsbyVNIC = assignHostIpAddressForVnic(existingSecondaryIpsbyVNIC, nodeIpFamilies, &npn)
 
 	// validate if maxPodCount = number of secondary IPs available on the vnics
 	if !isGvaNode(&npn) {
@@ -777,17 +782,45 @@ func (r *NativePodNetworkReconciler) getSecondaryIpsByVNICs(ctx context.Context,
 }
 
 // assignHostIpAddressForVnic is a util method to get HostIP Address per vnic
-func assignHostIpAddressForVnic(existingSecondaryVNICs map[string]*vnicSecondaryAddresses, ipFamilies []string) map[string]*vnicSecondaryAddresses {
+// a non-IP CIDR Address is assigned as Host address
+func assignHostIpAddressForVnic(existingSecondaryVNICs map[string]*vnicSecondaryAddresses, ipFamilies []string, npn *npnv1beta1.NativePodNetwork) map[string]*vnicSecondaryAddresses {
 	IPsbyVNICs := make(map[string]*vnicSecondaryAddresses)
+
 	for k, vnic := range existingSecondaryVNICs {
+
 		if len(ipFamilies) == 0 || contains(ipFamilies, IPv4) {
 			if len(vnic.V4) >= 1 {
-				vnic.hostIpv4, vnic.V4 = vnic.V4[0].IpAddress, vnic.V4[1:]
+				if isGvaNode(npn) {
+					for i := 0; i < len(vnic.V4); i++ {
+						// ipv4 non-ipCidrAddress has prefix == 32
+						if vnic.V4[i].CidrPrefixLength != nil && *vnic.V4[i].CidrPrefixLength == 32 {
+							vnic.hostIpv4 = vnic.V4[i].IpAddress
+							vnic.V4 = append(vnic.V4[:i], vnic.V4[i+1:]...)
+							break
+						}
+					}
+
+				} else {
+					vnic.hostIpv4, vnic.V4 = vnic.V4[0].IpAddress, vnic.V4[1:]
+				}
+
 			}
 		}
 		if contains(ipFamilies, IPv6) {
 			if len(vnic.V6) >= 1 {
-				vnic.hostIpv6, vnic.V6 = vnic.V6[0].IpAddress, vnic.V6[1:]
+				if isGvaNode(npn) {
+					for i := 0; i < len(vnic.V6); i++ {
+						// non-ipCidrAddress for ipv4 has prefix == nil
+						if vnic.V6[i].CidrPrefixLength == nil {
+							vnic.hostIpv6 = vnic.V6[i].IpAddress
+							vnic.V6 = append(vnic.V6[:i], vnic.V6[i+1:]...)
+							break
+						}
+					}
+
+				} else {
+					vnic.hostIpv6, vnic.V6 = vnic.V6[0].IpAddress, vnic.V6[1:]
+				}
 			}
 		}
 		IPsbyVNICs[k] = vnic
@@ -887,8 +920,7 @@ func validateAdditionalVnicAttachments(vnics []VnicAttachmentResponse) error {
 }
 
 // compute the number of (additional) IPs needed to be allocated per VNIC
-func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSecondaryAddresses, npn *npnv1beta1.NativePodNetwork, totalAllocated IpAddressCountByVersion, nodeIpFamilies []string, gvaNics []GvaNics) ([]VnicIPAllocations, error) {
-
+func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSecondaryAddresses, npn *npnv1beta1.NativePodNetwork, totalAllocated IpAddressCountByVersion, nodeIpFamilies []string, gvaNics []GvaNics, log logr.Logger) ([]VnicIPAllocations, error) {
 	if *npn.Spec.MaxPodCount == 0 && len(npn.Status.VNICs) == 0 {
 		return nil, nil
 	}
@@ -909,6 +941,8 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 	perVnicIpFamilies := make(map[string][]string)
 	if isGvaNode(npn) {
 		for _, vnic := range gvaNics {
+			var existingIPsOnVnic IpAddressCountByVersion
+
 			if vnic.vnicId == nil {
 				continue
 			}
@@ -916,13 +950,37 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 			ipCount := vnic.SecondaryVnicSpec.CreateVnicDetails.IpCount
 			vnicIpFamilies := vnic.SecondaryVnicSpec.CreateVnicDetails.IpFamilies
 			perVnicIpFamilies[vnicID] = vnicIpFamilies
-			if contains(vnicIpFamilies, IPv4) {
+			if contains(nodeIpFamilies, IPv4) {
+				for _, v4Ips := range existingIpsByVnic[vnicID].V4 {
+					if v4Ips.CidrPrefixLength != nil && *v4Ips.CidrPrefixLength < 32 {
+						log.Info(fmt.Sprintf("%s is an ip cidr address with prefix %d. expanding the cidr range", *v4Ips.IpAddress, *v4Ips.CidrPrefixLength))
+						existingIPsOnVnic.V4 += getBlockSizeForCidrPrefix(*v4Ips.CidrPrefixLength, IPv4)
+					} else {
+						existingIPsOnVnic.V4++
+					}
+
+				}
 				// 1 for host IP
-				requiredIPv4ByVnic[vnicID] = max(0, ipCount+1-len(existingIpsByVnic[vnicID].V4))
+				requiredIPv4ByVnic[vnicID] = max(0, ipCount+1-existingIPsOnVnic.V4)
 			}
-			if contains(vnicIpFamilies, IPv6) {
+			if contains(nodeIpFamilies, IPv6) {
+				for _, v6Ips := range existingIpsByVnic[vnicID].V6 {
+					if v6Ips.CidrPrefixLength != nil {
+						log.Info(fmt.Sprintf("%s is an ip cidr address with prefix %d. expanding the cidr range", *v6Ips.IpAddress, *v6Ips.CidrPrefixLength))
+						// for ipv6 the blocksize can be greater than or equal to ipCount
+						// need to consider ipCount as size in such cases
+						blockSize := getBlockSizeForCidrPrefix(*v6Ips.CidrPrefixLength, IPv6)
+						if blockSize > ipCount {
+							blockSize = ipCount
+						}
+						existingIPsOnVnic.V6 += blockSize
+					} else {
+						existingIPsOnVnic.V6++
+					}
+
+				}
 				// 1 for host IP
-				requiredIPv6ByVnic[vnicID] = max(0, ipCount+1-len(existingIpsByVnic[vnicID].V6))
+				requiredIPv6ByVnic[vnicID] = max(0, ipCount+1-existingIPsOnVnic.V6)
 			}
 		}
 	} else {
@@ -951,18 +1009,31 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 			needV6 = totalRequiredIPv6
 		}
 
+		var available int
+		isGva := isGvaNode(npn)
 		if contains(ipFamilies, IPv4) {
-			available := maxSecondaryIpsPerVNIC - len(existing.V4)
+			if isGva {
+				// 1 for host address
+				available = GVA_MAX_IP_COUNT + 1 - len(existing.V4)
+			} else {
+				available = maxSecondaryIpsPerVNIC - len(existing.V4)
+			}
+
 			ipAlloc.V4 = min(needV4, available)
-			if !isGvaNode(npn) {
+			if !isGva {
 				totalRequiredIPv4 -= ipAlloc.V4
 			}
 		}
 
 		if contains(ipFamilies, IPv6) {
-			available := maxSecondaryIpsPerVNIC - len(existing.V6)
+			if isGva {
+				// 1 for host address
+				available = GVA_MAX_IP_COUNT + 1 - len(existing.V6)
+			} else {
+				available = maxSecondaryIpsPerVNIC - len(existing.V6)
+			}
 			ipAlloc.V6 = min(needV6, available)
-			if !isGvaNode(npn) {
+			if !isGva {
 				totalRequiredIPv6 -= ipAlloc.V6
 			}
 		}
@@ -992,6 +1063,7 @@ func validateVnicIpAllocation(ipAllocations []IPAllocation) error {
 
 // util method to translate OCI objects to NPN status fields
 func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSecondaryIpsByVNIC map[string]*vnicSecondaryAddresses, nodeIpFamilies []string, nics []GvaNics) []npnv1beta1.VNICAddress {
+	var ipCount int
 	npnVNICAddresses := make([]npnv1beta1.VNICAddress, 0, len(existingSecondaryIpsByVNIC))
 	for _, vnic := range existingSecondaryVNICs {
 		nicConfiguration := getNicConfigurationForNodes(vnic.Vnic, vnic.Subnet, nics)
@@ -1007,6 +1079,7 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 		}
 		if len(nics) > 0 && *nicConfiguration.IpCount > 0 {
 			npnVNICAddress.NicConfiguration = nicConfiguration
+			ipCount = *nicConfiguration.IpCount
 		}
 
 		vnicSecondaryAddresses := existingSecondaryIpsByVNIC[*vnic.Vnic.Id]
@@ -1057,24 +1130,93 @@ func convertCoreVNICtoNPNStatus(existingSecondaryVNICs []SubnetVnic, existingSec
 		}
 		vnicAddresses := make([]*string, 0, secondaryIpCount)
 		vnicPodAddresses := make([]npnv1beta1.PodAddress, 0, secondaryIpCount)
-		var ipv4IP, ipv6IP *string
+		//var ipv4IP, ipv6IP *string
+		var ipv4IPs, ipv6IPs []*string
 		for i := 0; i < secondaryIpCount; i++ {
 			if len(nodeIpFamilies) == 0 || requireIPv4s {
+				if vnicSecondaryAddresses.V4[i].CidrPrefixLength != nil && *vnicSecondaryAddresses.V4[i].CidrPrefixLength < 32 {
+					ipsInRange, err := expandIpAddressesInRange(*vnicSecondaryAddresses.V4[i].IpAddress,
+						*vnicSecondaryAddresses.V4[i].CidrPrefixLength)
+					if err != nil {
+						return nil
+					}
+					for _, address := range ipsInRange {
+						vnicAddresses = append(vnicAddresses, &address)
+					}
+				} else {
+					vnicAddresses = append(vnicAddresses, vnicSecondaryAddresses.V4[i].IpAddress)
+				}
 				// Populate the old fields in case of IPv4 or nodeIpFamilies length == 0
-				vnicAddresses = append(vnicAddresses, vnicSecondaryAddresses.V4[i].IpAddress)
+
 			}
 			if requireIPv4s {
-				ipv4IP = vnicSecondaryAddresses.V4[i].IpAddress
+				if vnicSecondaryAddresses.V4[i].CidrPrefixLength != nil && *vnicSecondaryAddresses.V4[i].CidrPrefixLength < 32 {
+					ipsInRange, err := expandIpAddressesInRange(*vnicSecondaryAddresses.V4[i].IpAddress,
+						*vnicSecondaryAddresses.V4[i].CidrPrefixLength)
+					if err != nil {
+						return nil
+					}
+					for _, address := range ipsInRange {
+						fmt.Println(&address)
+						ipv4IPs = append(ipv4IPs, &address)
+					}
+				} else {
+					ipv4IPs = append(ipv4IPs, vnicSecondaryAddresses.V4[i].IpAddress)
+				}
 			}
 			if requireIPv6s {
-				ipv6IP = vnicSecondaryAddresses.V6[i].IpAddress
+				if vnicSecondaryAddresses.V6[i].CidrPrefixLength != nil {
+					ipsInRange, err := expandIpAddressesInRange(*vnicSecondaryAddresses.V6[i].IpAddress,
+						*vnicSecondaryAddresses.V6[i].CidrPrefixLength)
+					if err != nil {
+						return nil
+					}
+
+					// account ips of length ipCount
+					for j := 0; j < ipCount; j++ {
+						ipv6IPs = append(ipv6IPs, &ipsInRange[j])
+					}
+				} else {
+					ipv6IPs = append(ipv6IPs, vnicSecondaryAddresses.V6[i].IpAddress)
+				}
 			}
-			if len(nodeIpFamilies) > 0 {
-				// Populate new fields only in case of IPFamilies being present in CRD
-				vnicPodAddresses = append(vnicPodAddresses, npnv1beta1.PodAddress{
-					V4: ipv4IP,
-					V6: ipv6IP,
-				})
+		}
+		if len(nodeIpFamilies) > 0 {
+			// Populate new fields only in case of IPFamilies being present in CRD
+			expandedIpv4Count := len(ipv4IPs)
+			expandedIpv6Count := len(ipv6IPs)
+
+			if expandedIpv4Count > 0 && expandedIpv6Count > 0 {
+				// Dual-stack
+				// not update any spilled over ips (should not happen)
+				minCount := expandedIpv4Count
+				if expandedIpv6Count < minCount {
+					minCount = expandedIpv6Count
+				}
+				for j := 0; j < minCount; j++ {
+					addr := npnv1beta1.PodAddress{}
+					if j < expandedIpv4Count {
+						addr.V4 = ipv4IPs[j]
+					}
+					if j < expandedIpv6Count {
+						addr.V6 = ipv6IPs[j]
+					}
+					vnicPodAddresses = append(vnicPodAddresses, addr)
+				}
+			} else if expandedIpv4Count > 0 {
+				// Single-stack ipv4
+				for _, v4 := range ipv4IPs {
+					vnicPodAddresses = append(vnicPodAddresses, npnv1beta1.PodAddress{
+						V4: v4,
+					})
+				}
+			} else if expandedIpv6Count > 0 && requireIPv6s {
+				// Single-stack ipv6
+				for _, v6 := range ipv6IPs {
+					vnicPodAddresses = append(vnicPodAddresses, npnv1beta1.PodAddress{
+						V6: v6,
+					})
+				}
 			}
 		}
 
@@ -1494,4 +1636,31 @@ func (r *NativePodNetworkReconciler) setApplicationResourceTaint(ctx context.Con
 		}
 	}
 	return nodeObject, nil
+}
+
+func expandIpAddressesInRange(ipAddress string, cidrPrefix int) ([]string, error) {
+	prefix, err := netip.ParsePrefix(fmt.Sprintf("%s/%d", ipAddress, cidrPrefix))
+	if err != nil {
+		return nil, fmt.Errorf("invalid CIDR: %s/%d to extract the addresses in the range", ipAddress, cidrPrefix)
+	}
+
+	// normalized to the network address—that is, all host bits set to zero.
+	// needed for the loop start from the correct starting network address
+	// ex:192.168.1.10/24 should start from 192.168.1.0
+	prefix = prefix.Masked()
+
+	var ips []string
+	for addr := prefix.Addr(); prefix.Contains(addr); addr = addr.Next() {
+		ips = append(ips, addr.String())
+	}
+	return ips, nil
+}
+
+func getBlockSizeForCidrPrefix(cidrPrefix int, ipFamily string) int {
+	var addressBits int
+	addressBits = 32
+	if ipFamily == IPv6 {
+		addressBits = 128
+	}
+	return int(math.Exp2(float64(addressBits - cidrPrefix)))
 }
