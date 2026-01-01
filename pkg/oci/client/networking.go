@@ -40,11 +40,11 @@ type NetworkingInterface interface {
 
 	ListPrivateIps(ctx context.Context, vnicId string) ([]core.PrivateIp, error)
 	GetPrivateIp(ctx context.Context, id string) (*core.PrivateIp, error)
-	CreatePrivateIp(ctx context.Context, vnicID string) (*core.PrivateIp, error)
+	CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.PrivateIp, error)
 	GetIpv6(ctx context.Context, id string) (*core.Ipv6, error)
 
 	ListIpv6s(ctx context.Context, vnicId string) ([]core.Ipv6, error)
-	CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error)
+	CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error)
 
 	GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error)
 
@@ -303,27 +303,28 @@ func (c *client) ListPrivateIps(ctx context.Context, vnicId string) ([]core.Priv
 	return privateIps, nil
 }
 
-func (c *client) CreatePrivateIp(ctx context.Context, vnicId string) (*core.PrivateIp, error) {
+func (c *client) CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.PrivateIp, error) {
 	if !c.rateLimiter.Writer.TryAccept() {
 		return nil, RateLimitError(false, "CreatePrivateIp")
 	}
 	requestMetadata := getDefaultRequestMetadata(c.requestMetadata)
 	resp, err := c.network.CreatePrivateIp(ctx, core.CreatePrivateIpRequest{
 		CreatePrivateIpDetails: core.CreatePrivateIpDetails{
-			VnicId: &vnicId,
+			VnicId:           &vnicID,
+			CidrPrefixLength: CidrPrefixLength,
 		},
 		RequestMetadata: requestMetadata,
 	})
 	incRequestCounter(err, createVerb, privateIPResource)
 	if err != nil {
-		c.logger.With(vnicId).Infof("CreatePrivateIp failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
+		c.logger.With(vnicID).Infof("CreatePrivateIp failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
 		return nil, errors.WithStack(err)
 	}
 
 	return &resp.PrivateIp, nil
 }
 
-func (c *client) CreateIpv6(ctx context.Context, vnicId string) (*core.Ipv6, error) {
+func (c *client) CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error) {
 	if !c.rateLimiter.Reader.TryAccept() {
 		return nil, RateLimitError(false, "CreateIpv6")
 	}
@@ -331,14 +332,15 @@ func (c *client) CreateIpv6(ctx context.Context, vnicId string) (*core.Ipv6, err
 
 	resp, err := c.network.CreateIpv6(ctx, core.CreateIpv6Request{
 		CreateIpv6Details: core.CreateIpv6Details{
-			VnicId: &vnicId,
+			VnicId:           &vnicID,
+			CidrPrefixLength: CidrPrefixLength,
 		},
 		RequestMetadata: requestMetadata,
 	})
 	incRequestCounter(err, createVerb, ipv6IPResource)
 
 	if err != nil {
-		c.logger.With(vnicId).Infof("CreateIpv6 failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
+		c.logger.With(vnicID).Infof("CreateIpv6 failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
 		return nil, errors.WithStack(err)
 	}
 	return &resp.Ipv6, nil

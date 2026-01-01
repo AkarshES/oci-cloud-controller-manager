@@ -1209,7 +1209,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			expected: []VnicIPAllocations{
-				{"app-cidr", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 12, V6: 0}},
+				{"app-cidr", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 13, V6: 1}},
 			},
 			err: nil,
 		},
@@ -1779,7 +1779,7 @@ func (c *MockVirtualNetworkClient) GetPrivateIp(ctx context.Context, id string) 
 	return nil, nil
 }
 
-func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicID string) (*core.PrivateIp, error) {
+func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.PrivateIp, error) {
 	return nil, nil
 }
 
@@ -1797,7 +1797,7 @@ func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string)
 	return ipv6s[vnicId], nil
 }
 
-func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error) {
+func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error) {
 	return nil, nil
 }
 
@@ -2390,6 +2390,120 @@ func TestGetBlockSizeForCidrPrefix(t *testing.T) {
 			got := getBlockSizeForCidrPrefix(tt.prefix, tt.family)
 			if got != tt.want {
 				t.Fatalf("getBlockSizeForCidrPrefix(%d, %q) = %d, want %d", tt.prefix, tt.family, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetCidrPrefixLengthForBlockSize(t *testing.T) {
+	intPtr := func(v int) *int { return &v }
+
+	tests := []struct {
+		name   string
+		size   int
+		family string
+		want   *int
+	}{
+		{
+			name:   "size <= 0 returns nil",
+			size:   0,
+			family: IPv4,
+			want:   nil,
+		},
+		{
+			name:   "IPv4 size 1 -> /32",
+			size:   1,
+			family: IPv4,
+			want:   intPtr(32),
+		},
+		{
+			name:   "IPv6 size 1 -> nil",
+			size:   1,
+			family: IPv6,
+			want:   nil,
+		},
+		{
+			name:   "IPv4 size 2 -> /31",
+			size:   2,
+			family: IPv4,
+			want:   intPtr(31),
+		},
+		{
+			name:   "IPv6 size 2 -> /124 (rounded down to multiple of 4)",
+			size:   2,
+			family: IPv6,
+			want:   intPtr(124),
+		},
+		{
+			name:   "IPv4 size 3 -> /30 (ceil log2)",
+			size:   3,
+			family: IPv4,
+			want:   intPtr(30),
+		},
+		{
+			name:   "IPv6 size 3 -> /124 (ceil log2 then round)",
+			size:   3,
+			family: IPv6,
+			want:   intPtr(124),
+		},
+		{
+			name:   "IPv4 size 16 -> /28",
+			size:   16,
+			family: IPv4,
+			want:   intPtr(28),
+		},
+		{
+			name:   "IPv6 size 16 -> /124",
+			size:   16,
+			family: IPv6,
+			want:   intPtr(124),
+		},
+		{
+			name:   "IPv4 size 17 -> /27",
+			size:   17,
+			family: IPv4,
+			want:   intPtr(27),
+		},
+		{
+			name:   "IPv6 size 17 -> /120 (rounded to multiple of 4)",
+			size:   17,
+			family: IPv6,
+			want:   intPtr(120),
+		},
+		{
+			name:   "IPv4 size 256 -> /24",
+			size:   256,
+			family: IPv4,
+			want:   intPtr(24),
+		},
+		{
+			name:   "IPv6 size 256 -> /120",
+			size:   256,
+			family: IPv6,
+			want:   intPtr(120),
+		},
+		{
+			name:   "unknown family defaults to IPv4 logic",
+			size:   2,
+			family: "unknown",
+			want:   intPtr(31),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getCidrPrefixLengthForBlockSize(tt.size, tt.family)
+			if tt.want == nil {
+				if got != nil {
+					t.Fatalf("expected nil, got %v", *got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatalf("expected %d, got nil", *tt.want)
+			}
+			if *got != *tt.want {
+				t.Fatalf("expected %d, got %d", *tt.want, *got)
 			}
 		})
 	}

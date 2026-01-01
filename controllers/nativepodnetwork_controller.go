@@ -529,14 +529,41 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			if additionalIpsByVnic[outerIndex].ips.V4 > 0 {
 				parallelLog.Info("Need to allocate secondary IPv4 for VNIC")
 				ipv4Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V4)
-				for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V4; innerIndex++ {
+				if isGvaNode(&npn) {
+					// For GVA nodes, additionalIpsByVnic[outerIndex].ips.V4 == ipCount (which equals configured ipCount + 1).
+					// Attach host IPv4 first (1), then attach remaining (ipCount - 1) pod IPv4s.
+					// Host IPv4
 					startTime := time.Now()
-					_, err := r.OCIClient.Networking(nil).CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId)
+					ipsToAttach := additionalIpsByVnic[outerIndex].ips.V4
+					_, err := r.OCIClient.Networking(nil).CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId, nil)
 					if err != nil {
-						parallelLog.Error(err, "failed to create IPv4")
+						parallelLog.Error(err, "failed to create IPv4 (host)")
 					}
-					ipv4Allocations[innerIndex].err = err
-					ipv4Allocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
+					ipv4Allocations[0].err = err
+					ipv4Allocations[0].timeTaken = float64(time.Since(startTime).Seconds())
+
+					//assign ip cidr address to accomdate rest of IP addresses
+					ipsToAttach -= 1
+					if ipsToAttach > 0 {
+						cidrPrefixLength := getCidrPrefixLengthForBlockSize(ipsToAttach, IPv4)
+
+						_, err = r.OCIClient.Networking(nil).CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId, cidrPrefixLength)
+						if err != nil {
+							parallelLog.Error(err, "failed to create IPv4")
+						}
+						ipv4Allocations[1].err = err
+						ipv4Allocations[1].timeTaken = float64(time.Since(startTime).Seconds())
+					}
+				} else {
+					for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V4; innerIndex++ {
+						startTime := time.Now()
+						_, err := r.OCIClient.Networking(nil).CreatePrivateIp(ctx, additionalIpsByVnic[outerIndex].vnicId, nil)
+						if err != nil {
+							parallelLog.Error(err, "failed to create IPv4")
+						}
+						ipv4Allocations[innerIndex].err = err
+						ipv4Allocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
+					}
 				}
 				errIPv4 = validateVnicIpAllocation(ipv4Allocations)
 				allocations.V4 = ipv4Allocations
@@ -546,14 +573,32 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			if additionalIpsByVnic[outerIndex].ips.V6 > 0 {
 				parallelLog.Info("Need to allocate secondary IPv6 for VNIC")
 				ipv6Allocations := make([]IPAllocation, additionalIpsByVnic[outerIndex].ips.V6)
-				for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V6; innerIndex++ {
+				if isGvaNode(&npn) {
+					// For GVA nodes, additionalIpsByVnic[outerIndex].ips.V4 ==  which equals configured ipCount + 1
+					// for ipv6, no need attach single IP Address for host address as AssignIPv6 parameter at vnic creation will have a IPv6 address
 					startTime := time.Now()
-					_, err := r.OCIClient.Networking(nil).CreateIpv6(ctx, additionalIpsByVnic[outerIndex].vnicId)
-					if err != nil {
-						parallelLog.Error(err, "failed to create IPv6")
+					ipsToAttach := additionalIpsByVnic[outerIndex].ips.V6 - 1
+					if ipsToAttach > 0 {
+						cidrPrefixLength := getCidrPrefixLengthForBlockSize(ipsToAttach, IPv6)
+
+						_, err = r.OCIClient.Networking(nil).CreateIpv6(ctx, additionalIpsByVnic[outerIndex].vnicId, cidrPrefixLength)
+						if err != nil {
+							parallelLog.Error(err, "failed to create IPv4")
+						}
+						ipv6Allocations[0].err = err
+						ipv6Allocations[0].timeTaken = float64(time.Since(startTime).Seconds())
 					}
-					ipv6Allocations[innerIndex].err = err
-					ipv6Allocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
+
+				} else {
+					for innerIndex := 0; innerIndex < additionalIpsByVnic[outerIndex].ips.V6; innerIndex++ {
+						startTime := time.Now()
+						_, err := r.OCIClient.Networking(nil).CreateIpv6(ctx, additionalIpsByVnic[outerIndex].vnicId, nil)
+						if err != nil {
+							parallelLog.Error(err, "failed to create IPv6")
+						}
+						ipv6Allocations[innerIndex].err = err
+						ipv6Allocations[innerIndex].timeTaken = float64(time.Since(startTime).Seconds())
+					}
 				}
 				errIPv6 = validateVnicIpAllocation(ipv6Allocations)
 				allocations.V6 = ipv6Allocations
@@ -1663,4 +1708,26 @@ func getBlockSizeForCidrPrefix(cidrPrefix int, ipFamily string) int {
 		addressBits = 128
 	}
 	return int(math.Exp2(float64(addressBits - cidrPrefix)))
+}
+
+// getCidrPrefixLengthForBlockSize returns a CIDR prefix length for a block that can hold at least `size` IPs.
+func getCidrPrefixLengthForBlockSize(size int, ipFamily string) *int {
+	if size <= 0 {
+		return nil
+	}
+	if size == 1 && strings.EqualFold(ipFamily, IPv6) {
+		return nil
+	}
+	k := int(math.Ceil(math.Log2(float64(size))))
+
+	if strings.EqualFold(ipFamily, IPv6) {
+		prefix := 128 - k
+		// Round down to a multiple of 4 (larger block or equal capacity), still >= size.
+		prefix -= prefix % 4
+		return &prefix
+	}
+
+	// Default IPv4
+	prefix := 32 - k
+	return &prefix
 }

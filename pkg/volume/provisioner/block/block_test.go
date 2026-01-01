@@ -342,7 +342,7 @@ func (c *MockVirtualNetworkClient) ListPrivateIps(ctx context.Context, id string
 	return []core.PrivateIp{}, nil
 }
 
-func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicId string) (*core.PrivateIp, error) {
+func (c *MockVirtualNetworkClient) CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.PrivateIp, error) {
 	return &core.PrivateIp{}, nil
 }
 func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
@@ -353,7 +353,7 @@ func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string)
 	return []core.Ipv6{}, nil
 }
 
-func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string) (*core.Ipv6, error) {
+func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error) {
 	return &core.Ipv6{}, nil
 }
 
