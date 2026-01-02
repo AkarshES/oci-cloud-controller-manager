@@ -89,6 +89,19 @@ locals {
         "false"]
       default_value = "false"
     }
+    "lustre-csi-controller-driver-enabled" = {
+      type = "ENUM"
+      description = "Feature flag to enable Lustre CSI Controller Driver in OKE clusters"
+      options = [
+        "true",
+        "false"]
+      default_value = "false"
+    }
+    "lustre-csi-provisioner-worker-threads" = {
+      type = "STRING"
+      description = "No. simultaneously running ControllerCreateVolume/DeleteVolume operations for Lustre."
+      default_value = "10"
+    }
   }
 
   
