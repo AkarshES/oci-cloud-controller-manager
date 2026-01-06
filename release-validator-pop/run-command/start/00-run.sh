@@ -61,7 +61,7 @@ if [ -n "$cpo_image_1" ]; then
     elif [[ $tag =~ ^v([0-9]+)\.([0-9]+)- ]]; then
       major_version=${BASH_REMATCH[1]}
       minor_version=${BASH_REMATCH[2]}
-      if [ "$major_version" -eq 1 ] && [ "$minor_version" -lt 28 ]; then
+      if [ "$major_version" -eq 1 ] && [ "$minor_version" -lt 29 ]; then
         echo "Warning: Missing image: $tag"
       else
         echo "Error: Missing image: $tag"
@@ -76,7 +76,7 @@ if [ -n "$cpo_image_1" ]; then
   if (( ${#missing_tags_with_error[@]} > 0 )); then
     exit 1
   else
-    echo "All images greater than v1.27 are present in OCIR"
+    echo "All images greater than v1.28 are present in OCIR"
   fi
 else
 
