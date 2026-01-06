@@ -31,7 +31,7 @@ func (d *Driver) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCa
 	}
 
 	var capabilities []*csi.PluginCapability
-	if d.name == BlockVolumeDriverName {
+	if d.name == BlockVolumeDriverName || d.name == LustreDriverName {
 		capabilities = []*csi.PluginCapability{
 			{
 				Type: &pluginCapabilityService,
