@@ -10,7 +10,7 @@ import (
 func main() {
 	http.HandleFunc("/opc/v2/instance/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-		data, err := ioutil.ReadFile("hack/localdev/imds_response.json")
+		data, err := ioutil.ReadFile("hack/localdev/imds_response_csi.json")
 		if err != nil {
 			log.Printf("Error reading file: %v", err)
 			http.Error(w, "Failed to read response", http.StatusInternalServerError)
