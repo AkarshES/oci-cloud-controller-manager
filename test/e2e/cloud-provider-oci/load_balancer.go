@@ -193,11 +193,7 @@ var _ = Describe("Service [Slow]", func() {
 						} else {
 							sharedfw.Failf("Compartment Id undefined.")
 						}
-						lbType := test.lbType
-						if strings.HasSuffix(test.lbType, "-wris") {
-							lbType = strings.TrimSuffix(test.lbType, "-wris")
-						}
-						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 						sharedfw.ExpectNoError(err)
 						sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
 						if setupF.AddOkeSystemTags && !sharedfw.HasOkeSystemTags(loadBalancer.SystemTags) {
@@ -517,6 +513,169 @@ var _ = Describe("Service NSG [Slow]", func() {
 
 				By("checking the TCP LoadBalancer is closed")
 				jig.TestNotReachableHTTP(tcpIngressIP, svcPort, loadBalancerLagTimeout)
+			}
+		})
+	})
+})
+
+var _ = Describe("Service Cross Compartment (OKE SKE Mixed)", func() {
+
+	baseName := "service-x-compartment"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	testDefinedTags := map[string]map[string]interface{}{"oke-tag": {"oke-tagging": "ccm-test-integ"}}
+	testDefinedTagsByteArray, _ := json.Marshal(testDefinedTags)
+
+	basicTestArray := []struct {
+		lbType              string
+		CreationAnnotations map[string]string
+	}{
+		{
+			"lb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
+			},
+		},
+		{
+			"nlb",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerType:            "nlb",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal: "true",
+			},
+		},
+		{
+			"lb-wris",
+			map[string]string{
+				cloudprovider.ServiceAnnotationLoadBalancerInternal:                   "true",
+				cloudprovider.ServiceAnnotationServiceAccountName:                     "sa",
+				cloudprovider.ServiceAnnotationLoadBalancerInitialDefinedTagsOverride: string(testDefinedTagsByteArray),
+			},
+		},
+		{
+			"nlb-wris",
+			map[string]string{
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerInternal:                   "true",
+				cloudprovider.ServiceAnnotationServiceAccountName:                            "sa",
+				cloudprovider.ServiceAnnotationLoadBalancerType:                              "nlb",
+				cloudprovider.ServiceAnnotationNetworkLoadBalancerInitialDefinedTagsOverride: string(testDefinedTagsByteArray),
+			},
+		},
+	}
+	Context("[cloudprovider][ccm][lb][wris][system-tags][x-compartment]", func() {
+		It("should be possible to create a Service type:LoadBalancer in a compartment different than the cluster compartment", func() {
+			for _, test := range basicTestArray {
+				if strings.HasSuffix(test.lbType, "-wris") && f.ClusterType != containerengine.ClusterTypeEnhancedCluster {
+					sharedfw.Logf("Skipping Workload Identity Principal test for LB Type (%s) because the cluster is not an OKE ENHANCED_CLUSTER", test.lbType)
+					continue
+				}
+				func() {
+					By("Running test for: " + test.lbType)
+					serviceName := "basic-" + test.lbType + "-test"
+					ns := f.Namespace.Name
+
+					jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+					loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
+					loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+					if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+						loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+					}
+					var serviceAccount *v1.ServiceAccount
+					if sa, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+						// Create a service account in the same namespace as the service
+						By("creating service account \"sa\" in namespace " + ns)
+						serviceAccount = jig.CreateServiceAccountOrFail(ns, sa, nil)
+					}
+					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeLoadBalancer
+						s.ObjectMeta.Annotations = test.CreationAnnotations
+						// Common X-compartment annotation for LB and NLB
+						s.ObjectMeta.Annotations[cloudprovider.CompartmentIDAnnotation] = setupF.Compartment2
+					})
+
+					if _, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
+						By("setting service account \"sa\" owner reference as the TCP service " + serviceName)
+						// Set SA owner reference as the service to prevent deletion of service account before the service
+						jig.SetServiceOwnerReferenceOnServiceAccountOrFail(ns, serviceAccount, tcpService)
+						defer func() {
+							dp := metav1.DeletePropagationForeground
+							jig.Client.CoreV1().Services(f.Namespace.Name).Delete(context.Background(), tcpService.Name, metav1.DeleteOptions{
+								PropagationPolicy: &dp,
+							})
+							time.Sleep(time.Second)
+						}()
+					}
+
+					svcPort := int(tcpService.Spec.Ports[0].Port)
+
+					By("waiting for the TCP service to have a load balancer")
+					// Wait for the load balancer to be created asynchronously
+					tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+					// Ensure required Defined Tags
+					if strings.HasSuffix(test.lbType, "-wris") {
+						lbName := cloudprovider.GetLoadBalancerName(tcpService)
+						sharedfw.Logf("LB Name is %s", lbName)
+						ctx := context.TODO()
+						compartmentId := ""
+						if setupF.Compartment2 != "" {
+							compartmentId = setupF.Compartment2
+						} else {
+							sharedfw.Failf("Compartment Id undefined.")
+						}
+						lbType := strings.TrimSuffix(test.lbType, "-wris")
+						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+						sharedfw.ExpectNoError(err)
+
+						// Check if tag namespace in a compartment other than the cluster and LB compartment is usable and defined tags are as expected.
+						if !reflect.DeepEqual(loadBalancer.DefinedTags, testDefinedTags) {
+							sharedfw.Failf("Defined tag mismatch! Expected: %v, Got: %v", testDefinedTags, loadBalancer.DefinedTags)
+						}
+					}
+
+					// Ensure required System Tags
+					if strings.HasSuffix(test.lbType, "-wris") {
+						sharedfw.Logf("skip evaluating system tag when the principal type is Workload identity")
+					} else {
+						By("validating system tags on the loadbalancer")
+						lbName := cloudprovider.GetLoadBalancerName(tcpService)
+						sharedfw.Logf("LB Name is %s", lbName)
+						ctx := context.TODO()
+						compartmentId := ""
+						if setupF.Compartment2 != "" {
+							compartmentId = setupF.Compartment2
+						} else {
+							sharedfw.Failf("Compartment Id undefined.")
+						}
+						loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+						sharedfw.ExpectNoError(err)
+						sharedfw.Logf("Loadbalancer details %v:", loadBalancer)
+						if setupF.AddOkeSystemTags && !sharedfw.HasOkeSystemTags(loadBalancer.SystemTags) {
+							sharedfw.Failf("Loadbalancer is expected to have the system tags")
+						}
+					}
+
+					tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
+					sharedfw.Logf("TCP node port: %d", tcpNodePort)
+
+					tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+					sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+					// Change the services back to ClusterIP.
+					By("changing TCP service back to type=ClusterIP")
+					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+						s.Spec.Type = v1.ServiceTypeClusterIP
+						s.Spec.Ports[0].NodePort = 0
+					})
+
+					// Wait for the load balancer to be destroyed asynchronously
+					tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+					jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+					By("checking the TCP LoadBalancer is closed")
+					jig.TestNotReachableHTTP(tcpIngressIP, svcPort, loadBalancerLagTimeout)
+				}()
 			}
 		})
 	})
