@@ -75,6 +75,7 @@ var (
 	defaultOCITenancy             string
 	defaultOCIRegion              string
 	compartment1                  string
+	compartment2                  string
 	vcn                           string
 	lbsubnet1                     string
 	lbsubnet2                     string
@@ -157,6 +158,7 @@ func init() {
 	flag.StringVar(&defaultOCITenancy, "ocitenancy", "", "OCI tenancy.")
 	flag.StringVar(&defaultOCIRegion, "ociregion", "", "OCI region.")
 	flag.StringVar(&compartment1, "compartment1", "", "OCID of the compartment1 in which to manage clusters.")
+	flag.StringVar(&compartment2, "compartment2", "", "OCID of the compartment2 for x-compartment tests.")
 	flag.StringVar(&vcn, "vcn", "", "OCID of the VCN in which to create clusters.")
 	flag.StringVar(&lbsubnet1, "lbsubnet1", "", "OCID of the 1st subnet in which to create load balancers.")
 	flag.StringVar(&lbsubnet2, "lbsubnet2", "", "OCID of the 2nd subnet in which to create load balancers.")
@@ -286,6 +288,8 @@ type Framework struct {
 
 	// The compartment1 the cluster is running in.
 	Compartment1 string
+	// The compartment2 for x-compartment tests.
+	Compartment2 string
 	// The VCN the cluster is running in.
 	Vcn string
 	// Loadbalancer subnet 1.
@@ -452,6 +456,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		Region:       defaultOCIRegion,
 		User:         getDefaultOCIUser(),
 		Compartment1: compartment1,
+		Compartment2: compartment2,
 
 		RegionalKubeConfig: defaultKubeConfig,
 		requestHeaders:     map[string]string{},
@@ -605,6 +610,8 @@ func (f *Framework) Initialize() {
 	Logf("Architecture: %s", f.Architecture)
 	f.Compartment1 = compartment1
 	Logf("OCI compartment1 OCID: %s", f.Compartment1)
+	f.Compartment2 = compartment2
+	Logf("OCI compartment2 OCID: %s", f.Compartment2)
 	f.setImages()
 	if !enableCreateCluster {
 		Logf("Cluster Creation Disabled")
