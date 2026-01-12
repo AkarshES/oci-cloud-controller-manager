@@ -429,7 +429,7 @@ func (j *ServiceTestJig) SanityCheckService(svc *v1.Service, svcType v1.ServiceT
 	}
 
 	expectNodePorts := false
-	if svcType != v1.ServiceTypeClusterIP && svcType != v1.ServiceTypeExternalName {
+	if svcType != v1.ServiceTypeClusterIP && svcType != v1.ServiceTypeExternalName && *svc.Spec.AllocateLoadBalancerNodePorts != false {
 		expectNodePorts = true
 	}
 	for i, port := range svc.Spec.Ports {
@@ -631,7 +631,7 @@ func (j *ServiceTestJig) newRCTemplate(namespace string) *v1.ReplicationControll
 					Containers: []v1.Container{
 						{
 							Name:  "agnhost",
-							Image: agnhost,
+							Image: Agnhost,
 							Args:  []string{"netexec", "--http-port=80", "--udp-port=80"},
 							ReadinessProbe: &v1.Probe{
 								PeriodSeconds: 3,
