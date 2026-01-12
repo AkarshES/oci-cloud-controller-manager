@@ -113,7 +113,7 @@ var (
 	mntTargetSubnetOCID           string // mntTargetSubnetOCID is required for testing MT creation in FSS dynamic
 	mntTargetCompartmentOCID      string // mntTargetCompartmentOCID is required for testing MT cross compartment creation in FSS dynamic
 	nginx                         string // Image for nginx
-	agnhost                       string // Image for agnhost
+	Agnhost                       string // Image for agnhost
 	busyBoxImage                  string // Image for busyBoxImage
 	centos                        string // Image for centos
 	imagePullRepo                 string // Repo to pull images from. Will pull public images if not specified.
@@ -1047,25 +1047,25 @@ func (f *Framework) SaveKubeConfig(kubeconfig string) error {
 }
 
 func (f *Framework) setImages() {
-	var Agnhost = "agnhost:2.6"
+	var agnhost = "agnhost:2.6"
 	var BusyBoxImage = "busybox:latest"
 	var Nginx = "nginx:stable-alpine"
 	var Centos = "centos:latest"
 
 	if architecture == "ARM" {
-		Agnhost = "agnhost-arm:2.6"
+		agnhost = "agnhost-arm:2.6"
 		BusyBoxImage = "busybox-arm:latest"
 		Nginx = "nginx-arm:latest"
 		Centos = "centos-arm:latest"
 	}
 
 	if imagePullRepo != "" {
-		agnhost = fmt.Sprintf("%s%s", imagePullRepo, Agnhost)
+		Agnhost = fmt.Sprintf("%s%s", imagePullRepo, agnhost)
 		busyBoxImage = fmt.Sprintf("%s%s", imagePullRepo, BusyBoxImage)
 		nginx = fmt.Sprintf("%s%s", imagePullRepo, Nginx)
 		centos = fmt.Sprintf("%s%s", imagePullRepo, Centos)
 	} else {
-		agnhost = imageutils.GetE2EImage(imageutils.Agnhost)
+		Agnhost = imageutils.GetE2EImage(imageutils.Agnhost)
 		busyBoxImage = BusyBoxImage
 		nginx = Nginx
 		centos = Centos

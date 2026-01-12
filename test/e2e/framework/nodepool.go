@@ -340,6 +340,9 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		nodeConfigDetails = oke.CreateNodePoolNodeConfigDetails{
 			PlacementConfigs: make([]oke.NodePoolPlacementConfigDetails, 0, len(ads)),
 			Size:             poolSize,
+			NodePoolPodNetworkOptionDetails: oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
+				PodNsgIds: strings.Split(backendNsgIds, ","),
+			},
 		}
 
 		for _, ad := range ads {
