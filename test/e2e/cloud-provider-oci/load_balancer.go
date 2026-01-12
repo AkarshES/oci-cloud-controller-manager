@@ -441,11 +441,11 @@ var _ = Describe("Service NSG [Slow]", func() {
 				}
 
 				// Check the correct number of rules are present on the NSG
-				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionEgress)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionEgress, false)
 				backendNsgList := strings.Split(strings.ReplaceAll(setupF.BackendNsgOcid, " ", ""), ",")
 
 				for _, backendNsg := range backendNsgList {
-					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionIngress)
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionIngress, false)
 				}
 
 				// Check if rules are not modified on the security list.
@@ -499,7 +499,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 				jig.TestReachableHTTP(false, tcpIngressIP, svcPort, loadBalancerCreateTimeout) // this may actually recreate the LB
 
 				// Change the services back to ClusterIP.
-				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, svcPortOld, svcPort, core.SecurityRuleDirectionIngress)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, svcPortOld, svcPort, core.SecurityRuleDirectionIngress, false)
 
 				By("changing TCP service back to type=ClusterIP")
 				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
@@ -3112,6 +3112,146 @@ var _ = Describe("LB Properties", func() {
 				// Wait for the load balancer to be destroyed asynchronously
 				tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
 				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+			}
+		})
+	})
+})
+
+var _ = Describe("Pods as Backends mode [Slow]", func() {
+	baseName := "service"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	Context("[cloudprovider][ccm][lb][pods-as-backends]", func() {
+		crossCompartmentTestArray := []struct {
+			lbType      string
+			annotations map[string]string
+		}{
+			{
+				"lb",
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode:  "NSG",
+					cloudprovider.ServiceAnnotationBackendSecurityGroupForRuleManagement:   f.BackendNsgOcids,
+					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckConfiguration:    `{"protocol": "HTTP", "port": 8080, "urlPath": "/", "returnCode": 200, "retries": 2, "timeoutInMillis": 5000}`,
+					cloudprovider.ServiceAnnotationLoadBalancerInitialFreeformTagsOverride: `{"test":"pods-as-backends-lb"}`,
+				},
+			},
+			{
+				"nlb",
+				map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerType:                               "nlb",
+					cloudprovider.ServiceAnnotationLoadBalancerSecurityRuleManagementMode:         "NSG",
+					cloudprovider.ServiceAnnotationBackendSecurityGroupForRuleManagement:          f.BackendNsgOcids,
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerHealthCheckConfiguration:    `{"protocol": "HTTP", "port": 8080, "urlPath": "/", "returnCode": 200, "retries": 2, "timeoutInMillis": 5000}`,
+					cloudprovider.ServiceAnnotationNetworkLoadBalancerInitialFreeformTagsOverride: `{"test":"pods-as-backends-nlb"}`,
+				},
+			},
+		}
+		It("should be possible to create Service type:LoadBalancer in pods as backends mode", func() {
+			for _, test := range crossCompartmentTestArray {
+				By("Running test for: " + test.lbType)
+				serviceName := "e2e-" + test.lbType + "-pods-as-backends"
+				ns := f.Namespace.Name
+
+				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+				loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+				loadBalancerLagTimeout := sharedfw.LoadBalancerLagTimeoutDefault
+				if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+					loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+				}
+
+				compartmentId := ""
+				if setupF.Compartment1 != "" {
+					compartmentId = setupF.Compartment1
+				} else if f.CloudProviderConfig.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.CompartmentID
+				} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+					compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+				} else {
+					sharedfw.Failf("Compartment Id undefined.")
+				}
+
+				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+					s.Spec.Type = v1.ServiceTypeLoadBalancer
+					s.Spec.Ports = []v1.ServicePort{
+						{
+							Name:       "http",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						},
+					}
+					s.Spec.AllocateLoadBalancerNodePorts = common.Bool(false)
+					s.ObjectMeta.Annotations = test.annotations
+				})
+
+				svcPort := int(tcpService.Spec.Ports[0].Port)
+
+				By("creating a pod to be part of the TCP service " + serviceName)
+				jig.RunOrFail(ns, func(rc *v1.ReplicationController) {
+					newContainer := v1.Container{
+						Name:  "agnhost",
+						Image: sharedfw.Agnhost,
+						Args:  []string{"netexec", "--http-port=8080", "--udp-port=8080"},
+						ReadinessProbe: &v1.Probe{
+							PeriodSeconds: 3,
+							ProbeHandler: v1.ProbeHandler{
+								HTTPGet: &v1.HTTPGetAction{
+									Port: intstr.FromInt(8080),
+									Path: "/hostName",
+								},
+							},
+						},
+					}
+					rc.Spec.Template.Spec.Containers = []v1.Container{newContainer}
+				})
+
+				By("waiting for the TCP service to have a load balancer")
+				// Wait for the load balancer to be created asynchronously
+				tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+				jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+
+				tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+				sharedfw.Logf("TCP load balancer: %s", tcpIngressIP)
+
+				By("waiting upto 5m0s to verify successful creation of the loadbalancer")
+				lbName := cloudprovider.GetLoadBalancerName(tcpService)
+				sharedfw.Logf("LB Name is %s", lbName)
+				ctx := context.TODO()
+				lbType := strings.TrimSuffix(test.lbType, "-wris")
+				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+				sharedfw.ExpectNoError(err)
+
+				By("hitting the TCP service's LoadBalancer")
+				jig.TestReachableHTTP(false, tcpIngressIP, svcPort, loadBalancerLagTimeout)
+
+				// Count the number of ingress/egress rules with the original port so
+				// we can check the correct number are updated.
+
+				// Check the correct number of rules are present on the NSG
+				frontendNsgId := loadBalancer.NetworkSecurityGroupIds[0]
+				backendNsgList := strings.Split(strings.ReplaceAll(setupF.BackendNsgOcid, " ", ""), ",")
+
+				// Frontend NSG
+				// Backend port (service port)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, 0, int(tcpService.Spec.Ports[0].Port), core.SecurityRuleDirectionIngress, false)
+				// Healthcheck port (8080)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, 0, 8080, core.SecurityRuleDirectionEgress, true)
+
+				// Backend NSG
+				// Healthcheck port (8080)
+				for _, backendNsg := range backendNsgList {
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, 0, 8080, core.SecurityRuleDirectionIngress, false)
+				}
+
+				// Check if rules are not modified on the security list.
+				numEgressRules, numIngressRules := sharedfw.CountSinglePortSecListRules(f.Client, f.CCMSecListID, f.K8SSecListID, int(tcpService.Spec.Ports[0].Port))
+				if numEgressRules != 0 || numIngressRules != 0 {
+					sharedfw.Logf("Count of Egress Rules added to sec list %d", numEgressRules)
+					sharedfw.Logf("Count of Ingress Rules added to sec list %d", numIngressRules)
+					sharedfw.Failf("Security List rules modified while service should be using NSG on port %d", int(tcpService.Spec.Ports[0].Port))
+				}
+
+				// Let namespace deletion do the cleanup as part of AfterEach step.
 			}
 		})
 	})

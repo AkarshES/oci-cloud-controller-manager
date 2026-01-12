@@ -47,15 +47,16 @@ func CountSinglePortRules(oci client.Interface, nsgId string, port int, directio
 	return count
 }
 
-// HasValidSinglePortRulesAfterPortChangeNSG checks the counts of 'single port'
-func HasValidSinglePortRulesAfterPortChangeNSG(oci client.Interface, nsgId string, oldPort, newPort int, direction core.SecurityRuleDirectionEnum) bool {
+// HasValidSinglePortRulesAfterPortChangeNSG checks the counts of 'single port' security rules
+// expectMultipleRules parameter relaxes single rule check if required.
+func HasValidSinglePortRulesAfterPortChangeNSG(oci client.Interface, nsgId string, oldPort, newPort int, direction core.SecurityRuleDirectionEnum, expectMultipleRules bool) bool {
 	if nsgId != "" {
 		numOldPortRules := CountSinglePortRules(oci, nsgId, oldPort, direction)
 		numNewPortRules := CountSinglePortRules(oci, nsgId, newPort, direction)
 		if numOldPortRules != 0 {
 			return false
 		}
-		if numNewPortRules != 1 {
+		if numNewPortRules != 1 && !expectMultipleRules {
 			return false
 		}
 	}
@@ -64,9 +65,9 @@ func HasValidSinglePortRulesAfterPortChangeNSG(oci client.Interface, nsgId strin
 
 // WaitForSinglePortRulesAfterPortChangeOrFailNSG waits for the expected rules to be added and validates
 // that the rule on the old port is removed and the rule on the new port is added
-func WaitForSinglePortRulesAfterPortChangeOrFailNSG(oci client.Interface, nsgId string, oldPort, newPort int, direction core.SecurityRuleDirectionEnum) {
+func WaitForSinglePortRulesAfterPortChangeOrFailNSG(oci client.Interface, nsgId string, oldPort, newPort int, direction core.SecurityRuleDirectionEnum, expectMultipleRules bool) {
 	for start := time.Now(); time.Since(start) < 70*time.Second; {
-		valid := HasValidSinglePortRulesAfterPortChangeNSG(oci, nsgId, oldPort, newPort, direction)
+		valid := HasValidSinglePortRulesAfterPortChangeNSG(oci, nsgId, oldPort, newPort, direction, expectMultipleRules)
 		if !valid {
 			time.Sleep(1 * time.Second)
 		} else {
