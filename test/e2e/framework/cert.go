@@ -29,7 +29,7 @@ func (f *Framework) GetOrCreateCertificate() string {
 	if ls, err := f.certificateClient.ListCertificates(context.Background(), listRequest); err != nil {
 		Logf(fmt.Sprintf("no exisitng certificate found due to error %s", err))
 	} else if len(ls.Items) > 0 {
-		return *ls.Items[0].Id
+		return *(ls.Items[0].Id)
 	}
 	// create a new certificate if not present
 	Logf(fmt.Sprintf("no exisitng certificate found continue to create a new certificate"))
@@ -108,7 +108,7 @@ func (f *Framework) GetOrCreateAuthority() {
 	} else {
 		// Assign available certificate id
 		Logf(fmt.Sprintf("Found existing authority %+v", resp.Items))
-		f.CertAuthorityOCID = *resp.Items[0].IssuerCertificateAuthorityId
+		f.CertAuthorityOCID = *(resp.Items[0].Id)
 	}
 }
 
