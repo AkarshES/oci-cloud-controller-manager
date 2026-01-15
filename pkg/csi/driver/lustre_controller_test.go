@@ -98,6 +98,6 @@ func (m MockOCILustreFileStorageClient) AwaitLustreFileSystemDeleted(ctx context
 func (m MockOCILustreFileStorageClient) ListWorkRequests(ctx context.Context, compartmentID, resourceID string) ([]lustre.WorkRequestSummary, error) {
 	return nil, nil
 }
-func (m MockOCILustreFileStorageClient) ListWorkRequestErrors(ctx context.Context, workRequestID string) ([]lustre.WorkRequestError, error) {
+func (m MockOCILustreFileStorageClient) ListWorkRequestErrors(ctx context.Context, workRequestID string, volumeID string) ([]lustre.WorkRequestError, error) {
 	return nil, nil
 }

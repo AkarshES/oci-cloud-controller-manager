@@ -220,7 +220,7 @@ func (d *LustreControllerDriver) CreateVolume(ctx context.Context, req *csi.Crea
 			log.Error(errMsg)
 			metricDimensions[metrics.ComponentDimension] = util.GetComponentForMetricDimension(util.ErrValidation, util.CSIStorageType)
 			metrics.SendMetricData(d.metricPusher, metrics.LustreProvision, time.Since(startTime).Seconds(), metricDimensions)
-			return nil, status.Errorf(codes.Aborted, errMsg.Error())
+			return nil, status.Error(codes.Aborted, errMsg.Error())
 		}
 	}
 
