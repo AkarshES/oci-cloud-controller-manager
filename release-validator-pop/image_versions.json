@@ -35,6 +35,15 @@
     },
     {
       "oke-public-cloud-provider-oci": "v1.33-1fb97431d5a-29"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.32-9f9fe45efd5-80"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.33-34b14227b4c-50"
+    },
+    {
+      "oke-public-cloud-provider-oci": "v1.34-851b1264fdc-25"
     }
   ]
 }
