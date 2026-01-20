@@ -1,6 +1,6 @@
 locals {
   // Update the pop version corresponding to the pop build for app release
-  pop_version = "b07af457707_162"
+  pop_version = "4e7ade1a729_175"
 
   // Update the ccm image sha value here for updating CCM versions for respective k8s versions across all realms
   ccm_default_mapping = {
@@ -14,11 +14,11 @@ locals {
         "v1.27" : "v1.27-7e9bf7a9189-52@sha256:fd510337e52ef609ffb86953ef080b3f2fa1a19a0647f65dfbd2c1dfbda0df7a",
         "v1.28" : "v1.28-79d4f40b682-84@sha256:d8e0957a384781955a1e6b1dfb5498fa8ffb585face9a407486692ca685343fa",
         "v1.29" : "v1.29-393f7c992a6-112@sha256:cfc0512abe6e31a1e6020e45ebd7e79f89dc8f7bf5edc2655757762d5c662886",
-        "v1.30" : "v1.30-b38c1eb59d9-122@sha256:8d9bdc648e85a02e74599c965bca488c4ed04193356ed666fda2be28b7f6f3c6",
-        "v1.31" : "v1.31-a6832b543c2-89@sha256:3a07aeefee957255d20ce57276e43250c77f0365515d713faaaaf35e00761f13",
-        "v1.32" : "v1.32-fd1b5537713-59@sha256:0e1b38c3956d7a8cfa36138828568e64a8633bfec1809a3ebeeba41a77cda48e",
-        "v1.33" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
-        "v1.34" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
+        "v1.30" : "v1.30-8b278ca71ec-126@sha256:b52c65b13a3185413ddae10b0bb797d07b887ea893f6975e721962fcd6ddd3ed",
+        "v1.31" : "v1.31-fe64ed05c1e-106@sha256:7b9ab84d2041d9f44022c49bc314348c4d30ff9c8c3a0544624a83113126ad2c",
+        "v1.32" : "v1.32-9f9fe45efd5-80@sha256:89886358bc6e69215d60a2b95688a624ed6f334b29b971f622966eff1cf924a8",
+        "v1.33" : "v1.33-34b14227b4c-50@sha256:4dbd94e6c1c763366de17598a1ee010c326d1881bb937a47b3cc75ee8a876bcc",
+        "v1.34" : "v1.34-851b1264fdc-25@sha256:2e3f9f1348afd5b3058e300b92e7e0daaea608cdb8d1621b3aa1db7e949817fe"
       }
     }
   }
@@ -38,7 +38,7 @@ locals {
         "v1.31" : "v1.31-4e30e28b828-80-csi@sha256:bf55f642531ebcb3e8ec09c3adeb9507552733df58e9fc6b7692bc241d5df2ad",
         "v1.32" : "v1.32-2c5fcd2e853-46-csi@sha256:fb9e892af78589a74bf8a85fa47af4de66cb97a5fbe33846a5e4380f97c024ec",
         "v1.33" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
-        "v1.34" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
+        "v1.34" : "v1.34-8f0fbf7e71e-9-csi@sha256:2eca76b52bc3198f86b839c199f67476100bc614e401dec25ac0a2310f609c28"
       }
     }
   }
@@ -303,6 +303,7 @@ locals {
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
             "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
           }
         ))
       }
@@ -318,6 +319,22 @@ locals {
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
             "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
+          }
+        ))
+      }
+
+      "prd.oc23" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
+            "v1.17" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+            "v1.18" : "oke-multiarch-1.17-40e9a7a-13@sha256:60b1e805918f93e14bf618df8e224d8ac6de004496cf484c1ffd6bc74d1e38d9",
+            "v1.19" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+            "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+            "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
+            "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
           }
         ))
       }
@@ -353,6 +370,7 @@ locals {
             "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
             "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
             "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
           }
         ))
       }
@@ -371,6 +389,7 @@ locals {
             "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
             "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
             "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
           }
         ))
       }
@@ -388,6 +407,7 @@ locals {
             "v1.25" : "v1.25-756ad2ecbcd-31@sha256:9653868283b1b285daa6773383e0a77e5068dd67a3c32cd36b0a8f10d92ffbda",
             "v1.26" : "v1.26-046c0c74dc9-35@sha256:672d5c011956e4621b563e658c589dc2ae368d6a04dc04cc804765d8195bf029",
             "v1.28" : "v1.28-cb1635cc6c7-80@sha256:d9e51c8c78b3ef040e5739d6ac079d6587bb4b03d8b65579a877b4ec84c4f219",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
           }
         ))
       }
