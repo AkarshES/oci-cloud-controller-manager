@@ -38,7 +38,7 @@ locals {
         "v1.31" : "v1.31-4e30e28b828-80-csi@sha256:bf55f642531ebcb3e8ec09c3adeb9507552733df58e9fc6b7692bc241d5df2ad",
         "v1.32" : "v1.32-2c5fcd2e853-46-csi@sha256:fb9e892af78589a74bf8a85fa47af4de66cb97a5fbe33846a5e4380f97c024ec",
         "v1.33" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
-        "v1.34" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
+        "v1.34" : "v1.34-8f0fbf7e71e-9-csi@sha256:2eca76b52bc3198f86b839c199f67476100bc614e401dec25ac0a2310f609c28"
       }
     }
   }
