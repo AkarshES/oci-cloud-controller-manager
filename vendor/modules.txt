@@ -183,7 +183,6 @@ github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 github.com/gogo/protobuf/sortkeys
 # github.com/golang/mock v1.6.0
 ## explicit; go 1.11
-github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.5.4
 ## explicit; go 1.17
 github.com/golang/protobuf/proto
@@ -500,6 +499,7 @@ github.com/oracle/oci-go-sdk/v65/core
 github.com/oracle/oci-go-sdk/v65/filestorage
 github.com/oracle/oci-go-sdk/v65/identity
 github.com/oracle/oci-go-sdk/v65/loadbalancer
+github.com/oracle/oci-go-sdk/v65/lustrefilestorage
 github.com/oracle/oci-go-sdk/v65/monitoring
 github.com/oracle/oci-go-sdk/v65/networkloadbalancer
 # github.com/pelletier/go-toml v1.9.5
