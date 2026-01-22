@@ -109,7 +109,9 @@ func (f *CloudProviderFramework) CleanupLustreFileSystems(ctx context.Context, c
 	}
 	for _, s := range fsList {
 		// Skip already deleting/deleted
-		if s.LifecycleState == lustrefilestorage.LustreFileSystemLifecycleStateDeleting || s.LifecycleState == lustrefilestorage.LustreFileSystemLifecycleStateDeleted {
+		if s.LifecycleState == lustrefilestorage.LustreFileSystemLifecycleStateDeleting ||
+			s.LifecycleState == lustrefilestorage.LustreFileSystemLifecycleStateDeleted ||
+			s.LifecycleState == lustrefilestorage.LustreFileSystemLifecycleStateCreating {
 			continue
 		}
 		id := ""

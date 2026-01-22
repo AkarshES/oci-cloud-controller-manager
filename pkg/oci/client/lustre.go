@@ -104,9 +104,11 @@ func (c *client) ListLustreFileSystems(ctx context.Context, compartmentID, ad, d
 
 		req := lustre.ListLustreFileSystemsRequest{
 			CompartmentId:   &compartmentID,
-			DisplayName:     &displayName,
 			RequestMetadata: c.requestMetadata,
 			Page:            page,
+		}
+		if displayName != "" {
+			req.DisplayName = &displayName
 		}
 		if ad != "" {
 			req.AvailabilityDomain = &ad

@@ -317,6 +317,7 @@ function run_e2e_tests_existing_cluster() {
                 --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
                 --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
                 --cloud-config=${CLOUD_CONFIG} \
+                --compartment1=${COMPARTMENT} \
                 --adlocation=${ADLOCATION} \
                 --delete-namespace=${DELETE_NAMESPACE} \
                 --image-pull-repo=${IMAGE_PULL_REPO} \
@@ -357,6 +358,7 @@ function run_e2e_tests_existing_cluster() {
                         --enable-create-cluster=${ENABLE_CREATE_CLUSTER} \
                         --cluster-kubeconfig=${CLUSTER_KUBECONFIG} \
                         --cloud-config=${CLOUD_CONFIG} \
+                        --compartment1=${COMPARTMENT} \
                         --adlocation=${ADLOCATION} \
                         --delete-namespace=${DELETE_NAMESPACE} \
                         --image-pull-repo=${IMAGE_PULL_REPO} \
@@ -491,6 +493,7 @@ function declare_setup () {
     fi
 
     echo "ARCHITECTURE is ${ARCHITECTURE}"
+    echo "COMPARTMENT is ${COMPARTMENT}"
     echo "OKE_ENDPOINT is ${OKE_ENDPOINT}"
     echo "VCN is ${VCN}"
     echo "LBRGNSUBNET is ${LBRGNSUBNET}"

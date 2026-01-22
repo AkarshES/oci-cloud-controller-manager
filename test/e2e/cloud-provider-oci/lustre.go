@@ -28,9 +28,10 @@ var _ = Describe("Lustre E2E Tests", func() {
 	f := framework.NewDefaultFramework("lustre-dynamic-e2e")
 	Context("[cloudprovider][storage][csi][lustre]", func() {
 
-		f.CleanupLustreFileSystems(context.Background(), setupF.Compartment1)
-
 		It("All the lustre dynamic provisioning and static provisioning tests", func() {
+			framework.Logf("Compartment %v", setupF.Compartment1)
+			f.CleanupLustreFileSystems(context.Background(), setupF.Compartment1)
+
 			if !setupF.EnableLustreTests {
 				Skip("Skipping Lustre tests as Lustre tests are not been enabled (Env var: ENABLE_LUSTRE_TESTS)")
 			}

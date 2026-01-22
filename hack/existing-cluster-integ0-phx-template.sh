@@ -126,4 +126,4 @@ export OCI_NODESUBNET="ocid1.subnet.oc1.phx.aaaaaaaaegz7agsaqt5d6fdbwhtq2m3vmlzw
 export NODEPOOL_SIZE="3"
 export E2E_NODE_COUNT=1
 export E2E_BRANCH=private-e2e
-export COMPARTMENT=ocid1.compartment.oc1..aaaaaaaa7cgk4a3z2vknlyixzhibvdpauuvxdbs5c6n67yktnxdgh53zhibq
+export COMPARTMENT="ocid1.compartment.oc1..aaaaaaaa7cgk4a3z2vknlyixzhibvdpauuvxdbs5c6n67yktnxdgh53zhibq"
