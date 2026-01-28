@@ -215,6 +215,7 @@ locals {
             "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+            "v1.31" : "v1.31-36db5994afd-108@sha256:9ea3a6aad84d3ff6ff7e54f4a6ef265a056cfde5c6c5bf3af2b2de907439db3d",
           },
           local.ccm_upstream_k8s_new_version_test.default.all
         ))
