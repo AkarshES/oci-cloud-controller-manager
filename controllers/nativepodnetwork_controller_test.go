@@ -115,6 +115,7 @@ var (
 	falseVal         = false
 	testAddress1     = "1.1.1.1"
 	testAddress2     = "2.2.2.2"
+	testAddress3     = "3.3.3.3"
 	testIPv6Address1 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
 	testIPv6Address2 = "2001:0db8:85a3:0000:0000:8a2e:0370:1fde"
 )
@@ -328,6 +329,7 @@ func TestGetHostIpAddress(t *testing.T) {
 					V4: []core.PrivateIp{
 						{IpAddress: &testAddress1, CidrPrefixLength: common.Int(32)},
 						{IpAddress: &testAddress2, CidrPrefixLength: common.Int(30)},
+						{IpAddress: &testAddress3, CidrPrefixLength: common.Int(32), IsPrimary: common.Bool(true)},
 					},
 				},
 			},
@@ -347,9 +349,10 @@ func TestGetHostIpAddress(t *testing.T) {
 						{IpAddress: &testIPv6Address1, CidrPrefixLength: common.Int(120)},
 					},
 					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, CidrPrefixLength: common.Int(32)},
 						{IpAddress: &testAddress2, CidrPrefixLength: common.Int(30)},
 					},
-					hostIpv4: &testAddress1,
+					hostIpv4: &testAddress3,
 					hostIpv6: &testIPv6Address2,
 				},
 			},
@@ -865,7 +868,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"green"},
-							IpCount:              31,
+							IpCount:              32,
 							IpFamilies:           []string{IPv4, IPv6},
 						},
 					},
@@ -892,19 +895,20 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					V4: []core.PrivateIp{
 						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
 						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
-						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1, IsPrimary: common.Bool(true)},
+					},
 					V6: []core.Ipv6{
 						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
 						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
-						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
+						{IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1}, {IpAddress: &testIPv6Address1},
 					},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
 				{"green", []string{IPv4, IPv6}, IpAddressCountByVersion{
-					V4: 14,
-					V6: 14,
+					V4: 16,
+					V6: 16,
 				}},
 			},
 			err: nil,
@@ -918,7 +922,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-a"},
-							IpCount:              31,
+							IpCount:              32,
 							IpFamilies:           []string{IPv4, IPv6},
 						},
 					},
@@ -931,7 +935,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-a"},
-								IpCount:              31,
+								IpCount:              32,
 							},
 						},
 					},
@@ -939,8 +943,12 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"app-a": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
@@ -950,7 +958,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			err: nil,
 		},
 		{
-			name:       "Secondary vnic with 14 ip count",
+			name:       "Secondary vnic with 16 ip count",
 			ipFamilies: []string{IPv4, IPv6},
 			gvaNics: []GvaNics{
 				{
@@ -958,7 +966,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-a"},
-							IpCount:              14,
+							IpCount:              16,
 							IpFamilies:           []string{IPv4, IPv6},
 						},
 					},
@@ -971,7 +979,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-a"},
-								IpCount:              14,
+								IpCount:              16,
 							},
 						},
 					},
@@ -979,13 +987,17 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"app-a": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
-				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 15, V6: 15}},
+				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 16, V6: 16}},
 			},
 			err: nil,
 		},
@@ -998,7 +1010,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-a"},
-							IpCount:              20,
+							IpCount:              32,
 							IpFamilies:           []string{IPv4, IPv6},
 						},
 					},
@@ -1008,7 +1020,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-b"},
-							IpCount:              15,
+							IpCount:              8,
 							IpFamilies:           []string{IPv4, IPv6},
 						},
 					},
@@ -1021,13 +1033,13 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-a"},
-								IpCount:              20,
+								IpCount:              32,
 							},
 						},
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-b"},
-								IpCount:              15,
+								IpCount:              8,
 							},
 						},
 					},
@@ -1035,23 +1047,31 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"app-a": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 				"app-b": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
-				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 21, V6: 21}},
-				{"app-b", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 16, V6: 16}},
+				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
+				{"app-b", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 8, V6: 8}},
 			},
 			err: nil,
 		},
 		{
-			name:       "3 Secondary vnic with IPv4 partially allocated ips",
+			name:       "3 Secondary gvnic with IPv4 partially allocated ips",
 			ipFamilies: []string{IPv4},
 			gvaNics: []GvaNics{
 				{
@@ -1059,7 +1079,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-a"},
-							IpCount:              20,
+							IpCount:              32,
 							IpFamilies:           []string{IPv4},
 						},
 					},
@@ -1069,7 +1089,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-b"},
-							IpCount:              15,
+							IpCount:              16,
 							IpFamilies:           []string{IPv4},
 						},
 					},
@@ -1079,7 +1099,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
 						CreateVnicDetails: v1beta1.CreateVnicDetails{
 							ApplicationResources: []string{"app-c"},
-							IpCount:              9,
+							IpCount:              64,
 							IpFamilies:           []string{IPv4},
 						},
 					},
@@ -1092,19 +1112,19 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-a"},
-								IpCount:              20,
+								IpCount:              32,
 							},
 						},
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-b"},
-								IpCount:              15,
+								IpCount:              16,
 							},
 						},
 						{
 							CreateVnicDetails: v1beta1.CreateVnicDetails{
 								ApplicationResources: []string{"app-c"},
-								IpCount:              9,
+								IpCount:              64,
 							},
 						},
 					},
@@ -1116,24 +1136,34 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
 						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
 						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
-						{IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1}, {IpAddress: &testAddress1},
+						{IpAddress: &testAddress1}, {IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
 					},
-					V6: []core.Ipv6{},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 				"app-b": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 				"app-c": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
-				{"app-a", []string{IPv4}, IpAddressCountByVersion{V4: 1, V6: 0}},
+				{"app-a", []string{IPv4}, IpAddressCountByVersion{V4: 16, V6: 0}},
 				{"app-b", []string{IPv4}, IpAddressCountByVersion{V4: 16, V6: 0}},
-				{"app-c", []string{IPv4}, IpAddressCountByVersion{V4: 10, V6: 0}},
+				{"app-c", []string{IPv4}, IpAddressCountByVersion{V4: 64, V6: 0}},
 			},
 			err: nil,
 		},
@@ -1162,15 +1192,17 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"app-cidr": {
 					V4: []core.PrivateIp{
-						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(30)},
+						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(29)},
+						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(32), IsPrimary: common.Bool(true)},
 					},
 					V6: []core.Ipv6{
 						{IpAddress: common.String("2001:db8::"), CidrPrefixLength: common.Int(124)},
+						{IpAddress: common.String("2001:db8::")},
 					},
 				},
 			},
 			expected: []VnicIPAllocations{
-				{"app-cidr", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 13, V6: 1}},
+				{"app-cidr", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 8, V6: 0}},
 			},
 			err: nil,
 		},
@@ -1199,7 +1231,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"app-cidr": {
 					V4: []core.PrivateIp{
-						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(30)},
+						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(29)},
 						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(32)},
 					},
 					V6: []core.Ipv6{
@@ -1209,7 +1241,7 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 				},
 			},
 			expected: []VnicIPAllocations{
-				{"app-cidr", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 13, V6: 1}},
+				{"app-cidr", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 8, V6: 0}},
 			},
 			err: nil,
 		},
@@ -1272,26 +1304,84 @@ func TestGetAdditionalSecondaryIPsNeededPerVNIC(t *testing.T) {
 			},
 			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
 				"fresh-node": {
-					V4: []core.PrivateIp{},
-					V6: []core.Ipv6{},
+					V4: []core.PrivateIp{
+						{IpAddress: common.String("10.0.0.0"), CidrPrefixLength: common.Int(32), IsPrimary: common.Bool(true)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: common.String("2001:db8::")},
+					},
 				},
 			},
 			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
 			expected: []VnicIPAllocations{
-				{"fresh-node", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 33, V6: 33}},
+				{"fresh-node", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
 			},
 			err: nil,
+		},
+		{
+			name:       "Secondary vnics (gva) with IPv4 and IPv6 with non-compatibe ipCount",
+			ipFamilies: []string{IPv4, IPv6},
+			gvaNics: []GvaNics{
+				{
+					vnicId: common.String("app-a"),
+					SecondaryVnicSpec: &v1beta1.SecondaryVnic{
+						CreateVnicDetails: v1beta1.CreateVnicDetails{
+							ApplicationResources: []string{"app-a"},
+							IpCount:              30,
+							IpFamilies:           []string{IPv4, IPv6},
+						},
+					},
+				},
+			},
+			npnCR: v1beta1.NativePodNetwork{
+				Spec: v1beta1.NativePodNetworkSpec{
+					MaxPodCount: common.Int(32),
+					SecondaryVnics: []v1beta1.SecondaryVnic{
+						{
+							CreateVnicDetails: v1beta1.CreateVnicDetails{
+								ApplicationResources: []string{"app-a"},
+								IpCount:              30,
+							},
+						},
+					},
+				},
+			},
+			existingIpsByVnic: map[string]*vnicSecondaryAddresses{
+				"app-a": {
+					V4: []core.PrivateIp{
+						{IpAddress: &testAddress1, IsPrimary: common.Bool(true), CidrPrefixLength: common.Int(32)},
+					},
+					V6: []core.Ipv6{
+						{IpAddress: &testIPv6Address1},
+					},
+				},
+			},
+			allocatedSecondaryIps: IpAddressCountByVersion{V4: 0, V6: 0},
+			expected: []VnicIPAllocations{
+				{"app-a", []string{IPv4, IPv6}, IpAddressCountByVersion{V4: 32, V6: 32}},
+			},
+			err: errors.New("the required number of IPs to allocate on VNIC is not v4 IP CIDR address compatible. 30 is not a power of 2"),
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			allocation, err := getAdditionalSecondaryIPsNeededPerVNIC(tc.existingIpsByVnic, &tc.npnCR, tc.allocatedSecondaryIps, tc.ipFamilies, tc.gvaNics, logr.FromContextOrDiscard(context.Background()))
-			if (err == nil && tc.err != nil) || err != nil && tc.err == nil {
-				t.Errorf("expected err:\n%+v\nbut got err:\n%+v", tc.err, err)
+
+			if tc.err == nil && err != nil {
+				t.Errorf("unexpected error: %+v", err)
 				t.FailNow()
 			}
-			if err != nil && err.Error() != tc.err.Error() {
-				t.Errorf("expected err:\n%+v\nbut got err:\n%+v", tc.expected, allocation)
+			if tc.err != nil {
+				if err == nil {
+					t.Errorf("expected error: %+v, but got nil", tc.err)
+					t.FailNow()
+				}
+				if err.Error() != tc.err.Error() {
+					t.Errorf("expected error:\n%+v\nbut got error:\n%+v", tc.err, err)
+					t.FailNow()
+				}
+				// Error matched as expected, so PASS here (don't check allocations)
+				return
 			}
 
 			gotSumV4, gotSumV6 := 0, 0
@@ -2277,12 +2367,13 @@ func TestGetSecondaryIpsByVNICs(t *testing.T) {
 	npn := &NativePodNetworkReconciler{
 		OCIClient: MockOCIClient{},
 	}
+	npnObject := &npnv1beta1.NativePodNetwork{}
 
 	t.Parallel()
 	for _, tt := range testCases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic, tt.nodeIpFamilies)
+			ipsByVNICs, err := npn.getSecondaryIpsByVNICs(context.Background(), tt.existingSecondaryVnic, tt.nodeIpFamilies, npnObject)
 			if err != nil && err.Error() != tt.err.Error() {
 				t.Errorf("got error %s, expected %s", err, tt.err)
 			}
@@ -2399,111 +2490,138 @@ func TestGetCidrPrefixLengthForBlockSize(t *testing.T) {
 	intPtr := func(v int) *int { return &v }
 
 	tests := []struct {
-		name   string
-		size   int
-		family string
-		want   *int
+		name       string
+		size       int
+		family     string
+		wantPrefix *int
+		wantErr    bool
 	}{
 		{
-			name:   "size <= 0 returns nil",
-			size:   0,
-			family: IPv4,
-			want:   nil,
+			name:       "size <= 0 returns nil",
+			size:       0,
+			family:     IPv4,
+			wantPrefix: nil,
+			wantErr:    false,
 		},
 		{
-			name:   "IPv4 size 1 -> /32",
-			size:   1,
-			family: IPv4,
-			want:   intPtr(32),
+			name:       "IPv4 size 1 -> /32",
+			size:       1,
+			family:     IPv4,
+			wantPrefix: intPtr(32),
+			wantErr:    false,
 		},
 		{
-			name:   "IPv6 size 1 -> nil",
-			size:   1,
-			family: IPv6,
-			want:   nil,
+			name:       "IPv6 size 1 -> nil",
+			size:       1,
+			family:     IPv6,
+			wantPrefix: nil,
+			wantErr:    false,
 		},
 		{
-			name:   "IPv4 size 2 -> /31",
-			size:   2,
-			family: IPv4,
-			want:   intPtr(31),
+			name:       "IPv4 size 2 -> /31",
+			size:       2,
+			family:     IPv4,
+			wantPrefix: intPtr(31),
+			wantErr:    false,
 		},
 		{
-			name:   "IPv6 size 2 -> /124 (rounded down to multiple of 4)",
-			size:   2,
-			family: IPv6,
-			want:   intPtr(124),
+			name:       "IPv6 size 2 -> /124 (rounded down to multiple of 4)",
+			size:       2,
+			family:     IPv6,
+			wantPrefix: intPtr(124),
+			wantErr:    false,
 		},
 		{
-			name:   "IPv4 size 3 -> /30 (ceil log2)",
-			size:   3,
-			family: IPv4,
-			want:   intPtr(30),
+			name:       "IPv4 size 3 -> error (not power of 2)",
+			size:       3,
+			family:     IPv4,
+			wantPrefix: nil,
+			wantErr:    true,
 		},
 		{
-			name:   "IPv6 size 3 -> /124 (ceil log2 then round)",
-			size:   3,
-			family: IPv6,
-			want:   intPtr(124),
+			name:       "IPv6 size 3 -> error (not power of 2)",
+			size:       3,
+			family:     IPv6,
+			wantPrefix: nil,
+			wantErr:    true,
 		},
 		{
-			name:   "IPv4 size 16 -> /28",
-			size:   16,
-			family: IPv4,
-			want:   intPtr(28),
+			name:       "IPv4 size 16 -> /28",
+			size:       16,
+			family:     IPv4,
+			wantPrefix: intPtr(28),
+			wantErr:    false,
 		},
 		{
-			name:   "IPv6 size 16 -> /124",
-			size:   16,
-			family: IPv6,
-			want:   intPtr(124),
+			name:       "IPv6 size 16 -> /124",
+			size:       16,
+			family:     IPv6,
+			wantPrefix: intPtr(124),
+			wantErr:    false,
 		},
 		{
-			name:   "IPv4 size 17 -> /27",
-			size:   17,
-			family: IPv4,
-			want:   intPtr(27),
+			name:       "IPv4 size 17 -> error (not power of 2)",
+			size:       17,
+			family:     IPv4,
+			wantPrefix: nil,
+			wantErr:    true,
 		},
 		{
-			name:   "IPv6 size 17 -> /120 (rounded to multiple of 4)",
-			size:   17,
-			family: IPv6,
-			want:   intPtr(120),
+			name:       "IPv6 size 17 -> error (not power of 2)",
+			size:       17,
+			family:     IPv6,
+			wantPrefix: nil,
+			wantErr:    true,
 		},
 		{
-			name:   "IPv4 size 256 -> /24",
-			size:   256,
-			family: IPv4,
-			want:   intPtr(24),
+			name:       "IPv4 size 256 -> /24",
+			size:       256,
+			family:     IPv4,
+			wantPrefix: intPtr(24),
+			wantErr:    false,
 		},
 		{
-			name:   "IPv6 size 256 -> /120",
-			size:   256,
-			family: IPv6,
-			want:   intPtr(120),
+			name:       "IPv6 size 256 -> /120",
+			size:       256,
+			family:     IPv6,
+			wantPrefix: intPtr(120),
+			wantErr:    false,
 		},
 		{
-			name:   "unknown family defaults to IPv4 logic",
-			size:   2,
-			family: "unknown",
-			want:   intPtr(31),
+			name:       "unknown family defaults to IPv4 logic",
+			size:       2,
+			family:     "unknown",
+			wantPrefix: intPtr(31),
+			wantErr:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getCidrPrefixLengthForBlockSize(tt.size, tt.family)
-			if tt.want == nil {
+			got, err := getCidrPrefixLengthForBlockSize(tt.size, tt.family)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				if got != nil {
+					t.Fatalf("expected nil prefix on error, got %d", *got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.wantPrefix == nil {
 				if got != nil {
 					t.Fatalf("expected nil, got %v", *got)
 				}
 				return
 			}
 			if got == nil {
-				t.Fatalf("expected %d, got nil", *tt.want)
+				t.Fatalf("expected %d, got nil", *tt.wantPrefix)
 			}
-			if *got != *tt.want {
-				t.Fatalf("expected %d, got %d", *tt.want, *got)
+			if *got != *tt.wantPrefix {
+				t.Fatalf("expected %d, got %d", *tt.wantPrefix, *got)
 			}
 		})
 	}
