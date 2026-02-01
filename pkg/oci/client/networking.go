@@ -303,6 +303,9 @@ func (c *client) ListPrivateIps(ctx context.Context, vnicId string) ([]core.Priv
 	return privateIps, nil
 }
 
+// CidrPrefixLength (*int) is an optional field that when combined with the ipAddress field, will be used to
+// allocate secondary IPv4 CIDRs. (ex: 10.0.1.0/30).
+// vnicID (string) is the ocid of the VNIC to assign the private IP to.
 func (c *client) CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.PrivateIp, error) {
 	if !c.rateLimiter.Writer.TryAccept() {
 		return nil, RateLimitError(false, "CreatePrivateIp")
@@ -324,6 +327,9 @@ func (c *client) CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixL
 	return &resp.PrivateIp, nil
 }
 
+// CidrPrefixLength (*int) is an optional field that when combined with the ipAddress field, will be used to
+// allocate secondary IPv6 CIDRs. (ex: 2603:34fe::/120).
+// vnicID (string) is the ocid of the VNIC to assign the IPv6 IP to.
 func (c *client) CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error) {
 	if !c.rateLimiter.Reader.TryAccept() {
 		return nil, RateLimitError(false, "CreateIpv6")
