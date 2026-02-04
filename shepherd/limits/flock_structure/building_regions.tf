@@ -40,6 +40,31 @@ resource "shepherd_execution_target" "prod_build_spectre_region_et" {
       labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
     }
   }
+  dynamic "checkpoints" {
+    for_each = [local.spectrevaluessetupprdrealmtarget_region_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+    }
+  }
 }
 resource "shepherd_execution_target" "prod_build_region_et" {
   for_each                  = local.build_region_cell_overrides
@@ -66,6 +91,31 @@ resource "shepherd_execution_target" "prod_build_region_et" {
       labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
     }
   }  
+  dynamic "checkpoints" {
+    for_each = [local.prdrealmtarget_regioncell0_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+    }
+  }
   ignored_region_build_capabilities = ["grafana_dashboard"]
   provider_override {
     name = "null"

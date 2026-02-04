@@ -73,6 +73,31 @@ resource "shepherd_execution_target" "herds_common_env_setup_et" {
   labels = {
     herd = "784e372b-c0b0-4e09-a1e1-9ffb771af533"
   }
+  dynamic "checkpoints" {
+    for_each = [local.envsetupprdrealm_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+    }
+  }
 }
 
 resource "shepherd_execution_target" "herds_common_spectre_setup_et" {
@@ -93,6 +118,31 @@ resource "shepherd_execution_target" "herds_common_spectre_setup_et" {
   }
   labels = {
     herd = "784e372b-c0b0-4e09-a1e1-9ffb771af533"
+  }
+  dynamic "checkpoints" {
+    for_each = [local.spectresetupprdrealm_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+    }
   }
 }
 
@@ -161,6 +211,31 @@ resource "shepherd_execution_target" "herds_common_region_values" {
   alarms_to_watch {
     compartment_name = "assets"
     labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+  }
+  dynamic "checkpoints" {
+    for_each = [local.spectrevaluessetupprdrealmtarget_region_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+    }
   }
 }
 

@@ -72,6 +72,31 @@ resource "shepherd_execution_target" "build_env_setup_et" {
       labels = [ for idx in range(each.value.cell_count) : format("oke-mp-release-cells%s",idx)]
     }
   }
+  dynamic "checkpoints" {
+    for_each = [local.envsetupprdrealm_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+    }
+  }
 }  
 
 resource "shepherd_execution_target" "build_spectre_setup_et" {
@@ -90,6 +115,31 @@ resource "shepherd_execution_target" "build_spectre_setup_et" {
     content {
       compartment_name = "assets"
       labels           = ["oke-mp-release-cell0", "oke-mp-release-cell1"]
+    }
+  }
+  dynamic "checkpoints" {
+    for_each = [local.spectresetupprdrealm_checkpoints]
+    content {
+      infra {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.infra_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.infra_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
+      app {
+        dynamic "checkpoint" {
+          for_each = checkpoints.value.app_config.ckpts
+          content {
+            name                    = checkpoint.value
+            build_flags             = [checkpoint.value]
+            capability_dependencies = try(checkpoints.value.app_config.capability_dependencies[checkpoint.value], [])
+          }
+        }
+      }
     }
   }
 }  

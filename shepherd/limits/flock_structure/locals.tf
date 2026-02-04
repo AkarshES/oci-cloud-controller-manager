@@ -1078,4 +1078,110 @@ locals {
   cell_override_keys   = keys(local.cell_overrides)
   build_regions_nocell = [for region in local.build_regions : split(".cell", region)[0]]
   spectre_regional_et  = compact(distinct([for key in local.cell_override_keys : split(".cell", key)[0]]))
+  # SPAM checkpoints
+  # Execution Target: env.setup.prd.${REALM}
+  envsetupprdrealm_checkpoints = {
+    infra_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+    app_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+  }
+  # Execution Target: spectre.setup.prd.${REALM}
+  spectresetupprdrealm_checkpoints = {
+    infra_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+    app_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+  }
+
+  # Phase: region-build_${TARGET_REGION}
+  # Execution Target: prd.${REALM}.${TARGET_REGION}.cell0
+  prdrealmtarget_regioncell0_checkpoints = {
+    infra_config = {
+      ckpts = [
+          "checkpoint_one",
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "checkpoint_one" = [
+          ]
+          "complete" = [
+          ]
+      }
+    }
+    app_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+  }
+  # Execution Target: spectre.values.setup.prd.${REALM}.${TARGET_REGION}
+  spectrevaluessetupprdrealmtarget_region_checkpoints = {
+    infra_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+    app_config = {
+      ckpts = [
+          "complete",
+      ]
+      # Contains only optional dependencies for the ET.
+      # Required dependencies are implicitly grouped to the first checkpoint.
+      capability_dependencies = {
+          "complete" = [
+          ]
+      }
+    }
+  }
 }
