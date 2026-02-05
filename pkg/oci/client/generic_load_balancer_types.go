@@ -12,11 +12,15 @@ const (
 )
 
 type GenericBackendSetDetails struct {
-	Name                            *string
-	HealthChecker                   *GenericHealthChecker
-	Policy                          *string
-	Backends                        []GenericBackend
-	SessionPersistenceConfiguration *GenericSessionPersistenceConfiguration
+	Name          *string
+	HealthChecker *GenericHealthChecker
+	Policy        *string
+	Backends      []GenericBackend
+	// OCI SDK types are used directly for session persistence.
+	// Note: SessionPersistenceConfiguration (application cookie) and
+	// LbCookieSessionPersistenceConfiguration (LB cookie) are mutually exclusive.
+	SessionPersistenceConfiguration         *loadbalancer.SessionPersistenceConfigurationDetails
+	LbCookieSessionPersistenceConfiguration *loadbalancer.LbCookieSessionPersistenceConfigurationDetails
 	// Only needed for LB
 	BackendMaxConnections *int
 	SslConfiguration      *GenericSslConfigurationDetails
@@ -27,11 +31,6 @@ type GenericBackendSetDetails struct {
 }
 
 type GenericIpVersion string
-
-type GenericSessionPersistenceConfiguration struct {
-	CookieName      *string
-	DisableFallback *bool
-}
 
 type GenericHealthChecker struct {
 	Protocol          string  `json:"protocol,required"`
