@@ -6077,6 +6077,93 @@ func TestNewLBSpecSuccess(t *testing.T) {
 	}
 }
 
+func TestSessionPersistenceConfiguration(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+
+	baseSvc := func() *v1.Service {
+		return &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "svc",
+				Namespace: "default",
+				UID:       "uid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerInternal: "true",
+					ServiceAnnotationLoadBalancerType:     "lb",
+				},
+			},
+			Spec: v1.ServiceSpec{
+				IPFamilies:      []v1.IPFamily{v1.IPFamily(IPv4)},
+				SessionAffinity: v1.ServiceAffinityNone,
+				Type:            v1.ServiceTypeLoadBalancer,
+				Ports: []v1.ServicePort{{
+					Name:     "http",
+					Protocol: v1.ProtocolTCP,
+					Port:     80,
+					NodePort: 30080,
+				}},
+			},
+		}
+	}
+
+	t.Run("json: lb-cookie config populates lbCookieSessionPersistenceConfiguration", func(t *testing.T) {
+		svc := baseSvc()
+		svc.Annotations[ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig] = `{"CookieName":"mycookie"}`
+
+		sp, lbsp, err := getSessionPersistenceConfiguration(svc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if sp != nil {
+			t.Fatalf("expected app-cookie session persistence configuration to be nil")
+		}
+		if lbsp == nil {
+			t.Fatalf("expected lb-cookie session persistence configuration to be set")
+		}
+		if lbsp.CookieName == nil || *lbsp.CookieName != "mycookie" {
+			t.Fatalf("unexpected cookie name: %#v", lbsp.CookieName)
+		}
+	})
+
+	t.Run("json: app-cookie config populates sessionPersistenceConfiguration", func(t *testing.T) {
+		svc := baseSvc()
+		svc.Annotations[ServiceAnnotationLoadBalancerSessionPersistenceConfig] = `{"CookieName":"appcookie"}`
+
+		sp, lbsp, err := getSessionPersistenceConfiguration(svc)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if lbsp != nil {
+			t.Fatalf("expected lb-cookie session persistence configuration to be nil")
+		}
+		if sp == nil {
+			t.Fatalf("expected app-cookie session persistence configuration to be set")
+		}
+		if sp.CookieName == nil || *sp.CookieName != "appcookie" {
+			t.Fatalf("unexpected cookie name: %#v", sp.CookieName)
+		}
+	})
+
+	t.Run("json: mutually exclusive annotations", func(t *testing.T) {
+		svc := baseSvc()
+		svc.Annotations[ServiceAnnotationLoadBalancerSessionPersistenceConfig] = `{"CookieName":"appcookie"}`
+		svc.Annotations[ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig] = `{"CookieName":"lbcookie"}`
+		_, _, err := getSessionPersistenceConfiguration(svc)
+		if err == nil {
+			t.Fatalf("expected error")
+		}
+	})
+
+	t.Run("legacy: app-cookie annotations", func(t *testing.T) {
+		t.Skip("legacy per-field session persistence annotations were removed")
+	})
+
+	t.Run("legacy: lb-cookie annotations", func(t *testing.T) {
+		t.Skip("legacy per-field session persistence annotations were removed")
+	})
+
+	_ = logger
+}
+
 func TestNewLBSpecForTags(t *testing.T) {
 	enableOkeSystemTags = true
 	tests := map[string]struct {
