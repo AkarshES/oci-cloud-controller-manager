@@ -56,6 +56,7 @@ const (
 	ruleSetResource                      resource = "load_balancer_rule_set"
 	shapeResource                        resource = "load_balancer_shape"
 	certificateResource                  resource = "load_balancer_certificate"
+	certificateManagerResource           resource = "certificate_manager"
 	workRequestResource                  resource = "load_balancer_work_request"
 	nlbWorkRequestResource               resource = "network_load_balancer_work_request"
 	securityListResource                 resource = "security_list"

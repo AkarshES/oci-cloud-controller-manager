@@ -29,7 +29,7 @@ func (c *client) GetValidCertificate(ctx context.Context, id string) (*certifica
 	}
 	resp, err := c.certificatesManagementClient.GetCertificate(ctx, req)
 	c.logger.Debugf("Retrieved Certificate response %+v with reqeust %+v", resp, req)
-	incRequestCounter(err, getVerb, certificateResource)
+	incRequestCounter(err, getVerb, certificateManagerResource)
 	if err != nil {
 		c.logger.Errorf("Error retrieving Certificate %+v: %s", id, errors.WithStack(err))
 		return nil, errors.New(fmt.Sprintf("unexpected error in reading certificate: %s", err.Error()))
@@ -38,7 +38,9 @@ func (c *client) GetValidCertificate(ctx context.Context, id string) (*certifica
 		return nil, errors.New(fmt.Sprintf("unexpected nil response from GetValidCertificate"))
 	}
 	if resp.Certificate.LifecycleState != certificatesmanagement.CertificateLifecycleStateActive ||
-		(resp.Certificate.TimeOfDeletion != nil && resp.Certificate.TimeOfDeletion.Before(time.Now())) {
+		(resp.Certificate.TimeOfDeletion != nil && resp.Certificate.TimeOfDeletion.Before(time.Now())) ||
+		(resp.Certificate.CurrentVersion.Validity.TimeOfValidityNotBefore != nil &&
+			resp.Certificate.CurrentVersion.Validity.TimeOfValidityNotBefore.After(time.Now())) {
 		return nil, errors.New(fmt.Sprintf("No valid certificate found with id %s", id))
 	}
 	return &resp.Certificate, nil
