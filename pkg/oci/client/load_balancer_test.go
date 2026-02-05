@@ -3,11 +3,13 @@ package client
 import (
 	"context"
 	"errors"
-	errors2 "github.com/pkg/errors"
 	"log"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	errors2 "github.com/pkg/errors"
 
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/loadbalancer"
@@ -196,6 +198,85 @@ func TestGetLoadBalancerByName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLbCookieSessionPersistenceConfigurationConversions(t *testing.T) {
+	t.Parallel()
+
+	client := loadbalancerClientStruct{}
+
+	cookieName := "my-cookie"
+	disableFallback := true
+	domain := "example.com"
+	path := "/app"
+	maxAge := 3600
+	isSecure := true
+	isHttpOnly := true
+
+	in := &loadbalancer.LbCookieSessionPersistenceConfigurationDetails{
+		CookieName:      common.String(cookieName),
+		DisableFallback: common.Bool(disableFallback),
+		Domain:          common.String(domain),
+		Path:            common.String(path),
+		MaxAgeInSeconds: common.Int(maxAge),
+		IsSecure:        common.Bool(isSecure),
+		IsHttpOnly:      common.Bool(isHttpOnly),
+	}
+
+	out := &loadbalancer.LbCookieSessionPersistenceConfigurationDetails{}
+	*out = *in
+	if !reflect.DeepEqual(in, out) {
+		t.Fatalf("expected sdk structs to be deep-equal (sanity). expected=%#v got=%#v", in, out)
+	}
+
+	// Ensure backendset mapping includes lbCookie config
+	backendSetName := "bs1"
+	hcPort := 80
+	hc := &GenericHealthChecker{Protocol: "HTTP", Port: &hcPort}
+	backendSets := map[string]GenericBackendSetDetails{
+		backendSetName: {
+			Name: common.String(backendSetName),
+			HealthChecker: &GenericHealthChecker{
+				Protocol: "HTTP",
+				Port:     common.Int(hcPort),
+			},
+			Policy:                                  common.String("ROUND_ROBIN"),
+			Backends:                                []GenericBackend{},
+			LbCookieSessionPersistenceConfiguration: in,
+			SessionPersistenceConfiguration:         nil,
+		},
+	}
+
+	sdkBackendSets := client.genericBackendSetDetailsToBackendSets(backendSets)
+	if sdkBackendSets[backendSetName].LbCookieSessionPersistenceConfiguration == nil {
+		t.Fatalf("expected lbCookieSessionPersistenceConfiguration to be set in sdk backendset")
+	}
+	if sdkBackendSets[backendSetName].SessionPersistenceConfiguration != nil {
+		t.Fatalf("expected sessionPersistenceConfiguration to be nil")
+	}
+
+	// Convert back to generic (through LB struct conversion path)
+	lbBackendSets := map[string]loadbalancer.BackendSet{
+		backendSetName: {
+			Name:   backendSets[backendSetName].Name,
+			Policy: backendSets[backendSetName].Policy,
+			HealthChecker: &loadbalancer.HealthChecker{
+				Protocol: common.String("HTTP"),
+				Port:     common.Int(hcPort),
+			},
+			LbCookieSessionPersistenceConfiguration: sdkBackendSets[backendSetName].LbCookieSessionPersistenceConfiguration,
+		},
+	}
+
+	gotGeneric := client.backendSetsToGenericBackendSetDetails(lbBackendSets)
+	if gotGeneric[backendSetName].LbCookieSessionPersistenceConfiguration == nil {
+		t.Fatalf("expected generic lbCookie config to be set after conversion")
+	}
+	if !reflect.DeepEqual(in, gotGeneric[backendSetName].LbCookieSessionPersistenceConfiguration) {
+		t.Fatalf("lbCookie config mismatch after conversion. expected=%#v got=%#v", in, gotGeneric[backendSetName].LbCookieSessionPersistenceConfiguration)
+	}
+
+	_ = hc // keep for clarity; hc used in struct setup above
 }
 
 // MockLoadBalancerClient mocks LoadBalancer client implementation.

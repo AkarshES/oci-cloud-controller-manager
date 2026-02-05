@@ -350,11 +350,12 @@ func (c *loadbalancerClientStruct) CreateBackendSet(ctx context.Context, lbID st
 	createBackendSetRequest := loadbalancer.CreateBackendSetRequest{
 		LoadBalancerId: &lbID,
 		CreateBackendSetDetails: loadbalancer.CreateBackendSetDetails{
-			Name:                            &name,
-			Backends:                        c.genericBackendDetailsToBackendDetails(details.Backends),
-			HealthChecker:                   loadbalancerHealthCheckerToHealthCheckerDetails(details.HealthChecker),
-			Policy:                          details.Policy,
-			SessionPersistenceConfiguration: getSessionPersistenceConfiguration(details.SessionPersistenceConfiguration),
+			Name:                                    &name,
+			Backends:                                c.genericBackendDetailsToBackendDetails(details.Backends),
+			HealthChecker:                           loadbalancerHealthCheckerToHealthCheckerDetails(details.HealthChecker),
+			Policy:                                  details.Policy,
+			SessionPersistenceConfiguration:         details.SessionPersistenceConfiguration,
+			LbCookieSessionPersistenceConfiguration: details.LbCookieSessionPersistenceConfiguration,
 		},
 		RequestMetadata: c.requestMetadata,
 	}
@@ -384,10 +385,11 @@ func (c *loadbalancerClientStruct) UpdateBackendSet(ctx context.Context, lbID st
 		LoadBalancerId: &lbID,
 		BackendSetName: &name,
 		UpdateBackendSetDetails: loadbalancer.UpdateBackendSetDetails{
-			Backends:                        c.genericBackendDetailsToBackendDetails(details.Backends),
-			HealthChecker:                   loadbalancerHealthCheckerToHealthCheckerDetails(details.HealthChecker),
-			Policy:                          details.Policy,
-			SessionPersistenceConfiguration: getSessionPersistenceConfiguration(details.SessionPersistenceConfiguration),
+			Backends:                                c.genericBackendDetailsToBackendDetails(details.Backends),
+			HealthChecker:                           loadbalancerHealthCheckerToHealthCheckerDetails(details.HealthChecker),
+			Policy:                                  details.Policy,
+			SessionPersistenceConfiguration:         details.SessionPersistenceConfiguration,
+			LbCookieSessionPersistenceConfiguration: details.LbCookieSessionPersistenceConfiguration,
 		},
 		RequestMetadata: c.requestMetadata,
 	}
@@ -882,9 +884,8 @@ func (c *loadbalancerClientStruct) backendSetsToGenericBackendSetDetails(backend
 			backendDetailsStruct.BackendMaxConnections = v.BackendMaxConnections
 		}
 
-		if v.SessionPersistenceConfiguration != nil {
-			backendDetailsStruct.SessionPersistenceConfiguration = getGenericSessionPersistenceConfiguration(v.SessionPersistenceConfiguration)
-		}
+		backendDetailsStruct.SessionPersistenceConfiguration = v.SessionPersistenceConfiguration
+		backendDetailsStruct.LbCookieSessionPersistenceConfiguration = v.LbCookieSessionPersistenceConfiguration
 		genericBackendSetDetails[k] = backendDetailsStruct
 	}
 
@@ -920,8 +921,13 @@ func (c *loadbalancerClientStruct) genericBackendSetDetailsToBackendSets(backend
 		}
 
 		if v.SessionPersistenceConfiguration != nil {
-			backendSetDetailsStruct.SessionPersistenceConfiguration = getSessionPersistenceConfiguration(v.SessionPersistenceConfiguration)
+			backendSetDetailsStruct.SessionPersistenceConfiguration = v.SessionPersistenceConfiguration
 		}
+
+		if v.LbCookieSessionPersistenceConfiguration != nil {
+			backendSetDetailsStruct.LbCookieSessionPersistenceConfiguration = v.LbCookieSessionPersistenceConfiguration
+		}
+		
 		backendSetDetails[k] = backendSetDetailsStruct
 	}
 	return backendSetDetails
@@ -1074,27 +1080,6 @@ func stringArrayToBackendTcpProxyProtocolOptionsEnum(options []loadbalancer.Conn
 		ccString = append(ccString, string(option))
 	}
 	return ccString
-}
-
-func getSessionPersistenceConfiguration(details *GenericSessionPersistenceConfiguration) *loadbalancer.SessionPersistenceConfigurationDetails {
-	if details == nil {
-		return nil
-	}
-	return &loadbalancer.SessionPersistenceConfigurationDetails{
-		CookieName:      details.CookieName,
-		DisableFallback: details.DisableFallback,
-	}
-}
-
-func getGenericSessionPersistenceConfiguration(details *loadbalancer.SessionPersistenceConfigurationDetails) *GenericSessionPersistenceConfiguration {
-	if details == nil {
-		return nil
-	}
-
-	return &GenericSessionPersistenceConfiguration{
-		CookieName:      details.CookieName,
-		DisableFallback: details.DisableFallback,
-	}
 }
 
 func getListenerConnectionConfiguration(details *GenericConnectionConfiguration) *loadbalancer.ConnectionConfiguration {

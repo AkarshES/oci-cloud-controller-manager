@@ -236,6 +236,18 @@ const (
 	// LB https://docs.oracle.com/en-us/iaas/api/#/en/loadbalancer/20170115/datatypes/UpdateLoadBalancerDetails
 	// NLB https://docs.oracle.com/en-us/iaas/api/#/en/networkloadbalancer/20200501/datatypes/UpdateNetworkLoadBalancerDetails
 	ServiceAnnotationSecurityAttributes = "oci.oraclecloud.com/security-attributes"
+
+	// ServiceAnnotationLoadBalancerSessionPersistenceConfig is a JSON annotation that contains
+	// the OCI SDK struct fields for application-cookie persistence.
+	//	Example: {"CookieName":"mycookie","DisableFallback":true}
+	// https://docs.oracle.com/en-us/iaas/Content/Balance/Reference/sessionpersistence.htm#lb-cookie-stickeiness
+	ServiceAnnotationLoadBalancerSessionPersistenceConfig = "oci-load-balancer.oraclecloud.com/session-persistence-config"
+
+	// ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig is a JSON annotation that contains
+	// the OCI SDK struct fields for LB-cookie persistence.
+	//	Example: {"CookieName":"mycookie","IsHttpOnly":true}
+	// https://docs.oracle.com/en-us/iaas/Content/Balance/Reference/sessionpersistence.htm#app-cookie-stickiness
+	ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig = "oci-load-balancer.oraclecloud.com/lb-cookie-session-persistence-config"
 )
 
 // NLB specific annotations
@@ -353,6 +365,45 @@ type certificateData struct {
 	PublicCert []byte
 	PrivateKey []byte
 	Passphrase []byte
+}
+
+func getSessionPersistenceConfiguration(
+	svc *v1.Service,
+) (*loadbalancer.SessionPersistenceConfigurationDetails, *loadbalancer.LbCookieSessionPersistenceConfigurationDetails, error) {
+
+	annotations := svc.Annotations
+	if annotations == nil {
+		return nil, nil, nil
+	}
+
+	// Only LB supports these configurations. For NLB, ignore these annotations.
+	// This is intentionally non-fatal to allow users to share manifests across LB/NLB
+	// (and to avoid breaking existing tests/spec generation).
+	if getLoadBalancerType(svc) != LB {
+		return nil, nil, nil
+	}
+
+	spJSON := strings.TrimSpace(svc.Annotations[ServiceAnnotationLoadBalancerSessionPersistenceConfig])
+	lbspJSON := strings.TrimSpace(svc.Annotations[ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig])
+	if spJSON != "" && lbspJSON != "" {
+		return nil, nil, fmt.Errorf("annotations %s and %s are mutually exclusive", ServiceAnnotationLoadBalancerSessionPersistenceConfig, ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig)
+	}
+	if spJSON != "" {
+		var details loadbalancer.SessionPersistenceConfigurationDetails
+		if err := json.Unmarshal([]byte(spJSON), &details); err != nil {
+			return nil, nil, fmt.Errorf("failed to parse %s: %w", ServiceAnnotationLoadBalancerSessionPersistenceConfig, err)
+		}
+		return &details, nil, nil
+	}
+	if lbspJSON != "" {
+		var details loadbalancer.LbCookieSessionPersistenceConfigurationDetails
+		if err := json.Unmarshal([]byte(lbspJSON), &details); err != nil {
+			return nil, nil, fmt.Errorf("failed to parse %s: %w", ServiceAnnotationLoadBalancerLbCookieSessionPersistenceConfig, err)
+		}
+		return nil, &details, nil
+	}
+
+	return nil, nil, nil
 }
 
 type sslSecretReader interface {
@@ -1042,6 +1093,11 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 		return nil, err
 	}
 
+	sessionPersistenceConfig, lbCookieSessionPersistenceConfig, err := getSessionPersistenceConfiguration(svc)
+	if err != nil {
+		return nil, err
+	}
+
 	for backendSetName, servicePort := range getBackendSetNamePortMap(svc) {
 		var secretName string
 		var sslConfiguration *client.GenericSslConfigurationDetails
@@ -1075,13 +1131,15 @@ func getBackendSets(logger *zap.SugaredLogger, svc *v1.Service, provisionedNodes
 		// create only v6 BackendSet when NAT46 is enabled.
 		// skip creating Backend Set with other versions.
 		genericBackendSetDetails = client.GenericBackendSetDetails{
-			Name:                     common.String(backendSetName),
-			Policy:                   &loadbalancerPolicy,
-			HealthChecker:            healthChecker,
-			IsInstantFailoverEnabled: instantFailover,
-			IsPreserveSource:         &isPreserveSource,
-			BackendMaxConnections:    backendMaxConnections,
-			SslConfiguration:         sslConfiguration,
+			Name:                                    common.String(backendSetName),
+			Policy:                                  &loadbalancerPolicy,
+			HealthChecker:                           healthChecker,
+			IsInstantFailoverEnabled:                instantFailover,
+			IsPreserveSource:                        &isPreserveSource,
+			BackendMaxConnections:                   backendMaxConnections,
+			SslConfiguration:                        sslConfiguration,
+			SessionPersistenceConfiguration:         sessionPersistenceConfig,
+			LbCookieSessionPersistenceConfiguration: lbCookieSessionPersistenceConfig,
 		}
 		if nat46Enabled {
 			if strings.Contains(backendSetName, IPv6) && contains(listenerBackendIpVersion, IPv6) {

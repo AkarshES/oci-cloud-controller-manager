@@ -309,6 +309,16 @@ func getHealthCheckerDnsChanges(actual, desired *networkloadbalancer.DnsHealthCh
 func hasBackendSetChanged(logger *zap.SugaredLogger, actual client.GenericBackendSetDetails, desired client.GenericBackendSetDetails) bool {
 	logger = logger.With("BackEndSetName", toString(actual.Name))
 	backendSetChanges := getHealthCheckerChanges(actual.HealthChecker, desired.HealthChecker)
+
+	// Cookie Session persistence change diff check.
+	// Log whenever the desired/actual values differ so operators can understand
+	// why an update is triggered.
+	if !reflect.DeepEqual(actual.SessionPersistenceConfiguration, desired.SessionPersistenceConfiguration) {
+		backendSetChanges = append(backendSetChanges, fmt.Sprintf(changeFmtStr, "BackEndSet:SessionPersistenceConfiguration", actual.SessionPersistenceConfiguration, desired.SessionPersistenceConfiguration))
+	}
+	if !reflect.DeepEqual(actual.LbCookieSessionPersistenceConfiguration, desired.LbCookieSessionPersistenceConfiguration) {
+		backendSetChanges = append(backendSetChanges, fmt.Sprintf(changeFmtStr, "BackEndSet:LbCookieSessionPersistenceConfiguration", actual.LbCookieSessionPersistenceConfiguration, desired.LbCookieSessionPersistenceConfiguration))
+	}
 	// Need to update the seclist if service nodeport has changed
 	if len(actual.Backends) > 0 && len(desired.Backends) > 0 {
 		if *actual.Backends[0].Port != *desired.Backends[0].Port {
