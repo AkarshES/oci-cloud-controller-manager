@@ -475,6 +475,10 @@ func (f *Framework) DeleteCluster(clusterID string, waitForDeleted bool) {
 		Logf("Skipping cluster deletion for cluster %v, as its not created by e2e.", *cluster.Name)
 		return
 	}
+	if time.Since(cluster.Metadata.TimeCreated.Time) < 24*time.Hour {
+		Logf("Skipping cluster deletion for cluster %v, as its less than 24 hours old.", *cluster.Name)
+		return
+	}
 	Logf("Deleting cluster '%s', initial LifecycleState: '%s'.", *cluster.Name, cluster.LifecycleState)
 	Logf("Deleting cluster summary '%s', initial LifecycleState: '%s'.", *clusterSummary.Name, clusterSummary.LifecycleState)
 	Expect(fmt.Sprintf("%s", cluster.LifecycleState)).To(Equal(fmt.Sprintf("%s", clusterSummary.LifecycleState)))
