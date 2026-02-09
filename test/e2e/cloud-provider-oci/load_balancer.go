@@ -348,6 +348,11 @@ var _ = Describe("Service NSG [Slow]", func() {
 				serviceName := "basic-" + test.lbType + "-test"
 				ns := f.Namespace.Name
 
+				// Acquire a global critical section as these tests mutate shared backend NSGs
+				holder := fmt.Sprintf("%s/%s", ns, "managedNsg")
+				sharedfw.ExpectNoError(sharedfw.AcquireBackendNSGCriticalSection(holder))
+				defer sharedfw.ReleaseBackendNSGCriticalSection(holder)
+
 				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
 
 				nodeIP := sharedfw.PickNodeIP(jig.Client) // for later
@@ -437,11 +442,11 @@ var _ = Describe("Service NSG [Slow]", func() {
 				}
 
 				// Check the correct number of rules are present on the NSG
-				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionEgress, false)
 				backendNsgList := strings.Split(strings.ReplaceAll(setupF.BackendNsgOcid, " ", ""), ",")
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionEgress, len(backendNsgList))
 
 				for _, backendNsg := range backendNsgList {
-					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionIngress, false)
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, tcpNodePortOld, tcpNodePort, core.SecurityRuleDirectionIngress, 1)
 				}
 
 				// Check if rules are not modified on the security list.
@@ -495,7 +500,7 @@ var _ = Describe("Service NSG [Slow]", func() {
 				jig.TestReachableHTTP(false, tcpIngressIP, svcPort, loadBalancerCreateTimeout) // this may actually recreate the LB
 
 				// Change the services back to ClusterIP.
-				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, svcPortOld, svcPort, core.SecurityRuleDirectionIngress, false)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, svcPortOld, svcPort, core.SecurityRuleDirectionIngress, 1)
 
 				By("changing TCP service back to type=ClusterIP")
 				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
@@ -675,6 +680,11 @@ var _ = Describe("Service Cross Compartment (OKE SKE Mixed)", func() {
 
 					By("checking the TCP LoadBalancer is closed")
 					jig.TestNotReachableHTTP(tcpIngressIP, svcPort, loadBalancerLagTimeout)
+
+					// Grace period to ensure service deletion to avoid namespace getting stuck in deleting for wris tests.
+					if strings.HasSuffix(test.lbType, "-wris") {
+						time.Sleep(15 * time.Second)
+					}
 				}()
 			}
 		})
@@ -3311,6 +3321,11 @@ var _ = Describe("Pods as Backends mode [Slow]", func() {
 				serviceName := "e2e-" + test.lbType + "-pods-as-backends"
 				ns := f.Namespace.Name
 
+				// Acquire a global critical section as these tests mutate shared backend NSGs
+				holder := fmt.Sprintf("%s/%s", ns, "pods-as-backends")
+				sharedfw.ExpectNoError(sharedfw.AcquireBackendNSGCriticalSection(holder))
+				defer sharedfw.ReleaseBackendNSGCriticalSection(holder)
+
 				jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
 
 				loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
@@ -3392,14 +3407,14 @@ var _ = Describe("Pods as Backends mode [Slow]", func() {
 
 				// Frontend NSG
 				// Backend port (service port)
-				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, 0, int(tcpService.Spec.Ports[0].Port), core.SecurityRuleDirectionIngress, false)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, 0, int(tcpService.Spec.Ports[0].Port), core.SecurityRuleDirectionIngress, 1)
 				// Healthcheck port (8080)
-				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, 0, 8080, core.SecurityRuleDirectionEgress, true)
+				sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, frontendNsgId, 0, 8080, core.SecurityRuleDirectionEgress, len(backendNsgList))
 
 				// Backend NSG
 				// Healthcheck port (8080)
 				for _, backendNsg := range backendNsgList {
-					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, 0, 8080, core.SecurityRuleDirectionIngress, false)
+					sharedfw.WaitForSinglePortRulesAfterPortChangeOrFailNSG(f.Client, backendNsg, 0, 8080, core.SecurityRuleDirectionIngress, 1)
 				}
 
 				// Check if rules are not modified on the security list.
@@ -3410,7 +3425,18 @@ var _ = Describe("Pods as Backends mode [Slow]", func() {
 					sharedfw.Failf("Security List rules modified while service should be using NSG on port %d", int(tcpService.Spec.Ports[0].Port))
 				}
 
-				// Let namespace deletion do the cleanup as part of AfterEach step.
+				// Cleanup the LoadBalancer to ensure the LB, its frontend NSG and respective rules get cleaned up before NLB test
+				By("changing TCP service back to type=ClusterIP")
+				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+					s.Spec.Type = v1.ServiceTypeClusterIP
+					s.Spec.Ports[0].NodePort = 0
+				})
+				// Wait for the load balancer to be destroyed asynchronously
+				tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+				jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+				By("checking the TCP LoadBalancer is closed")
+				jig.TestNotReachableHTTP(tcpIngressIP, svcPort, loadBalancerLagTimeout)
 			}
 		})
 	})
