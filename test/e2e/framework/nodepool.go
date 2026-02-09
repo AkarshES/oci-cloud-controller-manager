@@ -342,9 +342,6 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 		nodeConfigDetails = oke.CreateNodePoolNodeConfigDetails{
 			PlacementConfigs: make([]oke.NodePoolPlacementConfigDetails, 0, len(ads)),
 			Size:             poolSize,
-			NodePoolPodNetworkOptionDetails: oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
-				PodNsgIds: strings.Split(backendNsgIds, ","),
-			},
 		}
 
 		for _, ad := range ads {
@@ -368,13 +365,24 @@ func (f *Framework) CreateNodePoolInRgnSubnetWithVersion(clusterID, compartmentI
 
 	if f.BackendNsgOcid != "" {
 		nodeConfigDetails.NsgIds = strings.Split(f.BackendNsgOcid, ",")
+		nodeConfigDetails.NodePoolPodNetworkOptionDetails = oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
+			PodNsgIds: strings.Split(backendNsgIds, ","),
+		}
 	}
 
 	if cniTypeEnum == oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative {
 		if podsubnet != "" {
-			nodeConfigDetails.NodePoolPodNetworkOptionDetails = oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
-				PodSubnetIds:   []string{podsubnet},
-				MaxPodsPerNode: common.Int(maxPodsPerNode),
+			if nodeConfigDetails.NodePoolPodNetworkOptionDetails == nil {
+				nodeConfigDetails.NodePoolPodNetworkOptionDetails = oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
+					PodSubnetIds:   []string{podsubnet},
+					MaxPodsPerNode: common.Int(maxPodsPerNode),
+				}
+			} else {
+				nodeConfigDetails.NodePoolPodNetworkOptionDetails = oke.OciVcnIpNativeNodePoolPodNetworkOptionDetails{
+					PodSubnetIds:   []string{podsubnet},
+					MaxPodsPerNode: common.Int(maxPodsPerNode),
+					PodNsgIds:      strings.Split(backendNsgIds, ","),
+				}
 			}
 		} else {
 			Logf("\tPOD SUBNET is empty %s", podsubnet)
