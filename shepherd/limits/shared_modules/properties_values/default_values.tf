@@ -1,6 +1,6 @@
 locals {
   // Update the pop version corresponding to the pop build for app release
-  pop_version = "d0cf7f0b528_179"
+  pop_version = "ef4ca3812ee_200"
 
   // Update the ccm image sha value here for updating CCM versions for respective k8s versions across all realms
   ccm_default_mapping = {
@@ -289,6 +289,17 @@ locals {
             "v1.20" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.21" : "oke-multiarch-1.19-64ab664-255@sha256:c0b0b665735d3288d0f8991c792c51aa00f9aaa031e2ffdd5ecca0238c03f28b",
             "v1.22" : "oke-multiarch-1.22-9893434-269@sha256:ceba7b8788c84d494113c862cd03dce2cc2c7b52c451ebeaa6eee88a97a4d8db",
+          }
+        ))
+      }
+
+      // pinned mappings in oc43
+      // hotfix applied for https://jira-sd.mc1.oracleiaas.com/browse/OKENP-36322
+      "prd.oc43" = {
+        "all" : jsonencode(merge(local.ccm_default_mapping.default.all,
+          {
+            "default" : "oke-multiarch-1.23-526d1e6-171@sha256:85235e1fa24c41e5fb158346e3339fc680dcdce791735bfca25c7755a479e4c8",
+            "v1.29" : "v1.29-0e75cc621e3-7019@sha256:3f8b9516f581eeeaafefcc2fbc448e09f44c1e7ad502761dc8334fadc167c809",
           }
         ))
       }
