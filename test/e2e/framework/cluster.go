@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"oracle.com/oci/tagging"
 	"os"
 	"strings"
 	"time"
@@ -293,6 +294,15 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 		version = f.OkeClusterK8sVersion
 	}
 
+	var freeFormTags tagging.FreeformTagSet
+	if strings.EqualFold(f.SkipClusterDeletion, "true") {
+		freeFormTags = tagging.FreeformTagSet{}
+		today := time.Now().Format("2006-01-02")
+		freeFormTags["no_reap"] = today
+		freeFormTags["pipeline_run"] = fmt.Sprintf("oci --region us-phoenix-1 devops build-run get --build-run-id %s", os.Getenv("OCI_PIPELINE_RUN_ID"))
+		clusterName = "DndTestCluster" + UniqueID()
+	}
+
 	// TODO Remove when cluster name lengths > 32 cause an error
 	if len(clusterName) > 32 {
 		Logf("The cluster Name: '%s' has len %d.\n", clusterName, len(clusterName))
@@ -357,7 +367,8 @@ func (f *Framework) createClusterFromConfig(cfg *ClusterCreateConfig) (response 
 					PodsCidr:     &cfg.PodCIDR,
 				},
 			},
-			Type: f.ClusterType,
+			Type:         f.ClusterType,
+			FreeformTags: freeFormTags,
 		},
 	}
 
@@ -461,10 +472,6 @@ func (f *Framework) waitForClusterCreation(response oke.CreateClusterResponse) s
 
 // DeleteCluster deletes the specified cluster (and child nodepools).
 func (f *Framework) DeleteCluster(clusterID string, waitForDeleted bool) {
-	if strings.EqualFold(f.SkipClusterDeletion, "true") {
-		Logf("Skipping cluster deletion based on env SKIP_CLUSTER_DELETION.")
-		return
-	}
 	Logf("Deleting cluster, clusterID: '%s'", clusterID)
 	// The nodepools are now deleted by the cluster delete
 	// Fetch the current OKE cluster objects.
@@ -475,8 +482,8 @@ func (f *Framework) DeleteCluster(clusterID string, waitForDeleted bool) {
 		Logf("Skipping cluster deletion for cluster %v, as its not created by e2e.", *cluster.Name)
 		return
 	}
-	if time.Since(cluster.Metadata.TimeCreated.Time) < 24*time.Hour {
-		Logf("Skipping cluster deletion for cluster %v, as its less than 24 hours old.", *cluster.Name)
+	if f.SkipClusterDeletionFor != 0 && time.Since(cluster.Metadata.TimeCreated.Time) < time.Duration(f.SkipClusterDeletionFor)*time.Hour {
+		Logf("Skipping cluster deletion for cluster %v, as its less than %d hours old.", *cluster.Name, f.SkipClusterDeletionFor)
 		return
 	}
 	Logf("Deleting cluster '%s', initial LifecycleState: '%s'.", *cluster.Name, cluster.LifecycleState)
