@@ -91,6 +91,7 @@ var (
 	npImageOS                     string
 	existingClusterOcid           string
 	skipClusterDeletion           string
+	skipClusterDeletionFor        int
 	okeProvidersK8sVersion        string
 	okeClusterK8sVersionIndex     int
 	okeNodePoolK8sVersionIndex    int
@@ -179,6 +180,7 @@ func init() {
 	flag.StringVar(&npImageOS, "npImageOS", "", "Node Pool OS Version to be used for testing.")
 	flag.StringVar(&existingClusterOcid, "existingClusterOcid", "", "OCID of existing cluster to run e2es on")
 	flag.StringVar(&skipClusterDeletion, "skipClusterDeletion", "false", "Flag to control cluster deletion post e2e run, useful to debug cluster in case of issues by skipping deletion.")
+	flag.IntVar(&skipClusterDeletionFor, "skipClusterDeletionFor", 0, "Flag to control cluster deletion post e2e run based on age, useful to debug cluster in case of issues by skipping deletion.")
 	flag.StringVar(&okeProvidersK8sVersion, "okeProvidersK8sVersion", "", "The exact k8s version provided by providers pipeline")
 	flag.IntVar(&okeClusterK8sVersionIndex, "okeClusterK8sVersionIndex", -1, "The index of k8s versionList (0 means the 1st version, 1 means the 2nd version. -1 means the latest version. versionList is like ['1.10.11', 1.11.8', '1.12.6']) used when create cluster")
 	flag.IntVar(&okeNodePoolK8sVersionIndex, "okeNodePoolK8sVersionIndex", -1, "The index of k8s versionList (0 means the 1st version, 1 means the 2nd version. -1 means the latest version. versionList is like ['1.10.11', 1.11.8', '1.12.6']) used when create nodepool")
@@ -329,6 +331,8 @@ type Framework struct {
 	ExistingClusterOcid string
 
 	SkipClusterDeletion string
+	// Skip Clusters older than SkipClusterDeletionFor * Hours
+	SkipClusterDeletionFor int
 	// Cluster Type
 	ClusterType oke.ClusterTypeEnum
 
@@ -494,6 +498,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		NpImageOS:                     npImageOS,
 		ExistingClusterOcid:           existingClusterOcid,
 		SkipClusterDeletion:           skipClusterDeletion,
+		SkipClusterDeletionFor:        skipClusterDeletionFor,
 		NodeShape:                     nodeshape,
 		NodePoolSize:                  nodepoolsize,
 		DelegationTargetServices:      "oke",
@@ -686,6 +691,8 @@ func (f *Framework) Initialize() {
 	Logf("ExistingClusterOcid: %s", f.ExistingClusterOcid)
 	f.SkipClusterDeletion = skipClusterDeletion
 	Logf("SkipClusterDeletion: %s", f.SkipClusterDeletion)
+	f.SkipClusterDeletionFor = skipClusterDeletionFor
+	Logf("SkipClusterDeletionFor: %s", f.SkipClusterDeletionFor)
 	f.NodeShape = nodeshape
 	Logf("Nodepool NodeShape: %s", f.NodeShape)
 	f.NodePoolSize = nodepoolsize

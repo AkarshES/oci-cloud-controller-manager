@@ -17,6 +17,9 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 
 	setupF = sharedfw.New()
 
+	// Cleanup the test compartment(s) before the test begins
+	setupF.CleanAllWithoutWait()
+
 	sharedfw.Logf("CloudProviderFramework Setup")
 
 	if setupF.EnableCreateCluster {

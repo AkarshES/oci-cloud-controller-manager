@@ -193,6 +193,7 @@ function run_e2e_tests() {
                 --npImageOS=${NP_IMAGE_OS} \
                 --existingClusterOcid=${EXISTING_CLUSTER_OCID} \
                 --skipClusterDeletion=${SKIP_CLUSTER_DELETION} \
+                --skipClusterDeletionFor=${SKIP_CLUSTER_DELETION_FOR} \
                 --okeProvidersK8sVersion=${OKE_PROVIDERS_K8S_VERSION} \
                 --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
                 --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
@@ -261,6 +262,7 @@ function run_e2e_tests() {
                 --npImageOS=${NP_IMAGE_OS} \
                 --existingClusterOcid=${EXISTING_CLUSTER_OCID} \
                 --skipClusterDeletion=${SKIP_CLUSTER_DELETION} \
+                --skipClusterDeletionFor=${SKIP_CLUSTER_DELETION_BEFORE} \
                 --okeProvidersK8sVersion=${OKE_PROVIDERS_K8S_VERSION} \
                 --okeClusterK8sVersionIndex=${OKE_CLUSTER_K8S_VERSION_INDEX} \
                 --okeNodePoolK8sVersionIndex=${OKE_NODEPOOL_K8S_VERSION_INDEX} \
