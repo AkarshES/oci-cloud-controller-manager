@@ -64,7 +64,7 @@ func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 	go csiprovisioner.StartCSIProvisioner(csioptions, driver.FSS)
 
 	// provisioner for lustre (guarded by env flag; default enabled if unset)
-	if func() bool { v := os.Getenv("LUSTRE_CSI_CONTROLLER_DRIVER_ENABLED"); return v == "" || strings.EqualFold(v, "true") }() {
+	if strings.EqualFold(os.Getenv("LUSTRE_CSI_CONTROLLER_DRIVER_ENABLED"), "true") {
 		logger.Info("starting csi-provisioner go routine for Lustre")
 		go csiprovisioner.StartCSIProvisioner(csioptions, driver.Lustre)
 	}
@@ -92,7 +92,7 @@ func Run(csioptions csioptions.CSIOptions, stopCh <-chan struct{}) error {
 	go csicontrollerdriver.StartControllerDriver(csioptions, driver.FSS)
 
 	// controller for lustre (guarded by env flag; default enabled if unset)
-	if func() bool { v := os.Getenv("LUSTRE_CSI_CONTROLLER_DRIVER_ENABLED"); return v == "" || strings.EqualFold(v, "true") }() {
+	if strings.EqualFold(os.Getenv("LUSTRE_CSI_CONTROLLER_DRIVER_ENABLED"), "true") {
 		logger.Info("starting csi-controller go routine for Lustre")
 		go csicontrollerdriver.StartControllerDriver(csioptions, driver.Lustre)
 	}
