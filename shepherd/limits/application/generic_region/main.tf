@@ -1,4 +1,4 @@
-variable "cpo-image-validation-enabled" {
+variable "cpo_image_validation_enabled" {
   default = true
 }
 
@@ -10,9 +10,9 @@ module "ad_map" {
 
 locals {
   physical_ad1                     = module.ad_map.physical_ad1
-  image_validator_count            = var.cpo-image-validation-enabled ? 1 : 0
+  image_validator_count            = var.cpo_image_validation_enabled ? 1 : 0
 
-  enable_validation = var.cpo-image-validation-enabled  && (length(data.odo_applications.image-release-validator-ccm-csi.applications) > 0) && (local.artifact_versions["release-validator-ccm-csi"].version != "skip")
+  enable_validation = var.cpo_image_validation_enabled  && (length(data.odo_applications.image-release-validator-ccm-csi.applications) > 0) && (local.artifact_versions["release-validator-ccm-csi"].version != "skip")
 }
 
 module "oke-cpo-images" {
