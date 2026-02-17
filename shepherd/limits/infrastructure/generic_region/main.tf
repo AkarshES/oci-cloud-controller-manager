@@ -81,7 +81,7 @@ resource "capability_require_capability" "oke_secrets_management" {
   name = "oke_secrets_management"
 }
 
-variable "cpo-image-validation-enabled" {
+variable "cpo_image_validation_enabled" {
   default = true
 }
 
@@ -99,7 +99,7 @@ locals {
 
   combined_images = tolist(toset(flatten(concat(local.raw_regional_image_list, local.raw_override_image_list))))
 
-  enable_validation = var.cpo-image-validation-enabled && (length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0) && data.capability.oke_ccm_csi.is_available
+  enable_validation = var.cpo_image_validation_enabled && (length(data.odo_applications.infra-release-validator-ccm-csi.applications) > 0) && data.capability.oke_ccm_csi.is_available
 }
 
 data "odo_applications" "infra-release-validator-ccm-csi" {

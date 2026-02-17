@@ -29,7 +29,7 @@ If image validation needs to be disabled for some reason, please follow 1 of the
   1. Go to the flock config you wish to create releases from.
   2. Add description, select change type and execution targets, select artifact versions (if applicable).
   3. Under `Input Variables (optional)`, click on `Add Variable +`.
-  4. Enter key = `cpo-image-validation-enabled` and value = `false`.
+  4. Enter key = `cpo_image_validation_enabled` and value = `false`.
   5. Create the release. This release should have the module odo_deployment as empty.
 
 ### Troubleshooting releases failing because of release validator
