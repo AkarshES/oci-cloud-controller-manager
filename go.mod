@@ -87,7 +87,6 @@ require (
 
 require (
 	github.com/go-logr/logr v1.4.3
-	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0
 	github.com/oracle/oci-go-sdk/v65 v65.2.0
@@ -99,6 +98,7 @@ require (
 	helm.sh/helm/v3 v3.18.2
 	k8s.io/apiextensions-apiserver v0.34.1
 	k8s.io/client-go v1.5.2
+	k8s.io/kubectl v0.33.0
 	sigs.k8s.io/gateway-api v1.4.0-rc.1
 	sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1
 )
@@ -253,7 +253,6 @@ require (
 	k8s.io/kms v0.34.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	k8s.io/kube-scheduler v0.32.1 // indirect
-	k8s.io/kubectl v0.33.0 // indirect
 	oracle.com/oci/httpsigner v0.0.0-20190320175442-e8cb27ebf440 // indirect
 	oracle.com/oci/ociauthz v0.0.0-20200515161105-5b1e37d2dc95 // indirect
 	oracle.com/oci/tagging v0.0.0-20190321202046-20a2e48911da // indirect

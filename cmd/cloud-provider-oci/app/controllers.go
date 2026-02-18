@@ -30,6 +30,7 @@ var controllerFactories = map[string]ControllerFactory{
 	csiController:     NewCSIController,
 	npnController:     NewNpnController,
 	norController:     NewNorController,
+	narController:     NewNarController,
 }
 
 type ControllerFactory func(ctx context.Context, logger *zap.SugaredLogger, mgr ctrl.Manager) (Controller, error)
