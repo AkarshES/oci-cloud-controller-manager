@@ -1023,7 +1023,10 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 			ipCount := vnic.SecondaryVnicSpec.CreateVnicDetails.IpCount
 			vnicIpFamilies := vnic.SecondaryVnicSpec.CreateVnicDetails.IpFamilies
 			perVnicIpFamilies[vnicID] = vnicIpFamilies
-			if contains(nodeIpFamilies, IPv4) {
+			// vnicIpFamilies is internally derived based on GVA vnic subnet and
+			// AssignIpv6Ip property in spec.secondaryVnics.createVnicDetails
+			// can never be empty for GVA
+			if contains(vnicIpFamilies, IPv4) {
 				for _, v4Ips := range existingIpsByVnic[vnicID].V4 {
 					if v4Ips.CidrPrefixLength != nil && *v4Ips.CidrPrefixLength < 32 {
 						log.Info(fmt.Sprintf("%s is an ip cidr address with prefix %d. expanding the cidr range", *v4Ips.IpAddress, *v4Ips.CidrPrefixLength))
@@ -1039,7 +1042,7 @@ func getAdditionalSecondaryIPsNeededPerVNIC(existingIpsByVnic map[string]*vnicSe
 				// Required IPs per VNIC = ipCount - (existing IPs on the VNIC - 1 primary IP address)
 				requiredIPv4ByVnic[vnicID] = max(0, ipCount+1-existingIPsOnVnic.V4)
 			}
-			if contains(nodeIpFamilies, IPv6) {
+			if contains(vnicIpFamilies, IPv6) {
 				for _, v6Ips := range existingIpsByVnic[vnicID].V6 {
 					if v6Ips.CidrPrefixLength != nil {
 						log.Info(fmt.Sprintf("%s is an ip cidr address with prefix %d. expanding the cidr range", *v6Ips.IpAddress, *v6Ips.CidrPrefixLength))
