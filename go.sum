@@ -9,9 +9,8 @@ bitbucket.oci.oraclecorp.com/goiam/ociauthz v0.0.0-20200515161105-5b1e37d2dc95/g
 bitbucket.oci.oraclecorp.com/goiam/ocihttpiam v0.0.0-20201112171351-7818abc80432/go.mod h1:SlQBZtLrkyNR5QA8Ph7FkiEQ4FhVEpVQ8bRD7zjBp8I=
 bitbucket.oci.oraclecorp.com/oke/bmc-go-sdk v0.0.0-20180119173458-fe578152e621 h1:M1WcJxHwJnkbsSHqVW+Qvt4am3JTAzsXBpOV9Z6v4+M=
 bitbucket.oci.oraclecorp.com/oke/bmc-go-sdk v0.0.0-20180119173458-fe578152e621/go.mod h1:QsX8wOl/1qYr+wRFQzl1AunrURQLg56MhPu3aMzyXas=
+bitbucket.oci.oraclecorp.com/oke/oci-go-common v1.0.4-0.20200706161333-eb59f40527dd h1:W+sDuo6wKH9f6cNVqYf6Ls0GHN9X2zHRdWNig4lowDo=
 bitbucket.oci.oraclecorp.com/oke/oci-go-common v1.0.4-0.20200706161333-eb59f40527dd/go.mod h1:vV+DBk4RXaIh/Fw9q5BIy7Z/oqPWb/jVeVHt6NkykKY=
-bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.0 h1:sGsjZv8P9XljlHYcXZhldhnpU7CzrOmEab3iqNvbFW4=
-bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.0/go.mod h1:p5nMyoMH/1Akq1Kd5ksnz75v/mgcE4txXvVKbb4QKK8=
 bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.1-0.20220429183118-f0129d710185 h1:ce+1Z2Bvv+gqbmC1n+RUZ8dMG9QGEMoW95PA6G1p11U=
 bitbucket.oci.oraclecorp.com/oke/oke-common v1.0.1-0.20220429183118-f0129d710185/go.mod h1:UZ8NMW2U4h4NVbHaP6TYLjRKkvUBuSAtEspw23Um2WI=
 cel.dev/expr v0.24.0 h1:56OvJKSH3hDGL0ml5uSxZmz3/3Pq4tJ+fb1unVLAFcY=
@@ -1401,7 +1400,6 @@ golang.org/x/tools v0.0.0-20210105154028-b0ab187a4818/go.mod h1:emZCQorbCU4vsT4f
 golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20210108195828-e2f9c7f1fc8e/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.1.0/go.mod h1:xkSsbof2nBLbhDlRMhhhyNLN/zl3eTqcnHD5viDpcZ0=
-golang.org/x/tools v0.1.1/go.mod h1:o0xws9oXOQQZyjljx8fwUC0k7L1pTE6eaCbjGeHmOkk=
 golang.org/x/tools v0.1.2/go.mod h1:o0xws9oXOQQZyjljx8fwUC0k7L1pTE6eaCbjGeHmOkk=
 golang.org/x/tools v0.1.10/go.mod h1:Uh6Zz+xoGYZom868N8YTex3t7RhtHDBrE8Gzo9bV56E=
 golang.org/x/tools v0.1.12/go.mod h1:hNGJHUnrk76NpqgfD5Aqm5Crs+Hm0VOH/i9J2+nxYbc=

@@ -97,6 +97,7 @@ type computeClient interface {
 	AttachVolume(ctx context.Context, request core.AttachVolumeRequest) (response core.AttachVolumeResponse, err error)
 	DetachVolume(ctx context.Context, request core.DetachVolumeRequest) (response core.DetachVolumeResponse, err error)
 	ListInstanceDevices(ctx context.Context, request core.ListInstanceDevicesRequest) (response core.ListInstanceDevicesResponse, err error)
+	InstanceAction(ctx context.Context, request core.InstanceActionRequest) (response core.InstanceActionResponse, err error)
 }
 
 type virtualNetworkClient interface {

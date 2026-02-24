@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -133,13 +132,8 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	patch := client.MergeFrom(node.DeepCopy())
 	var needsPatch bool
 
-	// Get dry run label
-	var repairEnabled bool
-	if val, ok := node.Labels[repairEnabledLabel]; ok && val == "true" {
-		repairEnabled = true
-	}
+	repairEnabled := node.Labels[repairEnabledLabel] == "true"
 
-	// Action 1: Add repair label if it doesn't exist.
 	if node.Labels == nil {
 		node.Labels = make(map[string]string)
 	}
@@ -192,34 +186,21 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// }
 
 	// Step 2: Record a single, combined event and log message.
-	eventMessage := "[Node Auto Repair]: Node conditions are unhealthy: " + strings.Join(problemTypes, ", ") + ", OKE is triggering - REBOOT - repair action"
+	eventMessage := "[Node Auto Repair]: Node conditions are unhealthy: " + strings.Join(problemTypes, ", ")
 	if !repairEnabled {
-		eventMessage += " (in dry run mode)"
+		eventMessage += " (dry run: will not repair)"
 	}
 	r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
-	eventMessage = "[Node Auto Repair]: Node problems are: " + strings.Join(problemReasons, ", ")
+	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", strings.Join(problemTypes, ", "))
 
-	r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
-
-	// Log a single, combined message.
-	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", strings.Join(problemTypes, ", "), "problems", strings.Join(problemReasons, ", "))
-
-	if repairEnabled {
-		workRequestId, _ := r.rebootNode(ctx, node.Spec.ProviderID, r.Config.ClusterID, norv1beta1.NodeOperationRule{
-			Spec: norv1beta1.NodeOperationRuleSpec{
-				NodeEvictionSettings: norv1beta1.NodeEvictionSettings{
-					EvictionGracePeriod:             1,
-					IsForceActionAfterGraceDuration: true,
-				},
-			},
-		})
-		r.Recorder.Event(node, v1.EventTypeWarning, "NodeAutoRepairController", "[Node Auto Repair]: OKE Reboot work request id: "+workRequestId)
-		logger.Info("CCM: Auto Repair work request id for reboot: " + workRequestId)
+	if !repairEnabled {
+		requeueDuration := getRequeueDuration(logger, node)
+		logger.Info("CCM: Repair disabled via label; requeueing", "node", node.Name, "after", requeueDuration)
+		return ctrl.Result{RequeueAfter: requeueDuration}, nil
 	}
 
-	requeDuration := getRequeueDuration(logger, node)
-	logger.Info("CCM: Requeuing request for periodic check after " + requeDuration.String())
-	return ctrl.Result{RequeueAfter: requeDuration}, nil
+	repairSM := newNodeRepairStateMachine(r, node, logger)
+	return repairSM.Run(ctx)
 }
 
 // cleanupRepairArtifacts checks a healthy node for leftover repair items and removes them.
@@ -253,7 +234,14 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 		needsPatch = true
 	}
 
-	// 3. Apply a single patch only if changes were made.
+	// 3. Remove state machine annotations after a completed repair.
+	if keys := nodeAnnotationsToPrune(node); len(keys) > 0 {
+		for _, key := range keys {
+			delete(node.Annotations, key)
+		}
+		needsPatch = true
+	}
+
 	if needsPatch {
 		logger.Info("Applying cleanup patch to node", "node", node.Name)
 		if err := r.Client.Patch(ctx, node, patch); err != nil {
@@ -265,13 +253,6 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *NodeAutoRepairReconciler) rebootNode(ctx context.Context, nodeId string, clusterId string, nor norv1beta1.NodeOperationRule) (string, error) {
-	var workRequestId string
-	var err error
-	workRequestId, err = r.OCIClient.ContainerEngine().RebootClusterNode(ctx, nodeId, clusterId, nor)
-	return workRequestId, err
 }
 
 type ConditionChangedPredicate struct {

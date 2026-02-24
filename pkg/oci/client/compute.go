@@ -41,6 +41,23 @@ type ComputeInterface interface {
 	GetVnicAttachment(ctx context.Context, vnicAttachmentId *string) (response *core.VnicAttachment, err error)
 
 	VolumeAttachmentInterface
+
+	// InstanceAction performs power actions (reset, stop, start) on an instance.
+	InstanceAction(ctx context.Context, request core.InstanceActionRequest) (response core.InstanceActionResponse, err error)
+}
+
+func (c *client) InstanceAction(ctx context.Context, request core.InstanceActionRequest) (response core.InstanceActionResponse, err error) {
+	if !c.rateLimiter.Writer.TryAccept() {
+		return response, RateLimitError(true, "InstanceAction")
+	}
+
+	request.RequestMetadata = getDefaultRequestMetadata(request.RequestMetadata)
+	response, err = c.compute.InstanceAction(ctx, request)
+	incRequestCounter(err, createVerb, instanceResource)
+	if err != nil {
+		return response, errors.WithStack(err)
+	}
+	return response, nil
 }
 
 func (c *client) GetInstance(ctx context.Context, id string) (*core.Instance, error) {
