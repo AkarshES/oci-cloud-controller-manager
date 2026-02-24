@@ -1191,7 +1191,9 @@ func (f *CloudProviderFramework) getVirtualPodsAndManagedNodesIPs(service *v1.Se
 	for _, node := range nodes.Items {
 		// Replace "-" with ":" to account for Single Stack IPv6 Node IP address modifications.
 		// Ex. SS IPv6 Node.Name is 2603-c020-14-26ee-78bc-94fe-2580-b9e4 instead of 2603:c020:14:26ee:78bc:94fe:2580:b9e4
-		ipMap[strings.ReplaceAll(node.Name, "-", ":")] = struct{}{}
+		for _, ip := range GetNodeAddresses(&node, v1.NodeInternalIP) {
+			ipMap[ip] = struct{}{}
+		}
 	}
 	return ipMap, nil
 }

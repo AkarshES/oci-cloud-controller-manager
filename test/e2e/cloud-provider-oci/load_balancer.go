@@ -1568,10 +1568,13 @@ var _ = Describe("BackendSet only enabled TLS - NodePool Scaling", func() {
 			} else {
 				sharedfw.Failf("Compartment Id undefined.")
 			}
-			sharedfw.Logf("Cluster ocid from setup is %s", setupF.ClusterOcid)
-			npList := setupF.ListNodePools(setupF.ClusterOcid)
+			sharedfw.Logf("Cluster ocid from setup is %s", sharedfw.ClusterID)
+			npList := setupF.ListNodePools(sharedfw.ClusterID)
 			if len(npList) == 0 {
 				sharedfw.Failf("NodePool not found.")
+			}
+			if npList[0].Id == nil {
+				sharedfw.Failf("NodePool OCID is nil.")
 			}
 			npOcid := npList[0].Id
 			nodePool := setupF.GetNodePool(*npOcid)
