@@ -21,21 +21,24 @@ import (
 )
 
 const (
-	narStateAnnotationKey       = "oci.oraclecloud.com/nodeautorepair-state"
-	narRepairIDAnnotationKey    = "oci.oraclecloud.com/nodeautorepair-repair-id"
-	narLastTransitionAnnotation = "oci.oraclecloud.com/nodeautorepair-last-transition"
-	narAttemptsAnnotationKey    = "oci.oraclecloud.com/nodeautorepair-attempts"
-	maxRepairAttempts           = 3
-	defaultRetryBase            = 10 * time.Second
-	defaultRetryCap             = 5 * time.Minute
-	metricRepairTotal           = "nodeautorepair_repair_total"
-	metricRepairFailures        = "nodeautorepair_repair_failures_total"
-	eventRepairDetected         = "NodeRepairDetected"
-	eventRepairCordoned         = "NodeRepairCordoned"
-	eventRepairDraining         = "NodeRepairDraining"
-	eventRepairRebooting        = "NodeRepairRebooting"
-	eventRepairUncordoned       = "NodeRepairUncordoned"
-	eventRepairFailed           = "NodeRepairFailed"
+	narStateAnnotationKey        = "oci.oraclecloud.com/nodeautorepair-state"
+	narRepairIDAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-repair-id"
+	narLastTransitionAnnotation  = "oci.oraclecloud.com/nodeautorepair-last-transition"
+	narAttemptsAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-attempts"
+	narRebootIssuedAnnotationKey = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
+	maxRepairAttempts            = 3
+	defaultRetryBase             = 10 * time.Second
+	defaultRetryCap              = 5 * time.Minute
+	metricRepairTotal            = "nodeautorepair_repair_total"
+	metricRepairFailures         = "nodeautorepair_repair_failures_total"
+	eventRepairDetected          = "NodeRepairDetected"
+	eventRepairCordoned          = "NodeRepairCordoned"
+	eventRepairDraining          = "NodeRepairDraining"
+	eventRepairRebooting         = "NodeRepairRebooting"
+	eventRepairUncordoned        = "NodeRepairUncordoned"
+	eventRepairFailed            = "NodeRepairFailed"
+	instanceRunningPollInterval  = 15 * time.Second
+	instanceRunningWait          = 2 * time.Minute
 )
 
 type repairState string
@@ -84,6 +87,7 @@ var repairAnnotationKeys = []string{
 	narRepairIDAnnotationKey,
 	narLastTransitionAnnotation,
 	narAttemptsAnnotationKey,
+	narRebootIssuedAnnotationKey,
 }
 
 type nodeRepairStateMachine struct {
@@ -202,20 +206,41 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 	if sm.stateTimedOut(stateRebooting) {
 		return sm.failState(ctx, stateRebooting, fmt.Errorf("rebooting timed out"))
 	}
-	attempt, err := sm.recordAttempt(ctx)
+	if !sm.rebootIssued() {
+		attempt, err := sm.recordAttempt(ctx)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if attempt > maxRepairAttempts {
+			return sm.failState(ctx, stateRebooting, fmt.Errorf("rebooting exceeded maximum attempts"))
+		}
+		workRequestID, err := sm.triggerReboot(ctx)
+		if err != nil {
+			sm.logger.Error(err, "Reboot request failed", "attempt", attempt, "node", sm.node.Name)
+			sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot failed (attempt %d): %v", attempt, err))
+			return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, attempt)}, nil
+		}
+		sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot work request %s submitted", workRequestID))
+		if err := sm.setRebootIssued(ctx, true); err != nil {
+			return ctrl.Result{}, err
+		}
+		requeue := repairStateConfigs[stateRebooting].successRequeue
+		if requeue == 0 {
+			requeue = 30 * time.Second
+		}
+		return ctrl.Result{RequeueAfter: requeue}, nil
+	}
+	running, err := sm.instanceIsRunning(ctx)
 	if err != nil {
+		sm.logger.Error(err, "Failed to query instance state", "node", sm.node.Name)
+		return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, 1)}, nil
+	}
+	if !running {
+		return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, 1)}, nil
+	}
+	if err := sm.setRebootIssued(ctx, false); err != nil {
 		return ctrl.Result{}, err
 	}
-	if attempt > maxRepairAttempts {
-		return sm.failState(ctx, stateRebooting, fmt.Errorf("rebooting exceeded maximum attempts"))
-	}
-	workRequestID, err := sm.triggerReboot(ctx)
-	if err != nil {
-		sm.logger.Error(err, "Reboot request failed", "attempt", attempt, "node", sm.node.Name)
-		sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot failed (attempt %d): %v", attempt, err))
-		return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, attempt)}, nil
-	}
-	sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot work request %s submitted", workRequestID))
 	if err := sm.setState(ctx, stateUncordon); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -390,7 +415,7 @@ func (sm *nodeRepairStateMachine) triggerReboot(ctx context.Context) (string, er
 	}
 	req := core.InstanceActionRequest{
 		InstanceId: &providerID,
-		Action:     core.InstanceActionRequestActionReset,
+		Action:     common.String("RESET"),
 		RequestMetadata: common.RequestMetadata{
 			RetryPolicy: ociclient.NewRetryPolicyWithMaxAttempts(3),
 		},
@@ -403,6 +428,35 @@ func (sm *nodeRepairStateMachine) triggerReboot(ctx context.Context) (string, er
 		return "", errors.New("instance reboot response missing work request id")
 	}
 	return *response.OpcRequestId, nil
+}
+
+func (sm *nodeRepairStateMachine) rebootIssued() bool {
+	if sm.node.Annotations == nil {
+		return false
+	}
+	return sm.node.Annotations[narRebootIssuedAnnotationKey] == "true"
+}
+
+func (sm *nodeRepairStateMachine) setRebootIssued(ctx context.Context, issued bool) error {
+	return sm.updateAnnotations(ctx, func(ann map[string]string) {
+		if issued {
+			ann[narRebootIssuedAnnotationKey] = "true"
+		} else {
+			delete(ann, narRebootIssuedAnnotationKey)
+		}
+	})
+}
+
+func (sm *nodeRepairStateMachine) instanceIsRunning(ctx context.Context) (bool, error) {
+	providerID := sm.node.Spec.ProviderID
+	if providerID == "" {
+		return false, fmt.Errorf("node providerID is empty")
+	}
+	instance, err := sm.reconciler.OCIClient.Compute().GetInstance(ctx, providerID)
+	if err != nil {
+		return false, err
+	}
+	return instance.LifecycleState == core.InstanceLifecycleStateRunning, nil
 }
 
 func (sm *nodeRepairStateMachine) updateAnnotations(ctx context.Context, mutate func(map[string]string)) error {
