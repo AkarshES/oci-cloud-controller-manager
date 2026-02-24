@@ -858,11 +858,7 @@ func (f *Framework) Initialize() {
 		}
 	}
 
-	if existingClusterOcid != "" {
-		type clusterpodnetworkoptiondetails struct {
-			JsonData []byte
-			CniType  string `json:"cniType"`
-		}
+	if existingClusterOcid != "" || enableCreateCluster == false {
 		cluster := f.GetCluster(existingClusterOcid)
 
 		switch cluster.ClusterPodNetworkOptions[0].(type) {
@@ -873,7 +869,7 @@ func (f *Framework) Initialize() {
 		}
 	}
 
-	if strings.ToUpper(cniType) == "OCI_VCN_IP_NATIVE" && podsubnet != "" {
+	if strings.ToUpper(cniType) == "OCI_VCN_IP_NATIVE" && (podsubnet != "" || enableCreateCluster == false) {
 		cniTypeEnum = oke.ClusterPodNetworkOptionDetailsCniTypeOciVcnIpNative
 	} else {
 		cniTypeEnum = oke.ClusterPodNetworkOptionDetailsCniTypeFlannelOverlay

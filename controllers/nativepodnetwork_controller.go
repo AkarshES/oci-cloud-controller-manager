@@ -299,6 +299,7 @@ func computeAveragesByReturnCode(errorArray []ErrorMetric) map[string]float64 {
 //+kubebuilder:rbac:groups=oci.oraclecloud.com,resources=nativepodnetworkings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=oci.oraclecloud.com,resources=nativepodnetworkings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=oci.oraclecloud.com,resources=nativepodnetworkings/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -492,8 +493,6 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	nodeName := getNodeNameFromPrimaryVnic(primaryVnic, nodeIpFamilies)
-
 	log.Info(FetchingPrivateIPsForSecondaryVNICs)
 	existingSecondaryIpsbyVNIC, err := r.getSecondaryIpsByVNICs(ctx, existingSecondaryVNICs, nodeIpFamilies, &npn)
 	if err != nil {
@@ -685,9 +684,9 @@ func (r *NativePodNetworkReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 	log.Info("Fetched NPN CR")
 
-	log.Info("Getting v1 Node object to set ownerref on NPN CR")
+	log.Info("Getting v1 Node object (matched by providerID) to set ownerref on NPN CR")
 	// Set OwnerRef on the CR and mark CR status as SUCCESS
-	nodeObject, err := r.getNodeObjectInCluster(ctx, req.NamespacedName, nodeName)
+	nodeObject, err := r.getNodeObjectInClusterByProviderID(ctx, req.NamespacedName, *npn.Spec.Id)
 	if err != nil {
 		failReason = "GetV1NodeFailed"
 		r.handleError(ctx, req, err, "GetV1Node")
@@ -1358,6 +1357,47 @@ func (r *NativePodNetworkReconciler) getNodeObjectInCluster(ctx context.Context,
 		log.Error(err, "timed out waiting for node object to be present in the cluster")
 	}
 	return &nodeObject, err
+}
+
+// getNodeObjectInClusterByProviderID waits for and returns the Node whose providerID matches the NPN's instance/provider ID.
+// It lists Nodes and compares normalized provider IDs:
+// - Node: trims provider prefix (oci://) using MapProviderIDToInstanceID
+// - CR: supports either instance OCID or full providerID (oci://<ocid>)
+func (r *NativePodNetworkReconciler) getNodeObjectInClusterByProviderID(ctx context.Context, cr types.NamespacedName, crProviderOrInstanceID string) (*v1.Node, error) {
+	log := log.FromContext(ctx, "namespacedName", cr)
+	// Normalize CR value to instance OCID
+	normalizedCR := ociclient.MapProviderIDToInstanceID(crProviderOrInstanceID)
+
+	var matchedNode v1.Node
+	matchFound := func() (bool, error) {
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		var nodeList v1.NodeList
+		if err := r.Client.List(ctx, &nodeList); err != nil {
+			log.Error(err, "failed to list nodes")
+			return false, err
+		}
+		for i := range nodeList.Items {
+			n := &nodeList.Items[i]
+			if n.Spec.ProviderID == "" {
+				continue
+			}
+			instanceID := ociclient.MapProviderIDToInstanceID(n.Spec.ProviderID)
+			if instanceID == normalizedCR {
+				matchedNode = *n.DeepCopy()
+				return true, nil
+			}
+		}
+		log.V(2).Info("no matching node found yet for provider/instance id", "id", normalizedCR)
+		return false, nil
+	}
+
+	if err := wait.PollImmediate(5*time.Second, GetNodeTimeout, matchFound); err != nil {
+		log.Error(err, "timed out waiting for node with matching providerID to be present in the cluster")
+		return nil, err
+	}
+	return &matchedNode, nil
 }
 
 // getIpFamilies is a method to get ip families (IPv4/IPv6) from the NPN CRD
