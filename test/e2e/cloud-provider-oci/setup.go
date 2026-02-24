@@ -138,6 +138,11 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 		}
 	} else {
 		sharedfw.Logf("Cluster creation skipped. Running tests with existing cluster.")
+		if setupF.ExistingClusterOcid != "" {
+			setupF.ClusterOcid = setupF.ExistingClusterOcid
+			sharedfw.ClusterID = setupF.ExistingClusterOcid
+			sharedfw.Logf("Using existing cluster OCID %s", setupF.ExistingClusterOcid)
+		}
 	}
 	if setupF.EnableCertCreation {
 		sharedfw.Logf("Cert creation is enabled. Creating a new certificate with auth Id provided.")
@@ -146,11 +151,18 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	return nil
 }, func(data []byte) {
 	setupF = sharedfw.New()
-},
-)
+	// Ensure parallel ginkgo nodes get the cluster OCID from the synchronized setup
+	if sharedfw.ClusterID != "" {
+		setupF.ClusterOcid = sharedfw.ClusterID
+	}
+})
 
 var _ = ginkgo.SynchronizedAfterSuite(func() {}, func() {
 	sharedfw.Logf("Running AfterSuite actions on all node")
+	if setupF == nil {
+		sharedfw.Logf("Skip AfterSuite actions since Setup failed!")
+		return
+	}
 	if !setupF.IsPostUpgrade && !setupF.IsPreUpgrade {
 		sharedfw.RunCleanupActions()
 		if setupF.EnableCreateCluster {

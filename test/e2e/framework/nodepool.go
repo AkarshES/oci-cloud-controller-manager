@@ -635,6 +635,21 @@ func (f *Framework) ScaleNodePool(np *oke.NodePool, nodeCount int) {
 	}
 	f.WaitForActiveStateInNodePool(*np.Id)
 }
+
+// UpdateNodePoolMetadata updates nodepool metadata and waits for nodes to recycle to ACTIVE state.
+func (f *Framework) UpdateNodePoolMetadata(np *oke.NodePool, nodeMetadata map[string]string) {
+	ctx := context.Background()
+	_, err := f.clustersClient.UpdateNodePool(ctx, oke.UpdateNodePoolRequest{
+		NodePoolId: np.Id,
+		UpdateNodePoolDetails: oke.UpdateNodePoolDetails{
+			NodeMetadata: nodeMetadata,
+		},
+	})
+	if err != nil {
+		Failf("Error while updating Node Pool metadata %v", *(np.Id))
+	}
+	f.WaitForActiveStateInNodePool(*np.Id)
+}
 func (f *Framework) EnableBVMPluginOnNodepool(np *oke.NodePool) {
 	agentDisabled := false
 	pluginName := "Block Volume Management"
