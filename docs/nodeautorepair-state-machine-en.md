@@ -34,10 +34,10 @@ Every state write should update `last-transition` and `attempts`.
 ## Idempotency and Retry
 - All operations must be idempotent: repeated cordon/uncordon/drain calls should not cause inconsistent state.
 - Default retry policy: max 3 attempts with exponential backoff (base=10s). retry should ideally not block the controller loop
-- Per-state timeouts: Cordoning 30s, Draining 10m, Rebooting 5m, Uncordoning 30s (configurable).
+- Per-state timeouts: Cordoning 30s, Draining 10m, Rebooting 5m, Uncordoning 30s .
 
 ## Safety Constraints
-- Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, wait and retry. Respect PDB for a maximum of 30 mins and force repair after the wait
+- Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, wait and retry. Respect PDB for a maximum of 10 mins and force repair after the wait
 - Skip DaemonSet pods and mirror pods when draining; handle local-volume usage carefully (see kubectl drain behavior).
 - Only the leader instance performs active repairs (use existing leader election).
 - Concurrency limits:
@@ -49,7 +49,7 @@ only one controller is activelly doing node auto repair
 
 ## Implementation Recommendations
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
-- Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB.
+- Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
 - Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; 
 - Annotation updates should use optimistic concurrency and retry on resourceVersion conflicts.
 
@@ -67,7 +67,7 @@ only one controller is activelly doing node auto repair
 
 ## Failure Handling and Human Intervention
 - When a repair reaches `Failed`, preserve annotations and emit an Event for operators.
-- Provide configurable automated retry or surface failures for manual remediation.
+- Provide automated retry or surface failures for manual remediation.
 
 ## Backwards Compatibility and Migration
 - If annotations are absent, the controller should default to the legacy detection path and create an initial `Detected` entry.

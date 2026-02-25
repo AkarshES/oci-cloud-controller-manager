@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -21,21 +23,22 @@ import (
 )
 
 const (
-	narStateAnnotationKey        = "oci.oraclecloud.com/nodeautorepair-state"
-	narRepairIDAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-repair-id"
-	narRepairOriginAnnotationKey = "oci.oraclecloud.com/nodeautorepair-repair-origin"
-	narLastTransitionAnnotation  = "oci.oraclecloud.com/nodeautorepair-last-transition"
-	narAttemptsAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-attempts"
-	narRebootIssuedAnnotationKey = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
-	metricRepairTotal            = "nodeautorepair_repair_total"
-	metricRepairFailures         = "nodeautorepair_repair_failures_total"
-	metricRepairDuration         = "nodeautorepair_repair_duration_seconds"
-	eventRepairDetected          = "NodeRepairDetected"
-	eventRepairCordoned          = "NodeRepairCordoned"
-	eventRepairDraining          = "NodeRepairDraining"
-	eventRepairRebooting         = "NodeRepairRebooting"
-	eventRepairUncordoned        = "NodeRepairUncordoned"
-	eventRepairFailed            = "NodeRepairFailed"
+	narStateAnnotationKey         = "oci.oraclecloud.com/nodeautorepair-state"
+	narRepairIDAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-repair-id"
+	narRepairOriginAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-repair-origin"
+	narLastTransitionAnnotation   = "oci.oraclecloud.com/nodeautorepair-last-transition"
+	narAttemptsAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-attempts"
+	narRebootIssuedAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
+	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
+	metricRepairTotal             = "nodeautorepair_repair_total"
+	metricRepairFailures          = "nodeautorepair_repair_failures_total"
+	metricRepairDuration          = "nodeautorepair_repair_duration_seconds"
+	eventRepairDetected           = "NodeRepairDetected"
+	eventRepairCordoned           = "NodeRepairCordoned"
+	eventRepairDraining           = "NodeRepairDraining"
+	eventRepairRebooting          = "NodeRepairRebooting"
+	eventRepairUncordoned         = "NodeRepairUncordoned"
+	eventRepairFailed             = "NodeRepairFailed"
 )
 
 type repairState string
@@ -86,13 +89,122 @@ var (
 	instanceRunningWait         = getEnvDuration("NODE_AUTOREPAIR_REBOOT_WAIT", 2*time.Minute)
 )
 
-var repairAnnotationKeys = []string{
-	narStateAnnotationKey,
-	narRepairIDAnnotationKey,
-	narRepairOriginAnnotationKey,
-	narLastTransitionAnnotation,
-	narAttemptsAnnotationKey,
-	narRebootIssuedAnnotationKey,
+var (
+	repairAnnotationKeys = []string{
+		narStateAnnotationKey,
+		narRepairIDAnnotationKey,
+		narRepairOriginAnnotationKey,
+		narLastTransitionAnnotation,
+		narAttemptsAnnotationKey,
+		narRebootIssuedAnnotationKey,
+		narStateMetadataAnnotationKey,
+	}
+	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 30*time.Minute)
+	drainForceAlways        = getEnvBool("NODE_AUTOREPAIR_DRAIN_FORCE", false)
+	drainIgnoreDaemonSets   = getEnvBool("NODE_AUTOREPAIR_DRAIN_IGNORE_DAEMONSETS", true)
+	drainDeleteEmptyDirData = getEnvBool("NODE_AUTOREPAIR_DRAIN_DELETE_EMPTYDIR", false)
+	drainAttemptTimeout     = getEnvDuration("NODE_AUTOREPAIR_DRAIN_ATTEMPT_TIMEOUT", 10*time.Second)
+)
+
+type repairStateTracker struct {
+	RepairID string                             `json:"repairId,omitempty"`
+	States   map[repairState]*stateTrackerEntry `json:"states,omitempty"`
+}
+
+type stateTrackerEntry struct {
+	StartTime string `json:"startTime,omitempty"`
+	Attempts  int    `json:"attempts,omitempty"`
+	Forced    bool   `json:"forced,omitempty"`
+}
+
+func (sm *nodeRepairStateMachine) refreshStateTracker() {
+	sm.tracker = loadRepairStateTracker(sm.node)
+	if sm.tracker != nil {
+		sm.tracker.RepairID = sm.node.Annotations[narRepairIDAnnotationKey]
+		sm.tracker.ensureStart(sm.currentState(), sm.lastTransitionTime())
+	}
+}
+
+func loadRepairStateTracker(node *v1.Node) *repairStateTracker {
+	if node == nil || node.Annotations == nil {
+		return newRepairStateTracker("")
+	}
+	meta := node.Annotations[narStateMetadataAnnotationKey]
+	if meta == "" {
+		return newRepairStateTracker(node.Annotations[narRepairIDAnnotationKey])
+	}
+	tracker := &repairStateTracker{}
+	if err := json.Unmarshal([]byte(meta), tracker); err != nil {
+		return newRepairStateTracker(node.Annotations[narRepairIDAnnotationKey])
+	}
+	if tracker.States == nil {
+		tracker.States = map[repairState]*stateTrackerEntry{}
+	}
+	if tracker.RepairID == "" {
+		tracker.RepairID = node.Annotations[narRepairIDAnnotationKey]
+	}
+	return tracker
+}
+
+func newRepairStateTracker(repairID string) *repairStateTracker {
+	return &repairStateTracker{
+		RepairID: repairID,
+		States:   map[repairState]*stateTrackerEntry{},
+	}
+}
+
+func (t *repairStateTracker) current(state repairState) *stateTrackerEntry {
+	if t == nil {
+		return nil
+	}
+	return t.States[state]
+}
+
+func (t *repairStateTracker) begin(state repairState) *stateTrackerEntry {
+	if t == nil {
+		return nil
+	}
+	entry := t.States[state]
+	if entry == nil {
+		entry = &stateTrackerEntry{}
+		t.States[state] = entry
+	}
+	entry.StartTime = time.Now().UTC().Format(time.RFC3339)
+	entry.Attempts = 0
+	return entry
+}
+
+func (t *repairStateTracker) reset(state repairState) {
+	if t == nil {
+		return
+	}
+	delete(t.States, state)
+}
+
+func (t *repairStateTracker) ensureStart(state repairState, fallback time.Time) *stateTrackerEntry {
+	if t == nil {
+		return nil
+	}
+	entry := t.States[state]
+	if entry == nil {
+		entry = &stateTrackerEntry{}
+		t.States[state] = entry
+	}
+	if entry.StartTime == "" && !fallback.IsZero() {
+		entry.StartTime = fallback.UTC().Format(time.RFC3339)
+	}
+	return entry
+}
+
+func (t *repairStateTracker) toJSON() string {
+	if t == nil {
+		return ""
+	}
+	bytes, err := json.Marshal(t)
+	if err != nil {
+		return ""
+	}
+	return string(bytes)
 }
 
 type nodeRepairStateMachine struct {
@@ -102,10 +214,11 @@ type nodeRepairStateMachine struct {
 	logger     logr.Logger
 	repairID   string
 	originID   string
+	tracker    *repairStateTracker
 }
 
 func newNodeRepairStateMachine(r *NodeAutoRepairReconciler, node *v1.Node, logger logr.Logger) *nodeRepairStateMachine {
-	return &nodeRepairStateMachine{
+	sm := &nodeRepairStateMachine{
 		reconciler: r,
 		node:       node,
 		nodeKey:    client.ObjectKey{Name: node.Name},
@@ -113,6 +226,9 @@ func newNodeRepairStateMachine(r *NodeAutoRepairReconciler, node *v1.Node, logge
 		repairID:   node.Annotations[narRepairIDAnnotationKey],
 		originID:   node.Annotations[narRepairOriginAnnotationKey],
 	}
+	sm.refreshStateTracker()
+	sm.ensureStateStart(sm.currentState())
+	return sm
 }
 
 func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) {
@@ -159,6 +275,8 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 	sm.repairID = sm.node.Annotations[narRepairIDAnnotationKey]
+	sm.tracker = newRepairStateTracker(sm.repairID)
+	sm.ensureStateStart(stateCordoning)
 	sm.emitEvent(eventRepairDetected, "Detected unhealthy node; transitioning to Cordoning")
 	sm.recordMetric(metricRepairTotal, 1)
 	if err := sm.setState(ctx, stateCordoning); err != nil {
@@ -167,7 +285,61 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 	return ctrl.Result{RequeueAfter: repairStateConfigs[stateCordoning].successRequeue}, nil
 }
 
+func (sm *nodeRepairStateMachine) beginState(ctx context.Context, state repairState) {
+	if sm.tracker == nil {
+		sm.tracker = newRepairStateTracker(sm.repairID)
+	}
+	entry := sm.tracker.begin(state)
+	if entry == nil {
+		return
+	}
+	_ = sm.persistTracker(ctx)
+}
+
+func (sm *nodeRepairStateMachine) ensureStateStart(state repairState) {
+	if sm.tracker == nil {
+		sm.tracker = newRepairStateTracker(sm.repairID)
+	}
+	sm.tracker.ensureStart(state, sm.lastTransitionTime())
+}
+
+func (sm *nodeRepairStateMachine) persistTracker(ctx context.Context) error {
+	return sm.updateAnnotations(ctx, func(ann map[string]string) {
+		ann[narStateMetadataAnnotationKey] = sm.tracker.toJSON()
+	})
+}
+
+func (sm *nodeRepairStateMachine) validateRepairID(ctx context.Context) error {
+	if sm.node.Annotations == nil {
+		return fmt.Errorf("node %s missing annotations for repair tracking", sm.node.Name)
+	}
+	annotatedID := sm.node.Annotations[narRepairIDAnnotationKey]
+	if annotatedID == "" {
+		return fmt.Errorf("node %s missing repair id annotation", sm.node.Name)
+	}
+	if sm.repairID == "" {
+		sm.repairID = annotatedID
+	}
+	if sm.repairID != annotatedID {
+		return fmt.Errorf("node %s repair id changed (expected %s, found %s)", sm.node.Name, sm.repairID, annotatedID)
+	}
+	annotationOrigin := sm.node.Annotations[narRepairOriginAnnotationKey]
+	if annotationOrigin != "" && sm.reconciler.ControllerID != "" && annotationOrigin != sm.reconciler.ControllerID {
+		return fmt.Errorf("node %s repair owned by %s; local controller %s", sm.node.Name, annotationOrigin, sm.reconciler.ControllerID)
+	}
+	if sm.tracker == nil {
+		sm.tracker = newRepairStateTracker(sm.repairID)
+	} else if sm.tracker.RepairID == "" || sm.tracker.RepairID != sm.repairID {
+		sm.tracker = newRepairStateTracker(sm.repairID)
+	}
+	return nil
+}
+
 func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Result, error) {
+	if err := sm.validateRepairID(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+	sm.beginState(ctx, stateCordoning)
 	if sm.stateTimedOut(stateCordoning) {
 		return sm.failState(ctx, stateCordoning, fmt.Errorf("cordoning timed out"))
 	}
@@ -191,6 +363,10 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 }
 
 func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Result, error) {
+	if err := sm.validateRepairID(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+	sm.beginState(ctx, stateDraining)
 	if sm.stateTimedOut(stateDraining) {
 		return sm.failState(ctx, stateDraining, fmt.Errorf("draining timed out"))
 	}
@@ -215,6 +391,10 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 }
 
 func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Result, error) {
+	if err := sm.validateRepairID(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+	sm.beginState(ctx, stateRebooting)
 	if sm.stateTimedOut(stateRebooting) {
 		return sm.failState(ctx, stateRebooting, fmt.Errorf("rebooting timed out"))
 	}
@@ -265,6 +445,10 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 }
 
 func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.Result, error) {
+	if err := sm.validateRepairID(ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+	sm.beginState(ctx, stateUncordon)
 	if sm.stateTimedOut(stateUncordon) {
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning timed out"))
 	}
@@ -292,11 +476,15 @@ func (sm *nodeRepairStateMachine) stateTimedOut(state repairState) bool {
 	if !ok || cfg.timeout == 0 {
 		return false
 	}
-	last := sm.lastTransitionTime()
-	if last.IsZero() {
+	entry := sm.tracker.current(state)
+	if entry == nil || entry.StartTime == "" {
 		return false
 	}
-	return time.Since(last) > cfg.timeout
+	start, err := time.Parse(time.RFC3339, entry.StartTime)
+	if err != nil {
+		return false
+	}
+	return time.Since(start) > cfg.timeout
 }
 
 func (sm *nodeRepairStateMachine) retryDelay(state repairState, attempt int) time.Duration {
@@ -356,6 +544,12 @@ func (sm *nodeRepairStateMachine) setState(ctx context.Context, next repairState
 		ann[narStateAnnotationKey] = string(next)
 		ann[narLastTransitionAnnotation] = time.Now().UTC().Format(time.RFC3339)
 		ann[narAttemptsAnnotationKey] = "0"
+		if sm.tracker == nil {
+			sm.tracker = newRepairStateTracker(sm.repairID)
+		}
+		sm.tracker.reset(next)
+		sm.tracker.ensureStart(next, time.Now())
+		ann[narStateMetadataAnnotationKey] = sm.tracker.toJSON()
 	})
 }
 
@@ -364,6 +558,13 @@ func (sm *nodeRepairStateMachine) recordAttempt(ctx context.Context) (int, error
 	newVal := current + 1
 	return newVal, sm.updateAnnotations(ctx, func(ann map[string]string) {
 		ann[narAttemptsAnnotationKey] = strconv.Itoa(newVal)
+		if sm.tracker != nil {
+			entry := sm.tracker.current(sm.currentState())
+			if entry != nil {
+				entry.Attempts = newVal
+				ann[narStateMetadataAnnotationKey] = sm.tracker.toJSON()
+			}
+		}
 	})
 }
 
@@ -409,14 +610,16 @@ func (sm *nodeRepairStateMachine) uncordonNode(ctx context.Context) error {
 }
 
 func (sm *nodeRepairStateMachine) drainNode(ctx context.Context) error {
+	childCtx, cancel := context.WithTimeout(ctx, drainAttemptTimeout)
+	defer cancel()
 	helper := &drain.Helper{
-		Ctx:                 ctx,
+		Ctx:                 childCtx,
 		Client:              sm.reconciler.KubeClient,
-		Force:               false,
+		Force:               drainForceAlways,
 		GracePeriodSeconds:  -1,
-		IgnoreAllDaemonSets: true,
-		DeleteEmptyDirData:  false,
-		Timeout:             repairStateConfigs[stateDraining].timeout,
+		IgnoreAllDaemonSets: drainIgnoreDaemonSets,
+		DeleteEmptyDirData:  drainDeleteEmptyDirData,
+		Timeout:             drainAttemptTimeout,
 		Out:                 nopWriter{},
 		ErrOut:              nopWriter{},
 	}
@@ -582,6 +785,18 @@ func getEnvDuration(key string, def time.Duration) time.Duration {
 	if val := os.Getenv(key); val != "" {
 		if parsed, err := time.ParseDuration(val); err == nil {
 			return parsed
+		}
+	}
+	return def
+}
+
+func getEnvBool(key string, def bool) bool {
+	if val := strings.TrimSpace(os.Getenv(key)); val != "" {
+		switch strings.ToLower(val) {
+		case "1", "true", "t", "yes", "y":
+			return true
+		case "0", "false", "f", "no", "n":
+			return false
 		}
 	}
 	return def

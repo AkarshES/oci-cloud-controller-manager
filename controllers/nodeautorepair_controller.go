@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -122,7 +123,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.ensureControllerID(); err != nil {
+	if err := r.ensureControllerID(logger); err != nil {
 		logger.Error(err, "CCM: Unable to determine controller identity")
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
@@ -132,12 +133,12 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return r.cleanupRepairArtifacts(ctx, logger, node)
 	}
 
-	repairEnabled := node.Labels[repairEnabledLabel] == "true"
+	repairEnabled := true
 	if !repairEnabled {
 		return r.handleUnhealthyNode(ctx, logger, node, unhealthyConditions)
 	}
 
-	isLeader, err := r.isLeader(ctx)
+	isLeader, err := r.isLeader(ctx, logger)
 	if err != nil {
 		logger.Error(err, "CCM: failed to determine leader status")
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
@@ -168,9 +169,9 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	patch := client.MergeFrom(node.DeepCopy())
 	var needsPatch bool
 
-	repairEnabled := node.Labels[repairEnabledLabel] == "true"
+	repairEnabled := true
 	if repairEnabled {
-		if err := r.ensureLeaseManager(); err != nil {
+		if err := r.ensureLeaseManager(logger); err != nil {
 			logger.Error(err, "CCM: failed to initialize repair lease manager")
 			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 		}
@@ -187,7 +188,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 			}
 			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 		}
-		if err := r.startLeaseHeartbeat(ctx, node.Name); err != nil {
+		if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
 			logger.Error(err, "CCM: failed to start lease heartbeat")
 			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 		}
@@ -263,20 +264,24 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	return repairSM.Run(ctx)
 }
 
-func (r *NodeAutoRepairReconciler) ensureControllerID() error {
+func (r *NodeAutoRepairReconciler) ensureControllerID(logger logr.Logger) error {
 	if r.ControllerID != "" {
 		return nil
 	}
-	if id, err := os.Hostname(); err == nil {
-		r.ControllerID = id
-		return nil
+	id, err := os.Hostname()
+	if err != nil {
+		logger.Error(err, "CCM: failed to resolve controller hostname")
+		return fmt.Errorf("controller ID not set: %w", err)
 	}
-	return fmt.Errorf("controller ID not set")
+	r.ControllerID = id
+	return nil
 }
 
-func (r *NodeAutoRepairReconciler) isLeader(ctx context.Context) (bool, error) {
+func (r *NodeAutoRepairReconciler) isLeader(ctx context.Context, logger logr.Logger) (bool, error) {
 	if r.leaderElection == nil {
-		return false, fmt.Errorf("leader election channel not initialized")
+		err := errors.New("leader election channel not initialized")
+		logger.Error(err, "CCM: leader election channel missing")
+		return false, err
 	}
 	select {
 	case <-ctx.Done():
@@ -436,12 +441,14 @@ func CreateRepairTaint() v1.Taint {
 	}
 }
 
-func (r *NodeAutoRepairReconciler) ensureLeaseManager() error {
+func (r *NodeAutoRepairReconciler) ensureLeaseManager(logger logr.Logger) error {
 	if r.leaseManager != nil {
 		return nil
 	}
 	if r.ControllerID == "" {
-		return fmt.Errorf("controller ID not initialized")
+		err := errors.New("controller ID not initialized")
+		logger.Error(err, "CCM: cannot initialize lease manager without controller ID")
+		return err
 	}
 	r.leaseManager = newRepairLeaseManager(r.Client, r.ControllerID)
 	return nil
@@ -454,9 +461,11 @@ func (r *NodeAutoRepairReconciler) releaseLease(ctx context.Context, nodeName st
 	return r.leaseManager.Release(ctx, nodeName)
 }
 
-func (r *NodeAutoRepairReconciler) startLeaseHeartbeat(ctx context.Context, nodeName string) error {
+func (r *NodeAutoRepairReconciler) startLeaseHeartbeat(ctx context.Context, nodeName string, logger logr.Logger) error {
 	if r.leaseManager == nil {
-		return fmt.Errorf("lease manager not initialized")
+		err := errors.New("lease manager not initialized")
+		logger.Error(err, "CCM: cannot start lease heartbeat without lease manager")
+		return err
 	}
 	if r.leaseStopCh != nil {
 		close(r.leaseStopCh)
@@ -471,7 +480,7 @@ func (r *NodeAutoRepairReconciler) startLeaseHeartbeat(ctx context.Context, node
 			select {
 			case <-ticker.C:
 				if err := r.leaseManager.Renew(context.Background(), nodeName); err != nil {
-					r.logHeartbeatError(err, nodeName)
+					r.logHeartbeatError(err, logger, nodeName)
 				}
 			case <-stopCh:
 				return
@@ -489,7 +498,6 @@ func (r *NodeAutoRepairReconciler) stopLeaseHeartbeat(ctx context.Context, nodeN
 	return r.releaseLease(ctx, nodeName)
 }
 
-func (r *NodeAutoRepairReconciler) logHeartbeatError(err error, nodeName string) {
-	log := zap.L().Sugar()
-	log.Errorw("CCM: lease heartbeat failed", "err", err, "node", nodeName)
+func (r *NodeAutoRepairReconciler) logHeartbeatError(err error, logger logr.Logger, nodeName string) {
+	logger.Error(err, "CCM: lease heartbeat failed", "node", nodeName)
 }
