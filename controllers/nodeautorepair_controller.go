@@ -80,6 +80,8 @@ type NodeAutoRepairReconciler struct {
 	Recorder         record.EventRecorder
 	Config           *providercfg.Config
 	ControllerID     string
+	leaseManager     *repairLeaseManager
+	leaseStopCh      chan struct{}
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -168,13 +170,28 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	repairEnabled := node.Labels[repairEnabledLabel] == "true"
 	if repairEnabled {
-		if busyNode, err := r.anotherRepairInProgress(ctx, node.Name); err != nil {
-			logger.Error(err, "CCM: Failed to determine active repairs")
-			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-		} else if busyNode != "" {
-			logger.Info("CCM: Another node is currently under repair", "activeNode", busyNode)
+		if err := r.ensureLeaseManager(); err != nil {
+			logger.Error(err, "CCM: failed to initialize repair lease manager")
 			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 		}
+		acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
+		if err != nil {
+			logger.Error(err, "CCM: failed to acquire repair lease")
+			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+		}
+		if !acquired {
+			if activeNode == "" {
+				logger.Info("CCM: Another controller holds the repair lease, waiting")
+			} else {
+				logger.Info("CCM: Another node is currently under repair", "activeNode", activeNode)
+			}
+			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+		}
+		if err := r.startLeaseHeartbeat(ctx, node.Name); err != nil {
+			logger.Error(err, "CCM: failed to start lease heartbeat")
+			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+		}
+		logger.Info("CCM: acquired repair lease", "node", node.Name)
 	}
 
 	if node.Labels == nil {
@@ -319,6 +336,9 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	} else {
 		logger.Info("Node is healthy and has no NPD conditions to clean up.", "node", node.Name)
 	}
+	if err := r.stopLeaseHeartbeat(ctx, node.Name); err != nil {
+		logger.Error(err, "Failed to stop lease heartbeat", "node", node.Name)
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -416,31 +436,60 @@ func CreateRepairTaint() v1.Taint {
 	}
 }
 
-func (r *NodeAutoRepairReconciler) anotherRepairInProgress(ctx context.Context, currentNode string) (string, error) {
-	nodeList := &v1.NodeList{}
-	if err := r.Client.List(ctx, nodeList); err != nil {
-		return "", err
+func (r *NodeAutoRepairReconciler) ensureLeaseManager() error {
+	if r.leaseManager != nil {
+		return nil
 	}
-	for _, n := range nodeList.Items {
-		if n.Name == currentNode {
-			continue
-		}
-		if isRepairActive(&n) {
-			return n.Name, nil
-		}
+	if r.ControllerID == "" {
+		return fmt.Errorf("controller ID not initialized")
 	}
-	return "", nil
+	r.leaseManager = newRepairLeaseManager(r.Client, r.ControllerID)
+	return nil
 }
 
-func isRepairActive(node *v1.Node) bool {
-	if node.Annotations == nil {
-		return false
+func (r *NodeAutoRepairReconciler) releaseLease(ctx context.Context, nodeName string) error {
+	if r.leaseManager == nil {
+		return nil
 	}
-	state := repairState(node.Annotations[narStateAnnotationKey])
-	switch state {
-	case stateCordoning, stateDraining, stateRebooting, stateUncordon, stateDetected:
-		return true
-	default:
-		return false
+	return r.leaseManager.Release(ctx, nodeName)
+}
+
+func (r *NodeAutoRepairReconciler) startLeaseHeartbeat(ctx context.Context, nodeName string) error {
+	if r.leaseManager == nil {
+		return fmt.Errorf("lease manager not initialized")
 	}
+	if r.leaseStopCh != nil {
+		close(r.leaseStopCh)
+	}
+	stopCh := make(chan struct{})
+	r.leaseStopCh = stopCh
+	interval := r.leaseManager.renewInterval()
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := r.leaseManager.Renew(context.Background(), nodeName); err != nil {
+					r.logHeartbeatError(err, nodeName)
+				}
+			case <-stopCh:
+				return
+			}
+		}
+	}()
+	return nil
+}
+
+func (r *NodeAutoRepairReconciler) stopLeaseHeartbeat(ctx context.Context, nodeName string) error {
+	if r.leaseStopCh != nil {
+		close(r.leaseStopCh)
+		r.leaseStopCh = nil
+	}
+	return r.releaseLease(ctx, nodeName)
+}
+
+func (r *NodeAutoRepairReconciler) logHeartbeatError(err error, nodeName string) {
+	log := zap.L().Sugar()
+	log.Errorw("CCM: lease heartbeat failed", "err", err, "node", nodeName)
 }

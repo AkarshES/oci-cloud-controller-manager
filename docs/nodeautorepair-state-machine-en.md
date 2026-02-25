@@ -27,7 +27,7 @@ Refactor the existing Node AutoRepair controller into a state machine that perfo
    - Draining -> perform drain(node); on success set state `Rebooting`; on failure retry or set `Failed`
    - Rebooting -> call cloud reboot API (or annotate node for agent); on success set state `Uncordoning`; otherwise retry/fail
    - Uncordoning -> perform uncordon(node); on success set state `Succeeded`; otherwise retry/fail
-   - Succeeded/Failed -> noop (preserve history and emit events for manual remediation)
+   - Succeeded/Failed -> noop (log history and emit events for manual remediation)
 
 Every state write should update `last-transition` and `attempts`.
 
@@ -37,14 +37,15 @@ Every state write should update `last-transition` and `attempts`.
 - Per-state timeouts: Cordoning 30s, Draining 10m, Rebooting 5m, Uncordoning 30s (configurable).
 
 ## Safety Constraints
-- Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, delay retry or mark `Failed` (configurable behavior).
+- Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, wait and retry. Respect PDB for a maximum of 30 mins and force repair after the wait
 - Skip DaemonSet pods and mirror pods when draining; handle local-volume usage carefully (see kubectl drain behavior).
 - Only the leader instance performs active repairs (use existing leader election).
 - Concurrency limits:
   - Per-node: use `repair-id` in annotations to prevent concurrent repairs on the same node.
-  - Global: only repair one node at any time, don't repair multiple machines at the same time
+  - Global: only repair one node at any time, don't repair multiple machines at the same time, consider apply a controller wide lock to guarantee even if multiple node are with unhealthy conditions, only one node will be picked for repair at a time
 - There could be multiple node auto repair controller in a cluster, please add leader election during controller initialization and make sure
 only one controller is activelly doing node auto repair
+- For global serialization add a cluster-scoped lock (e.g., `coordination.k8s.io/v1` Lease in `kube-system`) so only a single node repair runs at any time even if multiple controllers are reconciling.
 
 ## Implementation Recommendations
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
@@ -59,7 +60,6 @@ only one controller is activelly doing node auto repair
 ## Testing Strategy
 - Unit tests: state handler success, failure, and idempotency paths.
 - Integration tests: mock API server and cloud reboot API to validate full path from `Detected` to `Succeeded`.
-- Optional e2e: inject unhealthy node into a cluster and observe an end-to-end repair.
 
 ## Logging and Annotations
 - Keep `repair-id`, `last-transition`, and `attempts` in node annotations.
