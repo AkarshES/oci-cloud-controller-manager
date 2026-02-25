@@ -1144,6 +1144,8 @@ locals {
           "checkpoint_one" = [
           ]
           "complete" = [
+            "oke_ccm_csi",
+            "oci_containerengine_cluster",
           ]
       }
     }
