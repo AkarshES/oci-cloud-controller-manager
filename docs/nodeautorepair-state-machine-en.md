@@ -33,7 +33,7 @@ Every state write should update `last-transition` and `attempts`.
 
 ## Idempotency and Retry
 - All operations must be idempotent: repeated cordon/uncordon/drain calls should not cause inconsistent state.
-- Default retry policy: max 3 attempts with exponential backoff (base=10s).
+- Default retry policy: max 3 attempts with exponential backoff (base=10s). retry should ideally not block the controller loop
 - Per-state timeouts: Cordoning 30s, Draining 10m, Rebooting 5m, Uncordoning 30s (configurable).
 
 ## Safety Constraints
@@ -42,12 +42,14 @@ Every state write should update `last-transition` and `attempts`.
 - Only the leader instance performs active repairs (use existing leader election).
 - Concurrency limits:
   - Per-node: use `repair-id` in annotations to prevent concurrent repairs on the same node.
-  - Global: provide a configurable limit for concurrent repairs.
+  - Global: only repair one node at any time, don't repair multiple machines at the same time
+- There could be multiple node auto repair controller in a cluster, please add leader election during controller initialization and make sure
+only one controller is activelly doing node auto repair
 
 ## Implementation Recommendations
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
 - Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB.
-- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; as a fallback annotate the node and let a node agent perform the reboot.
+- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; 
 - Annotation updates should use optimistic concurrency and retry on resourceVersion conflicts.
 
 ## Observability and Alerts

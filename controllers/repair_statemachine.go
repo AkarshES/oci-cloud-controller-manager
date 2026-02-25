@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
-	"bitbucket.oci.oraclecorp.com/oke/oke-common/ociclient"
 	"github.com/go-logr/logr"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	"github.com/oracle/oci-go-sdk/v65/common"
@@ -23,22 +23,19 @@ import (
 const (
 	narStateAnnotationKey        = "oci.oraclecloud.com/nodeautorepair-state"
 	narRepairIDAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-repair-id"
+	narRepairOriginAnnotationKey = "oci.oraclecloud.com/nodeautorepair-repair-origin"
 	narLastTransitionAnnotation  = "oci.oraclecloud.com/nodeautorepair-last-transition"
 	narAttemptsAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-attempts"
 	narRebootIssuedAnnotationKey = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
-	maxRepairAttempts            = 3
-	defaultRetryBase             = 10 * time.Second
-	defaultRetryCap              = 5 * time.Minute
 	metricRepairTotal            = "nodeautorepair_repair_total"
 	metricRepairFailures         = "nodeautorepair_repair_failures_total"
+	metricRepairDuration         = "nodeautorepair_repair_duration_seconds"
 	eventRepairDetected          = "NodeRepairDetected"
 	eventRepairCordoned          = "NodeRepairCordoned"
 	eventRepairDraining          = "NodeRepairDraining"
 	eventRepairRebooting         = "NodeRepairRebooting"
 	eventRepairUncordoned        = "NodeRepairUncordoned"
 	eventRepairFailed            = "NodeRepairFailed"
-	instanceRunningPollInterval  = 15 * time.Second
-	instanceRunningWait          = 2 * time.Minute
 )
 
 type repairState string
@@ -59,32 +56,40 @@ type stateConfig struct {
 	retryBase      time.Duration
 }
 
-var repairStateConfigs = map[repairState]stateConfig{
-	stateCordoning: {
-		timeout:        30 * time.Second,
-		successRequeue: 5 * time.Second,
-		retryBase:      10 * time.Second,
-	},
-	stateDraining: {
-		timeout:        10 * time.Minute,
-		successRequeue: 10 * time.Second,
-		retryBase:      20 * time.Second,
-	},
-	stateRebooting: {
-		timeout:        5 * time.Minute,
-		successRequeue: 30 * time.Second,
-		retryBase:      30 * time.Second,
-	},
-	stateUncordon: {
-		timeout:        30 * time.Second,
-		successRequeue: 0,
-		retryBase:      10 * time.Second,
-	},
-}
+var (
+	maxRepairAttempts  = getEnvInt("NODE_AUTOREPAIR_MAX_ATTEMPTS", 3)
+	defaultRetryBase   = getEnvDuration("NODE_AUTOREPAIR_RETRY_BASE", 10*time.Second)
+	defaultRetryCap    = getEnvDuration("NODE_AUTOREPAIR_RETRY_CAP", 5*time.Minute)
+	repairStateConfigs = map[repairState]stateConfig{
+		stateCordoning: {
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_CORDONING", 30*time.Second),
+			successRequeue: 5 * time.Second,
+			retryBase:      defaultRetryBase,
+		},
+		stateDraining: {
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_DRAINING", 10*time.Minute),
+			successRequeue: 10 * time.Second,
+			retryBase:      defaultRetryBase,
+		},
+		stateRebooting: {
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_REBOOTING", 5*time.Minute),
+			successRequeue: 30 * time.Second,
+			retryBase:      defaultRetryBase,
+		},
+		stateUncordon: {
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_UNCORDONING", 30*time.Second),
+			successRequeue: 0,
+			retryBase:      defaultRetryBase,
+		},
+	}
+	instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 15*time.Second)
+	instanceRunningWait         = getEnvDuration("NODE_AUTOREPAIR_REBOOT_WAIT", 2*time.Minute)
+)
 
 var repairAnnotationKeys = []string{
 	narStateAnnotationKey,
 	narRepairIDAnnotationKey,
+	narRepairOriginAnnotationKey,
 	narLastTransitionAnnotation,
 	narAttemptsAnnotationKey,
 	narRebootIssuedAnnotationKey,
@@ -95,6 +100,8 @@ type nodeRepairStateMachine struct {
 	node       *v1.Node
 	nodeKey    client.ObjectKey
 	logger     logr.Logger
+	repairID   string
+	originID   string
 }
 
 func newNodeRepairStateMachine(r *NodeAutoRepairReconciler, node *v1.Node, logger logr.Logger) *nodeRepairStateMachine {
@@ -103,6 +110,8 @@ func newNodeRepairStateMachine(r *NodeAutoRepairReconciler, node *v1.Node, logge
 		node:       node,
 		nodeKey:    client.ObjectKey{Name: node.Name},
 		logger:     logger,
+		repairID:   node.Annotations[narRepairIDAnnotationKey],
+		originID:   node.Annotations[narRepairOriginAnnotationKey],
 	}
 }
 
@@ -149,6 +158,7 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 	if err := sm.ensureRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
+	sm.repairID = sm.node.Annotations[narRepairIDAnnotationKey]
 	sm.emitEvent(eventRepairDetected, "Detected unhealthy node; transitioning to Cordoning")
 	sm.recordMetric(metricRepairTotal, 1)
 	if err := sm.setState(ctx, stateCordoning); err != nil {
@@ -173,6 +183,7 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateCordoning, attempt)}, nil
 	}
 	sm.emitEvent(eventRepairCordoned, "Node cordoned; moving to Draining")
+	sm.recordStateDuration(stateCordoning)
 	if err := sm.setState(ctx, stateDraining); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -196,6 +207,7 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateDraining, attempt)}, nil
 	}
 	sm.emitEvent(eventRepairDraining, "Drain succeeded; moving to Rebooting")
+	sm.recordStateDuration(stateDraining)
 	if err := sm.setState(ctx, stateRebooting); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -244,6 +256,7 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 	if err := sm.setState(ctx, stateUncordon); err != nil {
 		return ctrl.Result{}, err
 	}
+	sm.recordStateDuration(stateRebooting)
 	requeue := repairStateConfigs[stateRebooting].successRequeue
 	if requeue == 0 {
 		requeue = 30 * time.Second
@@ -267,6 +280,7 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateUncordon, attempt)}, nil
 	}
 	sm.emitEvent(eventRepairUncordoned, "Node uncordoned; marking repair succeeded")
+	sm.recordStateDuration(stateUncordon)
 	if err := sm.setState(ctx, stateSucceeded); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -311,6 +325,7 @@ func (sm *nodeRepairStateMachine) ensureRepairID(ctx context.Context) error {
 	}
 	return sm.updateAnnotations(ctx, func(ann map[string]string) {
 		ann[narRepairIDAnnotationKey] = string(uuid.NewUUID())
+		ann[narRepairOriginAnnotationKey] = sm.reconciler.ControllerID
 	})
 }
 
@@ -414,11 +429,9 @@ func (sm *nodeRepairStateMachine) triggerReboot(ctx context.Context) (string, er
 		return "", fmt.Errorf("node providerID is empty")
 	}
 	req := core.InstanceActionRequest{
-		InstanceId: &providerID,
-		Action:     common.String("RESET"),
-		RequestMetadata: common.RequestMetadata{
-			RetryPolicy: ociclient.NewRetryPolicyWithMaxAttempts(3),
-		},
+		InstanceId:      &providerID,
+		Action:          common.String("RESET"),
+		RequestMetadata: common.RequestMetadata{},
 	}
 	response, err := sm.reconciler.OCIClient.Compute().InstanceAction(ctx, req)
 	if err != nil {
@@ -488,7 +501,7 @@ func (sm *nodeRepairStateMachine) emitEvent(reason, message string) {
 	if sm.reconciler.Recorder == nil {
 		return
 	}
-	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, message)
+	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, sm.decorateMessage(message))
 }
 
 func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
@@ -505,6 +518,36 @@ func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
 		dimensions[metrics.InstanceIdDimension] = sm.node.Spec.ProviderID
 	}
 	metrics.SendMetricData(sm.reconciler.MetricPusher, metric, value, dimensions)
+}
+
+func (sm *nodeRepairStateMachine) decorateMessage(msg string) string {
+	if sm.repairID == "" {
+		return msg
+	}
+	return fmt.Sprintf("[repair-id:%s] %s", sm.repairID, msg)
+}
+
+func (sm *nodeRepairStateMachine) recordStateDuration(state repairState) {
+	if sm.reconciler.MetricPusher == nil {
+		return
+	}
+	start := sm.lastTransitionTime()
+	if start.IsZero() {
+		return
+	}
+	duration := time.Since(start).Seconds()
+	dims := map[string]string{
+		metrics.ComponentDimension: "nodeautorepair",
+		"state":                    string(state),
+		"repair_id":                sm.repairID,
+	}
+	if sm.reconciler.Config != nil {
+		dims[metrics.ClusterOCID] = sm.reconciler.Config.ClusterID
+	}
+	if sm.node.Spec.ProviderID != "" {
+		dims[metrics.InstanceIdDimension] = sm.node.Spec.ProviderID
+	}
+	metrics.SendMetricData(sm.reconciler.MetricPusher, metricRepairDuration, duration, dims)
 }
 
 type nopWriter struct{}
@@ -524,4 +567,22 @@ func nodeAnnotationsToPrune(node *v1.Node) []string {
 		}
 	}
 	return keys
+}
+
+func getEnvInt(key string, def int) int {
+	if val := os.Getenv(key); val != "" {
+		if parsed, err := strconv.Atoi(val); err == nil && parsed > 0 {
+			return parsed
+		}
+	}
+	return def
+}
+
+func getEnvDuration(key string, def time.Duration) time.Duration {
+	if val := os.Getenv(key); val != "" {
+		if parsed, err := time.ParseDuration(val); err == nil {
+			return parsed
+		}
+	}
+	return def
 }

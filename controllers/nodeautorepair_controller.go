@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
-	norv1beta1 "github.com/oracle/oci-cloud-controller-manager/api/node-cycling/v1beta1"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -70,12 +72,14 @@ var CONDITIONS map[string]string = map[string]string{
 type NodeAutoRepairReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
+	leaderElection   <-chan struct{}
 	MetricPusher     *metrics.MetricPusher
 	OCIClient        ociclient.Interface
 	KubeClient       clientset.Interface
 	TimeTakenTracker sync.Map
 	Recorder         record.EventRecorder
 	Config           *providercfg.Config
+	ControllerID     string
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -83,11 +87,27 @@ func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log := zap.L().Sugar()
 	log.Info("Setting up NAR controller with manager")
 	r.Recorder = mgr.GetEventRecorderFor("node-auto-repair-controller")
+	r.leaderElection = mgr.Elected()
+	if id, err := os.Hostname(); err == nil {
+		r.ControllerID = id
+	} else {
+		r.ControllerID = "unknown"
+	}
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Node{}, builder.WithPredicates(ConditionChangedPredicate{log: log})).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 20, CacheSyncTimeout: time.Hour}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: getMaxConcurrentRepairs(), CacheSyncTimeout: time.Hour}).
 		Complete(r)
+}
+
+func getMaxConcurrentRepairs() int {
+	const defaultConcurrency = 1
+	if val := os.Getenv("NODE_AUTOREPAIR_MAX_CONCURRENCY"); val != "" {
+		if parsed, err := strconv.Atoi(val); err == nil && parsed > 0 {
+			return parsed
+		}
+	}
+	return defaultConcurrency
 }
 
 // Reconcile is the main controller loop, now acting as an orchestrator.
@@ -100,18 +120,32 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Find all unhealthy conditions.
-	unhealthyConditions := findUnhealthyConditions(node)
+	if err := r.ensureControllerID(); err != nil {
+		logger.Error(err, "CCM: Unable to determine controller identity")
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
 
-	// Check if any unhealthy conditions were found.
-	if len(unhealthyConditions) > 0 {
-		// Handle all unhealthy conditions at once.
-		logger.Info("CCM: Node is unhealthy, starting repair process", "conditionsCount", len(unhealthyConditions))
+	unhealthyConditions := findUnhealthyConditions(node)
+	if len(unhealthyConditions) == 0 {
+		return r.cleanupRepairArtifacts(ctx, logger, node)
+	}
+
+	repairEnabled := node.Labels[repairEnabledLabel] == "true"
+	if !repairEnabled {
 		return r.handleUnhealthyNode(ctx, logger, node, unhealthyConditions)
 	}
 
-	// If no unhealthy conditions, clean up.
-	return r.cleanupRepairArtifacts(ctx, logger, node)
+	isLeader, err := r.isLeader(ctx)
+	if err != nil {
+		logger.Error(err, "CCM: failed to determine leader status")
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
+	if !isLeader {
+		logger.Info("CCM: skipping repair because this instance is not the leader")
+		return ctrl.Result{RequeueAfter: getRequeueDuration(logger, node)}, nil
+	}
+
+	return r.handleUnhealthyNode(ctx, logger, node, unhealthyConditions)
 }
 
 // findUnhealthyConditions checks if a node has any conditions that warrant repair.
@@ -133,6 +167,15 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	var needsPatch bool
 
 	repairEnabled := node.Labels[repairEnabledLabel] == "true"
+	if repairEnabled {
+		if busyNode, err := r.anotherRepairInProgress(ctx, node.Name); err != nil {
+			logger.Error(err, "CCM: Failed to determine active repairs")
+			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+		} else if busyNode != "" {
+			logger.Info("CCM: Another node is currently under repair", "activeNode", busyNode)
+			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+		}
+	}
 
 	if node.Labels == nil {
 		node.Labels = make(map[string]string)
@@ -201,6 +244,31 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	repairSM := newNodeRepairStateMachine(r, node, logger)
 	return repairSM.Run(ctx)
+}
+
+func (r *NodeAutoRepairReconciler) ensureControllerID() error {
+	if r.ControllerID != "" {
+		return nil
+	}
+	if id, err := os.Hostname(); err == nil {
+		r.ControllerID = id
+		return nil
+	}
+	return fmt.Errorf("controller ID not set")
+}
+
+func (r *NodeAutoRepairReconciler) isLeader(ctx context.Context) (bool, error) {
+	if r.leaderElection == nil {
+		return false, fmt.Errorf("leader election channel not initialized")
+	}
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	case <-r.leaderElection:
+		return true, nil
+	default:
+		return false, nil
+	}
 }
 
 // cleanupRepairArtifacts checks a healthy node for leftover repair items and removes them.
@@ -345,5 +413,34 @@ func CreateRepairTaint() v1.Taint {
 		Key:    REPAIR_TAINT_KEY,
 		Value:  timestamp, // Value is now a dynamic timestamp
 		Effect: REPAIR_TAINT_EFFECT,
+	}
+}
+
+func (r *NodeAutoRepairReconciler) anotherRepairInProgress(ctx context.Context, currentNode string) (string, error) {
+	nodeList := &v1.NodeList{}
+	if err := r.Client.List(ctx, nodeList); err != nil {
+		return "", err
+	}
+	for _, n := range nodeList.Items {
+		if n.Name == currentNode {
+			continue
+		}
+		if isRepairActive(&n) {
+			return n.Name, nil
+		}
+	}
+	return "", nil
+}
+
+func isRepairActive(node *v1.Node) bool {
+	if node.Annotations == nil {
+		return false
+	}
+	state := repairState(node.Annotations[narStateAnnotationKey])
+	switch state {
+	case stateCordoning, stateDraining, stateRebooting, stateUncordon, stateDetected:
+		return true
+	default:
+		return false
 	}
 }

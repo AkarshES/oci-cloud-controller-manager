@@ -202,6 +202,10 @@ func (c *mockComputeClient) ListInstanceDevices(ctx context.Context, request cor
 	return core.ListInstanceDevicesResponse{}, nil
 }
 
+func (c *mockComputeClient) InstanceAction(ctx context.Context, request core.InstanceActionRequest) (response core.InstanceActionResponse, err error) {
+	return core.InstanceActionResponse{}, nil
+}
+
 /* Mock NetworkClient interface implementations */
 func (c *mockVirtualNetworkClient) GetVnic(ctx context.Context, request core.GetVnicRequest) (response core.GetVnicResponse, err error) {
 	return core.GetVnicResponse{}, nil

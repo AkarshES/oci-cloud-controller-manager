@@ -69,8 +69,8 @@ const maxRetries = 50
 const initialRetryDelay = 5 * time.Second
 
 const (
-	defaultFssAddress  = "/var/run/shared-tmpfs/csi-fss.sock"
-	defaultFssEndpoint = "unix:///var/run/shared-tmpfs/csi-fss.sock"
+	defaultFssAddress     = "/var/run/shared-tmpfs/csi-fss.sock"
+	defaultFssEndpoint    = "unix:///var/run/shared-tmpfs/csi-fss.sock"
 	defaultLustreAddress  = "/var/run/shared-tmpfs/csi-lustre.sock"
 	defaultLustreEndpoint = "unix:///var/run/shared-tmpfs/csi-lustre.sock"
 )
@@ -303,7 +303,18 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 		logger.Info("crd manager not instantiated as no customer resource enabled.")
 	}
 
+	narCtrl, err := GetController(narController, ctx, logger, mgr)
+	if err != nil {
+		logger.Fatalf("Failed to create Node Auto Repair Controller: %v", err)
+	}
+	logger.Info("CCM: started NAR controller.")
+
+	if err := narCtrl.Run(mgr, config, options); err != nil {
+		logger.Fatalf("NAR Controller failed to start: %v", err)
+	}
+
 	controllers := []string{metricsController, ccmController, volumeProvisioner}
+	controllers = append(controllers, narController)
 	if enableCSI {
 		controllers = append(controllers, csiController)
 	}

@@ -846,6 +846,10 @@ func (c *MockComputeClient) WaitForUHPVolumeLoggedOut(ctx context.Context, attac
 	return nil
 }
 
+func (c *MockComputeClient) InstanceAction(ctx context.Context, request core.InstanceActionRequest) (response core.InstanceActionResponse, err error) {
+	return core.InstanceActionResponse{}, nil
+}
+
 func (p *MockProvisionerClient) Compute() client.ComputeInterface {
 	return &MockComputeClient{}
 }

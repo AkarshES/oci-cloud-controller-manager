@@ -1118,6 +1118,10 @@ func (c *MockComputeClient) WaitForUHPVolumeLoggedOut(ctx context.Context, attac
 	return nil
 }
 
+func (c *MockComputeClient) InstanceAction(ctx context.Context, request core.InstanceActionRequest) (response core.InstanceActionResponse, err error) {
+	return core.InstanceActionResponse{}, nil
+}
+
 func (c *MockBlockStorageClient) AwaitVolumeBackupAvailableOrTimeout(ctx context.Context, id string) (*core.VolumeBackup, error) {
 	return &core.VolumeBackup{}, nil
 }
