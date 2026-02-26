@@ -85,6 +85,11 @@ type NodeAutoRepairReconciler struct {
 	leaseStopCh      chan struct{}
 }
 
+// Cool-down window after a repair finishes. During this window, new repairs are throttled.
+var (
+    repairCoolDown = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 60*time.Minute)
+)
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodeAutoRepairReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	log := zap.L().Sugar()
@@ -168,6 +173,25 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
 	patch := client.MergeFrom(node.DeepCopy())
 	var needsPatch bool
+
+    // Throttle if the node has been repaired recently (cool-down window)
+    if node.Annotations != nil {
+        if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
+            if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
+                until := endTime.Add(repairCoolDown)
+                now := time.Now()
+                if now.Before(until) {
+                    remaining := time.Until(until)
+                    // Emit event and log, then skip repair attempts during cool-down
+                    if r.Recorder != nil {
+                        r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+                    }
+                    logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining)
+                    return ctrl.Result{RequeueAfter: remaining}, nil
+                }
+            }
+        }
+    }
 
 	repairEnabled := true
 	if repairEnabled {

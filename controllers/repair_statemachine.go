@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
+	ociclientpkg "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/core"
 	v1 "k8s.io/api/core/v1"
@@ -30,6 +31,9 @@ const (
 	narAttemptsAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-attempts"
 	narRebootIssuedAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
 	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
+    // Terminal repair summary annotations (preserved across cleanups)
+    narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
+    narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"
 	metricRepairTotal             = "nodeautorepair_repair_total"
 	metricRepairFailures          = "nodeautorepair_repair_failures_total"
 	metricRepairDuration          = "nodeautorepair_repair_duration_seconds"
@@ -38,6 +42,8 @@ const (
 	eventRepairDraining           = "NodeRepairDraining"
 	eventRepairRebooting          = "NodeRepairRebooting"
 	eventRepairUncordoned         = "NodeRepairUncordoned"
+    eventRepairThrottled          = "NodeRepairThrottled"
+	eventRepairSucceeded          = "NodeRepairSucceeded"
 	eventRepairFailed             = "NodeRepairFailed"
 )
 
@@ -75,7 +81,7 @@ var (
 			retryBase:      defaultRetryBase,
 		},
 		stateRebooting: {
-			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_REBOOTING", 5*time.Minute),
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_REBOOTING", 10*time.Minute),
 			successRequeue: 30 * time.Second,
 			retryBase:      defaultRetryBase,
 		},
@@ -85,8 +91,7 @@ var (
 			retryBase:      defaultRetryBase,
 		},
 	}
-	instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 15*time.Second)
-	instanceRunningWait         = getEnvDuration("NODE_AUTOREPAIR_REBOOT_WAIT", 2*time.Minute)
+	instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 10*time.Second)
 )
 
 var (
@@ -99,7 +104,8 @@ var (
 		narRebootIssuedAnnotationKey,
 		narStateMetadataAnnotationKey,
 	}
-	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 30*time.Minute)
+	// Respect PDB up to 10 minutes by default, then force repair per design doc
+	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 10*time.Minute)
 	drainForceAlways        = getEnvBool("NODE_AUTOREPAIR_DRAIN_FORCE", false)
 	drainIgnoreDaemonSets   = getEnvBool("NODE_AUTOREPAIR_DRAIN_IGNORE_DAEMONSETS", true)
 	drainDeleteEmptyDirData = getEnvBool("NODE_AUTOREPAIR_DRAIN_DELETE_EMPTYDIR", false)
@@ -217,6 +223,16 @@ type nodeRepairStateMachine struct {
 	tracker    *repairStateTracker
 }
 
+// l returns a logger with consistent contextual fields for easier troubleshooting
+func (sm *nodeRepairStateMachine) l() logr.Logger {
+	return sm.logger.WithValues(
+		"node", sm.node.Name,
+		"repairID", sm.repairID,
+		"state", sm.currentState(),
+		"attempts", sm.currentAttempts(),
+	)
+}
+
 func newNodeRepairStateMachine(r *NodeAutoRepairReconciler, node *v1.Node, logger logr.Logger) *nodeRepairStateMachine {
 	sm := &nodeRepairStateMachine{
 		reconciler: r,
@@ -256,13 +272,21 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 	case stateUncordon:
 		return sm.handleUncordoning(ctx)
 	case stateSucceeded:
-		sm.logger.Info("Node auto repair already succeeded", "node", sm.node.Name)
+		// Ensure any global repair lease is released in terminal state
+		if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
+			sm.l().Error(err, "Failed to stop lease heartbeat in Succeeded state")
+		}
+		sm.l().Info("Node auto repair already succeeded")
 		return ctrl.Result{}, nil
 	case stateFailed:
-		sm.logger.Info("Node auto repair is in failed state. Awaiting manual remediation", "node", sm.node.Name)
+		// Ensure any global repair lease is released in terminal state
+		if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
+			sm.l().Error(err, "Failed to stop lease heartbeat in Failed state")
+		}
+		sm.l().Info("Node auto repair is in failed state. Awaiting manual remediation")
 		return ctrl.Result{}, nil
 	default:
-		sm.logger.Info("Unknown node auto repair state, resetting", "state", state, "node", sm.node.Name)
+		sm.l().Info("Unknown node auto repair state, resetting", "observedState", state)
 		if err := sm.setState(ctx, stateDetected); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -351,7 +375,8 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 		return sm.failState(ctx, stateCordoning, fmt.Errorf("cordoning exceeded maximum attempts"))
 	}
 	if err := sm.cordonNode(ctx); err != nil {
-		sm.logger.Error(err, "Cordoning node failed", "attempt", attempt, "node", sm.node.Name)
+		sm.l().Error(err, "Cordoning node failed", "attempt", attempt)
+        sm.emitWarningEvent(eventRepairCordoned, fmt.Sprintf("Cordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateCordoning, attempt)}, nil
 	}
 	sm.emitEvent(eventRepairCordoned, "Node cordoned; moving to Draining")
@@ -378,8 +403,8 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 		return sm.failState(ctx, stateDraining, fmt.Errorf("draining exceeded maximum attempts"))
 	}
 	if err := sm.drainNode(ctx); err != nil {
-		sm.logger.Error(err, "Draining node failed", "attempt", attempt, "node", sm.node.Name)
-		sm.emitEvent(eventRepairDraining, fmt.Sprintf("Draining failed (attempt %d): %v", attempt, err))
+		sm.l().Error(err, "Draining node failed", "attempt", attempt)
+		sm.emitWarningEvent(eventRepairDraining, fmt.Sprintf("Draining failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateDraining, attempt)}, nil
 	}
 	sm.emitEvent(eventRepairDraining, "Drain succeeded; moving to Rebooting")
@@ -408,27 +433,24 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 		}
 		workRequestID, err := sm.triggerReboot(ctx)
 		if err != nil {
-			sm.logger.Error(err, "Reboot request failed", "attempt", attempt, "node", sm.node.Name)
-			sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot failed (attempt %d): %v", attempt, err))
+			sm.l().Error(err, "Reboot request failed", "attempt", attempt)
+			sm.emitWarningEvent(eventRepairRebooting, fmt.Sprintf("Reboot failed (attempt %d): %v", attempt, err))
 			return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, attempt)}, nil
 		}
 		sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot work request %s submitted", workRequestID))
 		if err := sm.setRebootIssued(ctx, true); err != nil {
 			return ctrl.Result{}, err
 		}
-		requeue := repairStateConfigs[stateRebooting].successRequeue
-		if requeue == 0 {
-			requeue = 30 * time.Second
-		}
-		return ctrl.Result{RequeueAfter: requeue}, nil
+		// After submitting reboot, poll the instance state periodically
+		return ctrl.Result{RequeueAfter: instanceRunningPollInterval}, nil
 	}
 	running, err := sm.instanceIsRunning(ctx)
 	if err != nil {
-		sm.logger.Error(err, "Failed to query instance state", "node", sm.node.Name)
-		return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, 1)}, nil
+		sm.l().Error(err, "Failed to query instance state")
+		return ctrl.Result{RequeueAfter: instanceRunningPollInterval}, nil
 	}
 	if !running {
-		return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, 1)}, nil
+		return ctrl.Result{RequeueAfter: instanceRunningPollInterval}, nil
 	}
 	if err := sm.setRebootIssued(ctx, false); err != nil {
 		return ctrl.Result{}, err
@@ -437,11 +459,7 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 		return ctrl.Result{}, err
 	}
 	sm.recordStateDuration(stateRebooting)
-	requeue := repairStateConfigs[stateRebooting].successRequeue
-	if requeue == 0 {
-		requeue = 30 * time.Second
-	}
-	return ctrl.Result{RequeueAfter: requeue}, nil
+	return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
 }
 
 func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.Result, error) {
@@ -460,7 +478,8 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning exceeded maximum attempts"))
 	}
 	if err := sm.uncordonNode(ctx); err != nil {
-		sm.logger.Error(err, "Uncordoning node failed", "attempt", attempt, "node", sm.node.Name)
+		sm.l().Error(err, "Uncordoning node failed", "attempt", attempt)
+        sm.emitWarningEvent(eventRepairUncordoned, fmt.Sprintf("Uncordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateUncordon, attempt)}, nil
 	}
 	sm.emitEvent(eventRepairUncordoned, "Node uncordoned; marking repair succeeded")
@@ -468,6 +487,20 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 	if err := sm.setState(ctx, stateSucceeded); err != nil {
 		return ctrl.Result{}, err
 	}
+	// Remove repair taint so the node becomes schedulable again
+	if err := sm.removeRepairTaint(ctx); err != nil {
+		sm.l().Error(err, "Failed to remove repair taint after success")
+	}
+	// Emit success event to mark completion
+	sm.emitEvent(eventRepairSucceeded, "Node auto repair succeeded; repair taint removed")
+	// Release global repair lease immediately upon success
+	if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
+		sm.l().Error(err, "Failed to stop lease heartbeat after Succeeded")
+	}
+    // Finalize: record last repair end/result and prune transient annotations
+    if err := sm.finalizeRepair(ctx, "succeeded"); err != nil {
+        sm.l().Error(err, "Failed to finalize repair annotations after success")
+    }
 	return ctrl.Result{}, nil
 }
 
@@ -584,12 +617,22 @@ func (sm *nodeRepairStateMachine) currentAttempts() int {
 }
 
 func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairState, reason error) (ctrl.Result, error) {
-	sm.logger.Error(reason, "Repair state failed", "state", state, "node", sm.node.Name)
-	sm.emitEvent(eventRepairFailed, fmt.Sprintf("State %s failed: %v", state, reason))
+	sm.l().Error(reason, "Repair state failed", "state", state)
+	sm.emitWarningEvent(eventRepairFailed, fmt.Sprintf("State %s failed: %v", state, reason))
 	sm.recordMetric(metricRepairFailures, 1)
+    // Record duration spent in the failing state before transitioning to Failed
+    sm.recordStateDuration(sm.currentState())
 	if err := sm.setState(ctx, stateFailed); err != nil {
 		return ctrl.Result{}, err
 	}
+	// Release global repair lease immediately upon failure
+	if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
+		sm.l().Error(err, "Failed to stop lease heartbeat after Failed")
+	}
+    // Finalize: record last repair end/result and prune transient annotations
+    if err := sm.finalizeRepair(ctx, "failed"); err != nil {
+        sm.l().Error(err, "Failed to finalize repair annotations after failure")
+    }
 	return ctrl.Result{}, nil
 }
 
@@ -612,16 +655,49 @@ func (sm *nodeRepairStateMachine) uncordonNode(ctx context.Context) error {
 func (sm *nodeRepairStateMachine) drainNode(ctx context.Context) error {
 	childCtx, cancel := context.WithTimeout(ctx, drainAttemptTimeout)
 	defer cancel()
+	// Determine whether to force drain (skip PDB by disabling evictions) based on elapsed time
+	// in current Draining state, or if globally configured to always force.
+	forcedMode := drainForceAlways
+	if !forcedMode {
+		// Use the state's last transition time (entering Draining) for a stable start timestamp
+		// regardless of reconcile retries.
+		start := sm.lastTransitionTime()
+		if !start.IsZero() && drainForceAfter > 0 && time.Since(start) >= drainForceAfter {
+			forcedMode = true
+		}
+	}
 	helper := &drain.Helper{
-		Ctx:                 childCtx,
-		Client:              sm.reconciler.KubeClient,
-		Force:               drainForceAlways,
+		Ctx:    childCtx,
+		Client: sm.reconciler.KubeClient,
+		// If forcedMode, we both set Force and DisableEviction to bypass PDB protection
+		// and proceed with deletions when evictions cannot make progress.
+		Force:               forcedMode || drainForceAlways,
 		GracePeriodSeconds:  -1,
 		IgnoreAllDaemonSets: drainIgnoreDaemonSets,
 		DeleteEmptyDirData:  drainDeleteEmptyDirData,
+		DisableEviction:     forcedMode,
 		Timeout:             drainAttemptTimeout,
 		Out:                 nopWriter{},
 		ErrOut:              nopWriter{},
+	}
+	if forcedMode {
+		// Mark we have switched to forced draining in the tracker metadata and emit an event once.
+		var emitted bool
+		if sm.tracker != nil {
+			// Ensure the entry exists without clobbering its start when available.
+			sm.tracker.ensureStart(stateDraining, sm.lastTransitionTime())
+			if entry := sm.tracker.current(stateDraining); entry != nil {
+				if !entry.Forced {
+					entry.Forced = true
+					emitted = true
+					// Best-effort persist; ignore error here, actual drain proceeds regardless.
+					_ = sm.persistTracker(ctx)
+				}
+			}
+		}
+		if emitted {
+			sm.emitEvent(eventRepairDraining, "PDB wait exceeded; forcing evictions and deletions")
+		}
 	}
 	return drain.RunNodeDrain(helper, sm.node.Name)
 }
@@ -631,8 +707,9 @@ func (sm *nodeRepairStateMachine) triggerReboot(ctx context.Context) (string, er
 	if providerID == "" {
 		return "", fmt.Errorf("node providerID is empty")
 	}
+	instanceID := ociclientpkg.MapProviderIDToInstanceID(providerID)
 	req := core.InstanceActionRequest{
-		InstanceId:      &providerID,
+		InstanceId:      &instanceID,
 		Action:          common.String("RESET"),
 		RequestMetadata: common.RequestMetadata{},
 	}
@@ -668,7 +745,8 @@ func (sm *nodeRepairStateMachine) instanceIsRunning(ctx context.Context) (bool, 
 	if providerID == "" {
 		return false, fmt.Errorf("node providerID is empty")
 	}
-	instance, err := sm.reconciler.OCIClient.Compute().GetInstance(ctx, providerID)
+	id := ociclientpkg.MapProviderIDToInstanceID(providerID)
+	instance, err := sm.reconciler.OCIClient.Compute().GetInstance(ctx, id)
 	if err != nil {
 		return false, err
 	}
@@ -705,6 +783,13 @@ func (sm *nodeRepairStateMachine) emitEvent(reason, message string) {
 		return
 	}
 	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, sm.decorateMessage(message))
+}
+
+func (sm *nodeRepairStateMachine) emitWarningEvent(reason, message string) {
+	if sm.reconciler.Recorder == nil {
+		return
+	}
+	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeWarning, reason, sm.decorateMessage(message))
 }
 
 func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
@@ -759,6 +844,23 @@ func (nopWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// removeRepairTaint removes the NoSchedule taint used to mark a node under repair
+func (sm *nodeRepairStateMachine) removeRepairTaint(ctx context.Context) error {
+	return sm.patchNode(ctx, func(node *v1.Node) {
+		if len(node.Spec.Taints) == 0 {
+			return
+		}
+		kept := make([]v1.Taint, 0, len(node.Spec.Taints))
+		for _, t := range node.Spec.Taints {
+			if t.Key == REPAIR_TAINT_KEY && t.Effect == REPAIR_TAINT_EFFECT {
+				continue
+			}
+			kept = append(kept, t)
+		}
+		node.Spec.Taints = kept
+	})
+}
+
 func nodeAnnotationsToPrune(node *v1.Node) []string {
 	if node.Annotations == nil {
 		return nil
@@ -770,6 +872,22 @@ func nodeAnnotationsToPrune(node *v1.Node) []string {
 		}
 	}
 	return keys
+}
+
+// finalizeRepair records the terminal timestamp/result and prunes transient repair annotations.
+func (sm *nodeRepairStateMachine) finalizeRepair(ctx context.Context, result string) error {
+    now := time.Now().UTC().Format(time.RFC3339)
+    return sm.updateAnnotations(ctx, func(ann map[string]string) {
+        // Record terminal metadata
+        ann[narLastRepairEndAnnotation] = now
+        if result != "" {
+            ann[narLastRepairResultAnnotation] = result
+        }
+        // Prune transient annotations
+        for _, k := range repairAnnotationKeys {
+            delete(ann, k)
+        }
+    })
 }
 
 func getEnvInt(key string, def int) int {

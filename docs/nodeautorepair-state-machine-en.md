@@ -50,7 +50,7 @@ only one controller is activelly doing node auto repair
 ## Implementation Recommendations
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
 - Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
-- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; 
+- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for instanceRunningPollInterval, default to 10s until instance is running again, if after 10 mins instance is not running, we move to failed step
 - Annotation updates should use optimistic concurrency and retry on resourceVersion conflicts.
 
 ## Observability and Alerts
@@ -78,6 +78,7 @@ only one controller is activelly doing node auto repair
 2. Implement `Cordoning` and `Draining` with unit tests.
 3. Implement `Rebooting` using `pkg/oci`, then `Uncordoning`.
 4. Add metrics, events, tests and documentation.
+5. After each repair is succeeded or failed, we should cleanup annotations. We should only leave an annotation which record the end time of the last reapir(no matter if it's a successful one). We should not repair a node again if it's less than 60mins since the last repair
 
 ---
 
