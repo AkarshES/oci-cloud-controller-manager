@@ -9,7 +9,7 @@ infra   = meta_variables.get('infra')
 
 with open("templates/meta-commons.py") as commons:
     exec(commons.read())
-config_id="31a7ca97-4a5d-4426-846b-2f2f710fadc6"
+config_id="29828ea3-63f8-4a2a-a86e-0f5d68293112"
 
 app_release_template = {
     "alias": "image-push",
@@ -62,42 +62,42 @@ if app:
             {
                 "resolver_type": "static",
                 "artifacts": {
-                    "oke-public-cloud-provider-oci__v1_DOT_30-c435522d651-125",
-                    "oke-public-cloud-provider-oci__v1_DOT_31-a6420995e6f-99",
-                    "oke-public-cloud-provider-oci__v1_DOT_32-b09589d7c0e-66",
-                    "oke-public-cloud-provider-oci__v1_DOT_33-34743d2a1f2-36",
-                    "oke-public-cloud-provider-oci__v1_DOT_34-8f0fbf7e71e-9",
-                    "oke-public-cloud-provider-oci__v1_DOT_34-8f0fbf7e71e-9-csi",
+                    "oke-public-cloud-provider-oci__v1_DOT_32-2900f005dfc-89",
+                    "oke-public-cloud-provider-oci__v1_DOT_32-cdb98690a4c-88-csi",
+                    "oke-public-cloud-provider-oci__v1_DOT_33-cb45871c215-59",
+                    "oke-public-cloud-provider-oci__v1_DOT_33-fd3150dc2e1-58-csi",
+                    "oke-public-cloud-provider-oci__v1_DOT_34-4218f75593b-34",
+                    "oke-public-cloud-provider-oci__v1_DOT_34-8913e88fdef-33-csi",
                     "release-validator-ccm-csi"
                 },
                 "resolver_params": {
                     "static_versions": {
-                        "oke-public-cloud-provider-oci__v1_DOT_30-c435522d651-125": {
-                            "version": "v1.30-c435522d651-125",
+                        "oke-public-cloud-provider-oci__v1_DOT_32-2900f005dfc-89": {
+                            "version": "v1.32-2900f005dfc-89",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_31-a6420995e6f-99": {
-                            "version": "v1.31-a6420995e6f-99",
+                        "oke-public-cloud-provider-oci__v1_DOT_32-cdb98690a4c-88-csi": {
+                            "version": "v1.32-cdb98690a4c-88-csi",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_32-b09589d7c0e-66": {
-                            "version": "v1.32-b09589d7c0e-66",
+                        "oke-public-cloud-provider-oci__v1_DOT_33-cb45871c215-59": {
+                            "version": "v1.33-cb45871c215-59",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_33-34743d2a1f2-36": {
-                            "version": "v1.33-34743d2a1f2-36",
+                        "oke-public-cloud-provider-oci__v1_DOT_33-fd3150dc2e1-58-csi": {
+                            "version": "v1.33-fd3150dc2e1-58-csi",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_34-8f0fbf7e71e-9": {
-                            "version": "v1.34-8f0fbf7e71e-9",
+                        "oke-public-cloud-provider-oci__v1_DOT_34-4218f75593b-34": {
+                            "version": "v1.34-4218f75593b-34",
                             "summary": "CPO image to be pushed for release"
                         },
-                        "oke-public-cloud-provider-oci__v1_DOT_34-8f0fbf7e71e-9-csi": {
-                            "version": "v1.34-8f0fbf7e71e-9-csi",
+                        "oke-public-cloud-provider-oci__v1_DOT_34-8913e88fdef-33-csi": {
+                            "version": "v1.34-8913e88fdef-33-csi",
                             "summary": "CPO image to be pushed for release"
                         },
                         "release-validator-ccm-csi": {
-                            "version": "70a75589c26_141",
+                            "version": "a4a221a256a_212",
                             "summary": "Release validator POP image to be pushed for release"
                         },
                     }

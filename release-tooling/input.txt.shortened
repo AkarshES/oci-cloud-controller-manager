@@ -1,0 +1,130 @@
+|| Bundle || Group || Regions || image-push ||| mapping-update 
+  | Day 1 Phase 1 | OC16 - Chaos lab | us-sanjose-2
+us-westjordan-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/9roTZs] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/sbqP0w] |
+  | Day 1 Phase 1 | OC17 - DRCC Test Lab | us-dcc-phoenix-1
+us-dcc-phoenix-2
+us-dcc-phoenix-4 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/MqT04x] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/HuJMih] |
+  | Day 1 Phase 1 | OC5 - FedRamp Test Realm {color:green} (Slack #sov-sca-ops) {color} | us-tacoma-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/SAP2K2] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/gbhOMt] |
+  | Day 1 Phase 2 | OC1 - Set 1 | mx-queretaro-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/6ec-ih] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/i65hdy] |
+  | Day 1 Phase 2 | OC1 - Set 2 | eu-paris-1
+me-abudhabi-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/C27hf9] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/BSJkoO] |
+  | Day 1 Phase 2 | OC1 - Set 3 | eu-madrid-1
+il-jerusalem-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/xMmoJ6] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Tn3btE] |
+  | Day 2 Phase 1 | OC1 - Set 4 {color:red}(DR with OC1 Set 10) {color} | ap-hyderabad-1
+ap-sydney-1
+ap-tokyo-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/eZBve8] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/8n_cuz] |
+  | Day 2 Phase 1 | OC1 - Set 5 {color:red}(DR with OC1 Set 11) {color} | ap-seoul-1
+ap-singapore-1
+ca-montreal-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/JJljUJ] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Ayqij7] |
+  | Day 2 Phase 1 | OC1 - Set 6 {color:red}(DR with OC1 Set 12) {color} | sa-bogota-1
+sa-santiago-1
+sa-vinhedo-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/jB7wcH] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/WJ3nKX] |
+  | Day 2 Phase 2 | OC1 - Set 7 {color:red}(DR with OC1 Set 13) {color} | eu-amsterdam-1
+eu-marseille-1
+eu-zurich-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/_K9uHL] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/ayr0Cc] |
+  | Day 2 Phase 2 | OC1 - Set 8 | af-johannesburg-1
+eu-stockholm-1
+uk-cardiff-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/A0vxge] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/RAGrWu] |
+  | Day 2 Phase 2 | OC1 - Set 9 {color:red}(DR with OC1 Set 14) {color} | me-dubai-1
+me-jeddah-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/lQCY6t] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/s4-in2] |
+  | Day 3 Phase 1 | OC1 - Set 10 {color:red} (DR with OC1 Set 4) {color} | ap-melbourne-1
+ap-mumbai-1
+ap-osaka-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/WSaUBq] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/l7PVtc] |
+  | Day 3 Phase 1 | OC1 - Set 11 {color:red} (DR with OC1 Set 5) {color} | ap-chuncheon-1
+ap-singapore-2
+ca-toronto-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/b4xw5b] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Pf_Z3U] |
+  | Day 3 Phase 1 | OC1 - Set 12 {color:red} (DR with OC1 Set 6) {color} | sa-saopaulo-1
+sa-valparaiso-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/iKFuYD] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Y5f9yc] |
+  | Day 3 Phase 2 | OC1 - Set 13 {color:red}(DR with OC1 Set 7) {color} | eu-milan-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/kZWbao] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/mTJ-SI] |
+  | Day 3 Phase 2 | OC1 - Set 14 {color:red}(DR with OC1 Set 9) {color} | me-riyadh-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/_Y7FNE] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/nEZBgZ] |
+  | Day 3 Phase 2 | OC1 - Set 15 | mx-monterrey-1
+us-dallas-1
+us-desmoines-1
+us-quincy-1
+us-shawnee-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/S7ECce] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/s3Txyc] |
+  | Day 3 Phase 2 | OC1 - Set 16 | ap-batam-1
+ap-delhi-1
+ap-kulai-1
+eu-dublin-3
+us-boardman-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/VGBGz_] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/HKQeD5] |
+  | Day 3 Phase 2 | OC1 - Set 17 | af-casablanca-1
+ap-chennai-1
+ap-kulai-2
+eu-madrid-3
+eu-turin-1
+sa-riodejaneiro-2
+us-columbus-1
+us-lenexa-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/4LKr9J] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/qXU59J] |
+  | Day 3 Phase 2 | Region1 | us-seattle-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/t2ToV2] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/v2Fesg] |
+  | Day 3 Phase 3 | OC1 - AGA | us-saltlake-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/5fY7jS] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/xhDX03] |
+  | Day 3 Phase 3 | OC1 - LHR | uk-london-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/TyI7wN] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/B82vkE] |
+  | Day 3 Phase 3 | OC1 - ORD | us-chicago-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/ZuLJN5] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/tCSk-R] |
+  | Day 3 Phase 3 | OC1 - FRA | eu-frankfurt-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/Hq_s6P] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/jLTRcy] |
+  | Day 3 Phase 3 | OC1 - IAD | us-ashburn-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/LK_Bws] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/UOmms7] |
+  | Day 3 Phase 3 | OC1 - PHX | us-phoenix-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/EyYC0i] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/nN0gYG] |
+  | Day 3 Phase 3 | OC1 - SJC | us-sanjose-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/WKyfT8] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/y_Qfln] |
+  | Day 3 Phase 3 | OC1 - ABL | us-abilene-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/HdYTz6] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/_aui0K] |
+  | Day 3 Phase 3 | OC8 - NJA {color:green} (Slack #nri-ops-support) {color} | ap-chiyoda-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/R8yL26] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/boZl7z] |
+  | Day 4 Phase 1 | OC2 {color:green} (Slack #usgovops) {color} | us-langley-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/7pD0pp] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/MRBSMb] |
+  | Day 4 Phase 1 | OC3 {color:green} (Slack #usgovops) {color} | us-gov-phoenix-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/YOaWrm] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/2sRPdf] |
+  | Day 4 Phase 1 | OC23 {color:green} (Slack #usgovops) {color} | us-somerset-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/1BUAgV] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/rUmUsM] |
+  | Day 4 Phase 1 | OC4 {color:green} (Slack #oci_ukgov_ops_support) {color} | uk-gov-cardiff-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/YYTA4x] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/IVHili] |
+  | Day 4 Phase 1 | OC14 | eu-dcc-dublin-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/aljlNw] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/G7lfAe] |
+  | Day 4 Phase 2 | OC2 {color:green} (Slack #usgovops) {color} | us-luke-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/JAWcE7] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Ti-nC2] |
+  | Day 4 Phase 2 | OC3 {color:green} (Slack #usgovops) {color} | us-gov-chicago-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/j77VXJ] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/vImnI7] |
+  | Day 4 Phase 2 | OC23 {color:green} (Slack #usgovops) {color} | us-thames-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/828tIY] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/qZw1SL] |
+  | Day 4 Phase 2 | OC4 {color:green} (Slack #oci_ukgov_ops_support) {color} | uk-gov-london-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/eX5y59] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/df-rXz] |
+  | Day 4 Phase 2 | OC10 | ap-dcc-canberra-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/iqBRNJ] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/6QD2gs] |
+  | Day 4 Phase 2 | OC14 | eu-dcc-milan-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/wkw7XR] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Ys_VA4] |
+  | Day 4 Phase 3 | OC3 {color:green} (Slack #usgovops) {color} | us-gov-ashburn-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/UAPHqU] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Iag0zn] |
+  | Day 4 Phase 3 | OC6 {color:green} (Slack #onsr_compute_oke_support) {color} | us-gov-fortworth-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/XL2MsG] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/0EAsnJ] |
+  | Day 4 Phase 3 | OC8 - UKB {color:green} (Slack #nri-ops-support) {color} | ap-ibaraki-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/CNMYdf] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/yKBPbs] |
+  | Day 4 Phase 3 | OC9 | me-dcc-muscat-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/vJkgp3] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/0Pyuf1] |
+  | Day 4 Phase 3 | OC14 | eu-dcc-rating-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/LCMWJu] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/e4XzkO] |
+  | Day 4 Phase 4 | OC6 {color:green} (Slack #onsr_compute_oke_support) {color} | us-gov-sterling-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/eCtmG_] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Uao00C] |
+  | Day 4 Phase 4 | OC11 {color:green} (Slack #onsr_compute_oke_support) {color} | us-gov-sterling-3 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/7qkHTc] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/XCd4lF] |
+  | Day 4 Phase 4 | OC9 | me-ibri-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/RYxW_V] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/4DIk3_] |
+  | Day 4 Phase 4 | OC14 | eu-dcc-dublin-2
+eu-dcc-milan-2
+eu-dcc-rating-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/d6ZB3o] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/7nNH4G] |
+  | Day 4 Phase 4 | OC15 | ap-dcc-gazipur-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/_t0p2j] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/FYgQPa] |
+  | Day 5 Phase 1 | OC11 {color:green} (Slack #onsr_compute_oke_support) {color} | us-gov-phoenix-3 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/RAgh2L] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/4EBrca] |
+  | Day 5 Phase 1 | OC19 {color:green} (Slack #oci_euosc_operations) {color} | eu-madrid-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/EHo_mw] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/NsEKzD] |
+  | Day 5 Phase 1 | OC20 | eu-jovanovac-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/gAxIwM] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/VxSSZH] |
+  | Day 5 Phase 1 | OC21 | me-dcc-doha-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/wr7tSw] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/0WcgeP] |
+  | Day 5 Phase 1 | OC22 {color:green} (Slack #oci_euosc_operations) {color} | eu-dcc-rome-1
+eu-milan-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/upX8yr] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/vYVJQr] |
+  | Day 5 Phase 1 | OC24 | eu-dcc-zurich-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/GzlDL3] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/avS2kd] |
+  | Day 5 Phase 1 | OC25 | ap-dcc-tokyo-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/M2yFtt] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/dblxBo] |
+  | Day 5 Phase 1 | OC26 | me-abudhabi-3 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/bqMZ3p] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/FE24QB] |
+  | Day 5 Phase 1 | OC27 | us-dcc-swjordan-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/5GKfVL] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/NJ-HGA] |
+  | Day 5 Phase 1 | OC29 | me-abudhabi-4 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/MezHk1] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/uVLeVA] |
+  | Day 5 Phase 1 | OC31 | ap-hobsonville-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/hmBycz] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Da-Pba] |
+  | Day 5 Phase 1 | OC35 | ap-suwon-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/0k5V9S] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/dM70yj] |
+  | Day 5 Phase 1 | OC36 | me-riyadh-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/qFKw6P] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/N8kNXi] |
+  | Day 5 Phase 2 | OC11 {color:green} (Slack #onsr_compute_oke_support) {color} | us-gov-fortworth-3 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/8_9soN] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/45iEgI] |
+  | Day 5 Phase 2 | OC19 {color:green} (Slack #oci_euosc_operations) {color} | eu-frankfurt-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/_7C1ID] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/I7JsMw] |
+  | Day 5 Phase 2 | OC24 | eu-crissier-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/TG66aB] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/NfIPqo] |
+  | Day 5 Phase 2 | OC25 | ap-dcc-osaka-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/O5rjZD] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/-Qv-qX] |
+  | Day 5 Phase 2 | OC26 | me-alain-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/0RNRs7] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Ik7AxW] |
+  | Day 5 Phase 2 | OC28 | us-dcc-swjordan-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/Nch13E] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/djMC1t] |
+  | Day 5 Phase 2 | OC29 | me-abudhabi-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/PSrUzV] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/FVkk-X] |
+  | Day 5 Phase 2 | OC31 | ap-silverdale-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/0Ikfir] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/t-4PGX] |
+  | Day 5 Phase 2 | OC35 | ap-chuncheon-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/dqJAsS] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/klX20O] |
+  | Day 5 Phase 2 | OC36 | me-alkhobar-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/fKdoMc] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/kX54g4] |
+  | Day 5 Phase 2 | OC43 | ap-samutprakan-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/w39Hz9] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/f6_P3l] |
+  | Day 5 Phase 3 | OC35 | ap-seoul-2 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/IoDBLJ] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/-roJeS] |
+  | Day 5 Phase 3 | OC39 - Butterfly Region | us-tukwila-3 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/9jISWG] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/lHoM0f] |
+  | Day 5 Phase 3 | OC40 {color:green} (Slack #oci_japan_operations) {color} | ap-osaka-2
+ap-tatebayashi-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/MenQ1b] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/XFWilt] |
+  | Day 5 Phase 3 | OC41 | me-dubai-2
+me-dubai-3 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/Gb-piF] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/QU2518] |
+  | Day 5 Phase 3 | OC42 | us-ashburn-2
+us-newark-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/GRlgZv] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/KIyqMx] |
+  | Day 5 Phase 3 | OC43 | ap-pathumthani-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/vOwHZN] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/F8XzSJ] |
+  | Day 5 Phase 3 | OC50 | ap-mitaka-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/0uUKDZ] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/acXfnF] |
+  | Day 5 Phase 3 | OC51 | eu-budapest-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/MGcRHx] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/AgM2hL] |
+  | Day 5 Phase 3 | OC52 | sa-riodejaneiro-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/eMo71c] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/Ew2MDx] |
+  | Day 5 Phase 3 | OC55 | ap-westtokyo-1 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/EOcawV] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/k_NNG6] |
+  | Day 5 Phase 3 | OC57 | me-abudhabi-5
+me-dubai-4 | [DeltaChicken|https://devops.oci.oraclecorp.com/t/itT4x1] |[DeltaCarefree|https://devops.oci.oraclecorp.com/t/y2W699] |

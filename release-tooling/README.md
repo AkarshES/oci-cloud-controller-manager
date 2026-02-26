@@ -76,6 +76,12 @@ make update-gitmodule
 python3.9 create_cm.py
 ```
 
+
+# To shorten release links in Implementation section
+Copy contents of implementation section in input.txt
+/usr/local/bin/bash shorten-cm-devops-urls.sh input.txt --output input.txt.shortened
+
+
 ## Steps being run by the script (Only for reference)
 
 ```

@@ -1,155 +1,56 @@
-{% set property = 'ccm-image-version-mapping' %}
-{% set k8s_versions = '1.30, 1.31, 1.32, 1.33, 1.34' %}
-{% set l1_peer_reviewer = '[~lalit.s.singh@oracle.com]' %}
-{% set l1_manager_reviewer = '[~rohit.chaware@oracle.com]' %}
-{% set l2_peer_reviewer = '[~akarsh.ellore.sreenath@oracle.com]' %}
+{% set property = 'ccm-image-version-mapping, csi-image-version-mapping' %}
+{% set k8s_versions = '1.32,1.33,1.34,1.35' %}
+{% set l1_peer_reviewer = '[~goutham.m.l@oracle.com]' %}
+{% set l1_manager_reviewer = '[~mrunal.pagnis@oracle.com]' %}
+{% set l2_peer_reviewer = '[~jayasheelan.kumar@oracle.com]' %}
 {% set l2_manager_reviewer = '[~sachin.goel@oracle.com]' %}
-{% set changelog = '[CPO Release 1.15.1 changelog|]' %}
-{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/1889/overview]' %}
-{% set e2e_ticket = '[E2E results|https://jira.oci.oraclecorp.com/browse/OKE-40198]' %}
-{% set app_release_name = 'GammaRaspberry' %}
-{% set app_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/31a7ca97-4a5d-4426-846b-2f2f710fadc6]' %}
-{% set infra_release_name = 'GammaSurprised' %}
-{% set infra_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/31a7ca97-4a5d-4426-846b-2f2f710fadc6]' %}
-{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/Fidvhi' %}
-{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/JfH3qr' %}
-{% set infra_rollback_release_name = 'GammaSmart' %}
-{% set infra_rollback_test_link = 'https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/releases/7840635a-0185-4605-98ba-906e4eb849f6' %}
-{% set infra_rollback_config = '8fe23f71-2736-408c-800b-56f7c8314ed1' %}
-{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/8fe23f71-2736-408c-800b-56f7c8314ed1' %}
-{% set infra_rollback_commit = '58ddded205abd372e0f4517c4a28a2ac0580dc19' %}
-{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/58ddded205abd372e0f4517c4a28a2ac0580dc19' %}
+{% set changelog = '[CPO Release v1.19.0 changelog|]' %}
+{% set pr = '[PR Link|https://bitbucket.oci.oraclecorp.com/projects/OKE/repos/oci-cloud-controller-manager/pull-requests/2020/overview]' %}
+{% set e2e_ticket = '[E2E results|https://jira.oci.oraclecorp.com/browse/OKE-41877]' %}
+{% set app_release_name = 'DeltaChicken' %}
+{% set app_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/95c12661-c111-449b-b3e5-1ed07f2f0629]' %}
+{% set infra_release_name = 'DeltaCarefree' %}
+{% set infra_flock_config = '[https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/95c12661-c111-449b-b3e5-1ed07f2f0629]' %}
+{% set app_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/1bxvE1' %}
+{% set infra_rollforward_test_link = 'https://devops.oci.oraclecorp.com/t/tEj8id' %}
+{% set infra_rollback_release_name = 'DeltaBulky' %}
+{% set infra_rollback_test_link = 'https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/releases/876c0460-4366-4408-9ea6-b7baa6f2d6dc' %}
+{% set infra_rollback_config = '047ed20f-785f-4256-8c7d-c22829d22d7c' %}
+{% set infra_rollback_config_link = 'https://devops.oci.oraclecorp.com/shepherd/projects/oke/flocks/oke-ccm-csi/configs/047ed20f-785f-4256-8c7d-c22829d22d7c' %}
+{% set infra_rollback_commit = '147dc2f99d09a9379d8edafc320a96944cdcfb1e' %}
+{% set infra_rollback_commit_link = 'https://bitbucket.oci.oraclecorp.com/projects/oke/repos/oci-cloud-controller-manager/commits/147dc2f99d09a9379d8edafc320a96944cdcfb1e' %}
 
 {% macro images_list() %}
-    oke-public-cloud-provider-oci:v1.30-c435522d651-125
-    oke-public-cloud-provider-oci:v1.31-a6420995e6f-99
-    oke-public-cloud-provider-oci:v1.32-b09589d7c0e-66
-    oke-public-cloud-provider-oci:v1.33-34743d2a1f2-36
-    oke-public-cloud-provider-oci:v1.34-8f0fbf7e71e-9
-    oke-public-cloud-provider-oci:v1.34-8f0fbf7e71e-9-csi
+    oke-public-cloud-provider-oci                     , v1.32-2900f005dfc-89
+    oke-public-cloud-provider-oci                     , v1.32-cdb98690a4c-88-csi
+    oke-public-cloud-provider-oci                     , v1.33-cb45871c215-59
+    oke-public-cloud-provider-oci                     , v1.33-fd3150dc2e1-58-csi
+    oke-public-cloud-provider-oci                     , v1.34-4218f75593b-34
+    oke-public-cloud-provider-oci                     , v1.34-8913e88fdef-33-csi
 {%- endmacro %}
 
 {% macro mapping_changes() %}
-    "v1.30" : "v1.30-c435522d651-125@sha256:3035c0f0f0c3d31fa6ca1e0db6e7bf9a1122160cca9848001381927c941e3fd4",
-    "v1.31" : "v1.31-a6420995e6f-99@sha256:7b0de551f2a0c634c7ef434ac18e229662c4441fe38c251f93651811dee194fd",
-    "v1.32" : "v1.32-b09589d7c0e-66@sha256:d373ffb19a60eeda987c4841d38c0cd26de63405495bdb5da658f6ff3ee8ad81",
-    "v1.33" : "v1.33-34743d2a1f2-36@sha256:9d1f3eb7e7c8c7876ba62c7d9ca0ba92bbfed97c13799efa8ef75beb3cdd442c",
-    "v1.34" : "v1.34-8f0fbf7e71e-9@sha256:83a9edce1f90b214327ca0003e5c0a5204e3805f64009f8c8981db5d174f37c4",
+    ccm-image-version-mapping
+        "v1.32": "v1.32-2900f005dfc-89@sha256:e51184fad8a9fbd76ea1822b4a39e9af1c2bda4f12b2a4f1d24f617c8afe8e4e",
+        "v1.33": "v1.33-cb45871c215-59@sha256:f862ceccae104679949b6729d7d664435ac115327627c39520b73d63eb3ebb7f",
+        "v1.34": "v1.34-4218f75593b-34@sha256:0cf1f22c21bcd5fda40024d3c4b8603af77f45612e6127192b241536939f95d7",
+        "v1.35": "v1.34-4218f75593b-34@sha256:0cf1f22c21bcd5fda40024d3c4b8603af77f45612e6127192b241536939f95d7"
+    csi-image-version-mapping 
+       "v1.32" : "v1.32-cdb98690a4c-88-csi@sha256:09e5e53cac2c153c47fac13016c8bff5453a59b4fd0febf78f149340df3d0a63",
+        "v1.33" : "v1.33-fd3150dc2e1-58-csi@sha256:12e563da0eba8c4c6b3464b56d664de9c2a045291ec65b491382cc165e3b5c7b",
+        "v1.34" : "v1.34-8913e88fdef-33-csi@sha256:1fbf5f93975972f8d11bbdf4337965fbe0c1bff5c177c2e2a732567ef32f75f9",
+        "v1.35" : "v1.34-8913e88fdef-33-csi@sha256:1fbf5f93975972f8d11bbdf4337965fbe0c1bff5c177c2e2a732567ef32f75f9"
 {%- endmacro %}
 
 {% macro rollback_mapping() %}
-    "v1.30" : "v1.30-b38c1eb59d9-122@sha256:8d9bdc648e85a02e74599c965bca488c4ed04193356ed666fda2be28b7f6f3c6",
-    "v1.31" : "v1.31-a6832b543c2-89@sha256:3a07aeefee957255d20ce57276e43250c77f0365515d713faaaaf35e00761f13",
-    "v1.32" : "v1.32-fd1b5537713-59@sha256:0e1b38c3956d7a8cfa36138828568e64a8633bfec1809a3ebeeba41a77cda48e",
-    "v1.33" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
-    "v1.34" : "v1.33-1fb97431d5a-29@sha256:204aed3318628cd094f148653c808f0138bb59318898791104719ca91c2564c8",
+    ccm-image-version-mapping
+        "v1.32" : "v1.32-8567820c2b2-7061@sha256:294c15051daea44308c17674f40434eb81dc9c7b6e0ff3af1505a2be39a5caf0",
+        "v1.33" : "v1.33-227c27250c9-7060@sha256:f4288aaa8d38737a4c91e83f3ad35f8e517158bf8e5a395a640026f3f581f2a8",
+        "v1.34" : "v1.34-219abcce797-7062@sha256:dbdfe17351eadbea3e9a8d9daf5cf55c6341217b2a16c9654cb2c0c9cc66a506",
+        "v1.35" : "v1.34-219abcce797-7062@sha256:dbdfe17351eadbea3e9a8d9daf5cf55c6341217b2a16c9654cb2c0c9cc66a506"
+    csi-image-version-mapping 
+        "v1.32" : "v1.32-2c5fcd2e853-46-csi@sha256:fb9e892af78589a74bf8a85fa47af4de66cb97a5fbe33846a5e4380f97c024ec",
+        "v1.33" : "v1.33-87690329d0a-20-csi@sha256:5c7e230d58e1b6faed400bbe3744a3608fca42f33c2c4b5e281abc7df5489a0f",
+        "v1.34" : "v1.34-8f0fbf7e71e-9-csi@sha256:2eca76b52bc3198f86b839c199f67476100bc614e401dec25ac0a2310f609c28",
+        "v1.35" : "v1.34-8f0fbf7e71e-9-csi@sha256:2eca76b52bc3198f86b839c199f67476100bc614e401dec25ac0a2310f609c28"
 {%- endmacro %}
-
-{% set change_locations = [
-"OC1-af-johannesburg-1",
-"OC1-ap-batam-1",
-"OC1-ap-chuncheon-1",
-"OC1-ap-hyderabad-1",
-"OC1-ap-kulai-1",
-"OC1-ap-melbourne-1",
-"OC1-ap-mumbai-1",
-"OC1-ap-osaka-1",
-"OC1-ap-seoul-1",
-"OC1-ap-singapore-1",
-"OC1-ap-singapore-2",
-"OC1-ap-sydney-1",
-"OC1-ap-tokyo-1",
-"OC1-ca-montreal-1",
-"OC1-ca-toronto-1",
-"OC1-eu-amsterdam-1",
-"OC1-eu-dublin-3",
-"OC1-eu-frankfurt-1",
-"OC1-eu-madrid-1",
-"OC1-eu-marseille-1",
-"OC1-eu-milan-1",
-"OC1-eu-paris-1",
-"OC1-eu-stockholm-1",
-"OC1-eu-zurich-1",
-"OC1-il-jerusalem-1",
-"OC1-me-abudhabi-1",
-"OC1-me-dubai-1",
-"OC1-me-jeddah-1",
-"OC1-me-riyadh-1",
-"OC1-mx-monterrey-1",
-"OC1-mx-queretaro-1",
-"OC1-sa-bogota-1",
-"OC1-sa-santiago-1",
-"OC1-sa-saopaulo-1",
-"OC1-sa-valparaiso-1",
-"OC1-sa-vinhedo-1",
-"OC1-uk-cardiff-1",
-"OC1-uk-london-1",
-"OC1-us-abilene-1",
-"OC1-us-ashburn-1",
-"OC1-us-boardman-1",
-"OC1-us-chicago-1",
-"OC1-us-dallas-1",
-"OC1-us-desmoines-1",
-"OC1-us-phoenix-1",
-"OC1-us-quincy-1",
-"OC1-us-saltlake-2",
-"OC1-us-sanjose-1",
-"OC1-us-shawnee-1",
-"OC10-ap-dcc-canberra-1",
-"OC11-us-gov-fortworth-3",
-"OC11-us-gov-phoenix-3",
-"OC11-us-gov-sterling-3",
-"OC14-eu-dcc-dublin-1",
-"OC14-eu-dcc-dublin-2",
-"OC14-eu-dcc-milan-1",
-"OC14-eu-dcc-milan-2",
-"OC14-eu-dcc-rating-1",
-"OC14-eu-dcc-rating-2",
-"OC15-ap-dcc-gazipur-1",
-"OC16-us-westjordan-1",
-"OC17-us-dcc-phoenix-1",
-"OC17-us-dcc-phoenix-2",
-"OC17-us-dcc-phoenix-4",
-"OC19-eu-frankfurt-2",
-"OC19-eu-madrid-2",
-"OC2-us-langley-1",
-"OC2-us-luke-1",
-"OC20-eu-jovanovac-1",
-"OC21-me-dcc-doha-1",
-"OC22-eu-dcc-rome-1",
-"OC23-us-somerset-1",
-"OC23-us-thames-1",
-"OC24-eu-crissier-1",
-"OC24-eu-dcc-zurich-1",
-"OC25-ap-dcc-osaka-1",
-"OC25-ap-dcc-tokyo-1",
-"OC26-me-abudhabi-3",
-"OC26-me-alain-1",
-"OC27-us-dcc-swjordan-1",
-"OC28-us-dcc-swjordan-2",
-"OC29-me-abudhabi-2",
-"OC29-me-abudhabi-4",
-"OC3-us-gov-ashburn-1",
-"OC3-us-gov-chicago-1",
-"OC3-us-gov-phoenix-1",
-"OC31-ap-hobsonville-1",
-"OC31-ap-silverdale-1",
-"OC35-ap-chuncheon-2",
-"OC35-ap-seoul-2",
-"OC35-ap-suwon-1",
-"OC39-us-tukwila-3",
-"OC4-uk-gov-cardiff-1",
-"OC4-uk-gov-london-1",
-"OC40-ap-osaka-2",
-"OC40-ap-tatebayashi-1",
-"OC41-me-dubai-2",
-"OC41-me-dubai-3",
-"OC5-us-tacoma-1",
-"OC51-eu-budapest-1",
-"OC6-us-gov-fortworth-1",
-"OC6-us-gov-sterling-2",
-"OC8-ap-chiyoda-1",
-"OC8-ap-ibaraki-1",
-"OC9-me-dcc-muscat-1",
-"REGION1-us-seattle-1"
-] %}

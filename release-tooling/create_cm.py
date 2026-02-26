@@ -141,6 +141,9 @@ for idx, row in enumerate(data_rows):
         release_index += 1
 
 updated_table = "\n".join([header] + data_rows)
+
+print(updated_table)
+
 updated_deployment_plan = deployment_plan_field.replace(table_text, updated_table)
 
 # Update Jira issue with modified deployment plan
