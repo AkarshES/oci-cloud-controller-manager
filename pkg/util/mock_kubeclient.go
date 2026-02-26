@@ -69,7 +69,7 @@ import (
 	v117 "k8s.io/client-go/kubernetes/typed/storage/v1"
 	"k8s.io/client-go/kubernetes/typed/storage/v1alpha1"
 	v1beta117 "k8s.io/client-go/kubernetes/typed/storage/v1beta1"
-	alpha1 "k8s.io/client-go/kubernetes/typed/storagemigration/v1alpha1"
+	storagemigrationv1beta1 "k8s.io/client-go/kubernetes/typed/storagemigration/v1beta1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/rest/fake"
 )
@@ -97,10 +97,6 @@ func (m MockKubeClient) ResourceV1beta1() v1beta1.ResourceV1beta1Interface {
 }
 
 func (m MockKubeClient) CoordinationV1alpha1() v1alpha14.CoordinationV1alpha2Interface {
-	return nil
-}
-
-func (m MockKubeClient) StoragemigrationV1alpha1() alpha1.StoragemigrationV1alpha1Interface {
 	return nil
 }
 
@@ -395,9 +391,12 @@ func (m MockKubeClientWithFailingRestClient) StorageV1alpha1() v1alpha1.StorageV
 	panic("implement me")
 }
 
-func (m MockKubeClientWithFailingRestClient) StoragemigrationV1alpha1() alpha1.StoragemigrationV1alpha1Interface {
-	//TODO implement me
-	panic("implement me")
+func (m MockKubeClientWithFailingRestClient) StoragemigrationV1beta1() storagemigrationv1beta1.StoragemigrationV1beta1Interface {
+	return nil;
+}
+
+func (m MockKubeClient) StoragemigrationV1beta1() storagemigrationv1beta1.StoragemigrationV1beta1Interface {
+	return nil
 }
 
 func (m MockCoreClientWithFailingRestClient) ComponentStatuses() v12.ComponentStatusInterface {
