@@ -364,7 +364,7 @@ func TestMergeFilterLabels(t *testing.T) {
 			name:         "unhappy case: invalid value in triggerLabel - too long length",
 			triggerLabel: map[string]string{okeReservedLabelKey: "iamlongerthan63charskjhfsadhfjdshfaldshfajdsahfksjhfkjshjkfhasjdkfhsdjafhjdskjsdfhdsfhaskj"},
 			customLabels: map[string]string{"deployment": "green", "ad": "1"},
-			errMsg:       "values[0][oke.oraclecloud.com/node_operation]: Invalid value: \"iamlongerthan63charskjhfsadhfjdshfaldshfajdsahfksjhfkjshjkfhasjdkfhsdjafhjdskjsdfhdsfhaskj\": must be no more than 63 characters",
+			errMsg:       "values[0][oke.oraclecloud.com/node_operation]: Invalid value: \"iamlongerthan63charskjhfsadhfjdshfaldshfajdsahfksjhfkjshjkfhasjdkfhsdjafhjdskjsdfhdsfhaskj\": must be no more than 63 bytes",
 		},
 		{
 			name:         "unhappy case: invalid key in customLabels - key cannot start with slash",
@@ -382,7 +382,7 @@ func TestMergeFilterLabels(t *testing.T) {
 			name:         "unhappy case: invalid key in customLabels - key length is too long",
 			triggerLabel: map[string]string{okeReservedLabelKey: "true"},
 			customLabels: map[string]string{"iamlongerthan63charskjhfsadhfjdshfaldshfajdsahfksjhfkjshjkfhasjdkfhsdjafhjdskjsdfhdsfhaskja": "green", "ad": "1"},
-			errMsg:       "key: Invalid value: \"iamlongerthan63charskjhfsadhfjdshfaldshfajdsahfksjhfkjshjkfhasjdkfhsdjafhjdskjsdfhdsfhaskja\": name part must be no more than 63 characters",
+			errMsg:       "key: Invalid value: \"iamlongerthan63charskjhfsadhfjdshfaldshfajdsahfksjhfkjshjkfhasjdkfhsdjafhjdskjsdfhdsfhaskja\": name part must be no more than 63 bytes",
 		},
 	}
 
