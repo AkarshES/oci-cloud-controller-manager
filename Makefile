@@ -188,9 +188,9 @@ build-local: build-dirs
 			 -v $(PWD):$(DOCKER_REPO_ROOT) \
 			 -e COMPONENT="$(COMPONENT)" \
 			 -e GOPATH=/go/ \
-			odo-docker-signed-local.artifactory.oci.oraclecorp.com/odx-oke/oke/k8-manager-base:go1.20.8-1.0.19-165 /bin/bash -c \
+			odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke-golang-fips:go1.25.0-ol8-102 /bin/bash -c \
 			'for component in ${COMPONENT}; do \
-				echo building $$component && GOOS=$(GOOS) GOARCH=$(ARCH) CGO_ENABLED=1 go build -mod vendor -o dist/$$component -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" ./cmd/$$component ; \
+				echo building $$component && GOOS=$(GOOS) GOARCH=$(ARCH) CGO_ENABLED=1 go build -mod vendor -buildvcs=false -o dist/$$component -ldflags "-X main.version=$(VERSION) -X main.build=$(BUILD)" ./cmd/$$component ; \
 			 done'
 
 .PHONY: test-local
