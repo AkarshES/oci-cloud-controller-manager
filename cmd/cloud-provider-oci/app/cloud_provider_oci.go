@@ -266,6 +266,7 @@ func run(logger *zap.SugaredLogger, config *cloudControllerManagerConfig.Complet
 		logger.Info("CSI is disabled.")
 	}
 
+	logger.Info("Trying to start NPN, NOR, NAR.")
 	enableNPN := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NPN_CONTROLLER", false)
 	enableNOR := oci.GetIsFeatureEnabledFromEnv(logger, "ENABLE_NOR_CONTROLLER", false)
 	enableNodeControllers := shouldStartControllerManager(enableNOR, enableNPN, enableNPNController)

@@ -10,13 +10,14 @@ import (
 	"sync"
 	"time"
 
+	"crypto/sha256"
+	"encoding/hex"
+
 	"github.com/go-logr/logr"
 	providercfg "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci/config"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/metrics"
 	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	"go.uber.org/zap"
-	"crypto/sha256"
-	"encoding/hex"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientset "k8s.io/client-go/kubernetes"
@@ -34,7 +35,7 @@ import (
 
 const (
 	narName                    string         = "narName"
-	repairProblemDetectedLabel string         = "oci.oraclecloud.com/node-problem-detected"
+	repairProblemDetectedLabel string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
 	repairEnabledLabel         string         = "oci.oraclecloud.com/node-auto-repair-enabled"
 	repairFrequencyLabel       string         = "oci.oraclecloud.com/node-auto-repair-freq"
 	REPAIR_TAINT_KEY           string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
@@ -163,16 +164,16 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 // whether it is in a terminal state (Succeeded/Failed). It returns the current
 // state string and a boolean indicating terminality.
 func currentTerminalRepairState(node *v1.Node) (string, bool) {
-    if node == nil || node.Annotations == nil {
-        return "", false
-    }
-    state := node.Annotations[narStateAnnotationKey]
-    switch state {
-    case string(stateSucceeded), string(stateFailed):
-        return state, true
-    default:
-        return state, false
-    }
+	if node == nil || node.Annotations == nil {
+		return "", false
+	}
+	state := node.Annotations[narStateAnnotationKey]
+	switch state {
+	case string(stateSucceeded), string(stateFailed):
+		return state, true
+	default:
+		return state, false
+	}
 }
 
 // findUnhealthyConditions checks if a node has any conditions that warrant repair.
@@ -204,7 +205,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 						r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
 					}
 					logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining)
-					return ctrl.Result{RequeueAfter: remaining}, nil
+					return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 				}
 			}
 		}
@@ -283,25 +284,25 @@ func (r *NodeAutoRepairReconciler) ensureRepairMarkers(ctx context.Context, node
 		if updated.Labels == nil {
 			updated.Labels = make(map[string]string)
 		}
-        // Always persist full problem list in annotation (no 63-char limit)
-        if updated.Annotations == nil {
-            updated.Annotations = make(map[string]string)
-        }
-        const narProblemsAnnotationKey = "oci.oraclecloud.com/nodeautorepair-problems"
-        if updated.Annotations[narProblemsAnnotationKey] != labelValue {
-            updated.Annotations[narProblemsAnnotationKey] = labelValue
-        }
-        // For the label value, respect the 63-char limit and allowed charset: hash if too long
-        val := labelValue
-        if len(val) > 63 {
-            sum := sha256.Sum256([]byte(val))
-            short := hex.EncodeToString(sum[:])[:12]
-            // label values: start/end alnum, allowed [-_.]
-            val = "h" + short
-        }
-        if updated.Labels[repairProblemDetectedLabel] != val {
-            updated.Labels[repairProblemDetectedLabel] = val
-        }
+		// Always persist full problem list in annotation (no 63-char limit)
+		if updated.Annotations == nil {
+			updated.Annotations = make(map[string]string)
+		}
+		const narProblemsAnnotationKey = "oci.oraclecloud.com/nodeautorepair-problems"
+		if updated.Annotations[narProblemsAnnotationKey] != labelValue {
+			updated.Annotations[narProblemsAnnotationKey] = labelValue
+		}
+		// For the label value, respect the 63-char limit and allowed charset: hash if too long
+		val := labelValue
+		if len(val) > 63 {
+			sum := sha256.Sum256([]byte(val))
+			short := hex.EncodeToString(sum[:])[:12]
+			// label values: start/end alnum, allowed [-_.]
+			val = "h" + short
+		}
+		if updated.Labels[repairProblemDetectedLabel] != val {
+			updated.Labels[repairProblemDetectedLabel] = val
+		}
 		ta := CreateRepairTaint()
 		repairTaintExists := false
 		for _, taint := range updated.Spec.Taints {
@@ -352,57 +353,57 @@ func (r *NodeAutoRepairReconciler) isLeader(ctx context.Context, logger logr.Log
 
 // cleanupRepairArtifacts checks a healthy node for leftover repair items and removes them.
 func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, logger logr.Logger, node *v1.Node) (ctrl.Result, error) {
-    // If node was under NAR and recovered to healthy in the middle of a repair,
-    // finalize as succeeded to record terminal metadata (end/result) for cooldown/metrics.
-    var needsPatch bool
+	// If node was under NAR and recovered to healthy in the middle of a repair,
+	// finalize as succeeded to record terminal metadata (end/result) for cooldown/metrics.
+	var needsPatch bool
 
-    // Determine if the node bears NAR markers (taints/annotations) so that we can
-    // safely auto-uncordon only when NAR had previously acted on this node.
-    hasNARTaint := false
-    if len(node.Spec.Taints) > 0 {
-        for _, t := range node.Spec.Taints {
-            if t.Key == REPAIR_TAINT_KEY && t.Effect == REPAIR_TAINT_EFFECT {
-                hasNARTaint = true
-                break
-            }
-        }
-    }
-    hasWorkingNARAnnotation := false
-    if node.Annotations != nil {
-        // Only count working-state annotations (state/repair-id/origin/etc.) as NAR markers
-        for _, k := range repairAnnotationKeys {
-            if _, ok := node.Annotations[k]; ok {
-                hasWorkingNARAnnotation = true
-                break
-            }
-        }
-    }
+	// Determine if the node bears NAR markers (taints/annotations) so that we can
+	// safely auto-uncordon only when NAR had previously acted on this node.
+	hasNARTaint := false
+	if len(node.Spec.Taints) > 0 {
+		for _, t := range node.Spec.Taints {
+			if t.Key == REPAIR_TAINT_KEY && t.Effect == REPAIR_TAINT_EFFECT {
+				hasNARTaint = true
+				break
+			}
+		}
+	}
+	hasWorkingNARAnnotation := false
+	if node.Annotations != nil {
+		// Only count working-state annotations (state/repair-id/origin/etc.) as NAR markers
+		for _, k := range repairAnnotationKeys {
+			if _, ok := node.Annotations[k]; ok {
+				hasWorkingNARAnnotation = true
+				break
+			}
+		}
+	}
 
-    // If NAR is in a non-terminal working state, finalize as succeeded
-    if node.Annotations != nil {
-        curState := node.Annotations[narStateAnnotationKey]
-        switch curState {
-        case string(stateCordoning), string(stateDraining), string(stateRebooting), string(stateUncordon), string(stateDetected):
-            logger.Info("Node recovered while under NAR; finalizing as succeeded", "node", node.Name, "state", curState)
-            sm := newNodeRepairStateMachine(r, node, logger)
-            if err := sm.finalizeRepair(ctx, "succeeded"); err != nil {
-                logger.Error(err, "Failed to finalize repair during cleanup", "node", node.Name)
-            } else {
-                // Node pointer is updated by finalizeRepair's patch method.
-            }
-        }
-    }
+	// If NAR is in a non-terminal working state, finalize as succeeded
+	if node.Annotations != nil {
+		curState := node.Annotations[narStateAnnotationKey]
+		switch curState {
+		case string(stateCordoning), string(stateDraining), string(stateRebooting), string(stateUncordon), string(stateDetected):
+			logger.Info("Node recovered while under NAR; finalizing as succeeded", "node", node.Name, "state", curState)
+			sm := newNodeRepairStateMachine(r, node, logger)
+			if err := sm.finalizeRepair(ctx, "succeeded"); err != nil {
+				logger.Error(err, "Failed to finalize repair during cleanup", "node", node.Name)
+			} else {
+				// Node pointer is updated by finalizeRepair's patch method.
+			}
+		}
+	}
 
-    // Build patch base after potential finalize above
-    patch := client.MergeFrom(node.DeepCopy())
+	// Build patch base after potential finalize above
+	patch := client.MergeFrom(node.DeepCopy())
 
-    // If the node is healthy (we're in cleanup), and it still remains cordoned, auto-uncordon
-    // but only if there are NAR markers indicating the cordon likely originated from NAR.
-    if (hasNARTaint || hasWorkingNARAnnotation) && node.Spec.Unschedulable {
-        logger.Info("Node is healthy; auto-uncordon due to previous NAR markers", "node", node.Name)
-        node.Spec.Unschedulable = false
-        needsPatch = true
-    }
+	// If the node is healthy (we're in cleanup), and it still remains cordoned, auto-uncordon
+	// but only if there are NAR markers indicating the cordon likely originated from NAR.
+	if (hasNARTaint || hasWorkingNARAnnotation) && node.Spec.Unschedulable {
+		logger.Info("Node is healthy; auto-uncordon due to previous NAR markers", "node", node.Name)
+		node.Spec.Unschedulable = false
+		needsPatch = true
+	}
 
 	// 1. Clean up repair labels.
 	for key := range node.Labels {
@@ -438,13 +439,13 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 		needsPatch = true
 	}
 
-    // 4. Remove the problems annotation when node is healthy
-    if node.Annotations != nil {
-        if _, ok := node.Annotations["oci.oraclecloud.com/nodeautorepair-problems"]; ok {
-            delete(node.Annotations, "oci.oraclecloud.com/nodeautorepair-problems")
-            needsPatch = true
-        }
-    }
+	// 4. Remove the problems annotation when node is healthy
+	if node.Annotations != nil {
+		if _, ok := node.Annotations["oci.oraclecloud.com/nodeautorepair-problems"]; ok {
+			delete(node.Annotations, "oci.oraclecloud.com/nodeautorepair-problems")
+			needsPatch = true
+		}
+	}
 
 	if needsPatch {
 		logger.Info("Applying cleanup patch to node", "node", node.Name)
