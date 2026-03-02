@@ -66,6 +66,14 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaawxdcmyu3bxuemm3yfj7jojapxsm6dmyx6s344bn6zsqb2ebznoyq"
           },
 
+          // FRA, IAD
+          {
+            regions      = ["iad", "fra"]
+            env          = "prd"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaan3x2ydyc7ixtw2kevyivhxjgz5ndphxeauvnwlxcp2pw6kneozca"
+          },
+
           // LHR, FRA
           {
             regions      = ["lhr", "fra"]
@@ -144,6 +152,13 @@ locals {
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaougcn7snh444oh4r5n6wfsfirzng2zwlnn6endtbllaiebfcbmma"
           },
+          // IAD
+          {
+            regions      = ["iad"]
+            env          = "prd"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaagk4hvldx7tjxecwcuq73cz7tqdvlzy7bejmt4ltl5obgufhsqdpa"
+          },
 
           // PHX
           {
@@ -151,13 +166,6 @@ locals {
             env          = "prd"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaizwb7xbe7nt3wfb2jdrnsehrbip53s64qtwi2hx4y3ydkdmaeywq"
-          },
-          // PHX
-          {
-            regions      = ["phx"]
-            env          = "prd"
-            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
           },
 
 
@@ -183,13 +191,6 @@ locals {
             env          = "prd"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaufx55y3yism5pgygpqrdqcuzj3sghxqcgkhwgpt4ucaloqqi2laa"
-          },
-          // LHR
-          {
-            regions      = ["lhr"]
-            env          = "prd"
-            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaa4wptnxymnypvjjltnejidchjhz6uimlhru7rdi5qb6qlnmrtgu3a"
           },
 
           // BOM
@@ -232,7 +233,15 @@ locals {
             env          = "prd"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaamlwq2br5i2t2o5guzkxkzuedfxlw4ifrxfdnz6yb5nzrs5jaz7hq"
-          }
+          },
+
+          // SIN
+          {
+            regions      = ["sin"]
+            env          = "prd"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaan3x2ydyc7ixtw2kevyivhxjgz5ndphxeauvnwlxcp2pw6kneozca"
+          },
           // karpenter LA overrides ends
         ]
       },
