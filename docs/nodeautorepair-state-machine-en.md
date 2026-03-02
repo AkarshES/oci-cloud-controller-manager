@@ -45,12 +45,14 @@ Every state write should update `last-transition` and `attempts`.
   - Global: only repair one node at any time, don't repair multiple machines at the same time, consider apply a controller wide lock to guarantee even if multiple node are with unhealthy conditions, only one node will be picked for repair at a time
 - There could be multiple node auto repair controller in a cluster, please add leader election during controller initialization and make sure
 only one controller is activelly doing node auto repair
-- For global serialization add a cluster-scoped lock (e.g., `coordination.k8s.io/v1` Lease in `kube-system`) so only a single node repair runs at any time even if multiple controllers are reconciling.
+- For global serialization add a cluster-scoped lock (e.g., `coordination.k8s.io/v1` Lease in `kube-system`) so only a single node repair runs at any time even if multiple controllers are reconciling. Plase make sure lease ownership is doesn't drift 
 
 ## Implementation Recommendations
+- Node should be repaired serially, Each time the repair controller should only repair a node
+- The node repair controller will try to to fix a node for 3 times, after that, it will wait for 1 hour before kicking off the next repair 
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
 - Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
-- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for instanceRunningPollInterval, default to 20s until instance is running again, if after 10 mins instance is not running, we move to failed step
+- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for instanceRunningPollInterval, default to 20s until instance is running again, if after 20 mins instance is not running, we move to failed step
 - Annotation updates should use optimistic concurrency and retry on resourceVersion conflicts.
 - If the node is healthy again, it should be uncordoned
 - If the repair failed, we should remove the annotations so that the node can be picked up by next repair. We should only keep the annotaions for repair attempted

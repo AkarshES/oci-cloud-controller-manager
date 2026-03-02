@@ -43,7 +43,7 @@ const (
 	eventRepairRebooting          = "NodeRepairRebooting"
 	eventRepairUncordoned         = "NodeRepairUncordoned"
 	eventRepairThrottled          = "NodeRepairThrottled"
-    eventRepairLeaseLost          = "NodeRepairLeaseLost"
+	eventRepairLeaseLost          = "NodeRepairLeaseLost"
 	eventRepairSucceeded          = "NodeRepairSucceeded"
 	eventRepairFailed             = "NodeRepairFailed"
 )
@@ -92,7 +92,7 @@ var (
 			retryBase:      defaultRetryBase,
 		},
 	}
-    instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 10*time.Second)
+	instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 10*time.Second)
 )
 
 var (
@@ -227,7 +227,7 @@ type nodeRepairStateMachine struct {
 // leaseRenewer is a tiny interface to allow unit testing of lease ownership checks
 // by substituting a fake that implements Renew.
 type leaseRenewer interface {
-    Renew(ctx context.Context, nodeName string) error
+	Renew(ctx context.Context, nodeName string) error
 }
 
 // l returns a logger with consistent contextual fields for easier troubleshooting
@@ -302,10 +302,10 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 }
 
 func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Result, error) {
-    // Verify we still own the global repair lease before proceeding
-    if err := sm.ensureLeaseOwned(ctx); err != nil {
-        return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-    }
+	// Verify we still own the global repair lease before proceeding
+	if err := sm.ensureLeaseOwned(ctx); err != nil {
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
 	if err := sm.ensureRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -359,15 +359,15 @@ func (sm *nodeRepairStateMachine) validateRepairID(ctx context.Context) error {
 		return fmt.Errorf("node %s repair id changed (expected %s, found %s)", sm.node.Name, sm.repairID, annotatedID)
 	}
 	annotationOrigin := sm.node.Annotations[narRepairOriginAnnotationKey]
-    if annotationOrigin != "" && sm.reconciler.ControllerID != "" && annotationOrigin != sm.reconciler.ControllerID {
-        // Allow takeover if this controller is currently orchestrating the repair (global lease
-        // was acquired in handleUnhealthyNode before entering the state machine). Update origin.
-        if err := sm.updateAnnotations(ctx, func(ann map[string]string) {
-            ann[narRepairOriginAnnotationKey] = sm.reconciler.ControllerID
-        }); err != nil {
-            return fmt.Errorf("node %s repair appears owned by %s; takeover by %s failed: %w", sm.node.Name, annotationOrigin, sm.reconciler.ControllerID, err)
-        }
-    }
+	if annotationOrigin != "" && sm.reconciler.ControllerID != "" && annotationOrigin != sm.reconciler.ControllerID {
+		// Allow takeover if this controller is currently orchestrating the repair (global lease
+		// was acquired in handleUnhealthyNode before entering the state machine). Update origin.
+		if err := sm.updateAnnotations(ctx, func(ann map[string]string) {
+			ann[narRepairOriginAnnotationKey] = sm.reconciler.ControllerID
+		}); err != nil {
+			return fmt.Errorf("node %s repair appears owned by %s; takeover by %s failed: %w", sm.node.Name, annotationOrigin, sm.reconciler.ControllerID, err)
+		}
+	}
 	if sm.tracker == nil {
 		sm.tracker = newRepairStateTracker(sm.repairID)
 	} else if sm.tracker.RepairID == "" || sm.tracker.RepairID != sm.repairID {
@@ -380,9 +380,9 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
-    if err := sm.ensureLeaseOwned(ctx); err != nil {
-        return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-    }
+	if err := sm.ensureLeaseOwned(ctx); err != nil {
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
 	sm.beginState(ctx, stateCordoning)
 	if sm.stateTimedOut(stateCordoning) {
 		return sm.failState(ctx, stateCordoning, fmt.Errorf("cordoning timed out"))
@@ -411,9 +411,9 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
-    if err := sm.ensureLeaseOwned(ctx); err != nil {
-        return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-    }
+	if err := sm.ensureLeaseOwned(ctx); err != nil {
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
 	sm.beginState(ctx, stateDraining)
 	if sm.stateTimedOut(stateDraining) {
 		return sm.failState(ctx, stateDraining, fmt.Errorf("draining timed out"))
@@ -440,9 +440,9 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
-    if err := sm.ensureLeaseOwned(ctx); err != nil {
-        return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-    }
+	if err := sm.ensureLeaseOwned(ctx); err != nil {
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
 	sm.beginState(ctx, stateRebooting)
 	if sm.stateTimedOut(stateRebooting) {
 		return sm.failState(ctx, stateRebooting, fmt.Errorf("rebooting timed out"))
@@ -490,9 +490,9 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
-    if err := sm.ensureLeaseOwned(ctx); err != nil {
-        return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-    }
+	if err := sm.ensureLeaseOwned(ctx); err != nil {
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
 	sm.beginState(ctx, stateUncordon)
 	if sm.stateTimedOut(stateUncordon) {
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning timed out"))
@@ -737,7 +737,7 @@ func (sm *nodeRepairStateMachine) triggerReboot(ctx context.Context) (string, er
 	instanceID := ociclientpkg.MapProviderIDToInstanceID(providerID)
 	req := core.InstanceActionRequest{
 		InstanceId:      &instanceID,
-		Action:          common.String("RESET"),
+		Action:          common.String("SOFTRESET"),
 		RequestMetadata: common.RequestMetadata{},
 	}
 	response, err := sm.reconciler.OCIClient.Compute().InstanceAction(ctx, req)
@@ -846,18 +846,18 @@ func (sm *nodeRepairStateMachine) decorateMessage(msg string) string {
 // for this node. If not, it stops the heartbeat and emits a warning event, then returns error
 // so the caller can safely stop progressing the state machine.
 func (sm *nodeRepairStateMachine) ensureLeaseOwned(ctx context.Context) error {
-    if sm.reconciler == nil || sm.reconciler.leaseManager == nil {
-        return nil
-    }
-    var r leaseRenewer = sm.reconciler.leaseManager
-    if err := r.Renew(ctx, sm.node.Name); err != nil {
-        // Lost ownership (or lease missing). Stop our heartbeat to avoid noise and back off.
-        _ = sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name)
-        sm.emitWarningEvent(eventRepairLeaseLost, "Lost global repair lease; pausing state progression")
-        sm.l().Info("Lost global repair lease; stopping current repair progression")
-        return fmt.Errorf("repair lease not owned: %w", err)
-    }
-    return nil
+	if sm.reconciler == nil || sm.reconciler.leaseManager == nil {
+		return nil
+	}
+	var r leaseRenewer = sm.reconciler.leaseManager
+	if err := r.Renew(ctx, sm.node.Name); err != nil {
+		// Lost ownership (or lease missing). Stop our heartbeat to avoid noise and back off.
+		_ = sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name)
+		sm.emitWarningEvent(eventRepairLeaseLost, "Lost global repair lease; pausing state progression")
+		sm.l().Info("Lost global repair lease; stopping current repair progression")
+		return fmt.Errorf("repair lease not owned: %w", err)
+	}
+	return nil
 }
 
 func (sm *nodeRepairStateMachine) recordStateDuration(state repairState) {

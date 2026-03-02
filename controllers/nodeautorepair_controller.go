@@ -379,17 +379,30 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 		}
 	}
 
-	// If NAR is in a non-terminal working state, finalize as succeeded
 	if node.Annotations != nil {
 		curState := node.Annotations[narStateAnnotationKey]
 		switch curState {
 		case string(stateCordoning), string(stateDraining), string(stateRebooting), string(stateUncordon), string(stateDetected):
 			logger.Info("Node recovered while under NAR; finalizing as succeeded", "node", node.Name, "state", curState)
 			sm := newNodeRepairStateMachine(r, node, logger)
+			if err := r.ensureLeaseManager(logger); err != nil {
+				logger.Error(err, "Failed to ensure lease manager during cleanup", "node", node.Name)
+				break
+			}
+			acquired, _, err := r.leaseManager.TryAcquire(ctx, node.Name)
+			if err != nil {
+				logger.Error(err, "Failed to acquire lease during cleanup", "node", node.Name)
+				break
+			}
+			if !acquired {
+				logger.Info("Lease held elsewhere; skipping cleanup finalize", "node", node.Name)
+				break
+			}
 			if err := sm.finalizeRepair(ctx, "succeeded"); err != nil {
 				logger.Error(err, "Failed to finalize repair during cleanup", "node", node.Name)
-			} else {
-				// Node pointer is updated by finalizeRepair's patch method.
+			}
+			if err := r.releaseLease(ctx, node.Name); err != nil {
+				logger.Error(err, "Failed to release cleanup lease", "node", node.Name)
 			}
 		}
 	}
