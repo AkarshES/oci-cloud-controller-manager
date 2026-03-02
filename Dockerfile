@@ -1,4 +1,4 @@
-FROM odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke-golang-fips:go1.25.0-ol8-102 as builder
+FROM odo-docker-signed-local.artifactory.oci.oraclecorp.com/oke-golang-fips:go1.25.7-ol8-128 as builder
 
 RUN microdnf install yum yum-utils
 
