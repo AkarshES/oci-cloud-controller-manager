@@ -138,9 +138,43 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	unhealthyConditions := findUnhealthyConditions(node)
-	if len(unhealthyConditions) == 0 {
-		return r.cleanupRepairArtifacts(ctx, logger, node)
-	}
+    if len(unhealthyConditions) == 0 {
+        // If a NAR repair is already in progress and is in Rebooting/Uncordoning,
+        // do not short-circuit to cleanup. Let the state machine finish Uncordoning
+        // so it can emit NodeRepairUncordoned/NodeRepairSucceeded events.
+        var curState string
+        if node.Annotations != nil {
+            curState = node.Annotations[narStateAnnotationKey]
+        }
+        if curState == string(stateRebooting) || curState == string(stateUncordon) {
+            // Ensure we can drive the state machine by acquiring the global repair lease
+            if err := r.ensureLeaseManager(logger); err != nil {
+                logger.Error(err, "CCM: failed to initialize repair lease manager (resume path)")
+                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+            }
+            acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
+            if err != nil {
+                logger.Error(err, "CCM: failed to acquire repair lease (resume path)")
+                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+            }
+            if !acquired {
+                if activeNode == "" {
+                    logger.Info("CCM: Another controller holds the repair lease (resume path), waiting")
+                } else {
+                    logger.Info("CCM: Another node is currently under repair (resume path)", "activeNode", activeNode)
+                }
+                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+            }
+            if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
+                logger.Error(err, "CCM: failed to start lease heartbeat (resume path)")
+                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+            }
+            repairSM := newNodeRepairStateMachine(r, node.DeepCopy(), logger)
+            return repairSM.Run(ctx)
+        }
+        // Otherwise perform normal cleanup for healthy nodes
+        return r.cleanupRepairArtifacts(ctx, logger, node)
+    }
 
 	repairEnabled := true
 	if !repairEnabled {
