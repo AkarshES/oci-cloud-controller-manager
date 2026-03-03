@@ -160,22 +160,6 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	return r.handleUnhealthyNode(ctx, logger, node.DeepCopy(), unhealthyConditions)
 }
 
-// currentTerminalRepairState inspects the node's NAR state annotation and reports
-// whether it is in a terminal state (Succeeded/Failed). It returns the current
-// state string and a boolean indicating terminality.
-func currentTerminalRepairState(node *v1.Node) (string, bool) {
-	if node == nil || node.Annotations == nil {
-		return "", false
-	}
-	state := node.Annotations[narStateAnnotationKey]
-	switch state {
-	case string(stateSucceeded), string(stateFailed):
-		return state, true
-	default:
-		return state, false
-	}
-}
-
 // findUnhealthyConditions checks if a node has any conditions that warrant repair.
 // It returns a slice of all matching unhealthy conditions, or an empty slice if the node is healthy.
 func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {

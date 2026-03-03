@@ -7,8 +7,10 @@ Refactor the existing Node AutoRepair controller into a state machine that perfo
 - Use Node annotations as the lightweight storage for state (no CRD required). Suggested annotation keys:
   - `oci.oraclecloud.com/nodeautorepair-state` — current state (Detected/Cordoning/Draining/Rebooting/Uncordoning/Succeeded/Failed)
   - `oci.oraclecloud.com/nodeautorepair-repair-id` — unique repair task id to avoid concurrent repairs
-  - `oci.oraclecloud.com/nodeautorepair-last-transition` — ISO8601 timestamp of last transition
-  - `oci.oraclecloud.com/nodeautorepair-attempts` — number of attempts
+- `oci.oraclecloud.com/nodeautorepair-last-transition` — ISO8601 timestamp of last transition
+- `oci.oraclecloud.com/nodeautorepair-attempts` — number of attempts
+- `oci.oraclecloud.com/nodeautorepair-cycle-attempts` — total attempts in the current repair cycle
+- `oci.oraclecloud.com/nodeautorepair-cycle-lock` — ISO8601 timestamp indicating when the next repair cycle may start
 
 ## State Definitions
 - Detected
@@ -49,7 +51,7 @@ only one controller is activelly doing node auto repair
 
 ## Implementation Recommendations
 - Node should be repaired serially, Each time the repair controller should only repair a node
-- The node repair controller will try to to fix a node for 3 times, after that, it will wait for 1 hour before kicking off the next repair 
+- The node repair controller will try to fix a node for 3 total attempts per cycle; after exhausting those attempts, it waits for 1 hour (configurable via `NODE_AUTOREPAIR_COOLDOWN`) before starting the next repair cycle.
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
 - Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
 - Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for instanceRunningPollInterval, default to 20s until instance is running again, if after 20 mins instance is not running, we move to failed step

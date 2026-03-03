@@ -24,13 +24,15 @@ import (
 )
 
 const (
-	narStateAnnotationKey         = "oci.oraclecloud.com/nodeautorepair-state"
-	narRepairIDAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-repair-id"
-	narRepairOriginAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-repair-origin"
-	narLastTransitionAnnotation   = "oci.oraclecloud.com/nodeautorepair-last-transition"
-	narAttemptsAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-attempts"
-	narRebootIssuedAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
-	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
+	narStateAnnotationKey          = "oci.oraclecloud.com/nodeautorepair-state"
+	narRepairIDAnnotationKey       = "oci.oraclecloud.com/nodeautorepair-repair-id"
+	narRepairOriginAnnotationKey   = "oci.oraclecloud.com/nodeautorepair-repair-origin"
+	narLastTransitionAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-transition"
+	narAttemptsAnnotationKey       = "oci.oraclecloud.com/nodeautorepair-attempts"
+	narRebootIssuedAnnotationKey   = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
+	narStateMetadataAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-state-meta"
+	narRepairCycleAttemptsKey      = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
+	narRepairCycleLockKey          = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
 	// Terminal repair summary annotations (preserved across cleanups)
 	narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
 	narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"
@@ -68,6 +70,7 @@ type stateConfig struct {
 
 var (
 	maxRepairAttempts  = getEnvInt("NODE_AUTOREPAIR_MAX_ATTEMPTS", 3)
+	maxRepairCycles    = getEnvInt("NODE_AUTOREPAIR_MAX_REPAIR_CYCLES", 3)
 	defaultRetryBase   = getEnvDuration("NODE_AUTOREPAIR_RETRY_BASE", 10*time.Second)
 	defaultRetryCap    = getEnvDuration("NODE_AUTOREPAIR_RETRY_CAP", 5*time.Minute)
 	repairStateConfigs = map[repairState]stateConfig{
@@ -104,6 +107,8 @@ var (
 		narAttemptsAnnotationKey,
 		narRebootIssuedAnnotationKey,
 		narStateMetadataAnnotationKey,
+		narRepairCycleAttemptsKey,
+		narRepairCycleLockKey,
 	}
 	// Respect PDB up to 10 minutes by default, then force repair per design doc
 	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 10*time.Minute)
@@ -308,6 +313,11 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 	}
 	if err := sm.ensureRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
+	}
+	if stopped, wait := sm.cycleAttemptsExceeded(); stopped {
+		sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
+		sm.l().Info("Repair cycle attempts exceeded; waiting before next cycle", "wait", wait)
+		return ctrl.Result{RequeueAfter: wait}, nil
 	}
 	sm.repairID = sm.node.Annotations[narRepairIDAnnotationKey]
 	sm.tracker = newRepairStateTracker(sm.repairID)
@@ -528,6 +538,7 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 	if err := sm.finalizeRepair(ctx, "succeeded"); err != nil {
 		sm.l().Error(err, "Failed to finalize repair annotations after success")
 	}
+	sm.resetCycleAttempts(ctx)
 	return ctrl.Result{}, nil
 }
 
@@ -604,6 +615,12 @@ func (sm *nodeRepairStateMachine) setState(ctx context.Context, next repairState
 		ann[narStateAnnotationKey] = string(next)
 		ann[narLastTransitionAnnotation] = time.Now().UTC().Format(time.RFC3339)
 		ann[narAttemptsAnnotationKey] = "0"
+		if next == stateCordoning {
+			if _, ok := ann[narRepairCycleAttemptsKey]; !ok {
+				ann[narRepairCycleAttemptsKey] = "0"
+			}
+			ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
+		}
 		if sm.tracker == nil {
 			sm.tracker = newRepairStateTracker(sm.repairID)
 		}
@@ -618,6 +635,13 @@ func (sm *nodeRepairStateMachine) recordAttempt(ctx context.Context) (int, error
 	newVal := current + 1
 	return newVal, sm.updateAnnotations(ctx, func(ann map[string]string) {
 		ann[narAttemptsAnnotationKey] = strconv.Itoa(newVal)
+		if sm.currentState() == stateCordoning {
+			cycleAttempts := sm.currentCycleAttempts() + 1
+			ann[narRepairCycleAttemptsKey] = strconv.Itoa(cycleAttempts)
+			if cycleAttempts >= maxRepairCycles {
+				ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
+			}
+		}
 		if sm.tracker != nil {
 			entry := sm.tracker.current(sm.currentState())
 			if entry != nil {
@@ -643,6 +667,40 @@ func (sm *nodeRepairStateMachine) currentAttempts() int {
 	return parsed
 }
 
+func (sm *nodeRepairStateMachine) currentCycleAttempts() int {
+	if sm.node.Annotations == nil {
+		return 0
+	}
+	val, ok := sm.node.Annotations[narRepairCycleAttemptsKey]
+	if !ok {
+		return 0
+	}
+	parsed, err := strconv.Atoi(val)
+	if err != nil {
+		return 0
+	}
+	return parsed
+}
+
+func (sm *nodeRepairStateMachine) cycleAttemptsExceeded() (bool, time.Duration) {
+	if sm.node.Annotations == nil {
+		return false, 0
+	}
+	lockStr := sm.node.Annotations[narRepairCycleLockKey]
+	if lockStr == "" {
+		return false, 0
+	}
+	lockTime, err := time.Parse(time.RFC3339, lockStr)
+	if err != nil {
+		return false, 0
+	}
+	now := time.Now()
+	if now.After(lockTime) {
+		return false, 0
+	}
+	return true, lockTime.Sub(now)
+}
+
 func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairState, reason error) (ctrl.Result, error) {
 	sm.l().Error(reason, "Repair state failed", "state", state)
 	sm.emitWarningEvent(eventRepairFailed, fmt.Sprintf("State %s failed: %v", state, reason))
@@ -652,6 +710,7 @@ func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairSta
 	if err := sm.setState(ctx, stateFailed); err != nil {
 		return ctrl.Result{}, err
 	}
+	sm.resetCycleAttempts(ctx)
 	// Release global repair lease immediately upon failure
 	if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
 		sm.l().Error(err, "Failed to stop lease heartbeat after Failed")
@@ -932,6 +991,13 @@ func (sm *nodeRepairStateMachine) finalizeRepair(ctx context.Context, result str
 		for _, k := range repairAnnotationKeys {
 			delete(ann, k)
 		}
+	})
+}
+
+func (sm *nodeRepairStateMachine) resetCycleAttempts(ctx context.Context) {
+	_ = sm.updateAnnotations(ctx, func(ann map[string]string) {
+		delete(ann, narRepairCycleAttemptsKey)
+		delete(ann, narRepairCycleLockKey)
 	})
 }
 
