@@ -60,3 +60,6 @@ output_ocibuild_dockerize_ccm_arm/
 # ignore Dockerfile under vendor
 vendor/**/Dockerfile
 .vscode/settings.json
+
+# Ignore OCA stub
+*/custom_code_review_guidelines.txt

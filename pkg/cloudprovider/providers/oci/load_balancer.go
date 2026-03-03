@@ -2789,12 +2789,13 @@ func (cp *CloudProvider) getCertOcidForListenerPort(ctx context.Context, service
 			cert, err = cp.client.CertManager().GetValidCertificate(ctx, ocid)
 			if err != nil {
 				return nil, fmt.Errorf("failed to fetch certificate %v. Error: %s", ocid, err.Error())
-			} else {
+			} else if cert != nil {
 				certOcids := CertAuthOcids{
-					CertificateOcid: *cert.Id,
-					AuthorityOcid:   *cert.IssuerCertificateAuthorityId,
+					CertificateOcid: cert.Id,
 				}
 				portTLSMap[port] = append(portTLSMap[port], certOcids)
+			} else {
+				cp.logger.Infof("cert not found for port %v with provided cert id %v", port, ocid)
 			}
 		}
 	}

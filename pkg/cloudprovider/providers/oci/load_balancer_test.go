@@ -3576,7 +3576,6 @@ func Test_updateListenerSSLConfigFromCertMap(t *testing.T) {
 		logger:     zap.S(),
 	}
 	ocid := "ocid1.certificate.oc1..exampleuniqueID"
-	authId := "ocid1.authId"
 
 	tests := []struct {
 		name           string
@@ -3600,8 +3599,7 @@ func Test_updateListenerSSLConfigFromCertMap(t *testing.T) {
 			expected: map[int][]CertAuthOcids{
 				443: {
 					{
-						CertificateOcid: ocid,
-						AuthorityOcid:   authId,
+						CertificateOcid: &ocid,
 					},
 				},
 			},
