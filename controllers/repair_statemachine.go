@@ -24,15 +24,15 @@ import (
 )
 
 const (
-	narStateAnnotationKey          = "oci.oraclecloud.com/nodeautorepair-state"
-	narRepairIDAnnotationKey       = "oci.oraclecloud.com/nodeautorepair-repair-id"
-	narRepairOriginAnnotationKey   = "oci.oraclecloud.com/nodeautorepair-repair-origin"
-	narLastTransitionAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-transition"
-	narAttemptsAnnotationKey       = "oci.oraclecloud.com/nodeautorepair-attempts"
-	narRebootIssuedAnnotationKey   = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
-	narStateMetadataAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-state-meta"
-	narRepairCycleAttemptsKey      = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
-	narRepairCycleLockKey          = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
+	narStateAnnotationKey         = "oci.oraclecloud.com/nodeautorepair-state"
+	narRepairIDAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-repair-id"
+	narRepairOriginAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-repair-origin"
+	narLastTransitionAnnotation   = "oci.oraclecloud.com/nodeautorepair-last-transition"
+	narAttemptsAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-attempts"
+	narRebootIssuedAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
+	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
+	narRepairCycleAttemptsKey     = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
+	narRepairCycleLockKey         = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
 	// Terminal repair summary annotations (preserved across cleanups)
 	narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
 	narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"
@@ -647,22 +647,22 @@ func (sm *nodeRepairStateMachine) recordAttempt(ctx context.Context) (int, error
 // incrementCycleFailure increments the per-node repair cycle failure counter.
 // When the counter reaches maxRepairCycles, it writes a cooldown lock until now+repairCoolDown.
 func (sm *nodeRepairStateMachine) incrementCycleFailure(ctx context.Context) error {
-    return sm.updateAnnotations(ctx, func(ann map[string]string) {
-        // Initialize if missing
-        cur := 0
-        if val, ok := ann[narRepairCycleAttemptsKey]; ok {
-            if parsed, err := strconv.Atoi(val); err == nil {
-                cur = parsed
-            }
-        }
-        cur++
-        ann[narRepairCycleAttemptsKey] = strconv.Itoa(cur)
-        if cur >= maxRepairCycles {
-            // Set lock only when threshold is reached
-            ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
-            sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
-        }
-    })
+	return sm.updateAnnotations(ctx, func(ann map[string]string) {
+		// Initialize if missing
+		cur := 0
+		if val, ok := ann[narRepairCycleAttemptsKey]; ok {
+			if parsed, err := strconv.Atoi(val); err == nil {
+				cur = parsed
+			}
+		}
+		cur++
+		ann[narRepairCycleAttemptsKey] = strconv.Itoa(cur)
+		if cur >= maxRepairCycles {
+			// Set lock only when threshold is reached
+			ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
+			sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
+		}
+	})
 }
 
 func (sm *nodeRepairStateMachine) currentAttempts() int {
@@ -720,10 +720,10 @@ func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairSta
 	sm.recordMetric(metricRepairFailures, 1)
 	// Record duration spent in the failing state before transitioning to Failed
 	sm.recordStateDuration(sm.currentState())
-    // Count a full-cycle failure
-    if err := sm.incrementCycleFailure(ctx); err != nil {
-        sm.l().Error(err, "Failed to record cycle failure")
-    }
+	// Count a full-cycle failure
+	if err := sm.incrementCycleFailure(ctx); err != nil {
+		sm.l().Error(err, "Failed to record cycle failure")
+	}
 	if err := sm.setState(ctx, stateFailed); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -1004,13 +1004,13 @@ func (sm *nodeRepairStateMachine) finalizeRepair(ctx context.Context, result str
 			ann[narLastRepairResultAnnotation] = result
 		}
 		// Prune transient annotations
-        for _, k := range repairAnnotationKeys {
-            // Preserve cycle counters/lock on failure so we can accumulate cycles
-            if result == "failed" && (k == narRepairCycleAttemptsKey || k == narRepairCycleLockKey) {
-                continue
-            }
-            delete(ann, k)
-        }
+		for _, k := range repairAnnotationKeys {
+			// Preserve cycle counters/lock on failure so we can accumulate cycles
+			if result == "failed" && (k == narRepairCycleAttemptsKey || k == narRepairCycleLockKey) {
+				continue
+			}
+			delete(ann, k)
+		}
 	})
 }
 

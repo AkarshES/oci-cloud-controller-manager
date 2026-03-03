@@ -138,43 +138,43 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	unhealthyConditions := findUnhealthyConditions(node)
-    if len(unhealthyConditions) == 0 {
-        // If a NAR repair is already in progress and is in Rebooting/Uncordoning,
-        // do not short-circuit to cleanup. Let the state machine finish Uncordoning
-        // so it can emit NodeRepairUncordoned/NodeRepairSucceeded events.
-        var curState string
-        if node.Annotations != nil {
-            curState = node.Annotations[narStateAnnotationKey]
-        }
-        if curState == string(stateRebooting) || curState == string(stateUncordon) {
-            // Ensure we can drive the state machine by acquiring the global repair lease
-            if err := r.ensureLeaseManager(logger); err != nil {
-                logger.Error(err, "CCM: failed to initialize repair lease manager (resume path)")
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
-            if err != nil {
-                logger.Error(err, "CCM: failed to acquire repair lease (resume path)")
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            if !acquired {
-                if activeNode == "" {
-                    logger.Info("CCM: Another controller holds the repair lease (resume path), waiting")
-                } else {
-                    logger.Info("CCM: Another node is currently under repair (resume path)", "activeNode", activeNode)
-                }
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
-                logger.Error(err, "CCM: failed to start lease heartbeat (resume path)")
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            repairSM := newNodeRepairStateMachine(r, node.DeepCopy(), logger)
-            return repairSM.Run(ctx)
-        }
-        // Otherwise perform normal cleanup for healthy nodes
-        return r.cleanupRepairArtifacts(ctx, logger, node)
-    }
+	if len(unhealthyConditions) == 0 {
+		// If a NAR repair is already in progress and is in Rebooting/Uncordoning,
+		// do not short-circuit to cleanup. Let the state machine finish Uncordoning
+		// so it can emit NodeRepairUncordoned/NodeRepairSucceeded events.
+		var curState string
+		if node.Annotations != nil {
+			curState = node.Annotations[narStateAnnotationKey]
+		}
+		if curState == string(stateRebooting) || curState == string(stateUncordon) {
+			// Ensure we can drive the state machine by acquiring the global repair lease
+			if err := r.ensureLeaseManager(logger); err != nil {
+				logger.Error(err, "CCM: failed to initialize repair lease manager (resume path)")
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
+			if err != nil {
+				logger.Error(err, "CCM: failed to acquire repair lease (resume path)")
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			if !acquired {
+				if activeNode == "" {
+					logger.Info("CCM: Another controller holds the repair lease (resume path), waiting")
+				} else {
+					logger.Info("CCM: Another node is currently under repair (resume path)", "activeNode", activeNode)
+				}
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
+				logger.Error(err, "CCM: failed to start lease heartbeat (resume path)")
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			repairSM := newNodeRepairStateMachine(r, node.DeepCopy(), logger)
+			return repairSM.Run(ctx)
+		}
+		// Otherwise perform normal cleanup for healthy nodes
+		return r.cleanupRepairArtifacts(ctx, logger, node)
+	}
 
 	repairEnabled := true
 	if !repairEnabled {
@@ -209,44 +209,51 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 
 // handleUnhealthyNode performs all actions when a node is found to be unhealthy.
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
+	// If a NAR repair is already in progress for this node, do not start or advance
+	// a new cycle here. Simply requeue and let the existing state machine progress.
+	if repairInProgress(node) {
+		logger.Info("CCM: Node auto repair already in progress; requeueing for later", "node", node.Name, "state", node.Annotations[narStateAnnotationKey])
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
+
 	// Throttle if the node has been repaired recently (cool-down window)
 	node = node.DeepCopy()
-    if node.Annotations != nil {
-        // Cooldown is applied differently for success vs. failure cycles.
-        // If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
-        // If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
-        var lastResult string
-        var cycleAttempts int
-        if val, ok := node.Annotations[narLastRepairResultAnnotation]; ok {
-            lastResult = val
-        }
-        if val, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
-            if parsed, err := strconv.Atoi(val); err == nil {
-                cycleAttempts = parsed
-            }
-        }
-        if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
-            if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
-                until := endTime.Add(repairCoolDown)
-                now := time.Now()
-                if now.Before(until) {
-                    // Decide whether to throttle based on last result and cycle attempts
-                    shouldThrottle := true
-                    if strings.EqualFold(lastResult, "failed") && cycleAttempts < maxRepairCycles {
-                        shouldThrottle = false
-                    }
-                    if shouldThrottle {
-                        remaining := time.Until(until)
-                        if r.Recorder != nil {
-                            r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
-                        }
-                        logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles)
-                        return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
-                    }
-                }
-            }
-        }
-    }
+	if node.Annotations != nil {
+		// Cooldown is applied differently for success vs. failure cycles.
+		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
+		// If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
+		var lastResult string
+		var cycleAttempts int
+		if val, ok := node.Annotations[narLastRepairResultAnnotation]; ok {
+			lastResult = val
+		}
+		if val, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
+			if parsed, err := strconv.Atoi(val); err == nil {
+				cycleAttempts = parsed
+			}
+		}
+		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
+			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
+				until := endTime.Add(repairCoolDown)
+				now := time.Now()
+				if now.Before(until) {
+					// Decide whether to throttle based on last result and cycle attempts
+					shouldThrottle := true
+					if strings.EqualFold(lastResult, "failed") && cycleAttempts < maxRepairCycles {
+						shouldThrottle = false
+					}
+					if shouldThrottle {
+						remaining := time.Until(until)
+						if r.Recorder != nil {
+							r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+						}
+						logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles)
+						return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+				}
+			}
+		}
+	}
 
 	repairEnabled := true
 	if repairEnabled {
@@ -309,6 +316,22 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	repairSM := newNodeRepairStateMachine(r, node, logger)
 	return repairSM.Run(ctx)
+}
+
+// repairInProgress returns true if the node shows annotations indicating that
+// a non-terminal NAR state is currently active for this node.
+func repairInProgress(node *v1.Node) bool {
+	if node == nil || node.Annotations == nil {
+		return false
+	}
+	state := node.Annotations[narStateAnnotationKey]
+	// Consider in-progress states as Cordoning/Draining/Rebooting/Uncordoning.
+	switch state {
+	case string(stateCordoning), string(stateDraining), string(stateRebooting), string(stateUncordon):
+		return true
+	default:
+		return false
+	}
 }
 
 func (r *NodeAutoRepairReconciler) ensureRepairMarkers(ctx context.Context, node *v1.Node, labelValue string) error {
