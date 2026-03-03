@@ -417,8 +417,7 @@ func (ssr noopSSLSecretReader) readSSLSecret(ns, name string) (sslSecret *certif
 }
 
 type CertAuthOcids struct {
-	CertificateOcid string
-	AuthorityOcid   string
+	CertificateOcid *string
 }
 
 // SSLConfig is a description of a SSL certificate.
@@ -1524,7 +1523,7 @@ func getSSLConfiguration(cfg *SSLConfig, name string, port int, lbSslConfigurati
 		// Extract the CertOcids as a string
 		var certOcids []string
 		for _, entry := range portToCertOCIDMap[port] {
-			certOcids = append(certOcids, entry.CertificateOcid)
+			certOcids = append(certOcids, *entry.CertificateOcid)
 		}
 		genericSSLConfigurationDetails = &client.GenericSslConfigurationDetails{
 			VerifyDepth:           common.Int(0),

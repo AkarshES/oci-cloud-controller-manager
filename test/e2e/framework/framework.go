@@ -150,7 +150,8 @@ var (
 	cniType                       string
 	cniTypeEnum                   oke.ClusterPodNetworkOptionDetailsCniTypeEnum
 	nodeMetadata                  map[string]string
-	certOcid                      string // OCId of the certificate to be added with LB service
+	certOcid                      string // OCId of the certificate issued by internal CA to be added with LB service
+	importedCertOcid              string // OCId of the certificate imported from external cert to be added with LB service
 	enableCertificateCreation     bool   // Boolean indicator of the certificate needs to be created. (Currently in same compartment as cluster)
 	certAuthorityOcid             string
 )
@@ -238,7 +239,9 @@ func init() {
 	flag.StringVar(&cniType, "cni-type", "FLANNEL_OVERLAY", "CNI type can be FLANNEL_OVERLAY or OCI_VCN_IP_NATIVE")
 	flag.BoolVar(&enableParallelRun, "enable-parallel-run", true, "Enables parallel running of test suite")
 	flag.BoolVar(&addOkeSystemTags, "add-oke-system-tags", true, "Adds oke system tags to new and existing loadbalancers and storage resources")
-	flag.StringVar(&certOcid, "cert-ocid", "", "Certificate OCID to use for Loadbalancer Service listener")
+	flag.StringVar(&certOcid, "cert-ocid", "", "Certificate OCID issues by internal CA to use for Loadbalancer Service listener")
+
+	flag.StringVar(&importedCertOcid, "imported-cert-ocid", "", "Certificate OCID imported from external to use for Loadbalancer Service listener")
 	flag.BoolVar(&enableCertificateCreation, "enable-cert-creation", false, "Whether or Not the test should a new certificate before test run")
 	flag.StringVar(&certAuthorityOcid, "cert-authority-ocid", "", "Authority Id to be used to create the Certificate to use for Loadbalancer Service listener")
 }
@@ -425,6 +428,7 @@ type Framework struct {
 	ClusterOcid             string
 	AddOkeSystemTags        bool
 	CertOCID                string
+	ImportedCertOCID        string
 	EnableCertCreation      bool
 	CertAuthorityOCID       string
 	KMSKeyOCIDForCA         string
@@ -528,6 +532,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		CniType:                       cniTypeEnum,
 		NodeMetadata:                  nodeMetadata,
 		CertOCID:                      certOcid,
+		ImportedCertOCID:              importedCertOcid,
 		EnableCertCreation:            enableCertificateCreation,
 		CertAuthorityOCID:             certAuthorityOcid,
 		KMSKeyOCIDForCA:               kmsKeyID,
@@ -881,13 +886,14 @@ func (f *Framework) Initialize() {
 	}
 	Logf("maxPodsPerNode is: %s", f.MaxPodsPerNode)
 	f.CertOCID = certOcid
+	f.ImportedCertOCID = importedCertOcid
 	f.EnableCertCreation = enableCertificateCreation
 	if f.EnableCertCreation {
 		f.CertAuthorityOCID = certAuthorityOcid
 		f.KMSKeyOCIDForCA = kmsKeyID
 		Logf("CertAuthorityOCID is: %s", f.CertAuthorityOCID)
 	}
-	Logf("CertOCID: %s, EnableCertificateCreation : %s", f.CertOCID, f.EnableCertCreation)
+	Logf("CertOCID: %s, EnableCertificateCreation : %s , imported Cert OCID : %s", f.CertOCID, f.EnableCertCreation, f.ImportedCertOCID)
 }
 
 // getK8sVersionValue returns the version value according to version index
@@ -957,14 +963,14 @@ func (f *Framework) CleanAll(waitForDeleted bool) {
 			f.DeleteCluster(*cluster.Id, waitForDeleted)
 		}
 	}
-	Logf("Cleaning invalid cert authority in compartment1 '%s' ", f.Compartment1)
+	Logf("Cleaning Inactive cert authority in compartment1 '%s' ", f.Compartment1)
 	if f.CertAuthorityOCID != "" {
 		_, state := f.GetCA()
 		if state != certificatesmanagement.CertificateAuthorityLifecycleStateActive {
 			f.DeleteCertificateAuthority()
 		}
 	}
-
+	Logf("Cleaning imported cert in compartment1 '%s' ", f.Compartment1)
 }
 
 // CreateClusterKubeconfigContent gets a valid 'kubeconfig' file for the target
@@ -1161,3 +1167,4 @@ func getLustreProvisionerName(handle string) string {
 func (f *Framework) GetCertOcid() string {
 	return f.CertOCID
 }
+func (f *Framework) GetImportedCertOcid() string { return f.ImportedCertOCID }
