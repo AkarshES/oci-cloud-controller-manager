@@ -619,7 +619,6 @@ func (sm *nodeRepairStateMachine) setState(ctx context.Context, next repairState
 			if _, ok := ann[narRepairCycleAttemptsKey]; !ok {
 				ann[narRepairCycleAttemptsKey] = "0"
 			}
-			ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
 		}
 		if sm.tracker == nil {
 			sm.tracker = newRepairStateTracker(sm.repairID)
@@ -635,13 +634,6 @@ func (sm *nodeRepairStateMachine) recordAttempt(ctx context.Context) (int, error
 	newVal := current + 1
 	return newVal, sm.updateAnnotations(ctx, func(ann map[string]string) {
 		ann[narAttemptsAnnotationKey] = strconv.Itoa(newVal)
-		if sm.currentState() == stateCordoning {
-			cycleAttempts := sm.currentCycleAttempts() + 1
-			ann[narRepairCycleAttemptsKey] = strconv.Itoa(cycleAttempts)
-			if cycleAttempts >= maxRepairCycles {
-				ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
-			}
-		}
 		if sm.tracker != nil {
 			entry := sm.tracker.current(sm.currentState())
 			if entry != nil {
@@ -650,6 +642,27 @@ func (sm *nodeRepairStateMachine) recordAttempt(ctx context.Context) (int, error
 			}
 		}
 	})
+}
+
+// incrementCycleFailure increments the per-node repair cycle failure counter.
+// When the counter reaches maxRepairCycles, it writes a cooldown lock until now+repairCoolDown.
+func (sm *nodeRepairStateMachine) incrementCycleFailure(ctx context.Context) error {
+    return sm.updateAnnotations(ctx, func(ann map[string]string) {
+        // Initialize if missing
+        cur := 0
+        if val, ok := ann[narRepairCycleAttemptsKey]; ok {
+            if parsed, err := strconv.Atoi(val); err == nil {
+                cur = parsed
+            }
+        }
+        cur++
+        ann[narRepairCycleAttemptsKey] = strconv.Itoa(cur)
+        if cur >= maxRepairCycles {
+            // Set lock only when threshold is reached
+            ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
+            sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
+        }
+    })
 }
 
 func (sm *nodeRepairStateMachine) currentAttempts() int {
@@ -707,10 +720,13 @@ func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairSta
 	sm.recordMetric(metricRepairFailures, 1)
 	// Record duration spent in the failing state before transitioning to Failed
 	sm.recordStateDuration(sm.currentState())
+    // Count a full-cycle failure
+    if err := sm.incrementCycleFailure(ctx); err != nil {
+        sm.l().Error(err, "Failed to record cycle failure")
+    }
 	if err := sm.setState(ctx, stateFailed); err != nil {
 		return ctrl.Result{}, err
 	}
-	sm.resetCycleAttempts(ctx)
 	// Release global repair lease immediately upon failure
 	if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
 		sm.l().Error(err, "Failed to stop lease heartbeat after Failed")
@@ -988,9 +1004,13 @@ func (sm *nodeRepairStateMachine) finalizeRepair(ctx context.Context, result str
 			ann[narLastRepairResultAnnotation] = result
 		}
 		// Prune transient annotations
-		for _, k := range repairAnnotationKeys {
-			delete(ann, k)
-		}
+        for _, k := range repairAnnotationKeys {
+            // Preserve cycle counters/lock on failure so we can accumulate cycles
+            if result == "failed" && (k == narRepairCycleAttemptsKey || k == narRepairCycleLockKey) {
+                continue
+            }
+            delete(ann, k)
+        }
 	})
 }
 

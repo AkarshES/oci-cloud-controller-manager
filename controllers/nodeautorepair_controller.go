@@ -211,23 +211,42 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
 	// Throttle if the node has been repaired recently (cool-down window)
 	node = node.DeepCopy()
-	if node.Annotations != nil {
-		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
-			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
-				until := endTime.Add(repairCoolDown)
-				now := time.Now()
-				if now.Before(until) {
-					remaining := time.Until(until)
-					// Emit event and log, then skip repair attempts during cool-down
-					if r.Recorder != nil {
-						r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
-					}
-					logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining)
-					return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
-				}
-			}
-		}
-	}
+    if node.Annotations != nil {
+        // Cooldown is applied differently for success vs. failure cycles.
+        // If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
+        // If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
+        var lastResult string
+        var cycleAttempts int
+        if val, ok := node.Annotations[narLastRepairResultAnnotation]; ok {
+            lastResult = val
+        }
+        if val, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
+            if parsed, err := strconv.Atoi(val); err == nil {
+                cycleAttempts = parsed
+            }
+        }
+        if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
+            if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
+                until := endTime.Add(repairCoolDown)
+                now := time.Now()
+                if now.Before(until) {
+                    // Decide whether to throttle based on last result and cycle attempts
+                    shouldThrottle := true
+                    if strings.EqualFold(lastResult, "failed") && cycleAttempts < maxRepairCycles {
+                        shouldThrottle = false
+                    }
+                    if shouldThrottle {
+                        remaining := time.Until(until)
+                        if r.Recorder != nil {
+                            r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+                        }
+                        logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles)
+                        return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+                    }
+                }
+            }
+        }
+    }
 
 	repairEnabled := true
 	if repairEnabled {
