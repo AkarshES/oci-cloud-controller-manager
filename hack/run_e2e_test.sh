@@ -132,6 +132,7 @@ function check_environment () {
     ENABLE_CERT_CREATION=${ENABLE_CERT_CREATION:-"true"}
     if [ "$ENABLE_CERT_CREATION" == "false" ]; then
         check-env "CERT_OCID" CERT_OCID
+        check-env "IMPORTED_CERT_OCID" IMPORTED_CERT_OCID
     fi
 }
 
@@ -305,6 +306,7 @@ function run_e2e_tests() {
                 --podsubnet=${POD_SUBNET} \
                 --maxpodspernode=${MAX_PODS_PER_NODE}\
                 --cert-ocid=${CERT_OCID}\
+                --imported-cert-ocid=${IMPORTED_CERT_OCID}\
                 --enable-cert-creation=${ENABLE_CERT_CREATION}\
                 --cert-authority-ocid=${CERT_AUTHORITY_OCID}\
                 --kms-key-id=${KMS_KEY_ID}
@@ -359,6 +361,7 @@ function run_e2e_tests_existing_cluster() {
                 --podsubnet=${POD_SUBNET} \
                 --maxpodspernode=${MAX_PODS_PER_NODE}\
                 --cert-ocid=${CERT_OCID}\
+                --imported-cert-ocid=${IMPORTED_CERT_OCID}\
                 --enable-cert-creation=${ENABLE_CERT_CREATION}\
                 --cert-authority-ocid=${CERT_AUTHORITY_OCID}\
                 --kms-key-id=${KMS_KEY_ID}
