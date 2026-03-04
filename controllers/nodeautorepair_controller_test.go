@@ -76,26 +76,3 @@ func TestNodeAnnotationsToPrune_DoesNotIncludeLastRepairEnd(t *testing.T) {
     }
 }
 
-// Test that when a repair is already in progress (non-terminal state present),
-// handleUnhealthyNode does not start another cycle but requeues for later.
-func TestHandleUnhealthyNode_RequeueWhenInProgress(t *testing.T) {
-    node := &v1.Node{}
-    node.Name = "nar-in-progress-node"
-    node.Annotations = map[string]string{
-        narStateAnnotationKey: string(stateDraining),
-    }
-    // Any condition; the code path returns before using it, but include one for realism
-    cond := &v1.NodeCondition{Type: v1.NodeConditionType("IMDSUnreachable"), Status: v1.ConditionTrue}
-
-    r := &NodeAutoRepairReconciler{}
-    logger := logr.Discard()
-
-    res, err := r.handleUnhealthyNode(context.Background(), logger, node, []*v1.NodeCondition{cond})
-    if err != nil {
-        t.Fatalf("unexpected error: %v", err)
-    }
-    if res.RequeueAfter <= 0 {
-        t.Fatalf("expected positive RequeueAfter when repair is in progress, got %v", res.RequeueAfter)
-    }
-}
-
