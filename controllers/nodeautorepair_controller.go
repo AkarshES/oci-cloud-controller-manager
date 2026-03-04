@@ -42,7 +42,7 @@ const (
 	REPAIR_TAINT_EFFECT        v1.TaintEffect = v1.TaintEffectNoSchedule
 )
 
-var CONDITIONS map[string]string = map[string]string{
+var UNHEALTHY_CONDITIONS map[string]string = map[string]string{
 	"IMDSUnreachable": "True",
 	"GPUCount":        "True",
 	"GPUCdfpCable":    "True",
@@ -138,43 +138,43 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	unhealthyConditions := findUnhealthyConditions(node)
-    if len(unhealthyConditions) == 0 {
-        // If a NAR repair is already in progress and is in Rebooting/Uncordoning,
-        // do not short-circuit to cleanup. Let the state machine finish Uncordoning
-        // so it can emit NodeRepairUncordoned/NodeRepairSucceeded events.
-        var curState string
-        if node.Annotations != nil {
-            curState = node.Annotations[narStateAnnotationKey]
-        }
-        if curState == string(stateRebooting) || curState == string(stateUncordon) {
-            // Ensure we can drive the state machine by acquiring the global repair lease
-            if err := r.ensureLeaseManager(logger); err != nil {
-                logger.Error(err, "CCM: failed to initialize repair lease manager (resume path)")
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
-            if err != nil {
-                logger.Error(err, "CCM: failed to acquire repair lease (resume path)")
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            if !acquired {
-                if activeNode == "" {
-                    logger.Info("CCM: Another controller holds the repair lease (resume path), waiting")
-                } else {
-                    logger.Info("CCM: Another node is currently under repair (resume path)", "activeNode", activeNode)
-                }
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
-                logger.Error(err, "CCM: failed to start lease heartbeat (resume path)")
-                return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-            }
-            repairSM := newNodeRepairStateMachine(r, node.DeepCopy(), logger)
-            return repairSM.Run(ctx)
-        }
-        // Otherwise perform normal cleanup for healthy nodes
-        return r.cleanupRepairArtifacts(ctx, logger, node)
-    }
+	if len(unhealthyConditions) == 0 {
+		// If a NAR repair is already in progress and is in Rebooting/Uncordoning,
+		// do not short-circuit to cleanup. Let the state machine finish Uncordoning
+		// so it can emit NodeRepairUncordoned/NodeRepairSucceeded events.
+		var curState string
+		if node.Annotations != nil {
+			curState = node.Annotations[narStateAnnotationKey]
+		}
+		if curState == string(stateRebooting) || curState == string(stateUncordon) {
+			// Ensure we can drive the state machine by acquiring the global repair lease
+			if err := r.ensureLeaseManager(logger); err != nil {
+				logger.Error(err, "CCM: failed to initialize repair lease manager (resume path)")
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
+			if err != nil {
+				logger.Error(err, "CCM: failed to acquire repair lease (resume path)")
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			if !acquired {
+				if activeNode == "" {
+					logger.Info("CCM: Another controller holds the repair lease (resume path), waiting")
+				} else {
+					logger.Info("CCM: Another node is currently under repair (resume path)", "activeNode", activeNode)
+				}
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
+				logger.Error(err, "CCM: failed to start lease heartbeat (resume path)")
+				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+			}
+			repairSM := newNodeRepairStateMachine(r, node.DeepCopy(), logger)
+			return repairSM.Run(ctx)
+		}
+		// Otherwise perform normal cleanup for healthy nodes
+		return r.cleanupRepairArtifacts(ctx, logger, node)
+	}
 
 	repairEnabled := true
 	if !repairEnabled {
@@ -200,7 +200,7 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 	var unhealthyConditions []*v1.NodeCondition
 	for _, condition := range node.Status.Conditions {
 		// Check if the condition type exists in our map and its status matches the expected value ("True").
-		if expectedStatus, ok := CONDITIONS[string(condition.Type)]; ok && string(condition.Status) == expectedStatus {
+		if expectedStatus, ok := UNHEALTHY_CONDITIONS[string(condition.Type)]; ok && string(condition.Status) == expectedStatus {
 			unhealthyConditions = append(unhealthyConditions, condition.DeepCopy())
 		}
 	}
@@ -211,42 +211,42 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
 	// Throttle if the node has been repaired recently (cool-down window)
 	node = node.DeepCopy()
-    if node.Annotations != nil {
-        // Cooldown is applied differently for success vs. failure cycles.
-        // If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
-        // If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
-        var lastResult string
-        var cycleAttempts int
-        if val, ok := node.Annotations[narLastRepairResultAnnotation]; ok {
-            lastResult = val
-        }
-        if val, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
-            if parsed, err := strconv.Atoi(val); err == nil {
-                cycleAttempts = parsed
-            }
-        }
-        if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
-            if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
-                until := endTime.Add(repairCoolDown)
-                now := time.Now()
-                if now.Before(until) {
-                    // Decide whether to throttle based on last result and cycle attempts
-                    shouldThrottle := true
-                    if strings.EqualFold(lastResult, "failed") && cycleAttempts < maxRepairCycles {
-                        shouldThrottle = false
-                    }
-                    if shouldThrottle {
-                        remaining := time.Until(until)
-                        if r.Recorder != nil {
-                            r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
-                        }
-                        logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles)
-                        return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
-                    }
-                }
-            }
-        }
-    }
+	if node.Annotations != nil {
+		// Cooldown is applied differently for success vs. failure cycles.
+		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
+		// If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
+		var lastResult string
+		var cycleAttempts int
+		if val, ok := node.Annotations[narLastRepairResultAnnotation]; ok {
+			lastResult = val
+		}
+		if val, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
+			if parsed, err := strconv.Atoi(val); err == nil {
+				cycleAttempts = parsed
+			}
+		}
+		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
+			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
+				until := endTime.Add(repairCoolDown)
+				now := time.Now()
+				if now.Before(until) {
+					// Decide whether to throttle based on last result and cycle attempts
+					shouldThrottle := true
+					if strings.EqualFold(lastResult, "failed") && cycleAttempts < maxRepairCycles {
+						shouldThrottle = false
+					}
+					if shouldThrottle {
+						remaining := time.Until(until)
+						if r.Recorder != nil {
+							r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+						}
+						logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles)
+						return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+					}
+				}
+			}
+		}
+	}
 
 	repairEnabled := true
 	if repairEnabled {
@@ -537,9 +537,13 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 		}
 		if oldCondition.Status != newCondition.Status || oldCondition.Reason != newCondition.Reason || oldCondition.Message != newCondition.Message {
 			p.log.Infow("CCM: Node condition: "+string(newCondition.Type)+" changed", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
-			if _, ok := CONDITIONS[string(oldCondition.Type)]; ok {
+			if _, ok := UNHEALTHY_CONDITIONS[string(oldCondition.Type)]; ok {
 				return true
 			}
+		}
+		if expectedStatus, ok := UNHEALTHY_CONDITIONS[string(newCondition.Type)]; ok && string(newCondition.Status) == expectedStatus {
+			p.log.Infow("CCM: Unhealthy Node condition: "+string(newCondition.Type)+" remained", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
+			return true
 		}
 	}
 	var lastManager string
