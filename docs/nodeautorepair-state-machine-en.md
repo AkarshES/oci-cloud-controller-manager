@@ -48,6 +48,13 @@ Every state write should update `last-transition` and `attempts`.
 - There could be multiple node auto repair controller in a cluster, please add leader election during controller initialization and make sure
 only one controller is activelly doing node auto repair
 - For global serialization add a cluster-scoped lock (e.g., `coordination.k8s.io/v1` Lease in `kube-system`) so only a single node repair runs at any time even if multiple controllers are reconciling. Plase make sure lease ownership is doesn't drift 
+- Allow customer to exempt a node for auto repair by adding "oci.oraclecloud.com/node-auto-repair-disabled" label with value true. When present, the controller logs detected issues, skips cordon/drain/reboot, and simply waits for either the label or the node's conditions to change before reconciling again (no periodic requeue spam).
+
+## Node Opt-Out Label
+- Nodes labeled with `oci.oraclecloud.com/node-auto-repair-disabled=true` are treated as explicitly opted out of automated remediation.
+- The controller still records a warning event describing the unhealthy conditions but will not cordon, drain, taint, or reboot the node while the label remains.
+- No periodic requeue is scheduled for opted-out nodes; reconciliation resumes automatically when either the node's conditions change or the label is removed/updated.
+- Updates to this label are observed directly by the controller so operators can toggle opt-out without forcing artificial condition changes.
 
 ## Implementation Recommendations
 - Node should be repaired serially, Each time the repair controller should only repair a node

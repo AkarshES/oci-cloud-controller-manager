@@ -36,7 +36,7 @@ import (
 const (
 	narName                    string         = "narName"
 	repairProblemDetectedLabel string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
-	repairEnabledLabel         string         = "oci.oraclecloud.com/node-auto-repair-enabled"
+	repairDisabledLabel        string         = "oci.oraclecloud.com/node-auto-repair-disabled"
 	repairFrequencyLabel       string         = "oci.oraclecloud.com/node-auto-repair-freq"
 	REPAIR_TAINT_KEY           string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
 	REPAIR_TAINT_EFFECT        v1.TaintEffect = v1.TaintEffectNoSchedule
@@ -176,11 +176,6 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return r.cleanupRepairArtifacts(ctx, logger, node)
 	}
 
-	repairEnabled := true
-	if !repairEnabled {
-		return r.handleUnhealthyNode(ctx, logger, node.DeepCopy(), unhealthyConditions)
-	}
-
 	isLeader, err := r.isLeader(ctx, logger)
 	if err != nil {
 		logger.Error(err, "CCM: failed to determine leader status")
@@ -209,8 +204,20 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 
 // handleUnhealthyNode performs all actions when a node is found to be unhealthy.
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
-	// Throttle if the node has been repaired recently (cool-down window)
 	node = node.DeepCopy()
+	problemTypes := conditionTypeValues(conditions)
+
+	if isNodeAutoRepairDisabled(node) {
+		conditionSummary := summarizeConditionTypes(problemTypes)
+		if r.Recorder != nil {
+			r.Recorder.Event(node, v1.EventTypeNormal, eventRepairDisabled,
+				fmt.Sprintf("[Node Auto Repair]: Node opted out via %s=true; detected conditions: %s", repairDisabledLabel, conditionSummary))
+		}
+		logger.Info("CCM: Node auto repair disabled via label; skipping cordon/drain/reboot", "node", node.Name, "conditions", conditionSummary)
+		return ctrl.Result{}, nil
+	}
+
+	// Throttle if the node has been repaired recently (cool-down window)
 	if node.Annotations != nil {
 		// Cooldown is applied differently for success vs. failure cycles.
 		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
@@ -248,36 +255,29 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		}
 	}
 
-	repairEnabled := true
-	if repairEnabled {
-		if err := r.ensureLeaseManager(logger); err != nil {
-			logger.Error(err, "CCM: failed to initialize repair lease manager")
-			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-		}
-		acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
-		if err != nil {
-			logger.Error(err, "CCM: failed to acquire repair lease")
-			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-		}
-		if !acquired {
-			if activeNode == "" {
-				logger.Info("CCM: Another controller holds the repair lease, waiting")
-			} else {
-				logger.Info("CCM: Another node is currently under repair", "activeNode", activeNode)
-			}
-			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-		}
-		if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
-			logger.Error(err, "CCM: failed to start lease heartbeat")
-			return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
-		}
-		logger.Info("CCM: acquired repair lease", "node", node.Name)
+	if err := r.ensureLeaseManager(logger); err != nil {
+		logger.Error(err, "CCM: failed to initialize repair lease manager")
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
+	acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
+	if err != nil {
+		logger.Error(err, "CCM: failed to acquire repair lease")
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
+	if !acquired {
+		if activeNode == "" {
+			logger.Info("CCM: Another controller holds the repair lease, waiting")
+		} else {
+			logger.Info("CCM: Another node is currently under repair", "activeNode", activeNode)
+		}
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
+	if err := r.startLeaseHeartbeat(ctx, node.Name, logger); err != nil {
+		logger.Error(err, "CCM: failed to start lease heartbeat")
+		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
+	}
+	logger.Info("CCM: acquired repair lease", "node", node.Name)
 
-	problemTypes := make([]string, 0, len(conditions))
-	for _, cond := range conditions {
-		problemTypes = append(problemTypes, string(cond.Type))
-	}
 	aggregatedLabelValue := strings.Join(problemTypes, ",")
 
 	if err := r.ensureRepairMarkers(ctx, node, aggregatedLabelValue); err != nil {
@@ -295,17 +295,10 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	// Step 2: Record a single, combined event and log message.
 	eventMessage := "[Node Auto Repair]: Node conditions are unhealthy: " + strings.Join(problemTypes, ", ")
-	if !repairEnabled {
-		eventMessage += " (dry run: will not repair)"
+	if r.Recorder != nil {
+		r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
 	}
-	r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
 	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", strings.Join(problemTypes, ", "))
-
-	if !repairEnabled {
-		requeueDuration := getRequeueDuration(logger, node)
-		logger.Info("CCM: Repair disabled via label; requeueing", "node", node.Name, "after", requeueDuration)
-		return ctrl.Result{RequeueAfter: requeueDuration}, nil
-	}
 
 	repairSM := newNodeRepairStateMachine(r, node, logger)
 	return repairSM.Run(ctx)
@@ -546,6 +539,7 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 			return true
 		}
 	}
+
 	var lastManager string
 	var lastUpdateTime time.Time
 	var fieldName string
@@ -570,6 +564,40 @@ func getConditionMap(conditions []v1.NodeCondition) map[v1.NodeConditionType]v1.
 		conditionMap[condition.Type] = condition
 	}
 	return conditionMap
+}
+
+func conditionTypeValues(conditions []*v1.NodeCondition) []string {
+	if len(conditions) == 0 {
+		return nil
+	}
+	values := make([]string, 0, len(conditions))
+	for _, cond := range conditions {
+		values = append(values, string(cond.Type))
+	}
+	return values
+}
+
+func summarizeConditionTypes(problemTypes []string) string {
+	if len(problemTypes) == 0 {
+		return "unknown"
+	}
+	return strings.Join(problemTypes, ", ")
+}
+
+func isNodeAutoRepairDisabled(node *v1.Node) bool {
+	if node == nil || node.Labels == nil {
+		return false
+	}
+	val, ok := node.Labels[repairDisabledLabel]
+	if !ok {
+		return false
+	}
+	trimmed := strings.TrimSpace(val)
+	disabled, err := strconv.ParseBool(trimmed)
+	if err != nil {
+		return strings.EqualFold(trimmed, "true")
+	}
+	return disabled
 }
 
 func getRequeueDuration(logger logr.Logger, node *v1.Node) time.Duration {
