@@ -33,7 +33,6 @@ const (
 	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
 	narRepairCycleAttemptsKey     = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
 	narRepairCycleLockKey         = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
-	narCooldownAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-cooldown-time"
 	// Terminal repair summary annotations (preserved across cleanups)
 	narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
 	narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"
@@ -257,7 +256,6 @@ func newNodeRepairStateMachine(r *NodeAutoRepairReconciler, node *v1.Node, logge
 		originID:   node.Annotations[narRepairOriginAnnotationKey],
 	}
 	sm.refreshStateTracker()
-	sm.l().Info("Initialized node repair state machine with state tracker", "tracker", sm.tracker)
 	sm.ensureStateStart(sm.currentState())
 	return sm
 }
@@ -268,7 +266,6 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 	}
 
 	state := sm.currentState()
-	sm.l().Info("Running node repair state machine", "currentState", state)
 	if state == "" {
 		if err := sm.setState(ctx, stateDetected); err != nil {
 			return ctrl.Result{}, err
@@ -475,7 +472,6 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 			sm.emitWarningEvent(eventRepairRebooting, fmt.Sprintf("Reboot failed (attempt %d): %v", attempt, err))
 			return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, attempt)}, nil
 		}
-		sm.l().Info("Reboot work request %s submitted", workRequestID)
 		sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot work request %s submitted", workRequestID))
 		if err := sm.setRebootIssued(ctx, true); err != nil {
 			return ctrl.Result{}, err
@@ -497,7 +493,6 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 	if err := sm.setState(ctx, stateUncordon); err != nil {
 		return ctrl.Result{}, err
 	}
-	sm.l().Info("Instance is running after reboot; moving to Uncordoning")
 	sm.recordStateDuration(stateRebooting)
 	return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
 }
@@ -665,8 +660,7 @@ func (sm *nodeRepairStateMachine) incrementCycleFailure(ctx context.Context) err
 		ann[narRepairCycleAttemptsKey] = strconv.Itoa(cur)
 		if cur >= maxRepairCycles {
 			// Set lock only when threshold is reached
-			cooldown := getNodeCooldownDuration(sm.node)
-			ann[narRepairCycleLockKey] = time.Now().UTC().Add(cooldown).Format(time.RFC3339)
+			ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
 			sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
 		}
 	})
@@ -677,6 +671,21 @@ func (sm *nodeRepairStateMachine) currentAttempts() int {
 		return 0
 	}
 	val, ok := sm.node.Annotations[narAttemptsAnnotationKey]
+	if !ok {
+		return 0
+	}
+	parsed, err := strconv.Atoi(val)
+	if err != nil {
+		return 0
+	}
+	return parsed
+}
+
+func (sm *nodeRepairStateMachine) currentCycleAttempts() int {
+	if sm.node.Annotations == nil {
+		return 0
+	}
+	val, ok := sm.node.Annotations[narRepairCycleAttemptsKey]
 	if !ok {
 		return 0
 	}
