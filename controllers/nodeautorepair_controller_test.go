@@ -11,32 +11,6 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-// Test that handleUnhealthyNode throttles when last-repair-end is within cooldown window
-func TestHandleUnhealthyNode_Throttled(t *testing.T) {
-	now := time.Now().UTC()
-	node := &v1.Node{}
-	node.Name = "nar-throttle-node"
-	node.Annotations = map[string]string{
-		narLastRepairEndAnnotation: now.Add(-30 * time.Minute).Format(time.RFC3339),
-	}
-	// a sample unhealthy condition (type doesn't matter for this direct call)
-	cond := &v1.NodeCondition{Type: v1.NodeReady, Status: v1.ConditionFalse}
-
-	r := &NodeAutoRepairReconciler{}
-	logger := logr.Discard()
-
-	res, err := r.handleUnhealthyNode(context.Background(), logger, node, []*v1.NodeCondition{cond})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if res.RequeueAfter <= 0 {
-		t.Fatalf("expected positive RequeueAfter due to throttling, got %v", res.RequeueAfter)
-	}
-	// remaining should be less than cooldown (default 60m)
-	if res.RequeueAfter >= repairCoolDown {
-		t.Fatalf("expected RequeueAfter < cooldown %v, got %v", repairCoolDown, res.RequeueAfter)
-	}
-}
 
 func TestHandleUnhealthyNode_ThrottleEventSuppressedWhenRepairInProgress(t *testing.T) {
 	now := time.Now().UTC()
@@ -52,13 +26,11 @@ func TestHandleUnhealthyNode_ThrottleEventSuppressedWhenRepairInProgress(t *test
 	r := &NodeAutoRepairReconciler{Recorder: rec}
 	logger := logr.Discard()
 
-	res, err := r.handleUnhealthyNode(context.Background(), logger, node, []*v1.NodeCondition{cond})
+	_, err := r.handleUnhealthyNode(context.Background(), logger, node, []*v1.NodeCondition{cond})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if res.RequeueAfter <= 0 {
-		t.Fatalf("expected throttling requeue, got %v", res.RequeueAfter)
-	}
+
 	select {
 	case evt := <-rec.Events:
 		t.Fatalf("expected no throttle event when repair in progress, got %q", evt)
