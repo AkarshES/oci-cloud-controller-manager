@@ -43,35 +43,36 @@ const (
 )
 
 var UNHEALTHY_CONDITIONS map[string]string = map[string]string{
-	"IMDSUnreachable": "True",
-	"GPUCount":        "True",
-	"GPUCdfpCable":    "True",
-	"GPURowRemap":     "True",
-	"GPUClock":        "True",
-	"PCIeBus":         "True",
-	"PCIeLanes":       "True",
-	"RDMALinkCount":   "True",
-	"RxDiscards":      "True",
-	"GIDIndex":        "True",
-	"RDMALink":        "True",
-	"ETHLink":         "True",
-	"RDMALinkAuth":    "True",
-	"GPUSRAM":         "True",
-	"GPUDriver":       "True",
-	"ETH0Check":       "True",
-	"CDFPCable":       "True",
-	"HCACheck":        "True",
-	"PCIeInterface":   "True",
-	"GPUMemory":       "True",
-	"GPUThermal":      "True",
-	"SourceRouting":   "True",
-	"OCAVersion":      "True",
-	"RDMALinkFlap":    "True",
-	"RDMANicSpeed":    "True",
-	"RDMALinkSpeed":   "True",
-	"HPCMetadata":     "True",
-	"AdvancedRDMA":    "True",
-	"XGMILink":        "True",
+	"GPUCount":         "True",
+	"GPUClock":         "True",
+	"PCIeBus":          "True",
+	"PCIeLanes":        "True",
+	"RDMALinkCount":    "True",
+	"RDMALink":         "True",
+	"ETHLink":          "True",
+	"GPUSRAM":          "True",
+	"CDFPCable":        "True",
+	"GPURowRemap":      "True",
+	"RDMALinkFlap":     "True",
+	"RDMALinkSpeed":    "True",
+	"RDMALinkAuth":     "True",
+	"HPCMetadata":      "True",
+	"XGMILink":         "True",
+	"GPUMemory":        "True",
+	"BAR1Util":         "True",
+	"C2CLink":          "True",
+	"GPUDiagnostics":   "True",
+	"GPUDRAM":          "True",
+	"GPUFabric":        "True",
+	"GPUFabricManager": "True",
+	"GPUXID":           "True",
+	"NVLink":           "True",
+	"NVLinkErrors":     "True",
+	"PeerMem":          "True",
+	"PortState":        "True",
+	"RetiredPages":     "True",
+	"RTTCCStatus":      "True",
+	"RxDiscards":       "True",
 }
 
 type NodeAutoRepairReconciler struct {
@@ -120,6 +121,25 @@ func getMaxConcurrentRepairs() int {
 		}
 	}
 	return defaultConcurrency
+}
+
+// getNodeCooldownDuration lets operators override the cooldown per node via annotation.
+// The annotation accepts either an integer minutes value (e.g. "60") or a Go duration string ("45m").
+func getNodeCooldownDuration(node *v1.Node) time.Duration {
+	if node == nil || node.Annotations == nil {
+		return repairCoolDown
+	}
+	raw := strings.TrimSpace(node.Annotations[narCooldownAnnotationKey])
+	if raw == "" {
+		return repairCoolDown
+	}
+	if dur, err := time.ParseDuration(raw); err == nil && dur > 0 {
+		return dur
+	}
+	if mins, err := strconv.Atoi(raw); err == nil && mins > 0 {
+		return time.Duration(mins) * time.Minute
+	}
+	return repairCoolDown
 }
 
 // Reconcile is the main controller loop, now acting as an orchestrator.
@@ -219,6 +239,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	// Throttle if the node has been repaired recently (cool-down window)
 	if node.Annotations != nil {
+		cooldown := getNodeCooldownDuration(node)
 		// Cooldown is applied differently for success vs. failure cycles.
 		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
 		// If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
@@ -234,7 +255,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		}
 		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
 			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
-				until := endTime.Add(repairCoolDown)
+				until := endTime.Add(cooldown)
 				now := time.Now()
 				if now.Before(until) {
 					// Decide whether to throttle based on last result and cycle attempts
