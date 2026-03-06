@@ -560,11 +560,11 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	for _, newCondition := range newConditions {
 		oldCondition, exists := oldConditions[newCondition.Type]
 		if !exists {
-			p.log.Infow("CCM: New condition added to node.", "node", newNode.Name, "conditionType", newCondition.Type, "status", newCondition.Status, "reason", newCondition.Reason)
+			p.log.Debug("CCM: New condition added to node.", "node", newNode.Name, "conditionType", newCondition.Type, "status", newCondition.Status, "reason", newCondition.Reason)
 			return true
 		}
 		if oldCondition.Status != newCondition.Status || oldCondition.Reason != newCondition.Reason || oldCondition.Message != newCondition.Message {
-			p.log.Infow("CCM: Node condition: "+string(newCondition.Type)+" changed", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
+			p.log.Debug("CCM: Node condition: "+string(newCondition.Type)+" changed", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
 			if _, ok := UNHEALTHY_CONDITIONS[string(oldCondition.Type)]; ok {
 				return true
 			}
@@ -586,9 +586,9 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 		}
 	}
 	if lastManager != "" {
-		p.log.Info("CCM: NPD Condition hasn't changed. Detected a change in Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
+		p.log.Debug("CCM: NPD Condition hasn't changed. Detected a change in Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
 	} else {
-		p.log.Info("CCM: NPD Condition hasn't changed. No manager found for this update event.")
+		p.log.Debug("CCM: NPD Condition hasn't changed. No manager found for this update event.")
 	}
 	return false
 }
