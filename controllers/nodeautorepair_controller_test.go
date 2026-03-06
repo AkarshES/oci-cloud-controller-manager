@@ -38,6 +38,34 @@ func TestHandleUnhealthyNode_Throttled(t *testing.T) {
 	}
 }
 
+func TestHandleUnhealthyNode_ThrottleEventSuppressedWhenRepairInProgress(t *testing.T) {
+	now := time.Now().UTC()
+	node := &v1.Node{}
+	node.Name = "nar-throttle-in-progress"
+	node.Annotations = map[string]string{
+		narStateAnnotationKey:      string(stateDraining),
+		narLastRepairEndAnnotation: now.Add(-30 * time.Minute).Format(time.RFC3339),
+	}
+	cond := &v1.NodeCondition{Type: v1.NodeReady, Status: v1.ConditionFalse}
+
+	rec := record.NewFakeRecorder(1)
+	r := &NodeAutoRepairReconciler{Recorder: rec}
+	logger := logr.Discard()
+
+	res, err := r.handleUnhealthyNode(context.Background(), logger, node, []*v1.NodeCondition{cond})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter <= 0 {
+		t.Fatalf("expected throttling requeue, got %v", res.RequeueAfter)
+	}
+	select {
+	case evt := <-rec.Events:
+		t.Fatalf("expected no throttle event when repair in progress, got %q", evt)
+	default:
+	}
+}
+
 func TestGetNodeCooldownDuration_Default(t *testing.T) {
 	orig := repairCoolDown
 	repairCoolDown = 42 * time.Minute

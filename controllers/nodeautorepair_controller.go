@@ -141,6 +141,20 @@ func getNodeCooldownDuration(node *v1.Node) time.Duration {
 	return repairCoolDown
 }
 
+// isRepairInProgress reports whether the node currently carries a non-terminal NAR state.
+func isRepairInProgress(node *v1.Node) bool {
+	if node == nil || node.Annotations == nil {
+		return false
+	}
+	curState := node.Annotations[narStateAnnotationKey]
+	switch curState {
+	case "", string(stateSucceeded), string(stateFailed):
+		return false
+	default:
+		return true
+	}
+}
+
 // Reconcile is the main controller loop, now acting as an orchestrator.
 // Reconcile is the main controller loop.
 func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
@@ -237,6 +251,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	}
 
 	// Throttle if the node has been repaired recently (cool-down window)
+	repairInProgress := isRepairInProgress(node)
 	cooldown := getNodeCooldownDuration(node)
 	if node.Annotations != nil {
 		// Cooldown is applied differently for success vs. failure cycles.
@@ -264,11 +279,11 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 					}
 					if shouldThrottle {
 						remaining := time.Until(until)
-						if r.Recorder != nil {
+						if r.Recorder != nil && !repairInProgress {
 							r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
 						}
 						logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
-						return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+						return ctrl.Result{}, nil
 					}
 				}
 			}
