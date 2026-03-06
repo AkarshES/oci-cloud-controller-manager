@@ -38,6 +38,39 @@ func TestHandleUnhealthyNode_Throttled(t *testing.T) {
 	}
 }
 
+func TestGetNodeCooldownDuration_Default(t *testing.T) {
+	orig := repairCoolDown
+	repairCoolDown = 42 * time.Minute
+	defer func() { repairCoolDown = orig }()
+
+	node := &v1.Node{}
+	if got := getNodeCooldownDuration(node); got != repairCoolDown {
+		t.Fatalf("expected default cooldown %v, got %v", repairCoolDown, got)
+	}
+}
+
+func TestGetNodeCooldownDuration_DurationString(t *testing.T) {
+	node := &v1.Node{
+		Annotations: map[string]string{
+			narCooldownAnnotationKey: "5m30s",
+		},
+	}
+	if got := getNodeCooldownDuration(node); got != 5*time.Minute+30*time.Second {
+		t.Fatalf("expected custom duration 5m30s, got %v", got)
+	}
+}
+
+func TestGetNodeCooldownDuration_MinutesValue(t *testing.T) {
+	node := &v1.Node{
+		Annotations: map[string]string{
+			narCooldownAnnotationKey: "15",
+		},
+	}
+	if got := getNodeCooldownDuration(node); got != 15*time.Minute {
+		t.Fatalf("expected custom duration 15m, got %v", got)
+	}
+}
+
 func TestHandleUnhealthyNode_DisabledLabelSkipsRepair(t *testing.T) {
 	node := &v1.Node{}
 	node.Name = "nar-disabled-node"

@@ -33,6 +33,7 @@ const (
 	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
 	narRepairCycleAttemptsKey     = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
 	narRepairCycleLockKey         = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
+	narCooldownAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-cooldown"
 	// Terminal repair summary annotations (preserved across cleanups)
 	narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
 	narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"
@@ -266,6 +267,7 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 	}
 
 	state := sm.currentState()
+	sm.l().Info("Current repair state", "state", state)
 	if state == "" {
 		if err := sm.setState(ctx, stateDetected); err != nil {
 			return ctrl.Result{}, err
@@ -660,7 +662,8 @@ func (sm *nodeRepairStateMachine) incrementCycleFailure(ctx context.Context) err
 		ann[narRepairCycleAttemptsKey] = strconv.Itoa(cur)
 		if cur >= maxRepairCycles {
 			// Set lock only when threshold is reached
-			ann[narRepairCycleLockKey] = time.Now().UTC().Add(repairCoolDown).Format(time.RFC3339)
+			cooldown := getNodeCooldownDuration(sm.node)
+			ann[narRepairCycleLockKey] = time.Now().UTC().Add(cooldown).Format(time.RFC3339)
 			sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
 		}
 	})
