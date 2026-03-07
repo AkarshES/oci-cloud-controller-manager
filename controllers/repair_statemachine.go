@@ -33,7 +33,6 @@ const (
 	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
 	narRepairCycleAttemptsKey     = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
 	narRepairCycleLockKey         = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
-	narCooldownAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-cooldown"
 	// Terminal repair summary annotations (preserved across cleanups)
 	narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
 	narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"

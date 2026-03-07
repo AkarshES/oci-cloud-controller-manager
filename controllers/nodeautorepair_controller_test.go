@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-
 func TestHandleUnhealthyNode_ThrottleEventSuppressedWhenRepairInProgress(t *testing.T) {
 	now := time.Now().UTC()
 	node := &v1.Node{}
@@ -46,6 +45,28 @@ func TestGetNodeCooldownDuration_Default(t *testing.T) {
 	node := &v1.Node{}
 	if got := getNodeCooldownDuration(node); got != repairCoolDown {
 		t.Fatalf("expected default cooldown %v, got %v", repairCoolDown, got)
+	}
+}
+
+func TestGetNodeCooldownDuration_DurationString(t *testing.T) {
+	node := &v1.Node{
+		Labels: map[string]string{
+			repairCooldownLabel: "5m30s",
+		},
+	}
+	if got := getNodeCooldownDuration(node); got != 5*time.Minute+30*time.Second {
+		t.Fatalf("expected custom duration 5m30s, got %v", got)
+	}
+}
+
+func TestGetNodeCooldownDuration_MinutesValue(t *testing.T) {
+	node := &v1.Node{
+		Labels: map[string]string{
+			repairCooldownLabel: "15",
+		},
+	}
+	if got := getNodeCooldownDuration(node); got != 15*time.Minute {
+		t.Fatalf("expected custom duration 15m, got %v", got)
 	}
 }
 

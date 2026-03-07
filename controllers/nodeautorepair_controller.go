@@ -38,6 +38,7 @@ const (
 	repairProblemDetectedLabel string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
 	repairDisabledLabel        string         = "oci.oraclecloud.com/node-auto-repair-disabled"
 	repairFrequencyLabel       string         = "oci.oraclecloud.com/node-auto-repair-freq"
+	repairCooldownLabel        string         = "oci.oraclecloud.com/node-auto-repair-cooldown"
 	REPAIR_TAINT_KEY           string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
 	REPAIR_TAINT_EFFECT        v1.TaintEffect = v1.TaintEffectNoSchedule
 )
@@ -122,13 +123,13 @@ func getMaxConcurrentRepairs() int {
 	return defaultConcurrency
 }
 
-// getNodeCooldownDuration lets operators override the cooldown per node via annotation.
-// The annotation accepts either an integer minutes value (e.g. "60") or a Go duration string ("45m").
+// getNodeCooldownDuration lets operators override the cooldown per node via label.
+// The label accepts either an integer minutes value (e.g. "60") or a Go duration string ("45m").
 func getNodeCooldownDuration(node *v1.Node) time.Duration {
-	if node == nil || node.Annotations == nil {
+	if node == nil || node.Labels == nil {
 		return repairCoolDown
 	}
-	raw := strings.TrimSpace(node.Annotations[narCooldownAnnotationKey])
+	raw := strings.TrimSpace(node.Labels[repairCooldownLabel])
 	if raw == "" {
 		return repairCoolDown
 	}
@@ -284,7 +285,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 							r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
 						}
 						logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
-						return ctrl.Result{}, nil
+						return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 					}
 				}
 			}
