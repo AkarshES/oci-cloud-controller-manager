@@ -49,22 +49,22 @@ func TestGetNodeCooldownDuration_Default(t *testing.T) {
 }
 
 func TestGetNodeCooldownDuration_DurationString(t *testing.T) {
-	node := &v1.Node{
-		Labels: map[string]string{
-			repairCooldownLabel: "5m30s",
-		},
+	node := &v1.Node{}
+	node.Labels = map[string]string{
+		repairCooldownLabel: "5m30s",
 	}
+
 	if got := getNodeCooldownDuration(node); got != 5*time.Minute+30*time.Second {
 		t.Fatalf("expected custom duration 5m30s, got %v", got)
 	}
 }
 
 func TestGetNodeCooldownDuration_MinutesValue(t *testing.T) {
-	node := &v1.Node{
-		Labels: map[string]string{
-			repairCooldownLabel: "15",
-		},
+	node := &v1.Node{}
+	node.Labels = map[string]string{
+		repairCooldownLabel: "15",
 	}
+
 	if got := getNodeCooldownDuration(node); got != 15*time.Minute {
 		t.Fatalf("expected custom duration 15m, got %v", got)
 	}
