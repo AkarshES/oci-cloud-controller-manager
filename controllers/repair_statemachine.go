@@ -389,6 +389,7 @@ func (sm *nodeRepairStateMachine) validateRepairID(ctx context.Context) error {
 }
 
 func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Result, error) {
+	sm.l().Info("CCM: Handle cordoning state")
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -411,6 +412,7 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 		sm.emitWarningEvent(eventRepairCordoned, fmt.Sprintf("Cordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateCordoning, attempt)}, nil
 	}
+	sm.l().Info("CCM: Emit cordoning event and transition to draining")
 	sm.emitEvent(eventRepairCordoned, "Node cordoned; moving to Draining")
 	sm.recordStateDuration(stateCordoning)
 	if err := sm.setState(ctx, stateDraining); err != nil {
@@ -420,6 +422,7 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 }
 
 func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Result, error) {
+	sm.l().Info("CCM: Handle draining state")
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -440,7 +443,9 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 		sm.emitWarningEvent(eventRepairDraining, fmt.Sprintf("Draining failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateDraining, attempt)}, nil
 	}
+	sm.l().Info("CCM: Emit draining event and transition to rebooting")
 	sm.emitEvent(eventRepairDraining, "Drain succeeded; moving to Rebooting")
+	sm.l().Info("CCM: Record state duration for draining")
 	sm.recordStateDuration(stateDraining)
 	if err := sm.setState(ctx, stateRebooting); err != nil {
 		return ctrl.Result{}, err
@@ -449,6 +454,7 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 }
 
 func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Result, error) {
+	sm.l().Info("CCM: Handle rebooting state")
 	if err := sm.validateRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -474,6 +480,7 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 			return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, attempt)}, nil
 		}
 		sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot work request %s submitted", workRequestID))
+		sm.l().Info("CCM: Reboot issued, recording annotation and polling for instance state", "workRequestID", workRequestID)
 		if err := sm.setRebootIssued(ctx, true); err != nil {
 			return ctrl.Result{}, err
 		}
