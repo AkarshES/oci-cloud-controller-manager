@@ -281,11 +281,15 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 					}
 					if shouldThrottle {
 						remaining := time.Until(until)
-						if r.Recorder != nil && !repairInProgress {
-							r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+						if repairInProgress {
+							logger.Info("CCM: Cool-down window active but repair already in progress; continuing", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
+						} else {
+							if r.Recorder != nil {
+								r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+							}
+							logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
+							return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 						}
-						logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
-						return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 					}
 				}
 			}
