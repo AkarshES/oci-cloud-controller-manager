@@ -195,7 +195,7 @@ func (r *NodeAutoRepairReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				if activeNode == "" {
 					logger.Info("CCM: Another controller holds the repair lease (resume path), waiting")
 				} else {
-					logger.Info("CCM: Another node is currently under repair (resume path)", "activeNode", activeNode)
+					logger.Info(fmt.Sprintf("CCM: Another node is currently under repair (resume path) (activeNode=%s)", activeNode))
 				}
 				return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 			}
@@ -247,14 +247,14 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 			r.Recorder.Event(node, v1.EventTypeNormal, eventRepairDisabled,
 				fmt.Sprintf("[Node Auto Repair]: Node opted out via %s=true; detected conditions: %s", repairDisabledLabel, conditionSummary))
 		}
-		logger.Info("CCM: Node auto repair disabled via label; skipping cordon/drain/reboot", "node", node.Name, "conditions", conditionSummary)
+		logger.Info(fmt.Sprintf("CCM: Node auto repair disabled via label; skipping cordon/drain/reboot (node=%s conditions=%s)", node.Name, conditionSummary))
 		return ctrl.Result{}, nil
 	}
 
 	// Throttle if the node has been repaired recently (cool-down window)
 	repairInProgress := isRepairInProgress(node)
 	cooldown := getNodeCooldownDuration(node)
-	logger.Info("CCM: Node auto repair cooldown check, repairInProgress "+strconv.FormatBool(repairInProgress), "node", node.Name, "cooldown", cooldown)
+	logger.Info(fmt.Sprintf("CCM: Node auto repair cooldown check repairInProgress=%t node=%s cooldown=%s", repairInProgress, node.Name, cooldown))
 	if node.Annotations != nil {
 		// Cooldown is applied differently for success vs. failure cycles.
 		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
@@ -282,12 +282,12 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 					if shouldThrottle {
 						remaining := time.Until(until)
 						if repairInProgress {
-							logger.Info("CCM: Cool-down window active but repair already in progress; continuing", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
+							logger.Info(fmt.Sprintf("CCM: Cool-down window active but repair already in progress; continuing (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
 						} else {
 							if r.Recorder != nil {
 								r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
 							}
-							logger.Info("CCM: Throttling node auto repair due to cool-down window", "node", node.Name, "remaining", remaining, "lastResult", lastResult, "cycleAttempts", cycleAttempts, "maxCycles", maxRepairCycles, "cooldown", cooldown)
+							logger.Info(fmt.Sprintf("CCM: Throttling node auto repair due to cool-down window (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
 							return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 						}
 					}
@@ -309,7 +309,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		if activeNode == "" {
 			logger.Info("CCM: Another controller holds the repair lease, waiting")
 		} else {
-			logger.Info("CCM: Another node is currently under repair", "activeNode", activeNode)
+			logger.Info(fmt.Sprintf("CCM: Another node is currently under repair (activeNode=%s)", activeNode))
 		}
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
@@ -317,7 +317,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		logger.Error(err, "CCM: failed to start lease heartbeat")
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
-	logger.Info("CCM: acquired repair lease", "node", node.Name)
+	logger.Info(fmt.Sprintf("CCM: acquired repair lease (node=%s)", node.Name))
 
 	aggregatedLabelValue := strings.Join(problemTypes, ",")
 
@@ -339,7 +339,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	if r.Recorder != nil {
 		r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
 	}
-	logger.Info("CCM: Node conditions triggered repair action", "node", node.Name, "conditions", strings.Join(problemTypes, ", "))
+	logger.Info(fmt.Sprintf("CCM: Node conditions triggered repair action (node=%s conditions=%s)", node.Name, strings.Join(problemTypes, ", ")))
 
 	repairSM := newNodeRepairStateMachine(r, node, logger)
 	return repairSM.Run(ctx)
@@ -454,26 +454,26 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 		curState := node.Annotations[narStateAnnotationKey]
 		switch curState {
 		case string(stateCordoning), string(stateDraining), string(stateRebooting), string(stateUncordon), string(stateDetected):
-			logger.Info("Node recovered while under NAR; finalizing as succeeded", "node", node.Name, "state", curState)
+			logger.Info(fmt.Sprintf("Node recovered while under NAR; finalizing as succeeded (node=%s state=%s)", node.Name, curState))
 			sm := newNodeRepairStateMachine(r, node, logger)
 			if err := r.ensureLeaseManager(logger); err != nil {
-				logger.Error(err, "Failed to ensure lease manager during cleanup", "node", node.Name)
+				logger.Error(err, fmt.Sprintf("Failed to ensure lease manager during cleanup (node=%s)", node.Name))
 				break
 			}
 			acquired, _, err := r.leaseManager.TryAcquire(ctx, node.Name)
 			if err != nil {
-				logger.Error(err, "Failed to acquire lease during cleanup", "node", node.Name)
+				logger.Error(err, fmt.Sprintf("Failed to acquire lease during cleanup (node=%s)", node.Name))
 				break
 			}
 			if !acquired {
-				logger.Info("Lease held elsewhere; skipping cleanup finalize", "node", node.Name)
+				logger.Info(fmt.Sprintf("Lease held elsewhere; skipping cleanup finalize (node=%s)", node.Name))
 				break
 			}
 			if err := sm.finalizeRepair(ctx, "succeeded"); err != nil {
-				logger.Error(err, "Failed to finalize repair during cleanup", "node", node.Name)
+				logger.Error(err, fmt.Sprintf("Failed to finalize repair during cleanup (node=%s)", node.Name))
 			}
 			if err := r.releaseLease(ctx, node.Name); err != nil {
-				logger.Error(err, "Failed to release cleanup lease", "node", node.Name)
+				logger.Error(err, fmt.Sprintf("Failed to release cleanup lease (node=%s)", node.Name))
 			}
 		}
 	}
@@ -484,7 +484,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	// If the node is healthy (we're in cleanup), and it still remains cordoned, auto-uncordon
 	// but only if there are NAR markers indicating the cordon likely originated from NAR.
 	if (hasNARTaint || hasWorkingNARAnnotation) && node.Spec.Unschedulable {
-		logger.Info("Node is healthy; auto-uncordon due to previous NAR markers", "node", node.Name)
+		logger.Info(fmt.Sprintf("Node is healthy; auto-uncordon due to previous NAR markers (node=%s)", node.Name))
 		node.Spec.Unschedulable = false
 		needsPatch = true
 	}
@@ -492,7 +492,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	// 1. Clean up repair labels.
 	for key := range node.Labels {
 		if strings.HasPrefix(key, repairProblemDetectedLabel) {
-			logger.Info("Node is healthy, removing repair label", "node", node.Name, "label", key)
+			logger.Info(fmt.Sprintf("Node is healthy, removing repair label (node=%s label=%s)", node.Name, key))
 			delete(node.Labels, key)
 			needsPatch = true
 		}
@@ -510,7 +510,7 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	}
 
 	if taintToRemove {
-		logger.Info("Node is healthy, removing repair taint", "node", node.Name, "taint", REPAIR_TAINT_KEY)
+		logger.Info(fmt.Sprintf("Node is healthy, removing repair taint (node=%s taint=%s)", node.Name, REPAIR_TAINT_KEY))
 		node.Spec.Taints = taintsToKeep
 		needsPatch = true
 	}
@@ -532,16 +532,16 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 	}
 
 	if needsPatch {
-		logger.Info("Applying cleanup patch to node", "node", node.Name)
+		logger.Info(fmt.Sprintf("Applying cleanup patch to node (node=%s)", node.Name))
 		if err := r.Client.Patch(ctx, node, patch); err != nil {
 			logger.Error(err, "Failed to apply cleanup patch to node")
 			return ctrl.Result{}, err
 		}
 	} else {
-		logger.Info("Node is healthy and has no NPD conditions to clean up.", "node", node.Name)
+		logger.Info(fmt.Sprintf("Node is healthy and has no NPD conditions to clean up (node=%s)", node.Name))
 	}
 	if err := r.stopLeaseHeartbeat(ctx, node.Name); err != nil {
-		logger.Error(err, "Failed to stop lease heartbeat", "node", node.Name)
+		logger.Error(err, fmt.Sprintf("Failed to stop lease heartbeat (node=%s)", node.Name))
 	}
 
 	return ctrl.Result{}, nil
@@ -561,25 +561,6 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	if !ok {
 		return false
 	}
-	oldConditions := getConditionMap(oldNode.Status.Conditions)
-	newConditions := getConditionMap(newNode.Status.Conditions)
-	for _, newCondition := range newConditions {
-		oldCondition, exists := oldConditions[newCondition.Type]
-		if !exists {
-			p.log.Debug("CCM: New condition added to node.", "node", newNode.Name, "conditionType", newCondition.Type, "status", newCondition.Status, "reason", newCondition.Reason)
-			return true
-		}
-		if oldCondition.Status != newCondition.Status || oldCondition.Reason != newCondition.Reason || oldCondition.Message != newCondition.Message {
-			p.log.Debug("CCM: Node condition: "+string(newCondition.Type)+" changed", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
-			if _, ok := UNHEALTHY_CONDITIONS[string(oldCondition.Type)]; ok {
-				return true
-			}
-		}
-		if expectedStatus, ok := UNHEALTHY_CONDITIONS[string(newCondition.Type)]; ok && string(newCondition.Status) == expectedStatus {
-			p.log.Infow("CCM: Unhealthy Node condition: "+string(newCondition.Type)+" remained", "node", newNode.Name, "conditionType", newCondition.Type, "oldStatus", oldCondition.Status, "newStatus", newCondition.Status, "oldReason", oldCondition.Reason, "newReason", newCondition.Reason, "oldHeartBeatTime", oldCondition.LastHeartbeatTime, "newHeartBeatTime", newCondition.LastHeartbeatTime, "oldTransitTime", oldCondition.LastTransitionTime, "newTransitTime", newCondition.LastHeartbeatTime)
-			return true
-		}
-	}
 
 	var lastManager string
 	var lastUpdateTime time.Time
@@ -591,12 +572,63 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 			fieldName = field.String()
 		}
 	}
+
+	oldConditions := getConditionMap(oldNode.Status.Conditions)
+	newConditions := getConditionMap(newNode.Status.Conditions)
+	for _, newCondition := range newConditions {
+		oldCondition, exists := oldConditions[newCondition.Type]
+		if !exists {
+			p.log.Debugf("CCM: New condition added to node (node=%s conditionType=%s status=%s reason=%s)", newNode.Name, newCondition.Type, newCondition.Status, newCondition.Reason)
+			return true
+		}
+		if oldCondition.Status != newCondition.Status || oldCondition.Reason != newCondition.Reason || oldCondition.Message != newCondition.Message {
+			p.log.Debugf("CCM: Node condition %s changed (node=%s oldStatus=%s newStatus=%s oldReason=%s newReason=%s oldHeartbeat=%s newHeartbeat=%s oldTransit=%s newTransit=%s)",
+				string(newCondition.Type),
+				newNode.Name,
+				oldCondition.Status,
+				newCondition.Status,
+				oldCondition.Reason,
+				newCondition.Reason,
+				oldCondition.LastHeartbeatTime.String(),
+				newCondition.LastHeartbeatTime.String(),
+				oldCondition.LastTransitionTime.String(),
+				newCondition.LastHeartbeatTime.String())
+			if _, ok := UNHEALTHY_CONDITIONS[string(oldCondition.Type)]; ok {
+				return true
+			}
+		}
+		if expectedStatus, ok := UNHEALTHY_CONDITIONS[string(newCondition.Type)]; ok && string(newCondition.Status) == expectedStatus {
+			triggerDetails := fmt.Sprintf("manager=%s time=%s field=%s",
+				coalesceEmpty(lastManager, "unknown"),
+				formatTimeOrUnknown(lastUpdateTime),
+				coalesceEmpty(fieldName, "unknown"))
+			p.log.Infof("CCM: Unhealthy node condition %s remained (triggered by %s)",
+				string(newCondition.Type),
+				triggerDetails)
+			return true
+		}
+	}
+
 	if lastManager != "" {
-		p.log.Debug("CCM: NPD Condition hasn't changed. Detected a change in Node object.", " manager: ", lastManager, " updateTime: ", lastUpdateTime, " fieldName:", fieldName)
+		p.log.Debugf("CCM: NPD Condition hasn't changed. Detected a change in Node object (manager=%s updateTime=%v fieldName=%s)", lastManager, lastUpdateTime, fieldName)
 	} else {
 		p.log.Debug("CCM: NPD Condition hasn't changed. No manager found for this update event.")
 	}
 	return false
+}
+
+func coalesceEmpty(val string, fallback string) string {
+	if strings.TrimSpace(val) == "" {
+		return fallback
+	}
+	return val
+}
+
+func formatTimeOrUnknown(t time.Time) string {
+	if t.IsZero() {
+		return "unknown"
+	}
+	return t.UTC().Format(time.RFC3339)
 }
 
 func getConditionMap(conditions []v1.NodeCondition) map[v1.NodeConditionType]v1.NodeCondition {
@@ -737,5 +769,5 @@ func (r *NodeAutoRepairReconciler) stopLeaseHeartbeat(ctx context.Context, nodeN
 }
 
 func (r *NodeAutoRepairReconciler) logHeartbeatError(err error, logger logr.Logger, nodeName string) {
-	logger.Error(err, "CCM: lease heartbeat failed", "node", nodeName)
+	logger.Error(err, fmt.Sprintf("CCM: lease heartbeat failed (node=%s)", nodeName))
 }

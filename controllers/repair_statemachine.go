@@ -300,7 +300,7 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 		sm.l().Info("Node auto repair is in failed state. Awaiting manual remediation")
 		return ctrl.Result{}, nil
 	default:
-		sm.l().Info("Unknown node auto repair state, resetting", "observedState", state)
+		sm.l().Info(fmt.Sprintf("Unknown node auto repair state, resetting (observedState=%s)", state))
 		if err := sm.setState(ctx, stateDetected); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -318,7 +318,7 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 	}
 	if stopped, wait := sm.cycleAttemptsExceeded(); stopped {
 		sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
-		sm.l().Info("Repair cycle attempts exceeded; waiting before next cycle", "wait", wait)
+		sm.l().Info(fmt.Sprintf("Repair cycle attempts exceeded; waiting before next cycle (wait=%s)", wait))
 		return ctrl.Result{RequeueAfter: wait}, nil
 	}
 	sm.repairID = sm.node.Annotations[narRepairIDAnnotationKey]
@@ -408,7 +408,7 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 		return sm.failState(ctx, stateCordoning, fmt.Errorf("cordoning exceeded maximum attempts"))
 	}
 	if err := sm.cordonNode(ctx); err != nil {
-		sm.l().Error(err, "Cordoning node failed", "attempt", attempt)
+		sm.l().Error(err, fmt.Sprintf("Cordoning node failed (attempt=%d)", attempt))
 		sm.emitWarningEvent(eventRepairCordoned, fmt.Sprintf("Cordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateCordoning, attempt)}, nil
 	}
@@ -439,7 +439,7 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 	}
 
 	if err := sm.drainNode(ctx); err != nil {
-		sm.l().Error(err, "Draining node failed", "attempt", attempt)
+		sm.l().Error(err, fmt.Sprintf("Draining node failed (attempt=%d)", attempt))
 		sm.emitWarningEvent(eventRepairDraining, fmt.Sprintf("Draining failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateDraining, attempt)}, nil
 	}
@@ -475,12 +475,12 @@ func (sm *nodeRepairStateMachine) handleRebooting(ctx context.Context) (ctrl.Res
 		}
 		workRequestID, err := sm.triggerReboot(ctx)
 		if err != nil {
-			sm.l().Error(err, "Reboot request failed", "attempt", attempt)
+			sm.l().Error(err, fmt.Sprintf("Reboot request failed (attempt=%d)", attempt))
 			sm.emitWarningEvent(eventRepairRebooting, fmt.Sprintf("Reboot failed (attempt %d): %v", attempt, err))
 			return ctrl.Result{RequeueAfter: sm.retryDelay(stateRebooting, attempt)}, nil
 		}
 		sm.emitEvent(eventRepairRebooting, fmt.Sprintf("Reboot work request %s submitted", workRequestID))
-		sm.l().Info("CCM: Reboot issued, recording annotation and polling for instance state", "workRequestID", workRequestID)
+		sm.l().Info(fmt.Sprintf("CCM: Reboot issued, recording annotation and polling for instance state (workRequestID=%s)", workRequestID))
 		if err := sm.setRebootIssued(ctx, true); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -524,7 +524,7 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning exceeded maximum attempts"))
 	}
 	if err := sm.uncordonNode(ctx); err != nil {
-		sm.l().Error(err, "Uncordoning node failed", "attempt", attempt)
+		sm.l().Error(err, fmt.Sprintf("Uncordoning node failed (attempt=%d)", attempt))
 		sm.emitWarningEvent(eventRepairUncordoned, fmt.Sprintf("Uncordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateUncordon, attempt)}, nil
 	}
@@ -620,6 +620,8 @@ func (sm *nodeRepairStateMachine) lastTransitionTime() time.Time {
 }
 
 func (sm *nodeRepairStateMachine) setState(ctx context.Context, next repairState) error {
+	prev := sm.currentState()
+	sm.l().Info(fmt.Sprintf("Transitioning node auto repair state from %s to %s", prev, next))
 	return sm.updateAnnotations(ctx, func(ann map[string]string) {
 		ann[narStateAnnotationKey] = string(next)
 		ann[narLastTransitionAnnotation] = time.Now().UTC().Format(time.RFC3339)
@@ -725,7 +727,7 @@ func (sm *nodeRepairStateMachine) cycleAttemptsExceeded() (bool, time.Duration) 
 }
 
 func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairState, reason error) (ctrl.Result, error) {
-	sm.l().Error(reason, "Repair state failed", "state", state)
+	sm.l().Error(reason, fmt.Sprintf("Repair state failed (state=%s)", state))
 	sm.emitWarningEvent(eventRepairFailed, fmt.Sprintf("State %s failed: %v", state, reason))
 	sm.recordMetric(metricRepairFailures, 1)
 	// Record duration spent in the failing state before transitioning to Failed
@@ -891,17 +893,21 @@ func (sm *nodeRepairStateMachine) patchNode(ctx context.Context, mutate func(*v1
 }
 
 func (sm *nodeRepairStateMachine) emitEvent(reason, message string) {
+	decorated := sm.decorateMessage(message)
+	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeNormal, reason, decorated))
 	if sm.reconciler.Recorder == nil {
 		return
 	}
-	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, sm.decorateMessage(message))
+	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, decorated)
 }
 
 func (sm *nodeRepairStateMachine) emitWarningEvent(reason, message string) {
+	decorated := sm.decorateMessage(message)
+	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeWarning, reason, decorated))
 	if sm.reconciler.Recorder == nil {
 		return
 	}
-	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeWarning, reason, sm.decorateMessage(message))
+	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeWarning, reason, decorated)
 }
 
 func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
