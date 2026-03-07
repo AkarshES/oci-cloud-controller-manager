@@ -266,7 +266,7 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 	}
 
 	state := sm.currentState()
-	sm.l().Info("Current repair state" + string(state))
+	sm.l().Info("Current repair state " + string(state))
 	if state == "" {
 		if err := sm.setState(ctx, stateDetected); err != nil {
 			return ctrl.Result{}, err
@@ -310,6 +310,7 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 
 func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Result, error) {
 	// Verify we still own the global repair lease before proceeding
+	sm.l().Info("CCM: Handle detected state")
 	if err := sm.ensureLeaseOwned(ctx); err != nil {
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
@@ -325,6 +326,7 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 	sm.tracker = newRepairStateTracker(sm.repairID)
 	sm.ensureStateStart(stateCordoning)
 	sm.emitEvent(eventRepairDetected, "Detected unhealthy node; transitioning to Cordoning")
+	sm.l().Info("CCM: Emit detected event and transition to cordoning")
 	sm.recordMetric(metricRepairTotal, 1)
 	if err := sm.setState(ctx, stateCordoning); err != nil {
 		return ctrl.Result{}, err
