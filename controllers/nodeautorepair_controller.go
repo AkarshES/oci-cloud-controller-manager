@@ -254,7 +254,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// Throttle if the node has been repaired recently (cool-down window)
 	repairInProgress := isRepairInProgress(node)
 	cooldown := getNodeCooldownDuration(node)
-	logger.Info("CCM: Node auto repair cooldown check", "node", node.Name, "repairInProgress", repairInProgress, "cooldown", cooldown)
+	logger.Info("CCM: Node auto repair cooldown check, repairInProgress "+strconv.FormatBool(repairInProgress), "node", node.Name, "cooldown", cooldown)
 	if node.Annotations != nil {
 		// Cooldown is applied differently for success vs. failure cycles.
 		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.

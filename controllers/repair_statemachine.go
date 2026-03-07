@@ -266,7 +266,7 @@ func (sm *nodeRepairStateMachine) Run(ctx context.Context) (ctrl.Result, error) 
 	}
 
 	state := sm.currentState()
-	sm.l().Info("Current repair state", "state", state)
+	sm.l().Info("Current repair state" + string(state))
 	if state == "" {
 		if err := sm.setState(ctx, stateDetected); err != nil {
 			return ctrl.Result{}, err
