@@ -76,8 +76,8 @@ var (
 	defaultRetryCap    = getEnvDuration("NODE_AUTOREPAIR_RETRY_CAP", 5*time.Minute)
 	repairStateConfigs = map[repairState]stateConfig{
 		stateCordoning: {
-			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_CORDONING", 30*time.Second),
-			successRequeue: 5 * time.Second,
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_CORDONING", 60*time.Second),
+			successRequeue: 10 * time.Second,
 			retryBase:      defaultRetryBase,
 		},
 		stateDraining: {
@@ -92,7 +92,7 @@ var (
 		},
 		stateUncordon: {
 			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_UNCORDONING", 30*time.Second),
-			successRequeue: 0,
+			successRequeue: 5 * time.Second,
 			retryBase:      defaultRetryBase,
 		},
 	}

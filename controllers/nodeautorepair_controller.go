@@ -288,7 +288,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 							// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
 							// }
 							logger.Info(fmt.Sprintf("CCM: Throttling node auto repair due to cool-down window (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
-							return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+							// return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 						}
 					}
 				}
