@@ -254,7 +254,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	// Throttle if the node has been repaired recently (cool-down window)
 	repairInProgress := isRepairInProgress(node)
 	cooldown := getNodeCooldownDuration(node)
-	logger.Info(fmt.Sprintf("CCM: Node auto repair cooldown check repairInProgress=%t node=%s cooldown=%s", repairInProgress, node.Name, cooldown))
+	logger.Info(fmt.Sprintf("CCM: Node auto repair cooldown check repairInProgress=%t node=%s nodeState %s", repairInProgress, node.Name, node.Annotations[narStateAnnotationKey]))
 	if node.Annotations != nil {
 		// Cooldown is applied differently for success vs. failure cycles.
 		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
@@ -284,9 +284,9 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 						if repairInProgress {
 							logger.Info(fmt.Sprintf("CCM: Cool-down window active but repair already in progress; continuing (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
 						} else {
-							if r.Recorder != nil {
-								r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
-							}
+							// if r.Recorder != nil {
+							// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
+							// }
 							logger.Info(fmt.Sprintf("CCM: Throttling node auto repair due to cool-down window (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
 							return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 						}
@@ -582,17 +582,10 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 			return true
 		}
 		if oldCondition.Status != newCondition.Status || oldCondition.Reason != newCondition.Reason || oldCondition.Message != newCondition.Message {
-			p.log.Debugf("CCM: Node condition %s changed (node=%s oldStatus=%s newStatus=%s oldReason=%s newReason=%s oldHeartbeat=%s newHeartbeat=%s oldTransit=%s newTransit=%s)",
+			p.log.Infof("CCM: Node condition %s changed (node=%s %s)",
 				string(newCondition.Type),
 				newNode.Name,
-				oldCondition.Status,
-				newCondition.Status,
-				oldCondition.Reason,
-				newCondition.Reason,
-				oldCondition.LastHeartbeatTime.String(),
-				newCondition.LastHeartbeatTime.String(),
-				oldCondition.LastTransitionTime.String(),
-				newCondition.LastHeartbeatTime.String())
+				summarizeConditionDiff(oldCondition, newCondition))
 			if _, ok := UNHEALTHY_CONDITIONS[string(oldCondition.Type)]; ok {
 				return true
 			}
@@ -655,6 +648,23 @@ func summarizeConditionTypes(problemTypes []string) string {
 		return "unknown"
 	}
 	return strings.Join(problemTypes, ", ")
+}
+
+func summarizeConditionDiff(oldCond, newCond v1.NodeCondition) string {
+	var diffs []string
+	if oldCond.Status != newCond.Status {
+		diffs = append(diffs, fmt.Sprintf("status:%s→%s", oldCond.Status, newCond.Status))
+	}
+	if oldCond.Reason != newCond.Reason {
+		diffs = append(diffs, fmt.Sprintf("reason:%s→%s", coalesceEmpty(oldCond.Reason, "''"), coalesceEmpty(newCond.Reason, "''")))
+	}
+	if oldCond.Message != newCond.Message {
+		diffs = append(diffs, fmt.Sprintf("message:%q→%q", oldCond.Message, newCond.Message))
+	}
+	if len(diffs) == 0 {
+		return "no condition field changes detected"
+	}
+	return strings.Join(diffs, ", ")
 }
 
 func isNodeAutoRepairDisabled(node *v1.Node) bool {
