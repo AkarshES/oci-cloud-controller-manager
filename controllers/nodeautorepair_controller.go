@@ -92,7 +92,7 @@ type NodeAutoRepairReconciler struct {
 
 // Cool-down window after a repair finishes. During this window, new repairs are throttled.
 var (
-	repairCoolDown = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 60*time.Minute)
+	repairCoolDown = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 20*time.Minute)
 )
 
 // SetupWithManager sets up the controller with the Manager.
@@ -336,7 +336,7 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	// Step 2: Record a single, combined event and log message.
 	eventMessage := "[Node Auto Repair]: Node conditions are unhealthy: " + strings.Join(problemTypes, ", ")
-	if r.Recorder != nil {
+	if r.Recorder != nil && !repairInProgress {
 		r.Recorder.Event(node, v1.EventTypeWarning, "NodeUnhealthy", eventMessage)
 	}
 	logger.Info(fmt.Sprintf("CCM: Node conditions triggered repair action (node=%s conditions=%s)", node.Name, strings.Join(problemTypes, ", ")))
