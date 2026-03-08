@@ -895,23 +895,25 @@ func (sm *nodeRepairStateMachine) patchNode(ctx context.Context, mutate func(*v1
 }
 
 func (sm *nodeRepairStateMachine) emitEvent(reason, message string) {
-	decorated := sm.decorateMessage(message)
-	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeNormal, reason, decorated))
+	decoratedMsg := sm.decorateMessage(message)
+	decoratedReason := sm.decorateReason(reason)
+	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeNormal, decoratedReason, decoratedMsg))
 	if sm.reconciler.Recorder == nil {
 		sm.l().Info("Event recorder not available; skipping event emission")
 		return
 	}
-	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, decorated)
-	sm.l().Info(fmt.Sprintf("Emitted repair event type=%s reason=%s message=%s", v1.EventTypeNormal, reason, decorated))
+	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, decoratedReason, decoratedMsg)
+	sm.l().Info(fmt.Sprintf("Emitted repair event type=%s reason=%s message=%s", v1.EventTypeNormal, decoratedReason, decoratedMsg))
 }
 
 func (sm *nodeRepairStateMachine) emitWarningEvent(reason, message string) {
-	decorated := sm.decorateMessage(message)
-	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeWarning, reason, decorated))
+	decoratedMsg := sm.decorateMessage(message)
+	decoratedReason := sm.decorateReason(reason)
+	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeWarning, decoratedReason, decoratedMsg))
 	if sm.reconciler.Recorder == nil {
 		return
 	}
-	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeWarning, reason, decorated)
+	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeWarning, decoratedReason, decoratedMsg)
 }
 
 func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
@@ -935,6 +937,19 @@ func (sm *nodeRepairStateMachine) decorateMessage(msg string) string {
 		return msg
 	}
 	return fmt.Sprintf("[repair-id:%s] %s", sm.repairID, msg)
+}
+
+// decorateReason appends a repair-id-based suffix so each repair emits a distinct
+// event reason, preventing aggregation from collapsing state transitions.
+func (sm *nodeRepairStateMachine) decorateReason(reason string) string {
+	if sm.repairID == "" || reason == "" {
+		return reason
+	}
+	suffix := strings.ToUpper(strings.ReplaceAll(sm.repairID, "-", ""))
+	if len(suffix) > 12 {
+		suffix = suffix[len(suffix)-12:]
+	}
+	return fmt.Sprintf("%s_%s", reason, suffix)
 }
 
 // ensureLeaseOwned verifies that the reconciler still holds the global repair lease
