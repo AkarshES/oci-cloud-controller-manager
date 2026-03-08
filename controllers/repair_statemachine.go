@@ -898,9 +898,11 @@ func (sm *nodeRepairStateMachine) emitEvent(reason, message string) {
 	decorated := sm.decorateMessage(message)
 	sm.l().Info(fmt.Sprintf("Emitting repair event type=%s reason=%s message=%s", v1.EventTypeNormal, reason, decorated))
 	if sm.reconciler.Recorder == nil {
+		sm.l().Info("Event recorder not available; skipping event emission")
 		return
 	}
 	sm.reconciler.Recorder.Event(sm.node, v1.EventTypeNormal, reason, decorated)
+	sm.l().Info(fmt.Sprintf("Emitted repair event type=%s reason=%s message=%s", v1.EventTypeNormal, reason, decorated))
 }
 
 func (sm *nodeRepairStateMachine) emitWarningEvent(reason, message string) {
