@@ -4891,7 +4891,7 @@ var _ = Describe("Listener only enabled Cert OCID", func() {
 			tcpNodePort := int(tcpService.Spec.Ports[0].NodePort)
 			sharedfw.Logf("TCP node port: %d", tcpNodePort)
 
-			name, err := setupF.GetCertificateAssociations(setupF.CertOCID)
+			name, err := setupF.GetCertificateAssociations(setupF.ImportedCertOCID)
 			sharedfw.Logf("Certificate Association: %d", name)
 			sharedfw.ExpectNoError(err)
 			Expect(name).NotTo(BeEmpty(), "Expecting an association")
