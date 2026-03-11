@@ -52,7 +52,7 @@ locals {
 
           // IAD, PHX and GRU
           {
-            regions      = ["iad", "phx", "gru"]
+            regions      = ["iad", "phx", "gru", "fra", "yyz", "ord"]
             env          = "prd"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaouhzxquloatd265invfv6faq34qqb76wgthnjxerddolkmyrgbnq"
@@ -68,7 +68,7 @@ locals {
 
           // FRA, IAD
           {
-            regions      = ["iad", "fra"]
+            regions      = ["iad", "fra", "sin"]
             env          = "prd"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaan3x2ydyc7ixtw2kevyivhxjgz5ndphxeauvnwlxcp2pw6kneozca"
@@ -159,6 +159,13 @@ locals {
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaagk4hvldx7tjxecwcuq73cz7tqdvlzy7bejmt4ltl5obgufhsqdpa"
           },
+          // IAD
+          {
+            regions      = ["iad"]
+            env          = "prd"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaamvvd6sarhcaekopsvrn22vt67bqac5kaljgjsnqxouubih2sspfq"
+          },
 
           // PHX
           {
@@ -235,13 +242,6 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaamlwq2br5i2t2o5guzkxkzuedfxlw4ifrxfdnz6yb5nzrs5jaz7hq"
           },
 
-          // SIN
-          {
-            regions      = ["sin"]
-            env          = "prd"
-            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.karpenter_la_ccm_overrides_v1-17-1))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaan3x2ydyc7ixtw2kevyivhxjgz5ndphxeauvnwlxcp2pw6kneozca"
-          },
           // karpenter LA overrides ends
         ]
       },
