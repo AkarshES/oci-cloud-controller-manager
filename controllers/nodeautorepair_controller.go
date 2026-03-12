@@ -105,7 +105,7 @@ type NodeAutoRepairReconciler struct {
 
 // Cool-down window after a repair finishes. During this window, new repairs are throttled.
 var (
-	repairCoolDown = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 20*time.Minute)
+	repairCoolDown = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 120*time.Minute)
 )
 
 // SetupWithManager sets up the controller with the Manager.
