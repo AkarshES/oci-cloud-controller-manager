@@ -256,10 +256,10 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 
 	if isNodeAutoRepairDisabled(node) {
 		conditionSummary := summarizeConditionTypes(problemTypes)
-		if r.Recorder != nil {
-			r.Recorder.Event(node, v1.EventTypeNormal, eventRepairDisabled,
-				fmt.Sprintf("[Node Auto Repair]: Node opted out via %s=true; detected conditions: %s", repairDisabledLabel, conditionSummary))
-		}
+		// if r.Recorder != nil {
+		// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairDisabled,
+		// 		fmt.Sprintf("[Node Auto Repair]: Node opted out via %s=true; detected conditions: %s", repairDisabledLabel, conditionSummary))
+		// }
 		logger.Info(fmt.Sprintf("CCM: Node auto repair disabled via label; skipping cordon/drain/reboot (node=%s conditions=%s)", node.Name, conditionSummary))
 		return ctrl.Result{}, nil
 	}
