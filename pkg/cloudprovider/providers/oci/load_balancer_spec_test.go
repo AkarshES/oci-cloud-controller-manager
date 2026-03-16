@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -11045,6 +11046,84 @@ func Test_getListeners(t *testing.T) {
 			},
 		},
 		{
+			name: "http2 protocol with ssl configuration and smart default cipher suite",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.Protocol("TCP"),
+							Port:     int32(443),
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBEProtocol: "http2",
+					},
+				},
+			},
+			listenerBackendIpVersion: []string{IPv4},
+			sslConfig: &SSLConfig{
+				Ports:                   sets.NewInt(443),
+				ListenerSSLSecretName:   listenerSecret,
+				BackendSetSSLSecretName: backendSecret,
+			},
+			want: map[string]client.GenericListener{
+				"HTTP2-443": {
+					Name:                  common.String("HTTP2-443"),
+					Port:                  common.Int(443),
+					Protocol:              common.String(ListenerProtocolHTTP2),
+					DefaultBackendSetName: common.String("TCP-443"),
+					SslConfiguration: &client.GenericSslConfigurationDetails{
+						CertificateName:       &listenerSecret,
+						VerifyDepth:           common.Int(0),
+						VerifyPeerCertificate: common.Bool(false),
+						CipherSuiteName:       common.String(DefaultCipherSuiteForHTTP2),
+					},
+				},
+			},
+		},
+		{
+			name: "http2 protocol with explicit cipher suite preserves override",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.Protocol("TCP"),
+							Port:     int32(443),
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBEProtocol:        "http2",
+						ServiceAnnotationLoadbalancerListenerSSLConfig: `{"cipherSuiteName":"custom-http2-cipher-suite","protocols":["TLSv1.2"]}`,
+					},
+				},
+			},
+			listenerBackendIpVersion: []string{IPv4},
+			sslConfig: &SSLConfig{
+				Ports:                   sets.NewInt(443),
+				ListenerSSLSecretName:   listenerSecret,
+				BackendSetSSLSecretName: backendSecret,
+			},
+			want: map[string]client.GenericListener{
+				"HTTP2-443": {
+					Name:                  common.String("HTTP2-443"),
+					Port:                  common.Int(443),
+					Protocol:              common.String(ListenerProtocolHTTP2),
+					DefaultBackendSetName: common.String("TCP-443"),
+					SslConfiguration: &client.GenericSslConfigurationDetails{
+						CertificateName:       &listenerSecret,
+						VerifyDepth:           common.Int(0),
+						VerifyPeerCertificate: common.Bool(false),
+						CipherSuiteName:       common.String("custom-http2-cipher-suite"),
+						Protocols:             []string{"TLSv1.2"},
+					},
+				},
+			},
+		},
+		{
 			name: "Listeners with cipher suites",
 			service: &v1.Service{
 				Spec: v1.ServiceSpec{
@@ -11085,6 +11164,157 @@ func Test_getListeners(t *testing.T) {
 				t.Errorf("getListeners() failed want: %s \n got: %s \n", want, got)
 			}
 		})
+	}
+}
+
+func Test_getListeners_HTTP2AndProtocolValidation(t *testing.T) {
+	testCases := []struct {
+		name           string
+		service        *v1.Service
+		sslConfig      *SSLConfig
+		wantErrContain string
+	}{
+		{
+			name: "http2 protocol no ssl",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.Protocol("TCP"),
+							Port:     int32(443),
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBEProtocol: ListenerProtocolHTTP2,
+					},
+				},
+			},
+			sslConfig:      nil,
+			wantErrContain: "HTTP2 listener requires SSL/TLS configuration",
+		},
+		{
+			name: "invalid backend protocol",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(443),
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBEProtocol: "HTTP3",
+					},
+				},
+			},
+			sslConfig:      nil,
+			wantErrContain: "Only 'HTTP', 'HTTP2', 'TCP' and 'GRPC' protocols supported",
+		},
+		{
+			name: "http2 protocol update removes tls configuration",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(443),
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBEProtocol: ListenerProtocolHTTP2,
+					},
+				},
+			},
+			sslConfig: &SSLConfig{
+				Ports:                   sets.NewInt(8443),
+				ListenerSSLSecretName:   listenerSecret,
+				BackendSetSSLSecretName: backendSecret,
+			},
+			wantErrContain: "HTTP2 listener requires SSL/TLS configuration",
+		},
+		{
+			name: "http2 protocol invalid listener ssl config annotation",
+			service: &v1.Service{
+				Spec: v1.ServiceSpec{
+					Ports: []v1.ServicePort{
+						{
+							Protocol: v1.ProtocolTCP,
+							Port:     int32(443),
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ServiceAnnotationLoadBalancerBEProtocol:        ListenerProtocolHTTP2,
+						ServiceAnnotationLoadbalancerListenerSSLConfig: `{"cipherSuiteName":`,
+					},
+				},
+			},
+			sslConfig: &SSLConfig{
+				Ports:                   sets.NewInt(443),
+				ListenerSSLSecretName:   listenerSecret,
+				BackendSetSSLSecretName: backendSecret,
+			},
+			wantErrContain: "failed to parse SSL Configuration annotation",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := getListeners(tc.service, tc.sslConfig, []string{IPv4})
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tc.wantErrContain)
+			}
+			if !strings.Contains(err.Error(), tc.wantErrContain) {
+				t.Fatalf("expected error containing %q, got %q", tc.wantErrContain, err.Error())
+			}
+		})
+	}
+}
+
+func Test_getListeners_HTTP2ProxyProtocolDefaultIdleTimeout(t *testing.T) {
+	svc := &v1.Service{
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{
+				{
+					Protocol: v1.ProtocolTCP,
+					Port:     int32(443),
+				},
+			},
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				ServiceAnnotationLoadBalancerBEProtocol:                     ListenerProtocolHTTP2,
+				ServiceAnnotationLoadBalancerConnectionProxyProtocolVersion: "2",
+			},
+		},
+	}
+	sslConfig := &SSLConfig{
+		Ports:                   sets.NewInt(443),
+		ListenerSSLSecretName:   listenerSecret,
+		BackendSetSSLSecretName: backendSecret,
+	}
+
+	listeners, err := getListeners(svc, sslConfig, []string{IPv4})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	listener, ok := listeners["HTTP2-443"]
+	if !ok {
+		t.Fatalf("expected listener HTTP2-443 to exist")
+	}
+	if listener.ConnectionConfiguration == nil || listener.ConnectionConfiguration.IdleTimeout == nil {
+		t.Fatalf("expected connection configuration idle timeout to be set")
+	}
+	if *listener.ConnectionConfiguration.IdleTimeout != lbConnectionIdleTimeoutHTTP {
+		t.Fatalf("expected idle timeout %d, got %d", lbConnectionIdleTimeoutHTTP, *listener.ConnectionConfiguration.IdleTimeout)
 	}
 }
 
