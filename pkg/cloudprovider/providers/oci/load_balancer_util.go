@@ -753,7 +753,7 @@ func sslEnabled(sslConfigMap map[int]*loadbalancer.SslConfiguration) bool {
 // we can use oci-load-balancer-backend-protocol: "HTTP" annotation.
 func getSanitizedName(name string) string {
 	fields := strings.Split(name, "-")
-	if strings.EqualFold(fields[0], "HTTP") {
+	if strings.EqualFold(fields[0], ListenerProtocolHTTP) || strings.EqualFold(fields[0], ListenerProtocolHTTP2) {
 		fields[0] = "TCP"
 		name = fmt.Sprintf("%s", strings.Join(fields, "-"))
 	}
