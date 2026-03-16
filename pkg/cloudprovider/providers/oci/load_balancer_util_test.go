@@ -1051,6 +1051,38 @@ func TestGetListenerChanges(t *testing.T) {
 			},
 		},
 		{
+			name: "create http2 listener with ssl config",
+			desired: map[string]client.GenericListener{"HTTP2-443": client.GenericListener{
+				DefaultBackendSetName: common.String("TCP-443"),
+				Protocol:              common.String(ListenerProtocolHTTP2),
+				Port:                  common.Int(443),
+				SslConfiguration: &client.GenericSslConfigurationDetails{
+					CertificateName:       common.String("listenersecret"),
+					VerifyDepth:           common.Int(0),
+					VerifyPeerCertificate: common.Bool(false),
+					CipherSuiteName:       common.String(DefaultCipherSuiteForHTTP2),
+				},
+			}},
+			actual: map[string]client.GenericListener{},
+			expected: []Action{
+				&ListenerAction{
+					name:       "HTTP2-443",
+					actionType: Create,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-443"),
+						Protocol:              common.String(ListenerProtocolHTTP2),
+						Port:                  common.Int(443),
+						SslConfiguration: &client.GenericSslConfigurationDetails{
+							CertificateName:       common.String("listenersecret"),
+							VerifyDepth:           common.Int(0),
+							VerifyPeerCertificate: common.Bool(false),
+							CipherSuiteName:       common.String(DefaultCipherSuiteForHTTP2),
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "add listener",
 			desired: map[string]client.GenericListener{
 				"TCP-80": client.GenericListener{
@@ -1237,6 +1269,53 @@ func TestGetListenerChanges(t *testing.T) {
 						Port:                  common.Int(80),
 						SslConfiguration: &client.GenericSslConfigurationDetails{
 							CertificateName: common.String("desired"),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "http2 listener ssl config update",
+			desired: map[string]client.GenericListener{
+				"HTTP2-443": client.GenericListener{
+					DefaultBackendSetName: common.String("TCP-443"),
+					Protocol:              common.String(ListenerProtocolHTTP2),
+					Port:                  common.Int(443),
+					SslConfiguration: &client.GenericSslConfigurationDetails{
+						CertificateName:       common.String("listenersecret"),
+						VerifyDepth:           common.Int(0),
+						VerifyPeerCertificate: common.Bool(false),
+						CipherSuiteName:       common.String("custom-http2-cipher-suite"),
+					},
+				},
+			},
+			actual: map[string]client.GenericListener{
+				"HTTP2-443": client.GenericListener{
+					Name:                  common.String("HTTP2-443"),
+					DefaultBackendSetName: common.String("TCP-443"),
+					Protocol:              common.String(ListenerProtocolHTTP2),
+					Port:                  common.Int(443),
+					SslConfiguration: &client.GenericSslConfigurationDetails{
+						CertificateName:       common.String("listenersecret"),
+						VerifyDepth:           common.Int(0),
+						VerifyPeerCertificate: common.Bool(false),
+						CipherSuiteName:       common.String(DefaultCipherSuiteForHTTP2),
+					},
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "HTTP2-443",
+					actionType: Update,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-443"),
+						Protocol:              common.String(ListenerProtocolHTTP2),
+						Port:                  common.Int(443),
+						SslConfiguration: &client.GenericSslConfigurationDetails{
+							CertificateName:       common.String("listenersecret"),
+							VerifyDepth:           common.Int(0),
+							VerifyPeerCertificate: common.Bool(false),
+							CipherSuiteName:       common.String("custom-http2-cipher-suite"),
 						},
 					},
 				},
@@ -1476,6 +1555,64 @@ func TestGetListenerChanges(t *testing.T) {
 			expected: []Action{
 				&ListenerAction{
 					name:       "HTTP-80",
+					actionType: Update,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-80"),
+						Protocol:              common.String("TCP"),
+						Port:                  common.Int(80),
+					},
+				},
+			},
+		},
+		{
+			name: "protocol change TCP to HTTP2",
+			desired: map[string]client.GenericListener{
+				"HTTP2-80": client.GenericListener{
+					DefaultBackendSetName: common.String("TCP-80"),
+					Protocol:              common.String("HTTP2"),
+					Port:                  common.Int(80),
+				},
+			},
+			actual: map[string]client.GenericListener{
+				"TCP-80": client.GenericListener{
+					Name:                  common.String("TCP-80"),
+					DefaultBackendSetName: common.String("TCP-80"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "TCP-80",
+					actionType: Update,
+					Listener: client.GenericListener{
+						DefaultBackendSetName: common.String("TCP-80"),
+						Protocol:              common.String("HTTP2"),
+						Port:                  common.Int(80),
+					},
+				},
+			},
+		},
+		{
+			name: "protocol change HTTP2 to TCP",
+			desired: map[string]client.GenericListener{
+				"TCP-80": client.GenericListener{
+					DefaultBackendSetName: common.String("TCP-80"),
+					Protocol:              common.String("TCP"),
+					Port:                  common.Int(80),
+				},
+			},
+			actual: map[string]client.GenericListener{
+				"HTTP2-80": client.GenericListener{
+					Name:                  common.String("HTTP2-80"),
+					DefaultBackendSetName: common.String("TCP-80"),
+					Protocol:              common.String("HTTP2"),
+					Port:                  common.Int(80),
+				},
+			},
+			expected: []Action{
+				&ListenerAction{
+					name:       "HTTP2-80",
 					actionType: Update,
 					Listener: client.GenericListener{
 						DefaultBackendSetName: common.String("TCP-80"),
@@ -1869,6 +2006,11 @@ func TestGetSanitizedName(t *testing.T) {
 			"TCP-80",
 		},
 		{
+			"Name has HTTP2",
+			"HTTP2-80",
+			"TCP-80",
+		},
+		{
 			"Name has Ipv6",
 			"TCP-80-IPv6",
 			"TCP-80-IPv6",
@@ -1876,6 +2018,11 @@ func TestGetSanitizedName(t *testing.T) {
 		{
 			"Name has HTTP",
 			"HTTP-80-IPv6",
+			"TCP-80-IPv6",
+		},
+		{
+			"Name has HTTP2",
+			"HTTP2-80-IPv6",
 			"TCP-80-IPv6",
 		},
 	}

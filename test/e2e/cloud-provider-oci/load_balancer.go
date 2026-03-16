@@ -1832,6 +1832,122 @@ var _ = Describe("GRPC Listeners only enabled TLS", func() {
 	})
 })
 
+var _ = Describe("HTTP2 Listeners only enabled TLS", func() {
+
+	baseName := "listener-service"
+	f := sharedfw.NewDefaultFramework(baseName)
+
+	Context("[cloudprovider][ccm][lb][http2]", func() {
+		It("should be possible to create a HTTP2 listener for LB [Canary]", func() {
+			serviceName := "listener-http2-lb-test"
+			ns := f.Namespace.Name
+
+			jig := sharedfw.NewServiceTestJig(f.ClientSet, serviceName)
+
+			sslSecretName := "ssl-certificate-secret-http2"
+			sslSecret, err := f.ClientSet.CoreV1().Secrets(ns).Create(context.Background(), &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: ns,
+					Name:      sslSecretName,
+				},
+				Data: map[string][]byte{
+					cloudprovider.SSLCAFileName:          []byte(sharedfw.SSLCAData),
+					cloudprovider.SSLCertificateFileName: []byte(sharedfw.SSLCertificateData),
+					cloudprovider.SSLPrivateKeyFileName:  []byte(sharedfw.SSLPrivateData),
+					cloudprovider.SSLPassphrase:          []byte(sharedfw.SSLPassphrase),
+				},
+			}, metav1.CreateOptions{})
+			sharedfw.ExpectNoError(err)
+			sharedfw.Logf("Created Secret %s/%s: %+v", ns, sslSecretName, sslSecret)
+
+			loadBalancerCreateTimeout := sharedfw.LoadBalancerCreateTimeoutDefault
+			if nodes := sharedfw.GetReadySchedulableNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
+				loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
+			}
+
+			requestedIP := ""
+			tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeLoadBalancer
+				s.Spec.LoadBalancerIP = requestedIP
+				s.Spec.Ports = []v1.ServicePort{
+					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)},
+				}
+				s.ObjectMeta.Annotations = map[string]string{
+					cloudprovider.ServiceAnnotationLoadBalancerSSLPorts:   "443",
+					cloudprovider.ServiceAnnotationLoadBalancerTLSSecret:  sslSecretName,
+					cloudprovider.ServiceAnnotationLoadBalancerInternal:   "true",
+					cloudprovider.ServiceAnnotationLoadBalancerBEProtocol: cloudprovider.ListenerProtocolHTTP2,
+				}
+			})
+			sharedfw.Logf("Created Service %s/%s: %+v", ns, tcpService.Name, tcpService)
+			svcPort := int(tcpService.Spec.Ports[0].Port)
+
+			By("creating a pod to be part of the TCP service " + serviceName)
+			rc := jig.RunOrFail(ns, nil)
+			sharedfw.Logf("Created ReplicationController %s/%s: %+v", ns, rc.Name, rc)
+			podList, err := f.ClientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{
+				LabelSelector: fmt.Sprintf("testid=%s", jig.ID),
+			})
+			sharedfw.ExpectNoError(err)
+			Expect(len(podList.Items)).To(BeNumerically(">", 0), "expected at least one pod to be created for service %s", tcpService.Name)
+			for _, pod := range podList.Items {
+				sharedfw.Logf("Created Pod %s/%s: %+v", pod.Namespace, pod.Name, pod)
+			}
+
+			By("waiting for the TCP service to have a load balancer")
+			tcpService = jig.WaitForLoadBalancerOrFail(ns, tcpService.Name, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeLoadBalancer)
+			sharedfw.Logf("Service after LB provisioning %s/%s: %+v", ns, tcpService.Name, tcpService)
+
+			if requestedIP != "" && sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0]) != requestedIP {
+				sharedfw.Failf("unexpected TCP Status.LoadBalancer.Ingress (expected %s, got %s)", requestedIP, sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0]))
+			}
+			tcpIngressIP := sharedfw.GetIngressPoint(&tcpService.Status.LoadBalancer.Ingress[0])
+			sharedfw.Logf("TCP load balancer ingress: %s", tcpIngressIP)
+
+			By("validating that HTTP2 listener is created with expected protocol and default cipher suite")
+			lbName := cloudprovider.GetLoadBalancerName(tcpService)
+			sharedfw.Logf("LB Name is %s", lbName)
+			ctx := context.TODO()
+			compartmentId := ""
+			if setupF.Compartment1 != "" {
+				compartmentId = setupF.Compartment1
+			} else if f.CloudProviderConfig.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.CompartmentID
+			} else if f.CloudProviderConfig.Auth.CompartmentID != "" {
+				compartmentId = f.CloudProviderConfig.Auth.CompartmentID
+			} else {
+				sharedfw.Failf("Compartment Id undefined.")
+			}
+			loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), cloudprovider.LB, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
+			sharedfw.ExpectNoError(err)
+			sharedfw.Logf("Created OCI LoadBalancer details: %+v", loadBalancer)
+
+			listener, ok := loadBalancer.Listeners["HTTP2-443"]
+			Expect(ok).To(BeTrue(), "expected HTTP2-443 listener to be created")
+			sharedfw.Logf("Created OCI Listener HTTP2-443 details: %+v", listener)
+			Expect(listener.Protocol).NotTo(BeNil())
+			Expect(*listener.Protocol).To(Equal(cloudprovider.ListenerProtocolHTTP2))
+			Expect(listener.SslConfiguration).NotTo(BeNil())
+			Expect(listener.SslConfiguration.CipherSuiteName).NotTo(BeNil())
+			Expect(*listener.SslConfiguration.CipherSuiteName).To(Equal(cloudprovider.DefaultCipherSuiteForHTTP2))
+
+			By("changing TCP service back to type=ClusterIP")
+			tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
+				s.Spec.Type = v1.ServiceTypeClusterIP
+				s.Spec.Ports[0].NodePort = 0
+			})
+
+			// Wait for the load balancer to be destroyed asynchronously
+			tcpService = jig.WaitForLoadBalancerDestroyOrFail(ns, tcpService.Name, tcpIngressIP, svcPort, loadBalancerCreateTimeout)
+			jig.SanityCheckService(tcpService, v1.ServiceTypeClusterIP)
+
+			err = f.ClientSet.CoreV1().Secrets(ns).Delete(context.Background(), sslSecretName, metav1.DeleteOptions{})
+			sharedfw.ExpectNoError(err)
+		})
+	})
+})
+
 var _ = Describe("End to end enabled TLS - different certificates", func() {
 	baseName := "e2e-diff-certs"
 	f := sharedfw.NewDefaultFramework(baseName)

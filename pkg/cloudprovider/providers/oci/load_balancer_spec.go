@@ -353,8 +353,12 @@ const (
 )
 
 const (
-	ProtocolGrpc              = "GRPC"
-	DefaultCipherSuiteForGRPC = "oci-default-http2-ssl-cipher-suite-v1"
+	ListenerProtocolHTTP       = "HTTP"
+	ListenerProtocolHTTP2      = "HTTP2"
+	ListenerProtocolTCP        = "TCP"
+	ProtocolGrpc               = "GRPC"
+	DefaultCipherSuiteForHTTP2 = "oci-default-http2-ssl-cipher-suite-v1"
+	DefaultCipherSuiteForGRPC  = DefaultCipherSuiteForHTTP2
 )
 
 // certificateData is a structure containing the data about a K8S secret required
@@ -1585,10 +1589,17 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 			if p == "" {
 				p = DefaultLoadBalancerBEProtocol
 			}
-			if strings.EqualFold(p, "HTTP") || strings.EqualFold(p, "TCP") || strings.EqualFold(p, "GRPC") {
-				protocol = p
-			} else {
-				return nil, fmt.Errorf("invalid backend protocol %q requested for load balancer listener. Only 'HTTP', 'TCP' and 'GRPC' protocols supported", p)
+			switch {
+			case strings.EqualFold(p, ListenerProtocolHTTP):
+				protocol = ListenerProtocolHTTP
+			case strings.EqualFold(p, ListenerProtocolTCP):
+				protocol = ListenerProtocolTCP
+			case strings.EqualFold(p, ProtocolGrpc):
+				protocol = ProtocolGrpc
+			case strings.EqualFold(p, ListenerProtocolHTTP2):
+				protocol = ListenerProtocolHTTP2
+			default:
+				return nil, fmt.Errorf("invalid backend protocol %q requested for load balancer listener. Only 'HTTP', 'HTTP2', 'TCP' and 'GRPC' protocols supported", p)
 			}
 		}
 		port := int(servicePort.Port)
@@ -1604,10 +1615,28 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 				return nil, err
 			}
 		}
-		if strings.EqualFold(protocol, "GRPC") {
-			protocol = ProtocolGrpc
+		switch protocol {
+		case ListenerProtocolHTTP2:
 			if sslConfiguration == nil {
-				return nil, fmt.Errorf("SSL configuration cannot be empty for GRPC protocol")
+				return nil, fmt.Errorf(
+					"HTTP2 listener requires SSL/TLS configuration for service port %d. Ensure annotations %q includes the port and %q references a valid TLS secret",
+					port,
+					ServiceAnnotationLoadBalancerSSLPorts,
+					ServiceAnnotationLoadBalancerTLSSecret,
+				)
+			}
+			if sslConfiguration.CipherSuiteName == nil {
+				sslConfiguration.CipherSuiteName = common.String(DefaultCipherSuiteForHTTP2)
+			}
+		case ProtocolGrpc:
+			if sslConfiguration == nil {
+				return nil, fmt.Errorf(
+					"SSL configuration cannot be empty for %s protocol on service port %d. Ensure annotations %q includes the port and %q references a valid TLS secret",
+					protocol,
+					port,
+					ServiceAnnotationLoadBalancerSSLPorts,
+					ServiceAnnotationLoadBalancerTLSSecret,
+				)
 			}
 			if sslConfiguration.CipherSuiteName == nil {
 				sslConfiguration.CipherSuiteName = common.String(DefaultCipherSuiteForGRPC)
@@ -1631,8 +1660,9 @@ func getListenersOciLoadBalancer(svc *v1.Service, sslCfg *SSLConfig) (map[string
 		if proxyProtocolVersion != nil && connectionIdleTimeout == nil {
 			// At that point LB only supports HTTP and TCP
 			defaultIdleTimeoutPerProtocol := map[string]int64{
-				"HTTP": lbConnectionIdleTimeoutHTTP,
-				"TCP":  lbConnectionIdleTimeoutTCP,
+				ListenerProtocolHTTP:  lbConnectionIdleTimeoutHTTP,
+				ListenerProtocolHTTP2: lbConnectionIdleTimeoutHTTP,
+				ListenerProtocolTCP:   lbConnectionIdleTimeoutTCP,
 			}
 			actualConnectionIdleTimeout = common.Int64(defaultIdleTimeoutPerProtocol[strings.ToUpper(protocol)])
 		}
