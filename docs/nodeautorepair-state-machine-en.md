@@ -36,7 +36,11 @@ Every state write should update `last-transition` and `attempts`.
 ## Idempotency and Retry
 - All operations must be idempotent: repeated cordon/uncordon/drain calls should not cause inconsistent state.
 - Default retry policy: max 3 attempts with exponential backoff (base=10s). retry should ideally not block the controller loop
-- Per-state timeouts: Cordoning 30s, Draining 10m, Rebooting 20m, Uncordoning 30s .
+- Per-state timeouts (current defaults in code): Cordoning 60s, Draining 15m, Rebooting 20m, Uncordoning 5m. These are configurable via:
+  - `NODE_AUTOREPAIR_TIMEOUT_CORDONING`
+  - `NODE_AUTOREPAIR_TIMEOUT_DRAINING`
+  - `NODE_AUTOREPAIR_TIMEOUT_REBOOTING`
+  - `NODE_AUTOREPAIR_TIMEOUT_UNCORDONING`
 
 ## Safety Constraints
 - Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, wait and retry. Respect PDB for a maximum of 10 mins and force repair after the wait
@@ -58,10 +62,11 @@ only one controller is activelly doing node auto repair
 
 ## Implementation Recommendations
 - Node should be repaired serially, Each time the repair controller should only repair a node
-- The node repair controller will try to fix a node for 3 total attempts per cycle; after exhausting those attempts, it waits for 1 hour (configurable via `NODE_AUTOREPAIR_COOLDOWN`) before starting the next repair cycle.
+- The node repair controller will try to fix a node for 3 total attempts for entire repair cycle; after exhausting those attempts, it waits for 1 hour (configurable via `NODE_AUTOREPAIR_COOLDOWN`) before starting the next repair cycle.
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
 - Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
-- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for instanceRunningPollInterval, default to 20s until instance is running again, if after 20 mins instance is not running, we move to failed step
+- Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for `instanceRunningPollInterval` (default 20s, configurable via `NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL`) until instance is running again, if after 20 mins instance is not running, we move to failed step
+- Uncordon: After reboot, if any unhealthy conditions persists, don't cordon the node, requeu uncordon request and periodically check node conditions, only uncordon the node when the node has no unhealthy conditions
 - Annotation updates should use optimistic concurrency and retry on resourceVersion conflicts.
 - If the node is healthy again, it should be uncordoned
 - If the repair failed, we should remove the annotations so that the node can be picked up by next repair. We should only keep the annotaions for repair attempted

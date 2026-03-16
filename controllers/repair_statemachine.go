@@ -91,12 +91,12 @@ var (
 			retryBase:      defaultRetryBase,
 		},
 		stateUncordon: {
-			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_UNCORDONING", 30*time.Second),
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_UNCORDONING", 5*time.Minute),
 			successRequeue: 5 * time.Second,
 			retryBase:      defaultRetryBase,
 		},
 	}
-	instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 10*time.Second)
+	instanceRunningPollInterval = getEnvDuration("NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL", 20*time.Second)
 )
 
 var (
@@ -338,9 +338,15 @@ func (sm *nodeRepairStateMachine) beginState(ctx context.Context, state repairSt
 	if sm.tracker == nil {
 		sm.tracker = newRepairStateTracker(sm.repairID)
 	}
-	entry := sm.tracker.begin(state)
-	if entry == nil {
+	// Preserve the original state start time so timeout windows are measured
+	// from state entry, not from every reconcile retry.
+	entry := sm.tracker.current(state)
+	if entry != nil && entry.StartTime != "" {
 		return
+	}
+	entry = sm.tracker.ensureStart(state, sm.lastTransitionTime())
+	if entry == nil || entry.StartTime == "" {
+		entry = sm.tracker.begin(state)
 	}
 	_ = sm.persistTracker(ctx)
 }
@@ -517,6 +523,13 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 	sm.beginState(ctx, stateUncordon)
 	if sm.stateTimedOut(stateUncordon) {
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning timed out"))
+	}
+	if unhealthyConditions := findUnhealthyConditions(sm.node); len(unhealthyConditions) > 0 {
+		sm.l().Info(fmt.Sprintf(
+			"Node still has unhealthy conditions after reboot; delaying uncordon (conditions=%s)",
+			summarizeConditionTypes(conditionTypeValues(unhealthyConditions)),
+		))
+		return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
 	}
 	attempt, err := sm.recordAttempt(ctx)
 	if err != nil {

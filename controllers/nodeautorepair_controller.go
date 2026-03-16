@@ -253,19 +253,22 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
 	node = node.DeepCopy()
 	problemTypes := conditionTypeValues(conditions)
+	repairInProgress := isRepairInProgress(node)
 
 	if isNodeAutoRepairDisabled(node) {
 		conditionSummary := summarizeConditionTypes(problemTypes)
-		// if r.Recorder != nil {
-		// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairDisabled,
-		// 		fmt.Sprintf("[Node Auto Repair]: Node opted out via %s=true; detected conditions: %s", repairDisabledLabel, conditionSummary))
-		// }
-		logger.Info(fmt.Sprintf("CCM: Node auto repair disabled via label; skipping cordon/drain/reboot (node=%s conditions=%s)", node.Name, conditionSummary))
-		return ctrl.Result{}, nil
+		if !repairInProgress {
+			// if r.Recorder != nil {
+			// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairDisabled,
+			// 		fmt.Sprintf("[Node Auto Repair]: Node opted out via %s=true; detected conditions: %s", repairDisabledLabel, conditionSummary))
+			// }
+			logger.Info(fmt.Sprintf("CCM: Node auto repair disabled via label; skipping cordon/drain/reboot (node=%s conditions=%s)", node.Name, conditionSummary))
+			return ctrl.Result{}, nil
+		}
+		logger.Info(fmt.Sprintf("CCM: Node auto repair disabled via label, but repair is already in progress; continuing state machine (node=%s conditions=%s)", node.Name, conditionSummary))
 	}
 
 	// Throttle if the node has been repaired recently (cool-down window)
-	repairInProgress := isRepairInProgress(node)
 	cooldown := getNodeCooldownDuration(node)
 	logger.Info(fmt.Sprintf("CCM: Node auto repair cooldown check repairInProgress=%t node=%s nodeState %s", repairInProgress, node.Name, node.Annotations[narStateAnnotationKey]))
 	if node.Annotations != nil {
@@ -282,8 +285,8 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 				cycleAttempts = parsed
 			}
 		}
-		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
-			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
+			if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
+				if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
 				until := endTime.Add(cooldown)
 				now := time.Now()
 				if now.Before(until) {
@@ -301,16 +304,16 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 							// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
 							// }
 							logger.Info(fmt.Sprintf("CCM: Throttling node auto repair due to cool-down window (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
+							return ctrl.Result{}, nil
 						}
-						return ctrl.Result{}, nil
 					}
+				}
 				}
 			}
 		}
-	}
 
-	if err := r.ensureLeaseManager(logger); err != nil {
-		logger.Error(err, "CCM: failed to initialize repair lease manager")
+		if err := r.ensureLeaseManager(logger); err != nil {
+			logger.Error(err, "CCM: failed to initialize repair lease manager")
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
 	acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
@@ -573,6 +576,22 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	newNode, ok := e.ObjectNew.(*v1.Node)
 	if !ok {
 		return false
+	}
+
+	// Always react to explicit opt-out label updates so operators can toggle
+	// node auto repair without requiring condition changes.
+	oldDisabled := ""
+	newDisabled := ""
+	if oldNode.Labels != nil {
+		oldDisabled = strings.TrimSpace(oldNode.Labels[repairDisabledLabel])
+	}
+	if newNode.Labels != nil {
+		newDisabled = strings.TrimSpace(newNode.Labels[repairDisabledLabel])
+	}
+	if oldDisabled != newDisabled {
+		p.log.Infof("CCM: Node auto-repair opt-out label changed (node=%s old=%q new=%q)",
+			newNode.Name, oldDisabled, newDisabled)
+		return true
 	}
 
 	var lastManager string

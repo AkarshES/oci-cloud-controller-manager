@@ -2,13 +2,18 @@ package controllers
 
 import (
 	"context"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.uber.org/zap"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 func TestHandleUnhealthyNode_ThrottleEventSuppressedWhenRepairInProgress(t *testing.T) {
@@ -92,11 +97,8 @@ func TestHandleUnhealthyNode_DisabledLabelSkipsRepair(t *testing.T) {
 
 	select {
 	case evt := <-rec.Events:
-		if !strings.Contains(evt, eventRepairDisabled) {
-			t.Fatalf("expected disabled event %q, got %q", eventRepairDisabled, evt)
-		}
+		t.Fatalf("expected no event when repair is disabled, got %q", evt)
 	default:
-		t.Fatalf("expected event to be emitted when repair is disabled")
 	}
 }
 
@@ -137,5 +139,135 @@ func TestNodeAnnotationsToPrune_DoesNotIncludeLastRepairEnd(t *testing.T) {
 	}
 	if len(want) != 0 {
 		t.Fatalf("expected working-state annotations to be pruned, missing: %v", want)
+	}
+}
+
+func TestConditionChangedPredicate_Update_TriggersOnRepairDisabledLabelAdded(t *testing.T) {
+	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
+	oldNode := &v1.Node{}
+	oldNode.Name = "nar-predicate-label-added"
+	newNode := oldNode.DeepCopy()
+	newNode.Labels = map[string]string{
+		repairDisabledLabel: "true",
+	}
+
+	changed := p.Update(event.UpdateEvent{
+		ObjectOld: oldNode,
+		ObjectNew: newNode,
+	})
+	if !changed {
+		t.Fatalf("expected update predicate to trigger when %s label is added", repairDisabledLabel)
+	}
+}
+
+func TestConditionChangedPredicate_Update_TriggersOnRepairDisabledLabelRemoved(t *testing.T) {
+	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
+	oldNode := &v1.Node{}
+	oldNode.Name = "nar-predicate-label-removed"
+	oldNode.Labels = map[string]string{
+		repairDisabledLabel: "true",
+	}
+	newNode := oldNode.DeepCopy()
+	delete(newNode.Labels, repairDisabledLabel)
+
+	changed := p.Update(event.UpdateEvent{
+		ObjectOld: oldNode,
+		ObjectNew: newNode,
+	})
+	if !changed {
+		t.Fatalf("expected update predicate to trigger when %s label is removed", repairDisabledLabel)
+	}
+}
+
+func TestConditionChangedPredicate_Update_TriggersOnRepairDisabledLabelValueChange(t *testing.T) {
+	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
+	oldNode := &v1.Node{}
+	oldNode.Name = "nar-predicate-label-toggled"
+	oldNode.Labels = map[string]string{
+		repairDisabledLabel: "false",
+	}
+	newNode := oldNode.DeepCopy()
+	newNode.Labels[repairDisabledLabel] = "true"
+
+	changed := p.Update(event.UpdateEvent{
+		ObjectOld: oldNode,
+		ObjectNew: newNode,
+	})
+	if !changed {
+		t.Fatalf("expected update predicate to trigger when %s label value changes", repairDisabledLabel)
+	}
+}
+
+func TestConditionChangedPredicate_Update_DoesNotTriggerWhenRepairDisabledLabelUnchanged(t *testing.T) {
+	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
+	oldNode := &v1.Node{}
+	oldNode.Name = "nar-predicate-label-unchanged"
+	oldNode.Labels = map[string]string{
+		repairDisabledLabel: "true",
+	}
+	newNode := oldNode.DeepCopy()
+
+	changed := p.Update(event.UpdateEvent{
+		ObjectOld: oldNode,
+		ObjectNew: newNode,
+	})
+	if changed {
+		t.Fatalf("expected update predicate to remain false when %s label is unchanged", repairDisabledLabel)
+	}
+}
+
+func TestHandleUnhealthyNode_DisabledLabelDoesNotBlockInProgressRepair(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := v1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add corev1 scheme: %v", err)
+	}
+	if err := coordinationv1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add coordinationv1 scheme: %v", err)
+	}
+
+	node := &v1.Node{}
+	node.Name = "nar-disabled-in-progress"
+	node.Labels = map[string]string{
+		repairDisabledLabel: "true",
+	}
+	node.Annotations = map[string]string{
+		narStateAnnotationKey: string(stateDetected),
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	rec := record.NewFakeRecorder(5)
+	r := &NodeAutoRepairReconciler{
+		Client:       fakeClient,
+		Recorder:     rec,
+		ControllerID: "nar-test-controller",
+	}
+	logger := logr.Discard()
+
+	res, err := r.handleUnhealthyNode(context.Background(), logger, node, findUnhealthyConditions(node))
+	defer func() {
+		_ = r.stopLeaseHeartbeat(context.Background(), node.Name)
+	}()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter != repairStateConfigs[stateCordoning].successRequeue {
+		t.Fatalf("expected in-progress repair to continue with requeueAfter %v, got %v", repairStateConfigs[stateCordoning].successRequeue, res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if got := latest.Annotations[narStateAnnotationKey]; got != string(stateCordoning) {
+		t.Fatalf("expected node state to transition to %q, got %q", stateCordoning, got)
+	}
+	if latest.Annotations[narRepairIDAnnotationKey] == "" {
+		t.Fatalf("expected repair-id annotation to be set for in-progress repair")
 	}
 }
