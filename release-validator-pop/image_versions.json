@@ -1,13 +1,13 @@
 {
   "images": [
     {
-      "oke-public-cloud-provider-oci": "v1.32-9d270016187-1"
+      "oke-public-cloud-provider-oci": "v1.32-4e385cb4e42-1"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.33-3d1741f037f-1"
+      "oke-public-cloud-provider-oci": "v1.33-892c56e21ac-1"
     },
     {
-      "oke-public-cloud-provider-oci": "v1.34-de2a4cbc8da-1"
+      "oke-public-cloud-provider-oci": "v1.34-6afedbccd1b-1"
     }
   ]
 }
