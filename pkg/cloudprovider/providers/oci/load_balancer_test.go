@@ -58,6 +58,191 @@ func newNodeObj(name string, labels map[string]string) *v1.Node {
 	}
 }
 
+func TestGetReservedIpOcidByIpAddress(t *testing.T) {
+	tests := map[string]struct {
+		ip              string
+		subnets         []string
+		networkClient   *MockVirtualNetworkClient
+		expectedID      ipOcidData
+		expectedErr     string
+		expectedIPv4IPs []string
+		expectedIPv6IPs []string
+	}{
+		"resolves available IPv4 reserved IP": {
+			ip:      "192.0.2.10",
+			subnets: []string{},
+			networkClient: &MockVirtualNetworkClient{
+				publicIP: &core.PublicIp{
+					Id:             common.String("ocid1.publicip.oc1..ipv4"),
+					LifecycleState: core.PublicIpLifecycleStateAvailable,
+				},
+			},
+			expectedID: ipOcidData{
+				ocid:     common.String("ocid1.publicip.oc1..ipv4"),
+				ipTypeOf: "Public",
+				ipFamily: IPv4,
+			},
+			expectedIPv4IPs: []string{"192.0.2.10"},
+		},
+		"resolves available IPv6 reserved IP": {
+			ip:      "2001:db8::10",
+			subnets: []string{"ocid1.subnet.oc1.phx", "ocid1.subnet.oc1.phx"},
+			networkClient: &MockVirtualNetworkClient{
+				ipv6: &core.Ipv6{
+					Id:             common.String("ocid1.ipv6.oc1..ipv6"),
+					IpAddress:      common.String("2001:db8::10"),
+					LifecycleState: core.Ipv6LifecycleStateAvailable,
+				},
+			},
+			expectedID: ipOcidData{
+				ocid:     common.String("ocid1.ipv6.oc1..ipv6"),
+				ipTypeOf: "Public",
+				ipFamily: IPv6,
+			},
+			expectedIPv6IPs: []string{"2001:db8::10"},
+		},
+		"rejects unavailable IPv6 reserved IP": {
+			ip:      "2001:db8::11",
+			subnets: []string{"ocid1.subnet.oc1.phx", "ocid1.subnet.oc1.phx"},
+			networkClient: &MockVirtualNetworkClient{
+				ipv6: &core.Ipv6{
+					Id:             common.String("ocid1.ipv6.oc1..terminating"),
+					IpAddress:      common.String("2001:db8::11"),
+					LifecycleState: core.Ipv6LifecycleStateTerminating,
+				},
+			},
+			expectedErr:     "The IP address provided is not available for use.",
+			expectedIPv6IPs: []string{"2001:db8::11"},
+		},
+		"Missing subnet with IPv6": {
+			ip:      "2001:db8::11",
+			subnets: []string{},
+			networkClient: &MockVirtualNetworkClient{
+				ipv6: &core.Ipv6{
+					Id:             common.String("ocid1.ipv6.oc1..terminating"),
+					IpAddress:      common.String("2001:db8::11"),
+					LifecycleState: core.Ipv6LifecycleStateTerminating,
+				},
+			},
+			expectedErr:     "Subnet is a required parameter for identifying ipv6",
+			expectedIPv6IPs: nil,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			id, err := getReservedIpOcidByIpAddress(context.Background(), tt.ip, tt.subnets, tt.networkClient)
+			if tt.expectedErr != "" {
+				assert.EqualError(t, err, tt.expectedErr)
+				assert.Nil(t, id)
+			} else {
+				assert.NoError(t, err)
+				if assert.NotNil(t, id) {
+					assert.Equal(t, tt.expectedID, *id)
+				}
+			}
+			assert.Equal(t, tt.expectedIPv4IPs, tt.networkClient.publicIpLookups)
+			assert.Equal(t, tt.expectedIPv6IPs, tt.networkClient.ipv6ByIPLookups)
+		})
+	}
+}
+
+func TestResolveReservedIps(t *testing.T) {
+	tests := map[string]struct {
+		ips             []string
+		subnets         []string
+		networkClient   *MockVirtualNetworkClient
+		expectedIPs     []client.GenericReservedIp
+		expectedErr     string
+		expectedIPv4IPs []string
+		expectedIPv6IPs []string
+	}{
+		"resolves one ipv4 and one ipv6": {
+			ips:     []string{"192.0.2.20", "2001:db8::20"},
+			subnets: []string{"ocid1.subnet.oc1.phx"},
+			networkClient: &MockVirtualNetworkClient{
+				publicIP: &core.PublicIp{
+					Id:             common.String("ocid1.publicip.oc1..ipv4"),
+					LifecycleState: core.PublicIpLifecycleStateAvailable,
+				},
+				ipv6: &core.Ipv6{
+					Id:             common.String("ocid1.ipv6.oc1..ipv6"),
+					IpAddress:      common.String("2001:db8::20"),
+					LifecycleState: core.Ipv6LifecycleStateAvailable,
+				},
+			},
+			expectedIPs: []client.GenericReservedIp{
+				{Id: common.String("ocid1.publicip.oc1..ipv4")},
+				{Id: common.String("ocid1.ipv6.oc1..ipv6")},
+			},
+			expectedIPv4IPs: []string{"192.0.2.20"},
+			expectedIPv6IPs: []string{"2001:db8::20"},
+		},
+		"fails when more than one ipv4 is provided": {
+			ips:     []string{"192.0.2.21", "192.0.2.22"},
+			subnets: []string{"ocid1.subnet.oc1.phx"},
+			networkClient: &MockVirtualNetworkClient{
+				publicIP: &core.PublicIp{
+					Id:             common.String("ocid1.publicip.oc1..ipv4"),
+					LifecycleState: core.PublicIpLifecycleStateAvailable,
+				},
+			},
+			expectedErr:     "Only one private IP and one public IP allowed.",
+			expectedIPv4IPs: []string{"192.0.2.21", "192.0.2.22"},
+		},
+		"fails when more than one ipv6 is provided": {
+			ips:     []string{"2001:db8::21", "2001:db8::22"},
+			subnets: []string{"ocid1.subnet.oc1.phx"},
+			networkClient: &MockVirtualNetworkClient{
+				ipv6: &core.Ipv6{
+					Id:             common.String("ocid1.ipv6.oc1..ipv6"),
+					IpAddress:      common.String("2001:db8::21"),
+					LifecycleState: core.Ipv6LifecycleStateAvailable,
+				},
+			},
+			expectedErr:     "Only one private IP and one public IP allowed.",
+			expectedIPv6IPs: []string{"2001:db8::21", "2001:db8::22"},
+		},
+		"fails when ipv6 has no subnet context": {
+			ips:     []string{"2001:db8::23"},
+			subnets: []string{},
+			networkClient: &MockVirtualNetworkClient{
+				ipv6: &core.Ipv6{
+					Id:             common.String("ocid1.ipv6.oc1..ipv6"),
+					IpAddress:      common.String("2001:db8::23"),
+					LifecycleState: core.Ipv6LifecycleStateAvailable,
+				},
+			},
+			expectedErr: "failed to resolve reserved IP 2001:db8::23: Subnet is a required parameter for identifying ipv6",
+		},
+		"fails when public ip lookup errors": {
+			ips:     []string{"192.0.2.23"},
+			subnets: []string{"ocid1.subnet.oc1.phx"},
+			networkClient: &MockVirtualNetworkClient{
+				publicIPErr: errors.New("lookup failed"),
+			},
+			expectedErr:     "failed to resolve reserved IP 192.0.2.23: lookup failed",
+			expectedIPv4IPs: []string{"192.0.2.23"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			reservedIPs, err := resolveReservedIps(context.Background(), tt.ips, tt.subnets, tt.networkClient)
+			if tt.expectedErr != "" {
+				assert.EqualError(t, err, tt.expectedErr)
+				assert.Nil(t, reservedIPs)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedIPs, reservedIPs)
+			}
+
+			assert.Equal(t, tt.expectedIPv4IPs, tt.networkClient.publicIpLookups)
+			assert.Equal(t, tt.expectedIPv6IPs, tt.networkClient.ipv6ByIPLookups)
+		})
+	}
+}
+
 func Test_filterNodes(t *testing.T) {
 	testCases := map[string]struct {
 		nodes    []*v1.Node

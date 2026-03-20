@@ -91,7 +91,6 @@ require (
 require (
 	bitbucket.oci.oraclecorp.com/cryptography/go_ensurefips v0.0.0-20220825162208-b1975cae9a19
 	github.com/go-logr/logr v1.4.2
-	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/kubernetes-csi/external-snapshotter/v8 v8.2.0
 	github.com/oracle/oci-go-sdk/v65 v65.2.0
@@ -103,6 +102,7 @@ require (
 	helm.sh/helm/v3 v3.17.1
 	k8s.io/apiextensions-apiserver v0.32.1
 	k8s.io/client-go v1.5.2
+	oracle.com/oci/tagging v0.0.0-20190321202046-20a2e48911da
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1
 )
@@ -270,7 +270,6 @@ require (
 	k8s.io/kubectl v0.32.1 // indirect
 	oracle.com/oci/httpsigner v0.0.0-20190320175442-e8cb27ebf440 // indirect
 	oracle.com/oci/ociauthz v0.0.0-20200515161105-5b1e37d2dc95 // indirect
-	oracle.com/oci/tagging v0.0.0-20190321202046-20a2e48911da // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.1 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect

@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -285,6 +286,65 @@ func (c *mockVirtualNetworkClient) ListNetworkSecurityGroupSecurityRules(ctx con
 
 func (c *mockVirtualNetworkClient) UpdateNetworkSecurityGroupSecurityRules(ctx context.Context, request core.UpdateNetworkSecurityGroupSecurityRulesRequest) (response core.UpdateNetworkSecurityGroupSecurityRulesResponse, err error) {
 	return core.UpdateNetworkSecurityGroupSecurityRulesResponse{}, nil
+}
+
+type pagingIpv6LookupClient struct {
+	mockVirtualNetworkClient
+	requestPages []string
+}
+
+func (c *pagingIpv6LookupClient) ListIpv6s(ctx context.Context, request core.ListIpv6sRequest) (response core.ListIpv6sResponse, err error) {
+	page := ""
+	if request.Page != nil {
+		page = *request.Page
+	}
+	c.requestPages = append(c.requestPages, page)
+
+	switch len(c.requestPages) {
+	case 1:
+		nextPage := "page-2"
+		otherIP := "2001:db8::1"
+		return core.ListIpv6sResponse{
+			Items:       []core.Ipv6{{IpAddress: &otherIP}},
+			OpcNextPage: &nextPage,
+		}, nil
+	case 2:
+		if page != "page-2" {
+			return core.ListIpv6sResponse{}, fmt.Errorf("expected page token page-2, got %q", page)
+		}
+		matchedIP := "2001:db8::2"
+		ipv6ID := "ocid1.ipv6.oc1..page2"
+		return core.ListIpv6sResponse{
+			Items: []core.Ipv6{{
+				Id:        &ipv6ID,
+				IpAddress: &matchedIP,
+			}},
+		}, nil
+	default:
+		return core.ListIpv6sResponse{}, fmt.Errorf("unexpected extra ListIpv6s call %d", len(c.requestPages))
+	}
+}
+
+func TestGetIpv6ByIpAddressPagesThroughResults(t *testing.T) {
+	networkClient := &pagingIpv6LookupClient{}
+	c := &client{
+		network: networkClient,
+		rateLimiter: RateLimiter{
+			Reader: flowcontrol.NewTokenBucketRateLimiter(100, 100),
+			Writer: flowcontrol.NewTokenBucketRateLimiter(100, 100),
+		},
+	}
+	subnets := []string{"ocid1.subnet.oc1.phx, ocid1.subnet.oc1.phx"}
+	ipv6, err := c.GetIpv6ByIpAddress(context.Background(), "2001:db8::2", subnets)
+	if err != nil {
+		t.Fatalf("GetIpv6ByIpAddress() error = %v", err)
+	}
+	if ipv6 == nil || ipv6.Id == nil || *ipv6.Id != "ocid1.ipv6.oc1..page2" {
+		t.Fatalf("GetIpv6ByIpAddress() returned %+v, want ocid1.ipv6.oc1..page2", ipv6)
+	}
+	if want := []string{"", "page-2"}; !reflect.DeepEqual(networkClient.requestPages, want) {
+		t.Fatalf("ListIpv6s() pages = %v, want %v", networkClient.requestPages, want)
+	}
 }
 
 func TestBackendTcpProxyProtocolOptionsStringArrayToEnum(t *testing.T) {

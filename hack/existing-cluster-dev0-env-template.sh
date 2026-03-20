@@ -42,6 +42,7 @@ export NSG_OCIDS=""
 
 #Reserved IP created in e2e test compartment
 export RESERVED_IP="144.25.98.32"
+export RESERVED_IPV6=""
 
 #Architecture to run tests on
 export ARCHITECTURE_AMD="AMD"

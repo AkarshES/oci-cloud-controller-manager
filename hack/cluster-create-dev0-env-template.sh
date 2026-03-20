@@ -129,6 +129,7 @@ export NSG_OCIDS_ARM="ocid1.networksecuritygroup.oc1.iad.aaaaaaaa3nacpqxf3eyjix6
 
 #Reserved IP created in above compartment
 export RESERVED_IP="144.25.98.32"
+export RESERVED_IPV6=""
 
 # FSS volume handle
 # format is FileSystemOCID:serverIP:path

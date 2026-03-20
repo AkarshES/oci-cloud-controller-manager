@@ -17,6 +17,7 @@ package oci
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -1145,9 +1146,26 @@ func (c *MockBlockStorageClient) GetVolumeBackupsByName(ctx context.Context, sna
 
 // MockVirtualNetworkClient mocks VirtualNetwork client implementation
 type MockVirtualNetworkClient struct {
+	publicIP        *core.PublicIp
+	publicIPErr     error
+	ipv6            *core.Ipv6
+	ipv6Err         error
+	publicIpLookups []string
+	ipv6ByIPLookups []string
 }
 
 func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
+func (c *MockVirtualNetworkClient) GetIpv6ByIpAddress(ctx context.Context, ip string, subnetOcids []string) (*core.Ipv6, error) {
+	if len(subnetOcids) < 1 {
+		return nil, errors.New(fmt.Sprintf("Subnet is a required parameter for identifying ipv6"))
+	}
+	c.ipv6ByIPLookups = append(c.ipv6ByIPLookups, ip)
+	if c.ipv6 != nil || c.ipv6Err != nil {
+		return c.ipv6, c.ipv6Err
+	}
 	return &core.Ipv6{}, nil
 }
 
@@ -1203,6 +1221,10 @@ func (c *MockVirtualNetworkClient) UpdateSecurityList(ctx context.Context, id st
 }
 
 func (c *MockVirtualNetworkClient) GetPublicIpByIpAddress(ctx context.Context, id string) (*core.PublicIp, error) {
+	c.publicIpLookups = append(c.publicIpLookups, id)
+	if c.publicIP != nil || c.publicIPErr != nil {
+		return c.publicIP, c.publicIPErr
+	}
 	return nil, nil
 }
 
