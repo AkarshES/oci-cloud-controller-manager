@@ -371,6 +371,12 @@ type certificateData struct {
 	Passphrase []byte
 }
 
+type ipOcidData struct {
+	ocid     *string
+	ipFamily string
+	ipTypeOf string
+}
+
 func getSessionPersistenceConfiguration(
 	svc *v1.Service,
 ) (*loadbalancer.SessionPersistenceConfigurationDetails, *loadbalancer.LbCookieSessionPersistenceConfigurationDetails, error) {

@@ -42,6 +42,7 @@ type NetworkingInterface interface {
 	GetPrivateIp(ctx context.Context, id string) (*core.PrivateIp, error)
 	CreatePrivateIp(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.PrivateIp, error)
 	GetIpv6(ctx context.Context, id string) (*core.Ipv6, error)
+	GetIpv6ByIpAddress(ctx context.Context, ip string, subnetOcids []string) (*core.Ipv6, error)
 
 	ListIpv6s(ctx context.Context, vnicId string) ([]core.Ipv6, error)
 	CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error)
@@ -366,7 +367,7 @@ func (c *client) ListIpv6s(ctx context.Context, vnicID string) ([]core.Ipv6, err
 		})
 		incRequestCounter(err, listVerb, ipv6IPResource)
 		if err != nil {
-			c.logger.With(vnicID).Infof("ListIpv6s failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
+			c.logger.With(vnicID).Errorf("ListIpv6s failed %s: %v", pointer.StringDeref(resp.OpcRequestId, ""), err.Error())
 			return nil, errors.WithStack(err)
 		}
 		ipv6s = append(ipv6s, resp.Items...)
@@ -398,6 +399,56 @@ func (c *client) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
 	}
 
 	return &resp.Ipv6, nil
+}
+
+// GetIpv6ByIpAddress call to https://docs.oracle.com/en-us/iaas/api/#/en/iaas/20160918/Ipv6/ListIpv6s
+func (c *client) GetIpv6ByIpAddress(ctx context.Context, ip string, subnetOcids []string) (*core.Ipv6, error) {
+	requestMetadata := getDefaultRequestMetadata(c.requestMetadata)
+	var page *string
+
+	for {
+		if !c.rateLimiter.Reader.TryAccept() {
+			return nil, RateLimitError(false, "ListIpv6s")
+		}
+		resp, err := core.ListIpv6sResponse{}, error(nil)
+		// try to find the ipv6 in available subnets
+		if len(subnetOcids) < 1 {
+			c.logger.With(ip).Info("Subnet is a required parameter for identifying ipv6")
+			return nil, errors.New(fmt.Sprintf("Subnet is a required parameter for identifying ipv6"))
+		}
+		for _, subnetOcid := range subnetOcids {
+			resp, err = c.network.ListIpv6s(ctx, core.ListIpv6sRequest{
+				IpAddress:       &ip,
+				Page:            page,
+				RequestMetadata: requestMetadata,
+				SubnetId:        &subnetOcid,
+			})
+			incRequestCounter(err, listVerb, ipv6IPResource)
+			if err != nil || len(resp.Items) < 1 {
+				// Check other options
+				continue
+			}
+		}
+		// if it continues to give error for all subnet fail the request
+		if err != nil {
+			c.logger.With(ip).Infof("ListIpv6s failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
+			return nil, errors.WithStack(err)
+		}
+
+		for _, ipv6 := range resp.Items {
+			if ipv6.IpAddress != nil && *ipv6.IpAddress == ip {
+				return &ipv6, nil
+			}
+		}
+
+		if nextPage := resp.OpcNextPage; nextPage == nil {
+			break
+		} else {
+			page = nextPage
+		}
+	}
+
+	return nil, errors.WithStack(errNotFound)
 }
 
 func (c *client) CreateNetworkSecurityGroup(ctx context.Context, compartmentId, vcnId, displayName, serviceUid string) (*core.NetworkSecurityGroup, error) {

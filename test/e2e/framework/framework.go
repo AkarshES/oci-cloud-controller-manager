@@ -123,6 +123,7 @@ var (
 	nsgOCIDS                      string // Testing CCM NSG feature
 	backendNsgIds                 string // Testing Rule management Backend NSG feature
 	reservedIP                    string // Testing public reserved IP feature
+	reservedIPv6                  string // Testing reserved IPv6 feature
 	architecture                  string
 	volumeHandle                  string // The FSS mount volume handle
 	lustreVolumeHandle            string // The Lustre mount volume handle
@@ -223,6 +224,7 @@ func init() {
 	flag.StringVar(&nsgOCIDS, "nsg-ocids", "", "NSG OCIDs to be used to associate to LB")
 	flag.StringVar(&backendNsgIds, "backend-nsg-ocids", "", "backend NSG Ids associated with backends of LB")
 	flag.StringVar(&reservedIP, "reserved-ip", "", "Public reservedIP to be used for testing loadbalancer with reservedIP")
+	flag.StringVar(&reservedIPv6, "reserved-ipv6", "", "Reserved IPv6 to be used for testing loadbalancer with reserved IPv6")
 	flag.StringVar(&architecture, "architecture", "", "CPU architecture to be used for testing.")
 
 	flag.StringVar(&staticSnapshotCompartmentOCID, "static-snapshot-compartment-id", "", "Compartment ID for cross compartment snapshot test")
@@ -402,6 +404,7 @@ type Framework struct {
 	NsgOCIDS                 string
 	BackendNsgOcid           string
 	ReservedIP               string
+	ReservedIPv6             string
 	Architecture             string
 
 	VolumeHandle       string
@@ -513,6 +516,7 @@ func NewWithConfig(config *FrameworkConfig) *Framework {
 		CMEKKMSKey:                    cmekKMSKey,
 		NsgOCIDS:                      nsgOCIDS,
 		ReservedIP:                    reservedIP,
+		ReservedIPv6:                  reservedIPv6,
 		Architecture:                  architecture,
 		VolumeHandle:                  volumeHandle,
 		LustreVolumeHandle:            lustreVolumeHandle,
@@ -649,6 +653,8 @@ func (f *Framework) Initialize() {
 	Logf("Backend NSG OCIDS: %s", f.BackendNsgOcid)
 	f.ReservedIP = reservedIP
 	Logf("Reserved IP: %s", f.ReservedIP)
+	f.ReservedIPv6 = reservedIPv6
+	Logf("Reserved IPv6: %s", f.ReservedIPv6)
 	f.Architecture = architecture
 	Logf("Architecture: %s", f.Architecture)
 	f.Compartment1 = compartment1

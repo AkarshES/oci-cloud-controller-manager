@@ -352,6 +352,10 @@ func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string)
 	return []core.Ipv6{}, nil
 }
 
+func (c *MockVirtualNetworkClient) GetIpv6ByIpAddress(ctx context.Context, ip string, subnets []string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
 func (c *MockVirtualNetworkClient) CreateIpv6(ctx context.Context, vnicID string, CidrPrefixLength *int) (*core.Ipv6, error) {
 	return &core.Ipv6{}, nil
 }

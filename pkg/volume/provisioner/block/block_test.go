@@ -349,6 +349,10 @@ func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*cor
 	return &core.Ipv6{}, nil
 }
 
+func (c *MockVirtualNetworkClient) GetIpv6ByIpAddress(ctx context.Context, ip string, subnets []string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
+}
+
 func (c *MockVirtualNetworkClient) ListIpv6s(ctx context.Context, vnicId string) ([]core.Ipv6, error) {
 	return []core.Ipv6{}, nil
 }

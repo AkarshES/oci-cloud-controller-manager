@@ -43,7 +43,8 @@ export CMEK_KMS_KEY="ocid1.key.oc1.phx.a5pq4liyaafqw.abyhqljt6vom6gkskvfk573dl4t
 export NSG_OCIDS="ocid1.networksecuritygroup.oc1.phx.aaaaaaaaubnnphlndatb5ojkb2fmo42gjdprett5z2oy5mhihh6i4nc5cgpa,ocid1.networksecuritygroup.oc1.phx.aaaaaaaa34hh25ocryiykb7t6ytukzkmzigchbs2h2ezvfpzpwkizticbwwa"
 
 #Reserved IP created in e2e test compartment
-export RESERVED_IP="144.24.42.104"
+export RESERVED_IP="161.153.47.69"
+export RESERVED_IPV6="2603:c020:11:1505:0:73ad:9e71:bd1"
 
 #Architecture to run tests on
 export ARCHITECTURE_AMD="AMD"

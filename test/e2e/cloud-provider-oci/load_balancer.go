@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	cloudprovider "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci"
+	ociclient "github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	sharedfw "github.com/oracle/oci-cloud-controller-manager/test/e2e/framework"
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/containerengine"
@@ -40,7 +41,68 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+	knet "k8s.io/utils/net"
 )
+
+func reservedServiceIPs(f *sharedfw.Framework) []string {
+	reservedIPs := make([]string, 0, 2)
+	if f.ReservedIP != "" {
+		reservedIPs = append(reservedIPs, f.ReservedIP)
+	}
+	if f.ReservedIPv6 != "" {
+		reservedIPs = append(reservedIPs, f.ReservedIPv6)
+	}
+	return reservedIPs
+}
+
+func configureReservedIPsOnService(s *v1.Service, reservedIPs []string, clusterIPFamily string) {
+	if len(reservedIPs) == 0 {
+		return
+	}
+
+	if s.ObjectMeta.Annotations == nil {
+		s.ObjectMeta.Annotations = map[string]string{}
+	}
+	for _, ip := range reservedIPs {
+		if knet.IsIPv4String(ip) {
+			s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationReservedIPs] = ip
+		}
+	}
+	// Check if IPv6 is to be validated
+	if strings.Contains(clusterIPFamily, "IPv6") {
+		ipFamilyPolicy := v1.IPFamilyPolicyRequireDualStack
+		s.Spec.IPFamilyPolicy = &ipFamilyPolicy
+		s.Spec.IPFamilies = []v1.IPFamily{v1.IPv4Protocol, v1.IPv6Protocol}
+		s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationReservedIPs] = strings.Join(reservedIPs, ",")
+	}
+}
+
+func assertReservedIPsAttached(ociClient ociclient.Interface, loadBalancer *ociclient.GenericLoadBalancer, reservedIPs []string, subnets []string) {
+	ctx := context.TODO()
+	expectedReservedIDs := make(map[string]struct{}, len(reservedIPs))
+	for _, reservedIP := range reservedIPs {
+		if knet.IsIPv6String(reservedIP) {
+			ipv6, err := ociClient.Networking(nil).GetIpv6ByIpAddress(ctx, reservedIP, subnets)
+			sharedfw.ExpectNoError(err)
+			expectedReservedIDs[*ipv6.Id] = struct{}{}
+			continue
+		}
+
+		publicIP, err := ociClient.Networking(nil).GetPublicIpByIpAddress(ctx, reservedIP)
+		sharedfw.ExpectNoError(err)
+		expectedReservedIDs[*publicIP.Id] = struct{}{}
+	}
+
+	actualReservedIDs := map[string]struct{}{}
+	for _, ipAddress := range loadBalancer.IpAddresses {
+		if ipAddress.ReservedIp != nil && ipAddress.ReservedIp.Id != nil {
+			actualReservedIDs[*ipAddress.ReservedIp.Id] = struct{}{}
+		}
+	}
+
+	sharedfw.Logf("Loadbalancer reserved IP OCIDs are: %v Expected reserved IP OCIDs: %v", actualReservedIDs, expectedReservedIDs)
+	Expect(actualReservedIDs).To(Equal(expectedReservedIDs))
+}
 
 var _ = Describe("Service [Slow]", func() {
 
@@ -2523,11 +2585,13 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckRetries:  "1",
 					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckTimeout:  "1000",
 					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckInterval: "4000",
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:             "",
 				},
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckRetries:  "2",
 					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckTimeout:  "2000",
 					cloudprovider.ServiceAnnotationLoadBalancerHealthCheckInterval: "6000",
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:             "",
 				},
 				map[string]string{},
 				4000,
@@ -2575,6 +2639,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 					if test.lbType == "lb" {
 						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 					}
@@ -2743,7 +2808,6 @@ var _ = Describe("LB Properties", func() {
 						cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "100",
 						cloudprovider.ServiceAnnotationLoadBalancerInternal:     "true",
 					}
-
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -2814,6 +2878,7 @@ var _ = Describe("LB Properties", func() {
 				s.Spec.LoadBalancerIP = requestedIP
 				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
+				s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 				s.ObjectMeta.Annotations = map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionIdleTimeout: "500",
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:              "true",
@@ -2887,6 +2952,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerShape:        "flexible",
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:      "",
 				},
 				cloudprovider.ServiceAnnotationLoadBalancerNetworkSecurityGroups,
 			},
@@ -2945,6 +3011,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.Annotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -3024,6 +3091,7 @@ var _ = Describe("LB Properties", func() {
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMin: "10",
 					cloudprovider.ServiceAnnotationLoadBalancerShapeFlexMax: "10",
 					cloudprovider.ServiceAnnotationLoadBalancerPolicy:       cloudprovider.IPHashLoadBalancerPolicy,
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:      "",
 				},
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerPolicy: cloudprovider.LeastConnectionsLoadBalancerPolicy,
@@ -3068,6 +3136,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 					if test.lbType == "lb" {
 						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerInternal] = "true"
 					}
@@ -3197,14 +3266,15 @@ var _ = Describe("LB Properties", func() {
 						serviceAccount = jig.CreateServiceAccountOrFail(ns, sa, nil)
 					}
 
-					reservedIP := setupF.ReservedIP
-					sharedfw.Logf(reservedIP)
+					reservedIPs := reservedServiceIPs(setupF)
+					sharedfw.Logf("Reserved IPs: %v", reservedIPs)
 					tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
 						s.Spec.Type = v1.ServiceTypeLoadBalancer
-						s.Spec.LoadBalancerIP = reservedIP
 						s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 							{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 						s.ObjectMeta.Annotations = test.CreationAnnotations
+						configureReservedIPsOnService(s, reservedIPs, setupF.ClusterIPFamily)
+						s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 					})
 
 					if _, exists := test.CreationAnnotations[cloudprovider.ServiceAnnotationServiceAccountName]; exists {
@@ -3250,11 +3320,8 @@ var _ = Describe("LB Properties", func() {
 					lbType := strings.TrimSuffix(test.lbType, "-wris")
 					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 					sharedfw.ExpectNoError(err)
-					By("waiting upto 5m0s to verify whether LB has been created with public reservedIP")
-
-					reservedIPOCID, err := f.Client.Networking(nil).GetPublicIpByIpAddress(ctx, reservedIP)
-					sharedfw.Logf("Loadbalancer reserved IP OCID is: %s  Expected reserved IP OCID: %s", *loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id)
-					Expect(strings.Compare(*loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id) == 0).To(BeTrue())
+					By("verifying verify whether LB has been created with the configured reserved IPs")
+					assertReservedIPsAttached(f.Client, loadBalancer, reservedIPs, []string{setupF.Subnet1})
 
 					By("changing TCP service to type=ClusterIP")
 					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
@@ -3286,10 +3353,12 @@ var _ = Describe("LB Properties", func() {
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:                       "true",
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionProxyProtocolVersion: "2",
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:                        "",
 				},
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:                       "true",
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionProxyProtocolVersion: "1",
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:                        "",
 				},
 				map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerInternal: "true",
@@ -3338,6 +3407,7 @@ var _ = Describe("LB Properties", func() {
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -4776,15 +4846,15 @@ var _ = Describe("SKE - LB Properties", func() {
 				if nodes := sharedfw.GetReadySchedulableVirtualNodesOrDie(f.ClientSet); len(nodes.Items) > sharedfw.LargeClusterMinNodesNumber {
 					loadBalancerCreateTimeout = sharedfw.LoadBalancerCreateTimeoutLarge
 				}
-				reservedIP := setupF.ReservedIP
-				sharedfw.Logf(reservedIP)
+				reservedIPs := reservedServiceIPs(setupF)
+				sharedfw.Logf("Reserved IPs: %v", reservedIPs)
 
 				tcpService := jig.CreateTCPServiceOrFail(ns, func(s *v1.Service) {
 					s.Spec.Type = v1.ServiceTypeLoadBalancer
-					s.Spec.LoadBalancerIP = reservedIP
 					s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 						{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
 					s.ObjectMeta.Annotations = test.CreationAnnotations
+					configureReservedIPsOnService(s, reservedIPs, setupF.ClusterIPFamily)
 				})
 
 				svcPort := int(tcpService.Spec.Ports[0].Port)
@@ -4817,11 +4887,8 @@ var _ = Describe("SKE - LB Properties", func() {
 
 				loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), test.lbtype, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 				sharedfw.ExpectNoError(err)
-				By("waiting upto 5m0s to verify whether LB has been created with public reservedIP")
-
-				reservedIPOCID, err := f.Client.Networking(nil).GetPublicIpByIpAddress(ctx, reservedIP)
-				sharedfw.Logf("Loadbalancer reserved IP OCID is: %s  Expected reserved IP OCID: %s", *loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id)
-				Expect(strings.Compare(*loadBalancer.IpAddresses[0].ReservedIp.Id, *reservedIPOCID.Id) == 0).To(BeTrue())
+				By("verifying whether LB has been created with the configured reserved IPs")
+				assertReservedIPsAttached(f.Client, loadBalancer, reservedIPs, []string{setupF.Subnet1})
 
 				By("changing TCP service to type=ClusterIP")
 				tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {

@@ -34,7 +34,6 @@ import (
 	cloudprovider "github.com/oracle/oci-cloud-controller-manager/pkg/cloudprovider/providers/oci"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
 	gerrors "github.com/pkg/errors"
-
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -713,7 +712,8 @@ func (j *ServiceTestJig) RunOrFail(namespace string, tweak func(rc *v1.Replicati
 	if tweak != nil {
 		tweak(rc)
 	}
-	result, err := j.Client.CoreV1().ReplicationControllers(namespace).Create(context.Background(), rc, metav1.CreateOptions{})
+	rci := j.Client.CoreV1().ReplicationControllers(namespace)
+	result, err := rci.Create(context.Background(), rc, metav1.CreateOptions{})
 	if err != nil {
 		Failf("Failed to create RC %q: %v", rc.Name, err)
 	}
@@ -747,18 +747,19 @@ func (j *ServiceTestJig) updateReplicationController(namespace, name string, upd
 	for i := 0; i < 3; i++ {
 		rc, err := j.Client.CoreV1().ReplicationControllers(namespace).Get(context.Background(), name, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get Replication Controller %q: %v", name, err)
+			return nil, fmt.Errorf("failed to get Replication Controller %q: %v", name, err)
 		}
 		update(rc)
-		rc, err = j.Client.CoreV1().ReplicationControllers(namespace).Update(context.Background(), rc, metav1.UpdateOptions{})
+		rci := j.Client.CoreV1().ReplicationControllers(namespace)
+		rc, err = rci.Update(context.Background(), rc, metav1.UpdateOptions{})
 		if err == nil {
 			return rc, nil
 		}
 		if !errors.IsConflict(err) && !errors.IsServerTimeout(err) {
-			return nil, fmt.Errorf("Failed to update Replication Controller %q: %v", name, err)
+			return nil, fmt.Errorf("failed to update Replication Controller %q: %v", name, err)
 		}
 	}
-	return nil, fmt.Errorf("Too many retries updating Replication Controller %q", name)
+	return nil, fmt.Errorf("too many retries updating Replication Controller %q", name)
 }
 
 func (j *ServiceTestJig) waitForPdbReady(namespace string) error {

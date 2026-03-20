@@ -20,9 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-logr/logr"
 	"reflect"
 	"testing"
+
+	"github.com/go-logr/logr"
 
 	"github.com/oracle/oci-cloud-controller-manager/api/v1beta1"
 	"github.com/oracle/oci-cloud-controller-manager/pkg/oci/client"
@@ -1789,6 +1790,10 @@ func (MockOCIClient) NewWorkloadIdentityClient(logger *zap.SugaredLogger, lbType
 
 // MockVirtualNetworkClient mocks VirtualNetwork client implementation
 type MockVirtualNetworkClient struct {
+}
+
+func (c *MockVirtualNetworkClient) GetIpv6ByIpAddress(ctx context.Context, ip string, subnets []string) (*core.Ipv6, error) {
+	return &core.Ipv6{}, nil
 }
 
 func (c *MockVirtualNetworkClient) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
