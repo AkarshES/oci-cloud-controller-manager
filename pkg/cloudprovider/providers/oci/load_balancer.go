@@ -279,8 +279,23 @@ func getSubnets(ctx context.Context, subnetIDs []string, n client.NetworkingInte
 	return subnets, nil
 }
 
-// getReservedIpOcidByIpAddress returns the OCID of public reserved IP if it is in Available state.
-func getReservedIpOcidByIpAddress(ctx context.Context, ipAddress string, n client.NetworkingInterface) (*string, error) {
+// getReservedIpOcidByIpAddress returns the OCID of a reserved IP if it is in Available state.
+func getReservedIpOcidByIpAddress(ctx context.Context, ipAddress string, subnetOcids []string, n client.NetworkingInterface) (*ipOcidData, error) {
+	if net.IsIPv6String(ipAddress) {
+		ipv6, err := n.GetIpv6ByIpAddress(ctx, ipAddress, subnetOcids)
+		if err != nil {
+			return nil, err
+		}
+		if ipv6.LifecycleState != core.Ipv6LifecycleStateAvailable {
+			return nil, errors.Errorf("The IP address provided is not available for use.")
+		}
+		return &ipOcidData{
+			ocid:     ipv6.Id,
+			ipFamily: IPv6,
+			ipTypeOf: "Public",
+		}, nil
+	}
+
 	publicIp, err := n.GetPublicIpByIpAddress(ctx, ipAddress)
 	if err != nil {
 		return nil, err
@@ -288,7 +303,45 @@ func getReservedIpOcidByIpAddress(ctx context.Context, ipAddress string, n clien
 	if publicIp.LifecycleState != core.PublicIpLifecycleStateAvailable {
 		return nil, errors.Errorf("The IP address provided is not available for use.")
 	}
-	return publicIp.Id, nil
+	return &ipOcidData{
+		ocid:     publicIp.Id,
+		ipFamily: IPv4,
+		ipTypeOf: "Public",
+	}, nil
+}
+
+// resolvedReservedIp resolve the IP OCID from collection of ip addressed with provided Networking Interface
+func resolveReservedIps(ctx context.Context, ips []string, subnetOcid []string, n client.NetworkingInterface) ([]client.GenericReservedIp, error) {
+	resolvedReservedIps := make([]client.GenericReservedIp, 0, len(ips))
+	ipOcids := make([]ipOcidData, 0, len(ips))
+
+	for _, ip := range ips {
+		ipOcid, err := getReservedIpOcidByIpAddress(ctx, ip, subnetOcid, n)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve reserved IP %s", ip)
+		}
+		ipOcids = append(ipOcids, *ipOcid)
+	}
+	// Validate at max 1 public Ip of each type  is allowed
+	countPublicIpv4 := 0
+	countPublicIpv6 := 0
+	for _, ocid := range ipOcids {
+		if ocid.ipFamily == IPv4 {
+			countPublicIpv4++
+		}
+		if ocid.ipFamily == IPv6 {
+			countPublicIpv6++
+		}
+	}
+	if countPublicIpv4 > 1 || countPublicIpv6 > 1 {
+		klog.Errorf("Only one private IP and one public IP allowed from each of the IPFamily of IPv4 and IPv6")
+		return nil, errors.Errorf("Only one private IP and one public IP allowed.")
+	}
+	// collect the reserved IP OCIDs
+	for _, ocid := range ipOcids {
+		resolvedReservedIps = append(resolvedReservedIps, client.GenericReservedIp{Id: ocid.ocid})
+	}
+	return resolvedReservedIps, nil
 }
 
 // getSubnetsForNodes returns the de-duplicated subnets in which the given
@@ -488,25 +541,21 @@ func (clb *CloudLoadBalancerProvider) createLoadBalancer(ctx context.Context, sp
 	var resolvedReservedIps []client.GenericReservedIp
 
 	if len(spec.ReservedIPs) > 0 {
-		// Convert each reserved IP string to OCID
-		for _, ip := range spec.ReservedIPs {
-			ipOcid, err := getReservedIpOcidByIpAddress(ctx, ip, clb.client.Networking(clb.ociConfig))
-			if err != nil {
-				return nil, "", errors.Wrapf(err, "failed to resolve reserved IP %s", ip)
-			}
-			resolvedReservedIps = append(resolvedReservedIps, client.GenericReservedIp{Id: ipOcid})
+		resolvedReservedIps, err = resolveReservedIps(ctx, spec.ReservedIPs, spec.Subnets, clb.client.Networking(clb.ociConfig))
+		if err != nil {
+			return nil, "", err
 		}
 	} else if spec.LoadBalancerIP != "" {
 		// Fallback to LoadBalancerIP
 		// TODO: https://jira.oci.oraclecorp.com/browse/OKE-39893
 		logger.Warnf("Field LoadBalancerIP is deprecated. Use annotation %s instead.", ServiceAnnotationReservedIPs)
 
-		ipOcid, err := getReservedIpOcidByIpAddress(ctx, spec.LoadBalancerIP, clb.client.Networking(clb.ociConfig))
+		ipOcid, err := getReservedIpOcidByIpAddress(ctx, spec.LoadBalancerIP, spec.Subnets, clb.client.Networking(clb.ociConfig))
 		if err != nil {
 			return nil, "", errors.Wrap(err, "failed to resolve LoadBalancerIP")
 		}
 		resolvedReservedIps = []client.GenericReservedIp{
-			{Id: ipOcid},
+			{Id: ipOcid.ocid},
 		}
 	}
 

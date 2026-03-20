@@ -134,6 +134,13 @@ function check_environment () {
         check-env "CERT_OCID" CERT_OCID
         check-env "IMPORTED_CERT_OCID" IMPORTED_CERT_OCID
     fi
+
+    if [[ "$CLUSTER_IP_FAMILY" =~ "IPv6" ]]; then
+        check-env "RESERVED_IPV6" RESERVED_IPV6
+    fi
+    if [[ "$CLUSTER_IP_FAMILY" =~ "IPv4" ]]; then
+        check-env "RESERVED_IP" RESERVED_IP
+    fi
 }
 
 function set_image_pull_repo_and_delete_namespace_flag () {
@@ -215,6 +222,7 @@ function run_e2e_tests() {
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
                 --reserved-ip=${RESERVED_IP} \
+                --reserved-ipv6=${RESERVED_IPV6} \
                 --architecture=${ARCHITECTURE} \
                 --volume-handle=${FSS_VOLUME_HANDLE} \
                 --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
@@ -284,6 +292,7 @@ function run_e2e_tests() {
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
                 --reserved-ip=${RESERVED_IP} \
+                --reserved-ipv6=${RESERVED_IPV6} \
                 --architecture=${ARCHITECTURE} \
                 --volume-handle=${FSS_VOLUME_HANDLE} \
                 --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
@@ -339,6 +348,7 @@ function run_e2e_tests_existing_cluster() {
                 --nsg-ocids=${NSG_OCIDS} \
                 --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
                 --reserved-ip=${RESERVED_IP} \
+                --reserved-ipv6=${RESERVED_IPV6} \
                 --architecture=${ARCHITECTURE} \
                 --volume-handle=${FSS_VOLUME_HANDLE} \
                 --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
@@ -383,6 +393,7 @@ function run_e2e_tests_existing_cluster() {
                         --nsg-ocids=${NSG_OCIDS} \
                         --backend-nsg-ocids=${BACKEND_NSG_OCIDS} \
                         --reserved-ip=${RESERVED_IP} \
+                        --reserved-ipv6=${RESERVED_IPV6} \
                         --architecture=${ARCHITECTURE} \
                         --volume-handle=${FSS_VOLUME_HANDLE} \
                         --lustre-volume-handle=${LUSTRE_VOLUME_HANDLE} \
