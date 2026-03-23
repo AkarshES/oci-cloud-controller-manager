@@ -72,3 +72,4 @@ release-tooling/jira_pat.txt
 
 # venv
 venv3/
+/.oca/

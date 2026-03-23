@@ -5,19 +5,19 @@ output "regional_properties_values_overrides" {
 module "all_values_validation" {
   source = "../validation"
 
-  for_each = local.all_values
+  for_each             = local.all_values
   image_mapping_values = lookup(each.value, "value", null)
 }
 
 module "overrides_validation" {
   source = "../validation"
 
-  for_each = local.tenancy_overrides_final
+  for_each             = local.tenancy_overrides_final
   image_mapping_values = lookup(each.value, "value", null)
 }
 
 resource "property_value" "values" {
-  for_each = { for k, v in local.all_values : k => v if(contains(keys(local.created_definitions),  v.name)) }
+  for_each = { for k, v in local.all_values : k => v if(contains(keys(local.created_definitions), v.name)) }
 
   group  = each.value.group
   name   = each.value.name

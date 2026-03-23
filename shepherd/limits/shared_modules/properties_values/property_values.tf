@@ -72,7 +72,7 @@ locals {
   }
 
   tenancy_overrides_map = {
-    for entry in local.tenancy_overrides : "${entry.group}/${entry.name}/${entry.region}/${entry.ad}/${entry.tag}" => entry }
+  for entry in local.tenancy_overrides : "${entry.group}/${entry.name}/${entry.region}/${entry.ad}/${entry.tag}" => entry }
 
   tenancy_overrides_final = merge(local.tenancy_overrides_map, local.tenancy_overrides__all_regions_map)
   /*
@@ -118,6 +118,6 @@ locals {
 
   //regional_overrides = length(local.regional_snowflake_values_map) > 0 ? merge(local.regional_values_map, local.regional_snowflake_values_map) : local.regional_values_map
 
-  all_values = merge(local.global_default_values_map, local.default_values_map, local.regional_values_map_overrides)
+  all_values          = merge(local.global_default_values_map, local.default_values_map, local.regional_values_map_overrides)
   created_definitions = { for def in data.property_definitions.existing_defs.definitions : def.name => def }
 }

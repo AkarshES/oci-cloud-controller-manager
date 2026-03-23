@@ -18,6 +18,13 @@ locals {
     "v1.35" : "v1.34-219abcce797-7062@sha256:dbdfe17351eadbea3e9a8d9daf5cf55c6341217b2a16c9654cb2c0c9cc66a506"
   }
 
+  freewheel_overrides = {
+    "v1.32" : "v1.32-4e385cb4e42-1@sha256:b8ba66fb8d2b1b726b334cf1c9443bf4b16c0dbd0649bacd40b2c5220af9f83a",
+    "v1.33" : "v1.33-892c56e21ac-1@sha256:3534fee82295e161df982b077caabb1297fdbdf41373e0a096b194e7ed9394e7",
+    "v1.34" : "v1.34-6afedbccd1b-1@sha256:3c410881e0473d4c0b03f6ea5c0173ddd9abec04a6bcd2a2e7ede2a4f8794a8a",
+    "v1.35" : "v1.34-6afedbccd1b-1@sha256:3c410881e0473d4c0b03f6ea5c0173ddd9abec04a6bcd2a2e7ede2a4f8794a8a"
+  }
+
   // !!! Do not play with fire, only used by ci-cd pipeline
   oci_cnp_dev_override = {
   }
@@ -558,7 +565,14 @@ locals {
             env          = "prd"
             value        = "true"
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaaft2mucrx352mvjgie7ez7lobrnvn56hv5lkxm7kbv6m6wrwo22q"
-          }
+          },
+          // Freewheel override SJC
+          {
+            regions      = ["sjc"]
+            env          = "prd"
+            value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.freewheel_overrides))
+            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaagmxnkamcr6l55it6k4gzowdpgnhlmhumuwbxrcj3qc4mi5bdihca"
+          },
         ]
       }
     },
