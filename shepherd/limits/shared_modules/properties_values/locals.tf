@@ -572,7 +572,7 @@ locals {
             env          = "prd"
             value        = jsonencode(merge(local.ccm_default_mapping.default.all, local.freewheel_overrides))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaagmxnkamcr6l55it6k4gzowdpgnhlmhumuwbxrcj3qc4mi5bdihca"
-          },
+          }
         ]
       }
     },
