@@ -7,6 +7,9 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestRetryDelayBackoffAndCap(t *testing.T) {
@@ -103,5 +106,60 @@ func TestHandleUncordoning_RequeuesWhileNodeUnhealthy(t *testing.T) {
 	}
 	if res.RequeueAfter != repairStateConfigs[stateUncordon].successRequeue {
 		t.Fatalf("expected requeueAfter %v, got %v", repairStateConfigs[stateUncordon].successRequeue, res.RequeueAfter)
+	}
+}
+
+func TestHandleUncordoning_WaitsForHealthyStabilization(t *testing.T) {
+	orig := healthyStabilization
+	healthyStabilization = 30 * time.Second
+	defer func() { healthyStabilization = orig }()
+
+	scheme := runtime.NewScheme()
+	if err := v1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add corev1 scheme: %v", err)
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	node := &v1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "nar-uncordon-stabilization",
+			Annotations: map[string]string{
+				narStateAnnotationKey:       string(stateUncordon),
+				narRepairIDAnnotationKey:    "rid-stable",
+				narLastTransitionAnnotation: now,
+			},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{Client: fakeClient}
+	sm := &nodeRepairStateMachine{
+		reconciler: r,
+		node:       node.DeepCopy(),
+		nodeKey:    client.ObjectKey{Name: node.Name},
+		repairID:   "rid-stable",
+		tracker:    newRepairStateTracker("rid-stable"),
+	}
+	sm.tracker.States[stateUncordon] = &stateTrackerEntry{StartTime: now}
+
+	res, err := sm.handleUncordoning(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter != repairStateConfigs[stateUncordon].successRequeue {
+		t.Fatalf("expected requeueAfter %v, got %v", repairStateConfigs[stateUncordon].successRequeue, res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	tracker := loadRepairStateTracker(latest)
+	entry := tracker.current(stateUncordon)
+	if entry == nil || entry.HealthySince == "" {
+		t.Fatalf("expected healthy stabilization timestamp to be recorded, got %+v", entry)
+	}
+	if got := latest.Annotations[narLastRepairResultAnnotation]; got != "" {
+		t.Fatalf("expected repair result to remain unset while stabilizing, got %q", got)
 	}
 }

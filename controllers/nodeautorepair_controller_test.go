@@ -10,9 +10,9 @@ import (
 	coordinationv1 "k8s.io/api/coordination/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -103,6 +103,40 @@ func TestHandleUnhealthyNode_DisabledLabelSkipsRepair(t *testing.T) {
 }
 
 // Test that cleanup logic will not propose pruning last-repair-end annotation
+func TestSanitizeRepairProblemLabelValue_CommaDelimitedProblems(t *testing.T) {
+	got := sanitizeRepairProblemLabelValue("PCIeLanes,RDMALinkSpeed")
+	if got != "PCIeLanes-RDMALinkSpeed" {
+		t.Fatalf("expected sanitized label value %q, got %q", "PCIeLanes-RDMALinkSpeed", got)
+	}
+}
+
+func TestEnsureRepairMarkers_StoresSanitizedLabelAndFullAnnotation(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := v1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add corev1 scheme: %v", err)
+	}
+
+	node := &v1.Node{}
+	node.Name = "nar-sanitize-markers"
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{Client: fakeClient}
+
+	if err := r.ensureRepairMarkers(context.Background(), node, "PCIeLanes,RDMALinkSpeed"); err != nil {
+		t.Fatalf("unexpected error ensuring repair markers: %v", err)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if got := latest.Labels[repairProblemDetectedLabel]; got != "PCIeLanes-RDMALinkSpeed" {
+		t.Fatalf("expected sanitized label value %q, got %q", "PCIeLanes-RDMALinkSpeed", got)
+	}
+	if got := latest.Annotations["oci.oraclecloud.com/nodeautorepair-problems"]; got != "PCIeLanes,RDMALinkSpeed" {
+		t.Fatalf("expected full problem list annotation to remain unchanged, got %q", got)
+	}
+}
+
 func TestNodeAnnotationsToPrune_DoesNotIncludeLastRepairEnd(t *testing.T) {
 	node := &v1.Node{}
 	node.Name = "nar-cleanup-node"

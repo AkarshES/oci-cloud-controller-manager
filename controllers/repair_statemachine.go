@@ -117,6 +117,7 @@ var (
 	drainIgnoreDaemonSets   = getEnvBool("NODE_AUTOREPAIR_DRAIN_IGNORE_DAEMONSETS", true)
 	drainDeleteEmptyDirData = getEnvBool("NODE_AUTOREPAIR_DRAIN_DELETE_EMPTYDIR", false)
 	drainAttemptTimeout     = getEnvDuration("NODE_AUTOREPAIR_DRAIN_ATTEMPT_TIMEOUT", 60*time.Second)
+	healthyStabilization    = getEnvDuration("NODE_AUTOREPAIR_HEALTHY_STABILIZATION", 75*time.Second)
 )
 
 type repairStateTracker struct {
@@ -125,9 +126,10 @@ type repairStateTracker struct {
 }
 
 type stateTrackerEntry struct {
-	StartTime string `json:"startTime,omitempty"`
-	Attempts  int    `json:"attempts,omitempty"`
-	Forced    bool   `json:"forced,omitempty"`
+	StartTime    string `json:"startTime,omitempty"`
+	Attempts     int    `json:"attempts,omitempty"`
+	Forced       bool   `json:"forced,omitempty"`
+	HealthySince string `json:"healthySince,omitempty"`
 }
 
 func (sm *nodeRepairStateMachine) refreshStateTracker() {
@@ -525,11 +527,28 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning timed out"))
 	}
 	if unhealthyConditions := findUnhealthyConditions(sm.node); len(unhealthyConditions) > 0 {
+		if sm.clearHealthySince(ctx, stateUncordon) {
+			sm.l().Info("Cleared healthy stabilization window because unhealthy conditions returned")
+		}
 		sm.l().Info(fmt.Sprintf(
 			"Node still has unhealthy conditions after reboot; delaying uncordon (conditions=%s)",
 			summarizeConditionTypes(conditionTypeValues(unhealthyConditions)),
 		))
 		return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
+	}
+	if healthyStabilization > 0 {
+		stable, remaining, err := sm.ensureHealthyFor(ctx, stateUncordon, healthyStabilization)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if !stable {
+			sm.l().Info(fmt.Sprintf(
+				"Node is healthy but waiting for stabilization window before uncordon (required=%s remaining=%s)",
+				healthyStabilization,
+				remaining.Truncate(time.Second),
+			))
+			return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
+		}
 	}
 	attempt, err := sm.recordAttempt(ctx)
 	if err != nil {
@@ -564,6 +583,52 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 	}
 	sm.resetCycleAttempts(ctx)
 	return ctrl.Result{}, nil
+}
+
+func (sm *nodeRepairStateMachine) ensureHealthyFor(ctx context.Context, state repairState, window time.Duration) (bool, time.Duration, error) {
+	if sm.tracker == nil {
+		sm.tracker = newRepairStateTracker(sm.repairID)
+	}
+	entry := sm.tracker.ensureStart(state, sm.lastTransitionTime())
+	if entry == nil {
+		return false, 0, nil
+	}
+	now := time.Now().UTC()
+	if entry.HealthySince == "" {
+		entry.HealthySince = now.Format(time.RFC3339)
+		if err := sm.persistTracker(ctx); err != nil {
+			return false, 0, err
+		}
+		return false, window, nil
+	}
+	healthySince, err := time.Parse(time.RFC3339, entry.HealthySince)
+	if err != nil {
+		entry.HealthySince = now.Format(time.RFC3339)
+		if persistErr := sm.persistTracker(ctx); persistErr != nil {
+			return false, 0, persistErr
+		}
+		return false, window, nil
+	}
+	elapsed := now.Sub(healthySince)
+	if elapsed >= window {
+		return true, 0, nil
+	}
+	return false, window - elapsed, nil
+}
+
+func (sm *nodeRepairStateMachine) clearHealthySince(ctx context.Context, state repairState) bool {
+	if sm.tracker == nil {
+		return false
+	}
+	entry := sm.tracker.current(state)
+	if entry == nil || entry.HealthySince == "" {
+		return false
+	}
+	entry.HealthySince = ""
+	if err := sm.persistTracker(ctx); err != nil {
+		sm.l().Error(err, "Failed to clear healthy stabilization timestamp")
+	}
+	return true
 }
 
 func (sm *nodeRepairStateMachine) stateTimedOut(state repairState) bool {

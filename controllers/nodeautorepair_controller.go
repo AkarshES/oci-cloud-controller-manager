@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -253,6 +254,7 @@ func findUnhealthyConditions(node *v1.Node) []*v1.NodeCondition {
 func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logger logr.Logger, node *v1.Node, conditions []*v1.NodeCondition) (ctrl.Result, error) {
 	node = node.DeepCopy()
 	problemTypes := conditionTypeValues(conditions)
+	sort.Strings(problemTypes)
 	repairInProgress := isRepairInProgress(node)
 
 	if isNodeAutoRepairDisabled(node) {
@@ -285,8 +287,8 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 				cycleAttempts = parsed
 			}
 		}
-			if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
-				if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
+		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
+			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
 				until := endTime.Add(cooldown)
 				now := time.Now()
 				if now.Before(until) {
@@ -308,12 +310,12 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 						}
 					}
 				}
-				}
 			}
 		}
+	}
 
-		if err := r.ensureLeaseManager(logger); err != nil {
-			logger.Error(err, "CCM: failed to initialize repair lease manager")
+	if err := r.ensureLeaseManager(logger); err != nil {
+		logger.Error(err, "CCM: failed to initialize repair lease manager")
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
 	acquired, activeNode, err := r.leaseManager.TryAcquire(ctx, node.Name)
@@ -379,12 +381,11 @@ func (r *NodeAutoRepairReconciler) ensureRepairMarkers(ctx context.Context, node
 		if updated.Annotations[narProblemsAnnotationKey] != labelValue {
 			updated.Annotations[narProblemsAnnotationKey] = labelValue
 		}
-		// For the label value, respect the 63-char limit and allowed charset: hash if too long
-		val := labelValue
-		if len(val) > 63 {
-			sum := sha256.Sum256([]byte(val))
+		// For the label value, normalize to a legal Kubernetes label value and hash if it still exceeds the limit.
+		val := sanitizeRepairProblemLabelValue(labelValue)
+		if val == "" || len(val) > 63 {
+			sum := sha256.Sum256([]byte(labelValue))
 			short := hex.EncodeToString(sum[:])[:12]
-			// label values: start/end alnum, allowed [-_.]
 			val = "h" + short
 		}
 		if updated.Labels[repairProblemDetectedLabel] != val {
@@ -673,6 +674,37 @@ func conditionTypeValues(conditions []*v1.NodeCondition) []string {
 		values = append(values, string(cond.Type))
 	}
 	return values
+}
+
+func sanitizeRepairProblemLabelValue(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	var b strings.Builder
+	lastInsertedDash := false
+	for _, r := range raw {
+		switch {
+		case isASCIIAlphaNumeric(r):
+			b.WriteRune(r)
+			lastInsertedDash = false
+		case r == '-' || r == '_' || r == '.':
+			b.WriteRune(r)
+			lastInsertedDash = false
+		default:
+			if !lastInsertedDash {
+				b.WriteByte('-')
+				lastInsertedDash = true
+			}
+		}
+	}
+	return strings.TrimFunc(b.String(), func(r rune) bool {
+		return !isASCIIAlphaNumeric(r)
+	})
+}
+
+func isASCIIAlphaNumeric(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')
 }
 
 func summarizeConditionTypes(problemTypes []string) string {
