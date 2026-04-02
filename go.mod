@@ -60,10 +60,10 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.8.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.40.0
-	golang.org/x/sys v0.33.0
+	golang.org/x/sys v0.40.0
 	google.golang.org/grpc v1.72.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -86,8 +86,7 @@ require (
 )
 
 require (
-	github.com/go-logr/logr v1.4.2
-	github.com/golang/mock v1.6.0
+	github.com/go-logr/logr v1.4.3
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/kubernetes-csi/external-snapshotter/v8 v8.3.0
 	github.com/oracle/oci-go-sdk/v65 v65.2.0
@@ -99,6 +98,7 @@ require (
 	helm.sh/helm/v3 v3.18.4
 	k8s.io/apiextensions-apiserver v0.33.2
 	k8s.io/client-go v1.5.2
+	oracle.com/oci/tagging v0.0.0-20190321202046-20a2e48911da
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/sig-storage-lib-external-provisioner/v11 v11.0.1
 )
@@ -223,15 +223,15 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.21 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.21 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.21 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0 // indirect
-	go.opentelemetry.io/otel v1.35.0 // indirect
+	go.opentelemetry.io/otel v1.40.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.33.0 // indirect
-	go.opentelemetry.io/otel/metric v1.35.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
-	go.opentelemetry.io/otel/trace v1.35.0 // indirect
+	go.opentelemetry.io/otel/metric v1.40.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.40.0 // indirect
+	go.opentelemetry.io/otel/trace v1.40.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
@@ -255,7 +255,6 @@ require (
 	k8s.io/kubectl v0.33.2 // indirect
 	oracle.com/oci/httpsigner v0.0.0-20190320175442-e8cb27ebf440 // indirect
 	oracle.com/oci/ociauthz v0.0.0-20200515161105-5b1e37d2dc95 // indirect
-	oracle.com/oci/tagging v0.0.0-20190321202046-20a2e48911da // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.2 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
