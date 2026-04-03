@@ -16,6 +16,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
+func newNodeAutoRepairTestScheme(t *testing.T) *runtime.Scheme {
+	t.Helper()
+	scheme := runtime.NewScheme()
+	if err := v1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add corev1 scheme: %v", err)
+	}
+	if err := coordinationv1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add coordinationv1 scheme: %v", err)
+	}
+	return scheme
+}
+
 func TestHandleUnhealthyNode_ThrottleEventSuppressedWhenRepairInProgress(t *testing.T) {
 	now := time.Now().UTC()
 	node := &v1.Node{}
@@ -99,6 +111,166 @@ func TestHandleUnhealthyNode_DisabledLabelSkipsRepair(t *testing.T) {
 	case evt := <-rec.Events:
 		t.Fatalf("expected no event when repair is disabled, got %q", evt)
 	default:
+	}
+}
+
+func TestHandleUnhealthyNode_WaitsForContinuousUnhealthyWindow(t *testing.T) {
+	orig := unhealthyThreshold
+	unhealthyThreshold = 10 * time.Minute
+	defer func() { unhealthyThreshold = orig }()
+
+	scheme := newNodeAutoRepairTestScheme(t)
+	node := &v1.Node{}
+	node.Name = "nar-unhealthy-dwell-wait"
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{Client: fakeClient}
+
+	res, err := r.handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter != unhealthyThreshold {
+		t.Fatalf("expected requeueAfter %v, got %v", unhealthyThreshold, res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if latest.Annotations[narUnhealthySinceAnnotationKey] == "" {
+		t.Fatalf("expected unhealthy-since annotation to be set")
+	}
+	if latest.Annotations[narStateAnnotationKey] != "" {
+		t.Fatalf("expected repair state to remain unset before threshold, got %q", latest.Annotations[narStateAnnotationKey])
+	}
+	if latest.Spec.Unschedulable {
+		t.Fatalf("expected node not to be cordoned before threshold")
+	}
+}
+
+func TestHandleUnhealthyNode_StartsRepairAfterContinuousUnhealthyWindow(t *testing.T) {
+	orig := unhealthyThreshold
+	unhealthyThreshold = 10 * time.Minute
+	defer func() { unhealthyThreshold = orig }()
+
+	scheme := newNodeAutoRepairTestScheme(t)
+	node := &v1.Node{}
+	node.Name = "nar-unhealthy-dwell-ready"
+	node.Annotations = map[string]string{
+		narUnhealthySinceAnnotationKey: time.Now().UTC().Add(-unhealthyThreshold - time.Minute).Format(time.RFC3339),
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	rec := record.NewFakeRecorder(5)
+	r := &NodeAutoRepairReconciler{
+		Client:       fakeClient,
+		Recorder:     rec,
+		ControllerID: "nar-test-controller",
+	}
+
+	res, err := r.handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	defer func() {
+		_ = r.stopLeaseHeartbeat(context.Background(), node.Name)
+	}()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter != repairStateConfigs[stateCordoning].successRequeue {
+		t.Fatalf("expected repair to start with requeueAfter %v, got %v", repairStateConfigs[stateCordoning].successRequeue, res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if got := latest.Annotations[narStateAnnotationKey]; got != string(stateCordoning) {
+		t.Fatalf("expected node state %q, got %q", stateCordoning, got)
+	}
+	foundRepairTaint := false
+	for _, taint := range latest.Spec.Taints {
+		if taint.Key == REPAIR_TAINT_KEY && taint.Effect == REPAIR_TAINT_EFFECT {
+			foundRepairTaint = true
+			break
+		}
+	}
+	if !foundRepairTaint {
+		t.Fatalf("expected repair taint to be added once repair starts")
+	}
+}
+
+func TestHandleUnhealthyNode_PreservesUnhealthySinceAcrossConditionChanges(t *testing.T) {
+	orig := unhealthyThreshold
+	unhealthyThreshold = 10 * time.Minute
+	defer func() { unhealthyThreshold = orig }()
+
+	scheme := newNodeAutoRepairTestScheme(t)
+	since := time.Now().UTC().Add(-5 * time.Minute).Format(time.RFC3339)
+	node := &v1.Node{}
+	node.Name = "nar-unhealthy-dwell-preserve"
+	node.Annotations = map[string]string{
+		narUnhealthySinceAnnotationKey: since,
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("RDMALink"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{Client: fakeClient}
+
+	res, err := r.handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter <= 0 || res.RequeueAfter >= unhealthyThreshold {
+		t.Fatalf("expected partial remaining dwell time, got %v", res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if got := latest.Annotations[narUnhealthySinceAnnotationKey]; got != since {
+		t.Fatalf("expected unhealthy-since to remain %q, got %q", since, got)
+	}
+}
+
+func TestCleanupRepairArtifacts_ClearsUnhealthySinceWhenNodeHealthy(t *testing.T) {
+	scheme := newNodeAutoRepairTestScheme(t)
+	node := &v1.Node{}
+	node.Name = "nar-unhealthy-dwell-clear"
+	node.Annotations = map[string]string{
+		narUnhealthySinceAnnotationKey: time.Now().UTC().Add(-2 * time.Minute).Format(time.RFC3339),
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{Client: fakeClient}
+
+	if _, err := r.cleanupRepairArtifacts(context.Background(), logr.Discard(), node.DeepCopy()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if _, ok := latest.Annotations[narUnhealthySinceAnnotationKey]; ok {
+		t.Fatalf("expected unhealthy-since annotation to be removed when node is healthy")
 	}
 }
 
@@ -194,6 +366,25 @@ func TestConditionChangedPredicate_Update_TriggersOnRepairDisabledLabelAdded(t *
 	}
 }
 
+func TestConditionChangedPredicate_Update_TriggersOnHumanInterventionLabelRemoved(t *testing.T) {
+	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
+	oldNode := &v1.Node{}
+	oldNode.Name = "nar-predicate-human-removed"
+	oldNode.Labels = map[string]string{
+		repairHumanInterventionLabel: "true",
+	}
+	newNode := oldNode.DeepCopy()
+	delete(newNode.Labels, repairHumanInterventionLabel)
+
+	changed := p.Update(event.UpdateEvent{
+		ObjectOld: oldNode,
+		ObjectNew: newNode,
+	})
+	if !changed {
+		t.Fatalf("expected update predicate to trigger when %s label is removed", repairHumanInterventionLabel)
+	}
+}
+
 func TestConditionChangedPredicate_Update_TriggersOnRepairDisabledLabelRemoved(t *testing.T) {
 	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
 	oldNode := &v1.Node{}
@@ -251,13 +442,7 @@ func TestConditionChangedPredicate_Update_DoesNotTriggerWhenRepairDisabledLabelU
 }
 
 func TestHandleUnhealthyNode_DisabledLabelDoesNotBlockInProgressRepair(t *testing.T) {
-	scheme := runtime.NewScheme()
-	if err := v1.AddToScheme(scheme); err != nil {
-		t.Fatalf("failed to add corev1 scheme: %v", err)
-	}
-	if err := coordinationv1.AddToScheme(scheme); err != nil {
-		t.Fatalf("failed to add coordinationv1 scheme: %v", err)
-	}
+	scheme := newNodeAutoRepairTestScheme(t)
 
 	node := &v1.Node{}
 	node.Name = "nar-disabled-in-progress"
@@ -303,5 +488,27 @@ func TestHandleUnhealthyNode_DisabledLabelDoesNotBlockInProgressRepair(t *testin
 	}
 	if latest.Annotations[narRepairIDAnnotationKey] == "" {
 		t.Fatalf("expected repair-id annotation to be set for in-progress repair")
+	}
+}
+
+func TestHandleUnhealthyNode_HumanInterventionLabelBlocksNewRepair(t *testing.T) {
+	node := &v1.Node{}
+	node.Name = "nar-human-block"
+	node.Labels = map[string]string{
+		repairHumanInterventionLabel: "true",
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	res, err := (&NodeAutoRepairReconciler{}).handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.Requeue || res.RequeueAfter != 0 {
+		t.Fatalf("expected no requeue when human intervention label is present, got %#v", res)
 	}
 }

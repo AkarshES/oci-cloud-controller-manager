@@ -1,16 +1,19 @@
 # Node AutoRepair State Machine Design
 
 ## Purpose
-Refactor the existing Node AutoRepair controller into a state machine that performs the following sequence for a detected unhealthy node: Cordon -> Drain -> Reboot -> Uncordon. The goals are idempotency, recoverability, and observability.
+Node AutoRepair uses a state machine to repair a node after it has stayed continuously unhealthy for at least 10 minutes. The repair sequence is Cordon -> Drain -> Reboot -> Uncordon. The goals are idempotency, recoverability, and observability.
 
 ## Storage
 - Use Node annotations as the lightweight storage for state (no CRD required). Suggested annotation keys:
   - `oci.oraclecloud.com/nodeautorepair-state` — current state (Detected/Cordoning/Draining/Rebooting/Uncordoning/Succeeded/Failed)
   - `oci.oraclecloud.com/nodeautorepair-repair-id` — unique repair task id to avoid concurrent repairs
 - `oci.oraclecloud.com/nodeautorepair-last-transition` — ISO8601 timestamp of last transition
-- `oci.oraclecloud.com/nodeautorepair-attempts` — number of attempts
-- `oci.oraclecloud.com/nodeautorepair-cycle-attempts` — total attempts in the current repair cycle
-- `oci.oraclecloud.com/nodeautorepair-cycle-lock` — ISO8601 timestamp indicating when the next repair cycle may start
+- `oci.oraclecloud.com/nodeautorepair-attempts` — per-state discrete action attempts
+- `oci.oraclecloud.com/nodeautorepair-cycle-attempts` — failed repair cycles without an intervening healthy recovery
+- `oci.oraclecloud.com/nodeautorepair-unhealthy-since` — start timestamp for the current continuous unhealthy dwell window
+- `oci.oraclecloud.com/nodeautorepair-last-repair-end` — end timestamp of the last completed repair cycle
+- `oci.oraclecloud.com/nodeautorepair-last-result` — last completed repair result (`succeeded` or `failed`)
+- `oci.oraclecloud.com/node-auto-repair-human-intervention=true` label — hard stop after 3 consecutive failed repair cycles; must be cleared manually
 
 ## State Definitions
 - Detected
@@ -22,25 +25,39 @@ Refactor the existing Node AutoRepair controller into a state machine that perfo
 - Failed
 
 ## State Transitions (Core Reconcile Flow)
-1. Reconcile fetches the Node and reads state from annotations (default to `Detected` if absent)
+1. Reconcile fetches the Node and evaluates unhealthy conditions.
+2. If the node is healthy, cleanup transient repair annotations and any stale `unhealthy-since` marker.
+3. If the node is unhealthy and no repair is in progress, require a continuous unhealthy dwell window of 10 minutes before starting a repair cycle.
+4. If the node carries `oci.oraclecloud.com/node-auto-repair-human-intervention=true`, do not start a new repair cycle.
+5. Once the dwell window is satisfied, create/continue a repair and switch on state:
 2. switch on state:
    - Detected -> write state `Cordoning` (and record `repair-id`)
    - Cordoning -> perform cordon(node); on success set state `Draining`; on failure retry or set `Failed`
    - Draining -> perform drain(node); on success set state `Rebooting`; on failure retry or set `Failed`
    - Rebooting -> call cloud reboot API (or annotate node for agent); on success set state `Uncordoning`; otherwise retry/fail
-   - Uncordoning -> perform uncordon(node); on success set state `Succeeded`; otherwise retry/fail
-   - Succeeded/Failed -> noop (log history and emit events for manual remediation)
+   - Uncordoning -> in the normal success path, wait for node health to clear and stabilize before uncordon
+   - Failed cleanup path -> if a repair step fails after NAR already cordoned the node, keep retrying uncordon until the node is schedulable again, then finalize the cycle as `failed`
+   - Succeeded/Failed -> noop after terminal annotations have been finalized
 
 Every state write should update `last-transition` and `attempts`.
 
 ## Idempotency and Retry
 - All operations must be idempotent: repeated cordon/uncordon/drain calls should not cause inconsistent state.
-- Default retry policy: max 3 attempts with exponential backoff (base=10s). retry should ideally not block the controller loop
+- Default retry policy for discrete API actions is max 3 attempts with exponential backoff (base=10s). This applies to Cordoning, reboot submission, and the normal Uncordoning path.
+- Repair cycles are retried separately from per-state action attempts:
+  - If a repair cycle fails, clear transient repair state and wait for a fresh 10-minute continuous unhealthy window before retrying.
+  - Retry up to 3 failed repair cycles.
+  - After the 3rd failed cycle, label the node with `oci.oraclecloud.com/node-auto-repair-human-intervention=true` and stop automatic repair until an operator clears the label.
 - Per-state timeouts (current defaults in code): Cordoning 60s, Draining 15m, Rebooting 20m, Uncordoning 5m. These are configurable via:
   - `NODE_AUTOREPAIR_TIMEOUT_CORDONING`
   - `NODE_AUTOREPAIR_TIMEOUT_DRAINING`
   - `NODE_AUTOREPAIR_TIMEOUT_REBOOTING`
   - `NODE_AUTOREPAIR_TIMEOUT_UNCORDONING`
+- Additional timing defaults from current code:
+  - unhealthy dwell threshold before starting repair: `10m` via `NODE_AUTOREPAIR_UNHEALTHY_THRESHOLD`
+  - reboot polling interval: `20s` via `NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL`
+  - healthy stabilization before successful uncordon: `75s` via `NODE_AUTOREPAIR_HEALTHY_STABILIZATION`
+  - drain force-after threshold: `10m` via `NODE_AUTOREPAIR_DRAIN_FORCE_AFTER`
 
 ## Safety Constraints
 - Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, wait and retry. Respect PDB for a maximum of 10 mins and force repair after the wait
@@ -56,20 +73,24 @@ only one controller is activelly doing node auto repair
 
 ## Node Opt-Out Label
 - Nodes labeled with `oci.oraclecloud.com/node-auto-repair-disabled=true` are treated as explicitly opted out of automated remediation.
-- The controller still records a warning event describing the unhealthy conditions but will not cordon, drain, taint, or reboot the node while the label remains.
+- The controller will not start a new repair cycle while the label remains.
+- If a repair is already in progress, the state machine continues and completes cleanup even if this label is added mid-repair.
 - No periodic requeue is scheduled for opted-out nodes; reconciliation resumes automatically when either the node's conditions change or the label is removed/updated.
 - Updates to this label are observed directly by the controller so operators can toggle opt-out without forcing artificial condition changes.
 
 ## Implementation Recommendations
 - Node should be repaired serially, Each time the repair controller should only repair a node
-- The node repair controller will try to fix a node for 3 total attempts for entire repair cycle; after exhausting those attempts, it waits for 1 hour (configurable via `NODE_AUTOREPAIR_COOLDOWN`) before starting the next repair cycle.
+- Start repair only after the node has been continuously unhealthy for 10 minutes.
+- Retry failed repair cycles only after another continuous 10-minute unhealthy dwell window.
+- After 3 consecutive failed repair cycles, add the human-intervention label and stop until an operator clears it.
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
 - Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
 - Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for `instanceRunningPollInterval` (default 20s, configurable via `NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL`) until instance is running again, if after 20 mins instance is not running, we move to failed step
-- Uncordon: After reboot, if any unhealthy conditions persists, don't cordon the node, requeu uncordon request and periodically check node conditions, only uncordon the node when the node has no unhealthy conditions
+- Uncordon success path: after reboot, if unhealthy conditions persist, keep waiting and only uncordon once the node is healthy and has stayed healthy for the stabilization window.
+- Uncordon failed-cycle cleanup path: if a repair cycle fails after NAR already cordoned the node, uncordon even if unhealthy conditions still persist, and only then record the cycle as failed.
 - Annotation updates should use optimistic concurrency and retry on resourceVersion conflicts.
 - If the node is healthy again, it should be uncordoned
-- If the repair failed, we should remove the annotations so that the node can be picked up by next repair. We should only keep the annotaions for repair attempted
+- If the repair failed, remove transient in-progress annotations so the next repair cycle starts cleanly; keep only summary information and the failed-cycle counter when more retries remain.
 
 ## Observability and Alerts
 - Emit Kubernetes Events for state transitions and failures.
@@ -84,8 +105,10 @@ only one controller is activelly doing node auto repair
 - Logs should include nodeName, repair-id, state, error, attempts, and timestamps.
 
 ## Failure Handling and Human Intervention
-- When a repair reaches `Failed`, preserve annotations and emit an Event for operators.
-- Provide automated retry or surface failures for manual remediation.
+- A repair cycle is only considered fully failed after cleanup is complete and the node is no longer left intentionally cordoned by NAR.
+- If a repair step fails after NAR has cordoned the node, keep retrying uncordon until it succeeds.
+- After the first and second failed repair cycles, wait for another fresh 10-minute unhealthy dwell window before retrying automatically.
+- After the third failed repair cycle, emit failure events, label the node for human intervention, and stop automatic retries.
 
 ## Backwards Compatibility and Migration
 - If annotations are absent, the controller should default to the legacy detection path and create an initial `Detected` entry.
@@ -96,7 +119,7 @@ only one controller is activelly doing node auto repair
 2. Implement `Cordoning` and `Draining` with unit tests.
 3. Implement `Rebooting` using `pkg/oci`, then `Uncordoning`.
 4. Add metrics, events, tests and documentation.
-5. After each repair is succeeded or failed, we should cleanup annotations. We should only leave an annotation which record the end time of the last reapir(no matter if it's a successful one). We should not repair a node again if it's less than 60mins since the last repair
+5. After each repair cycle succeeds or fails, cleanup transient annotations, preserve repair summary fields, and preserve failed-cycle count only while automatic retries are still allowed
 
 ---
 

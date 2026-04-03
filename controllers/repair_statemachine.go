@@ -24,15 +24,19 @@ import (
 )
 
 const (
-	narStateAnnotationKey         = "oci.oraclecloud.com/nodeautorepair-state"
-	narRepairIDAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-repair-id"
-	narRepairOriginAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-repair-origin"
-	narLastTransitionAnnotation   = "oci.oraclecloud.com/nodeautorepair-last-transition"
-	narAttemptsAnnotationKey      = "oci.oraclecloud.com/nodeautorepair-attempts"
-	narRebootIssuedAnnotationKey  = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
-	narStateMetadataAnnotationKey = "oci.oraclecloud.com/nodeautorepair-state-meta"
-	narRepairCycleAttemptsKey     = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
-	narRepairCycleLockKey         = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
+	narStateAnnotationKey            = "oci.oraclecloud.com/nodeautorepair-state"
+	narRepairIDAnnotationKey         = "oci.oraclecloud.com/nodeautorepair-repair-id"
+	narRepairOriginAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-repair-origin"
+	narLastTransitionAnnotation      = "oci.oraclecloud.com/nodeautorepair-last-transition"
+	narAttemptsAnnotationKey         = "oci.oraclecloud.com/nodeautorepair-attempts"
+	narRebootIssuedAnnotationKey     = "oci.oraclecloud.com/nodeautorepair-reboot-issued"
+	narStateMetadataAnnotationKey    = "oci.oraclecloud.com/nodeautorepair-state-meta"
+	narRepairCycleAttemptsKey        = "oci.oraclecloud.com/nodeautorepair-cycle-attempts"
+	narRepairCycleLockKey            = "oci.oraclecloud.com/nodeautorepair-cycle-lock"
+	narUnhealthySinceAnnotationKey   = "oci.oraclecloud.com/nodeautorepair-unhealthy-since"
+	narCordonedByRepairAnnotationKey = "oci.oraclecloud.com/nodeautorepair-cordoned-by-repair"
+	narFailureCleanupPendingKey      = "oci.oraclecloud.com/nodeautorepair-cleanup-pending"
+	narFailureCleanupStateKey        = "oci.oraclecloud.com/nodeautorepair-cleanup-failed-state"
 	// Terminal repair summary annotations (preserved across cleanups)
 	narLastRepairEndAnnotation    = "oci.oraclecloud.com/nodeautorepair-last-repair-end"
 	narLastRepairResultAnnotation = "oci.oraclecloud.com/nodeautorepair-last-result"
@@ -49,6 +53,7 @@ const (
 	eventRepairLeaseLost          = "NodeRepairLeaseLost"
 	eventRepairSucceeded          = "NodeRepairSucceeded"
 	eventRepairFailed             = "NodeRepairFailed"
+	eventRepairHumanIntervention  = "NodeRepairHumanInterventionRequired"
 )
 
 type repairState string
@@ -110,6 +115,10 @@ var (
 		narStateMetadataAnnotationKey,
 		narRepairCycleAttemptsKey,
 		narRepairCycleLockKey,
+		narUnhealthySinceAnnotationKey,
+		narCordonedByRepairAnnotationKey,
+		narFailureCleanupPendingKey,
+		narFailureCleanupStateKey,
 	}
 	// Respect PDB up to 10 minutes by default, then force repair per design doc
 	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 10*time.Minute)
@@ -319,11 +328,6 @@ func (sm *nodeRepairStateMachine) handleDetected(ctx context.Context) (ctrl.Resu
 	if err := sm.ensureRepairID(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
-	if stopped, wait := sm.cycleAttemptsExceeded(); stopped {
-		sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
-		sm.l().Info(fmt.Sprintf("Repair cycle attempts exceeded; waiting before next cycle (wait=%s)", wait))
-		return ctrl.Result{RequeueAfter: wait}, nil
-	}
 	sm.repairID = sm.node.Annotations[narRepairIDAnnotationKey]
 	sm.tracker = newRepairStateTracker(sm.repairID)
 	sm.ensureStateStart(stateCordoning)
@@ -417,10 +421,16 @@ func (sm *nodeRepairStateMachine) handleCordoning(ctx context.Context) (ctrl.Res
 	if attempt > maxRepairAttempts {
 		return sm.failState(ctx, stateCordoning, fmt.Errorf("cordoning exceeded maximum attempts"))
 	}
+	wasSchedulable := !sm.node.Spec.Unschedulable
 	if err := sm.cordonNode(ctx); err != nil {
 		sm.l().Error(err, fmt.Sprintf("Cordoning node failed (attempt=%d)", attempt))
 		sm.emitWarningEvent(eventRepairCordoned, fmt.Sprintf("Cordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateCordoning, attempt)}, nil
+	}
+	if wasSchedulable {
+		if err := sm.setCordonedByRepair(ctx, true); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	sm.l().Info("CCM: Emit cordoning event and transition to draining")
 	sm.emitEvent(eventRepairCordoned, "Node cordoned; moving to Draining")
@@ -523,47 +533,63 @@ func (sm *nodeRepairStateMachine) handleUncordoning(ctx context.Context) (ctrl.R
 		return ctrl.Result{RequeueAfter: defaultRetryBase}, nil
 	}
 	sm.beginState(ctx, stateUncordon)
-	if sm.stateTimedOut(stateUncordon) {
+	cleanupPending := sm.failureCleanupPending()
+	if !cleanupPending && sm.stateTimedOut(stateUncordon) {
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning timed out"))
 	}
-	if unhealthyConditions := findUnhealthyConditions(sm.node); len(unhealthyConditions) > 0 {
-		if sm.clearHealthySince(ctx, stateUncordon) {
-			sm.l().Info("Cleared healthy stabilization window because unhealthy conditions returned")
-		}
-		sm.l().Info(fmt.Sprintf(
-			"Node still has unhealthy conditions after reboot; delaying uncordon (conditions=%s)",
-			summarizeConditionTypes(conditionTypeValues(unhealthyConditions)),
-		))
-		return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
-	}
-	if healthyStabilization > 0 {
-		stable, remaining, err := sm.ensureHealthyFor(ctx, stateUncordon, healthyStabilization)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if !stable {
+	if !cleanupPending {
+		if unhealthyConditions := findUnhealthyConditions(sm.node); len(unhealthyConditions) > 0 {
+			if sm.clearHealthySince(ctx, stateUncordon) {
+				sm.l().Info("Cleared healthy stabilization window because unhealthy conditions returned")
+			}
 			sm.l().Info(fmt.Sprintf(
-				"Node is healthy but waiting for stabilization window before uncordon (required=%s remaining=%s)",
-				healthyStabilization,
-				remaining.Truncate(time.Second),
+				"Node still has unhealthy conditions after reboot; delaying uncordon (conditions=%s)",
+				summarizeConditionTypes(conditionTypeValues(unhealthyConditions)),
 			))
 			return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
 		}
+		if healthyStabilization > 0 {
+			stable, remaining, err := sm.ensureHealthyFor(ctx, stateUncordon, healthyStabilization)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if !stable {
+				sm.l().Info(fmt.Sprintf(
+					"Node is healthy but waiting for stabilization window before uncordon (required=%s remaining=%s)",
+					healthyStabilization,
+					remaining.Truncate(time.Second),
+				))
+				return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
+			}
+		}
+	}
+	if cleanupPending && !sm.node.Spec.Unschedulable {
+		sm.recordStateDuration(stateUncordon)
+		return sm.completeFailedCycle(ctx, sm.failureCleanupState(), fmt.Errorf("repair cleanup completed after node was already schedulable"))
 	}
 	attempt, err := sm.recordAttempt(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if attempt > maxRepairAttempts {
+	if !cleanupPending && attempt > maxRepairAttempts {
 		return sm.failState(ctx, stateUncordon, fmt.Errorf("uncordoning exceeded maximum attempts"))
 	}
 	if err := sm.uncordonNode(ctx); err != nil {
+		if cleanupPending {
+			sm.l().Error(err, fmt.Sprintf("Cleanup uncordon failed (attempt=%d)", attempt))
+			sm.emitWarningEvent(eventRepairUncordoned, fmt.Sprintf("Cleanup uncordon failed (attempt %d): %v", attempt, err))
+			return ctrl.Result{RequeueAfter: sm.retryDelay(stateUncordon, attempt)}, nil
+		}
 		sm.l().Error(err, fmt.Sprintf("Uncordoning node failed (attempt=%d)", attempt))
 		sm.emitWarningEvent(eventRepairUncordoned, fmt.Sprintf("Uncordoning failed (attempt %d): %v", attempt, err))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateUncordon, attempt)}, nil
 	}
-	sm.emitEvent(eventRepairUncordoned, "Node uncordoned; marking repair succeeded")
 	sm.recordStateDuration(stateUncordon)
+	if cleanupPending {
+		sm.emitEvent(eventRepairUncordoned, "Node uncordoned during failed repair cleanup")
+		return sm.completeFailedCycle(ctx, sm.failureCleanupState(), fmt.Errorf("repair cycle failed and node was uncordoned during cleanup"))
+	}
+	sm.emitEvent(eventRepairUncordoned, "Node uncordoned; marking repair succeeded")
 	if err := sm.setState(ctx, stateSucceeded); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -735,25 +761,13 @@ func (sm *nodeRepairStateMachine) recordAttempt(ctx context.Context) (int, error
 	})
 }
 
-// incrementCycleFailure increments the per-node repair cycle failure counter.
-// When the counter reaches maxRepairCycles, it writes a cooldown lock until now+repairCoolDown.
-func (sm *nodeRepairStateMachine) incrementCycleFailure(ctx context.Context) error {
-	return sm.updateAnnotations(ctx, func(ann map[string]string) {
-		// Initialize if missing
-		cur := 0
-		if val, ok := ann[narRepairCycleAttemptsKey]; ok {
-			if parsed, err := strconv.Atoi(val); err == nil {
-				cur = parsed
-			}
-		}
-		cur++
-		ann[narRepairCycleAttemptsKey] = strconv.Itoa(cur)
-		if cur >= maxRepairCycles {
-			// Set lock only when threshold is reached
-			cooldown := getNodeCooldownDuration(sm.node)
-			ann[narRepairCycleLockKey] = time.Now().UTC().Add(cooldown).Format(time.RFC3339)
-			sm.emitEvent(eventRepairThrottled, fmt.Sprintf("Repair cycle attempts reached %d; backing off", maxRepairCycles))
-		}
+// incrementCycleFailure increments the per-node failed repair cycle counter and
+// returns the updated value.
+func (sm *nodeRepairStateMachine) incrementCycleFailure(ctx context.Context) (int, error) {
+	next := sm.currentCycleAttempts() + 1
+	return next, sm.updateAnnotations(ctx, func(ann map[string]string) {
+		ann[narRepairCycleAttemptsKey] = strconv.Itoa(next)
+		delete(ann, narRepairCycleLockKey)
 	})
 }
 
@@ -787,37 +801,92 @@ func (sm *nodeRepairStateMachine) currentCycleAttempts() int {
 	return parsed
 }
 
-func (sm *nodeRepairStateMachine) cycleAttemptsExceeded() (bool, time.Duration) {
+func (sm *nodeRepairStateMachine) wasCordonedByRepair() bool {
 	if sm.node.Annotations == nil {
-		return false, 0
+		return false
 	}
-	lockStr := sm.node.Annotations[narRepairCycleLockKey]
-	if lockStr == "" {
-		return false, 0
+	return strings.EqualFold(strings.TrimSpace(sm.node.Annotations[narCordonedByRepairAnnotationKey]), "true")
+}
+
+func (sm *nodeRepairStateMachine) setCordonedByRepair(ctx context.Context, cordoned bool) error {
+	return sm.updateAnnotations(ctx, func(ann map[string]string) {
+		if cordoned {
+			ann[narCordonedByRepairAnnotationKey] = "true"
+			return
+		}
+		delete(ann, narCordonedByRepairAnnotationKey)
+	})
+}
+
+func (sm *nodeRepairStateMachine) failureCleanupPending() bool {
+	if sm.node.Annotations == nil {
+		return false
 	}
-	lockTime, err := time.Parse(time.RFC3339, lockStr)
-	if err != nil {
-		return false, 0
+	return strings.EqualFold(strings.TrimSpace(sm.node.Annotations[narFailureCleanupPendingKey]), "true")
+}
+
+func (sm *nodeRepairStateMachine) failureCleanupState() repairState {
+	if sm.node.Annotations == nil {
+		return stateFailed
 	}
-	now := time.Now()
-	if now.After(lockTime) {
-		return false, 0
+	if state := strings.TrimSpace(sm.node.Annotations[narFailureCleanupStateKey]); state != "" {
+		return repairState(state)
 	}
-	return true, lockTime.Sub(now)
+	return stateFailed
 }
 
 func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairState, reason error) (ctrl.Result, error) {
-	sm.l().Error(reason, fmt.Sprintf("Repair state failed (state=%s)", state))
-	sm.emitWarningEvent(eventRepairFailed, fmt.Sprintf("State %s failed: %v", state, reason))
+	if sm.needsFailureCleanupUncordon() {
+		return sm.enterFailureCleanup(ctx, state, reason)
+	}
+	sm.recordStateDuration(state)
+	return sm.completeFailedCycle(ctx, state, reason)
+}
+
+func (sm *nodeRepairStateMachine) needsFailureCleanupUncordon() bool {
+	return sm.wasCordonedByRepair() && sm.node.Spec.Unschedulable
+}
+
+func (sm *nodeRepairStateMachine) enterFailureCleanup(ctx context.Context, failedState repairState, reason error) (ctrl.Result, error) {
+	sm.l().Error(reason, fmt.Sprintf("Repair state failed; entering cleanup uncordon (state=%s)", failedState))
+	if failedState != stateUncordon {
+		sm.recordStateDuration(failedState)
+	}
+	if err := sm.updateAnnotations(ctx, func(ann map[string]string) {
+		ann[narFailureCleanupPendingKey] = "true"
+		ann[narFailureCleanupStateKey] = string(failedState)
+	}); err != nil {
+		return ctrl.Result{}, err
+	}
+	if sm.currentState() != stateUncordon {
+		if err := sm.setState(ctx, stateUncordon); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{RequeueAfter: repairStateConfigs[stateUncordon].successRequeue}, nil
+}
+
+func (sm *nodeRepairStateMachine) completeFailedCycle(ctx context.Context, failedState repairState, reason error) (ctrl.Result, error) {
+	sm.l().Error(reason, fmt.Sprintf("Repair cycle failed (state=%s)", failedState))
+	sm.emitWarningEvent(eventRepairFailed, fmt.Sprintf("State %s failed: %v", failedState, reason))
 	sm.recordMetric(metricRepairFailures, 1)
-	// Record duration spent in the failing state before transitioning to Failed
-	sm.recordStateDuration(sm.currentState())
-	// Count a full-cycle failure
-	if err := sm.incrementCycleFailure(ctx); err != nil {
+	failures, err := sm.incrementCycleFailure(ctx)
+	if err != nil {
 		sm.l().Error(err, "Failed to record cycle failure")
+		return ctrl.Result{}, err
 	}
 	if err := sm.setState(ctx, stateFailed); err != nil {
 		return ctrl.Result{}, err
+	}
+	if err := sm.removeRepairTaint(ctx); err != nil {
+		sm.l().Error(err, "Failed to remove repair taint after failed cycle")
+	}
+	humanIntervention := failures >= maxRepairCycles
+	if humanIntervention {
+		if err := sm.markHumanInterventionRequired(ctx); err != nil {
+			return ctrl.Result{}, err
+		}
+		sm.emitWarningEvent(eventRepairHumanIntervention, fmt.Sprintf("Repair failed %d consecutive times; manual intervention required", failures))
 	}
 	// Release global repair lease immediately upon failure
 	if err := sm.reconciler.stopLeaseHeartbeat(ctx, sm.node.Name); err != nil {
@@ -826,8 +895,13 @@ func (sm *nodeRepairStateMachine) failState(ctx context.Context, state repairSta
 	// Finalize: record last repair end/result and prune transient annotations
 	if err := sm.finalizeRepair(ctx, "failed"); err != nil {
 		sm.l().Error(err, "Failed to finalize repair annotations after failure")
+		return ctrl.Result{}, err
 	}
-	return ctrl.Result{}, nil
+	if humanIntervention {
+		sm.resetCycleAttempts(ctx)
+		return ctrl.Result{}, nil
+	}
+	return ctrl.Result{RequeueAfter: unhealthyThreshold}, nil
 }
 
 func (sm *nodeRepairStateMachine) cordonNode(ctx context.Context) error {
@@ -1091,6 +1165,15 @@ func (sm *nodeRepairStateMachine) removeRepairTaint(ctx context.Context) error {
 			kept = append(kept, t)
 		}
 		node.Spec.Taints = kept
+	})
+}
+
+func (sm *nodeRepairStateMachine) markHumanInterventionRequired(ctx context.Context) error {
+	return sm.patchNode(ctx, func(node *v1.Node) {
+		if node.Labels == nil {
+			node.Labels = map[string]string{}
+		}
+		node.Labels[repairHumanInterventionLabel] = "true"
 	})
 }
 

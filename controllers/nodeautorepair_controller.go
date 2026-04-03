@@ -35,13 +35,14 @@ import (
 )
 
 const (
-	narName                    string         = "narName"
-	repairProblemDetectedLabel string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
-	repairDisabledLabel        string         = "oci.oraclecloud.com/node-auto-repair-disabled"
-	repairFrequencyLabel       string         = "oci.oraclecloud.com/node-auto-repair-freq"
-	repairCooldownLabel        string         = "oci.oraclecloud.com/node-auto-repair-cooldown"
-	REPAIR_TAINT_KEY           string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
-	REPAIR_TAINT_EFFECT        v1.TaintEffect = v1.TaintEffectNoSchedule
+	narName                      string         = "narName"
+	repairProblemDetectedLabel   string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
+	repairDisabledLabel          string         = "oci.oraclecloud.com/node-auto-repair-disabled"
+	repairHumanInterventionLabel string         = "oci.oraclecloud.com/node-auto-repair-human-intervention"
+	repairFrequencyLabel         string         = "oci.oraclecloud.com/node-auto-repair-freq"
+	repairCooldownLabel          string         = "oci.oraclecloud.com/node-auto-repair-cooldown"
+	REPAIR_TAINT_KEY             string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
+	REPAIR_TAINT_EFFECT          v1.TaintEffect = v1.TaintEffectNoSchedule
 )
 
 var UNHEALTHY_CONDITIONS map[string]string = map[string]string{
@@ -106,7 +107,8 @@ type NodeAutoRepairReconciler struct {
 
 // Cool-down window after a repair finishes. During this window, new repairs are throttled.
 var (
-	repairCoolDown = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 120*time.Minute)
+	repairCoolDown     = getEnvDuration("NODE_AUTOREPAIR_COOLDOWN", 120*time.Minute)
+	unhealthyThreshold = getEnvDuration("NODE_AUTOREPAIR_UNHEALTHY_THRESHOLD", 10*time.Minute)
 )
 
 // SetupWithManager sets up the controller with the Manager.
@@ -257,6 +259,15 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	sort.Strings(problemTypes)
 	repairInProgress := isRepairInProgress(node)
 
+	if isNodeHumanInterventionRequired(node) {
+		conditionSummary := summarizeConditionTypes(problemTypes)
+		if !repairInProgress {
+			logger.Info(fmt.Sprintf("CCM: Node auto repair blocked by human intervention label; skipping repair (node=%s conditions=%s)", node.Name, conditionSummary))
+			return ctrl.Result{}, nil
+		}
+		logger.Info(fmt.Sprintf("CCM: Node has human intervention label, but repair is already in progress; continuing state machine (node=%s conditions=%s)", node.Name, conditionSummary))
+	}
+
 	if isNodeAutoRepairDisabled(node) {
 		conditionSummary := summarizeConditionTypes(problemTypes)
 		if !repairInProgress {
@@ -270,47 +281,23 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 		logger.Info(fmt.Sprintf("CCM: Node auto repair disabled via label, but repair is already in progress; continuing state machine (node=%s conditions=%s)", node.Name, conditionSummary))
 	}
 
-	// Throttle if the node has been repaired recently (cool-down window)
-	cooldown := getNodeCooldownDuration(node)
-	logger.Info(fmt.Sprintf("CCM: Node auto repair cooldown check repairInProgress=%t node=%s nodeState %s", repairInProgress, node.Name, node.Annotations[narStateAnnotationKey]))
-	if node.Annotations != nil {
-		// Cooldown is applied differently for success vs. failure cycles.
-		// If last result was failed and cycleAttempts < maxRepairCycles, do not throttle—allow immediate next cycle.
-		// If succeeded, always respect cooldown; if failed and cycleAttempts >= maxRepairCycles, throttle.
-		var lastResult string
-		var cycleAttempts int
-		if val, ok := node.Annotations[narLastRepairResultAnnotation]; ok {
-			lastResult = val
-		}
-		if val, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
-			if parsed, err := strconv.Atoi(val); err == nil {
-				cycleAttempts = parsed
+	if !repairInProgress {
+		if reachedRepairCycleLimit(node) {
+			if err := r.markNodeHumanInterventionRequired(ctx, node); err != nil {
+				logger.Error(err, "CCM: failed to add human intervention label after exhausted repair cycles")
+				return ctrl.Result{}, err
 			}
+			logger.Info(fmt.Sprintf("CCM: Node repair cycles already exhausted; added human intervention label (node=%s)", node.Name))
+			return ctrl.Result{}, nil
 		}
-		if ts, ok := node.Annotations[narLastRepairEndAnnotation]; ok && ts != "" {
-			if endTime, err := time.Parse(time.RFC3339, ts); err == nil {
-				until := endTime.Add(cooldown)
-				now := time.Now()
-				if now.Before(until) {
-					// Decide whether to throttle based on last result and cycle attempts
-					shouldThrottle := true
-					if strings.EqualFold(lastResult, "failed") && cycleAttempts < maxRepairCycles {
-						shouldThrottle = false
-					}
-					if shouldThrottle {
-						remaining := time.Until(until)
-						if repairInProgress {
-							logger.Info(fmt.Sprintf("CCM: Cool-down window active but repair already in progress; continuing (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
-						} else {
-							// if r.Recorder != nil {
-							// 	r.Recorder.Event(node, v1.EventTypeNormal, eventRepairThrottled, fmt.Sprintf("[Node Auto Repair]: Throttled due to recent repair; wait %s before next attempt", remaining.Truncate(time.Second)))
-							// }
-							logger.Info(fmt.Sprintf("CCM: Throttling node auto repair due to cool-down window (node=%s remaining=%s lastResult=%s cycleAttempts=%d maxCycles=%d cooldown=%s)", node.Name, remaining, lastResult, cycleAttempts, maxRepairCycles, cooldown))
-							return ctrl.Result{}, nil
-						}
-					}
-				}
-			}
+		ready, remaining, err := r.ensureUnhealthyDuration(ctx, node)
+		if err != nil {
+			logger.Error(err, "CCM: failed to persist unhealthy duration state")
+			return ctrl.Result{}, err
+		}
+		if !ready {
+			logger.Info(fmt.Sprintf("CCM: Node unhealthy dwell window still active before repair start (node=%s remaining=%s threshold=%s)", node.Name, remaining.Truncate(time.Second), unhealthyThreshold))
+			return ctrl.Result{RequeueAfter: remaining}, nil
 		}
 	}
 
@@ -421,6 +408,67 @@ func (r *NodeAutoRepairReconciler) ensureControllerID(logger logr.Logger) error 
 	}
 	r.ControllerID = id
 	return nil
+}
+
+func (r *NodeAutoRepairReconciler) ensureUnhealthyDuration(ctx context.Context, node *v1.Node) (bool, time.Duration, error) {
+	if unhealthyThreshold <= 0 {
+		return true, 0, nil
+	}
+	now := time.Now().UTC()
+	since, ok := unhealthySince(node)
+	if !ok {
+		if err := r.updateNodeAnnotations(ctx, node.Name, func(ann map[string]string) {
+			ann[narUnhealthySinceAnnotationKey] = now.Format(time.RFC3339)
+		}, node); err != nil {
+			return false, 0, err
+		}
+		return false, unhealthyThreshold, nil
+	}
+	elapsed := now.Sub(since)
+	if elapsed >= unhealthyThreshold {
+		return true, 0, nil
+	}
+	return false, unhealthyThreshold - elapsed, nil
+}
+
+func (r *NodeAutoRepairReconciler) updateNodeAnnotations(ctx context.Context, nodeName string, mutate func(map[string]string), out *v1.Node) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &v1.Node{}
+		if err := r.Client.Get(ctx, client.ObjectKey{Name: nodeName}, latest); err != nil {
+			return err
+		}
+		updated := latest.DeepCopy()
+		if updated.Annotations == nil {
+			updated.Annotations = make(map[string]string)
+		}
+		mutate(updated.Annotations)
+		if err := r.Client.Patch(ctx, updated, client.MergeFrom(latest)); err != nil {
+			return err
+		}
+		if out != nil {
+			*out = *updated
+		}
+		return nil
+	})
+}
+
+func (r *NodeAutoRepairReconciler) markNodeHumanInterventionRequired(ctx context.Context, node *v1.Node) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &v1.Node{}
+		if err := r.Client.Get(ctx, client.ObjectKey{Name: node.Name}, latest); err != nil {
+			return err
+		}
+		updated := latest.DeepCopy()
+		if updated.Labels == nil {
+			updated.Labels = make(map[string]string)
+		}
+		updated.Labels[repairHumanInterventionLabel] = "true"
+		if err := r.Client.Patch(ctx, updated, client.MergeFrom(latest)); err != nil {
+			return err
+		}
+		*node = *updated
+		return nil
+	})
 }
 
 func (r *NodeAutoRepairReconciler) isLeader(ctx context.Context, logger logr.Logger) (bool, error) {
@@ -546,6 +594,10 @@ func (r *NodeAutoRepairReconciler) cleanupRepairArtifacts(ctx context.Context, l
 			delete(node.Annotations, "oci.oraclecloud.com/nodeautorepair-problems")
 			needsPatch = true
 		}
+		if _, ok := node.Annotations[narUnhealthySinceAnnotationKey]; ok {
+			delete(node.Annotations, narUnhealthySinceAnnotationKey)
+			needsPatch = true
+		}
 	}
 
 	if needsPatch {
@@ -592,6 +644,19 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	if oldDisabled != newDisabled {
 		p.log.Infof("CCM: Node auto-repair opt-out label changed (node=%s old=%q new=%q)",
 			newNode.Name, oldDisabled, newDisabled)
+		return true
+	}
+	oldHuman := ""
+	newHuman := ""
+	if oldNode.Labels != nil {
+		oldHuman = strings.TrimSpace(oldNode.Labels[repairHumanInterventionLabel])
+	}
+	if newNode.Labels != nil {
+		newHuman = strings.TrimSpace(newNode.Labels[repairHumanInterventionLabel])
+	}
+	if oldHuman != newHuman {
+		p.log.Infof("CCM: Node auto-repair human intervention label changed (node=%s old=%q new=%q)",
+			newNode.Name, oldHuman, newHuman)
 		return true
 	}
 
@@ -745,6 +810,52 @@ func isNodeAutoRepairDisabled(node *v1.Node) bool {
 		return strings.EqualFold(trimmed, "true")
 	}
 	return disabled
+}
+
+func isNodeHumanInterventionRequired(node *v1.Node) bool {
+	if node == nil || node.Labels == nil {
+		return false
+	}
+	val, ok := node.Labels[repairHumanInterventionLabel]
+	if !ok {
+		return false
+	}
+	trimmed := strings.TrimSpace(val)
+	required, err := strconv.ParseBool(trimmed)
+	if err != nil {
+		return strings.EqualFold(trimmed, "true")
+	}
+	return required
+}
+
+func unhealthySince(node *v1.Node) (time.Time, bool) {
+	if node == nil || node.Annotations == nil {
+		return time.Time{}, false
+	}
+	raw := strings.TrimSpace(node.Annotations[narUnhealthySinceAnnotationKey])
+	if raw == "" {
+		return time.Time{}, false
+	}
+	since, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return since, true
+}
+
+func reachedRepairCycleLimit(node *v1.Node) bool {
+	if node == nil || node.Annotations == nil {
+		return false
+	}
+	raw := strings.TrimSpace(node.Annotations[narRepairCycleAttemptsKey])
+	if raw == "" {
+		return false
+	}
+	attempts, err := strconv.Atoi(raw)
+	if err != nil {
+		return false
+	}
+	return attempts >= maxRepairCycles
 }
 
 func getRequeueDuration(logger logr.Logger, node *v1.Node) time.Duration {
