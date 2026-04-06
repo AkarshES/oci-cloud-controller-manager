@@ -87,6 +87,39 @@ func TestGetNodeCooldownDuration_MinutesValue(t *testing.T) {
 	}
 }
 
+func TestGetNodeUnhealthyThresholdDuration_Default(t *testing.T) {
+	orig := unhealthyThreshold
+	unhealthyThreshold = 11 * time.Minute
+	defer func() { unhealthyThreshold = orig }()
+
+	node := &v1.Node{}
+	if got := getNodeUnhealthyThresholdDuration(node); got != unhealthyThreshold {
+		t.Fatalf("expected default unhealthy threshold %v, got %v", unhealthyThreshold, got)
+	}
+}
+
+func TestGetNodeUnhealthyThresholdDuration_DurationString(t *testing.T) {
+	node := &v1.Node{}
+	node.Labels = map[string]string{
+		repairUnhealthyThresholdLabel: "7m30s",
+	}
+
+	if got := getNodeUnhealthyThresholdDuration(node); got != 7*time.Minute+30*time.Second {
+		t.Fatalf("expected custom unhealthy threshold 7m30s, got %v", got)
+	}
+}
+
+func TestGetNodeUnhealthyThresholdDuration_MinutesValue(t *testing.T) {
+	node := &v1.Node{}
+	node.Labels = map[string]string{
+		repairUnhealthyThresholdLabel: "12",
+	}
+
+	if got := getNodeUnhealthyThresholdDuration(node); got != 12*time.Minute {
+		t.Fatalf("expected custom unhealthy threshold 12m, got %v", got)
+	}
+}
+
 func TestHandleUnhealthyNode_DisabledLabelSkipsRepair(t *testing.T) {
 	node := &v1.Node{}
 	node.Name = "nar-disabled-node"
@@ -250,6 +283,45 @@ func TestHandleUnhealthyNode_PreservesUnhealthySinceAcrossConditionChanges(t *te
 	}
 }
 
+func TestHandleUnhealthyNode_UsesNodeSpecificUnhealthyThresholdLabel(t *testing.T) {
+	orig := unhealthyThreshold
+	unhealthyThreshold = 10 * time.Minute
+	defer func() { unhealthyThreshold = orig }()
+
+	scheme := newNodeAutoRepairTestScheme(t)
+	node := &v1.Node{}
+	node.Name = "nar-unhealthy-dwell-label"
+	node.Labels = map[string]string{
+		repairUnhealthyThresholdLabel: "2m",
+	}
+	node.Annotations = map[string]string{
+		narUnhealthySinceAnnotationKey: time.Now().UTC().Add(-3 * time.Minute).Format(time.RFC3339),
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{
+		Client:       fakeClient,
+		ControllerID: "nar-test-controller",
+	}
+
+	res, err := r.handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	defer func() {
+		_ = r.stopLeaseHeartbeat(context.Background(), node.Name)
+	}()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter != repairStateConfigs[stateCordoning].successRequeue {
+		t.Fatalf("expected repair to start using node-specific threshold, got %v", res.RequeueAfter)
+	}
+}
+
 func TestCleanupRepairArtifacts_ClearsUnhealthySinceWhenNodeHealthy(t *testing.T) {
 	scheme := newNodeAutoRepairTestScheme(t)
 	node := &v1.Node{}
@@ -385,6 +457,25 @@ func TestConditionChangedPredicate_Update_TriggersOnHumanInterventionLabelRemove
 	}
 }
 
+func TestConditionChangedPredicate_Update_TriggersOnUnhealthyThresholdLabelChange(t *testing.T) {
+	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
+	oldNode := &v1.Node{}
+	oldNode.Name = "nar-predicate-threshold-changed"
+	oldNode.Labels = map[string]string{
+		repairUnhealthyThresholdLabel: "10m",
+	}
+	newNode := oldNode.DeepCopy()
+	newNode.Labels[repairUnhealthyThresholdLabel] = "5m"
+
+	changed := p.Update(event.UpdateEvent{
+		ObjectOld: oldNode,
+		ObjectNew: newNode,
+	})
+	if !changed {
+		t.Fatalf("expected update predicate to trigger when %s changes", repairUnhealthyThresholdLabel)
+	}
+}
+
 func TestConditionChangedPredicate_Update_TriggersOnRepairDisabledLabelRemoved(t *testing.T) {
 	p := ConditionChangedPredicate{log: zap.NewNop().Sugar()}
 	oldNode := &v1.Node{}
@@ -510,5 +601,103 @@ func TestHandleUnhealthyNode_HumanInterventionLabelBlocksNewRepair(t *testing.T)
 	}
 	if res.Requeue || res.RequeueAfter != 0 {
 		t.Fatalf("expected no requeue when human intervention label is present, got %#v", res)
+	}
+}
+
+func TestHandleUnhealthyNode_HumanInterventionRemovalWaitsForCooldown(t *testing.T) {
+	origCooldown := repairCoolDown
+	repairCoolDown = 30 * time.Minute
+	defer func() { repairCoolDown = origCooldown }()
+
+	scheme := newNodeAutoRepairTestScheme(t)
+	node := &v1.Node{}
+	node.Name = "nar-human-removed-cooldown"
+	node.Annotations = map[string]string{
+		narLastRepairResultAnnotation: "failed",
+		narLastRepairEndAnnotation:    time.Now().UTC().Add(-10 * time.Minute).Format(time.RFC3339),
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{Client: fakeClient}
+
+	res, err := r.handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter <= 0 || res.RequeueAfter > 20*time.Minute {
+		t.Fatalf("expected remaining cooldown requeue, got %v", res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if got := latest.Annotations[narLastRepairResultAnnotation]; got != "failed" {
+		t.Fatalf("expected failed summary to remain until cooldown expires, got %q", got)
+	}
+}
+
+func TestHandleUnhealthyNode_HumanInterventionRemovalResetsStateAndRestarts(t *testing.T) {
+	origCooldown := repairCoolDown
+	repairCoolDown = 20 * time.Minute
+	defer func() { repairCoolDown = origCooldown }()
+
+	scheme := newNodeAutoRepairTestScheme(t)
+	node := &v1.Node{}
+	node.Name = "nar-human-removed-restart"
+	node.Labels = map[string]string{
+		repairProblemDetectedLabel: "stale",
+	}
+	node.Annotations = map[string]string{
+		narLastRepairResultAnnotation:                 "failed",
+		narLastRepairEndAnnotation:                    time.Now().UTC().Add(-25 * time.Minute).Format(time.RFC3339),
+		narUnhealthySinceAnnotationKey:                time.Now().UTC().Add(-40 * time.Minute).Format(time.RFC3339),
+		"oci.oraclecloud.com/nodeautorepair-problems": "GPUCount",
+	}
+	node.Status.Conditions = []v1.NodeCondition{
+		{
+			Type:   v1.NodeConditionType("GPUCount"),
+			Status: v1.ConditionTrue,
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(node).Build()
+	r := &NodeAutoRepairReconciler{
+		Client:       fakeClient,
+		ControllerID: "nar-test-controller",
+	}
+
+	res, err := r.handleUnhealthyNode(context.Background(), logr.Discard(), node, findUnhealthyConditions(node))
+	defer func() {
+		_ = r.stopLeaseHeartbeat(context.Background(), node.Name)
+	}()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if res.RequeueAfter != repairStateConfigs[stateCordoning].successRequeue {
+		t.Fatalf("expected repair to restart immediately after cooldown expiry, got %v", res.RequeueAfter)
+	}
+
+	latest := &v1.Node{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
+		t.Fatalf("failed to fetch latest node: %v", err)
+	}
+	if got := latest.Annotations[narStateAnnotationKey]; got != string(stateCordoning) {
+		t.Fatalf("expected node state %q after restart, got %q", stateCordoning, got)
+	}
+	if _, ok := latest.Annotations[narLastRepairEndAnnotation]; ok {
+		t.Fatalf("expected last repair end annotation to be cleared before restart")
+	}
+	if _, ok := latest.Annotations[narLastRepairResultAnnotation]; ok {
+		t.Fatalf("expected last repair result annotation to be cleared before restart")
+	}
+	if got := latest.Labels[repairProblemDetectedLabel]; got == "stale" {
+		t.Fatalf("expected stale repair problem label to be reset before restart")
 	}
 }

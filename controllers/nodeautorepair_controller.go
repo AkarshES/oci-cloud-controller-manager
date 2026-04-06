@@ -35,14 +35,15 @@ import (
 )
 
 const (
-	narName                      string         = "narName"
-	repairProblemDetectedLabel   string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
-	repairDisabledLabel          string         = "oci.oraclecloud.com/node-auto-repair-disabled"
-	repairHumanInterventionLabel string         = "oci.oraclecloud.com/node-auto-repair-human-intervention"
-	repairFrequencyLabel         string         = "oci.oraclecloud.com/node-auto-repair-freq"
-	repairCooldownLabel          string         = "oci.oraclecloud.com/node-auto-repair-cooldown"
-	REPAIR_TAINT_KEY             string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
-	REPAIR_TAINT_EFFECT          v1.TaintEffect = v1.TaintEffectNoSchedule
+	narName                       string         = "narName"
+	repairProblemDetectedLabel    string         = "oci.oraclecloud.com/nodeauto-repair-node-problem-detected"
+	repairDisabledLabel           string         = "oci.oraclecloud.com/node-auto-repair-disabled"
+	repairHumanInterventionLabel  string         = "oci.oraclecloud.com/node-auto-repair-human-intervention"
+	repairUnhealthyThresholdLabel string         = "oci.oraclecloud.com/node-auto-repair-unhealthy-threshold"
+	repairFrequencyLabel          string         = "oci.oraclecloud.com/node-auto-repair-freq"
+	repairCooldownLabel           string         = "oci.oraclecloud.com/node-auto-repair-cooldown"
+	REPAIR_TAINT_KEY              string         = "oci.oraclecloud.com/node-auto-repair-scheduled"
+	REPAIR_TAINT_EFFECT           v1.TaintEffect = v1.TaintEffectNoSchedule
 )
 
 var UNHEALTHY_CONDITIONS map[string]string = map[string]string{
@@ -156,6 +157,23 @@ func getNodeCooldownDuration(node *v1.Node) time.Duration {
 		return time.Duration(mins) * time.Minute
 	}
 	return repairCoolDown
+}
+
+func getNodeUnhealthyThresholdDuration(node *v1.Node) time.Duration {
+	if node == nil || node.Labels == nil {
+		return unhealthyThreshold
+	}
+	raw := strings.TrimSpace(node.Labels[repairUnhealthyThresholdLabel])
+	if raw == "" {
+		return unhealthyThreshold
+	}
+	if dur, err := time.ParseDuration(raw); err == nil && dur > 0 {
+		return dur
+	}
+	if mins, err := strconv.Atoi(raw); err == nil && mins > 0 {
+		return time.Duration(mins) * time.Minute
+	}
+	return unhealthyThreshold
 }
 
 // isRepairInProgress reports whether the node currently carries a non-terminal NAR state.
@@ -282,6 +300,15 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 	}
 
 	if !repairInProgress {
+		restartAfterCooldown, remainingCooldown, err := r.prepareRetryAfterHumanIntervention(ctx, node)
+		if err != nil {
+			logger.Error(err, "CCM: failed while preparing retry after human intervention label removal")
+			return ctrl.Result{}, err
+		}
+		if remainingCooldown > 0 {
+			logger.Info(fmt.Sprintf("CCM: Human intervention label removed but cooldown still active (node=%s remaining=%s)", node.Name, remainingCooldown.Truncate(time.Second)))
+			return ctrl.Result{RequeueAfter: remainingCooldown}, nil
+		}
 		if reachedRepairCycleLimit(node) {
 			if err := r.markNodeHumanInterventionRequired(ctx, node); err != nil {
 				logger.Error(err, "CCM: failed to add human intervention label after exhausted repair cycles")
@@ -290,14 +317,16 @@ func (r *NodeAutoRepairReconciler) handleUnhealthyNode(ctx context.Context, logg
 			logger.Info(fmt.Sprintf("CCM: Node repair cycles already exhausted; added human intervention label (node=%s)", node.Name))
 			return ctrl.Result{}, nil
 		}
-		ready, remaining, err := r.ensureUnhealthyDuration(ctx, node)
-		if err != nil {
-			logger.Error(err, "CCM: failed to persist unhealthy duration state")
-			return ctrl.Result{}, err
-		}
-		if !ready {
-			logger.Info(fmt.Sprintf("CCM: Node unhealthy dwell window still active before repair start (node=%s remaining=%s threshold=%s)", node.Name, remaining.Truncate(time.Second), unhealthyThreshold))
-			return ctrl.Result{RequeueAfter: remaining}, nil
+		if !restartAfterCooldown {
+			ready, remaining, err := r.ensureUnhealthyDuration(ctx, node)
+			if err != nil {
+				logger.Error(err, "CCM: failed to persist unhealthy duration state")
+				return ctrl.Result{}, err
+			}
+			if !ready {
+				logger.Info(fmt.Sprintf("CCM: Node unhealthy dwell window still active before repair start (node=%s remaining=%s threshold=%s)", node.Name, remaining.Truncate(time.Second), getNodeUnhealthyThresholdDuration(node)))
+				return ctrl.Result{RequeueAfter: remaining}, nil
+			}
 		}
 	}
 
@@ -411,7 +440,8 @@ func (r *NodeAutoRepairReconciler) ensureControllerID(logger logr.Logger) error 
 }
 
 func (r *NodeAutoRepairReconciler) ensureUnhealthyDuration(ctx context.Context, node *v1.Node) (bool, time.Duration, error) {
-	if unhealthyThreshold <= 0 {
+	threshold := getNodeUnhealthyThresholdDuration(node)
+	if threshold <= 0 {
 		return true, 0, nil
 	}
 	now := time.Now().UTC()
@@ -422,13 +452,13 @@ func (r *NodeAutoRepairReconciler) ensureUnhealthyDuration(ctx context.Context, 
 		}, node); err != nil {
 			return false, 0, err
 		}
-		return false, unhealthyThreshold, nil
+		return false, threshold, nil
 	}
 	elapsed := now.Sub(since)
-	if elapsed >= unhealthyThreshold {
+	if elapsed >= threshold {
 		return true, 0, nil
 	}
-	return false, unhealthyThreshold - elapsed, nil
+	return false, threshold - elapsed, nil
 }
 
 func (r *NodeAutoRepairReconciler) updateNodeAnnotations(ctx context.Context, nodeName string, mutate func(map[string]string), out *v1.Node) error {
@@ -463,6 +493,69 @@ func (r *NodeAutoRepairReconciler) markNodeHumanInterventionRequired(ctx context
 			updated.Labels = make(map[string]string)
 		}
 		updated.Labels[repairHumanInterventionLabel] = "true"
+		if err := r.Client.Patch(ctx, updated, client.MergeFrom(latest)); err != nil {
+			return err
+		}
+		*node = *updated
+		return nil
+	})
+}
+
+func (r *NodeAutoRepairReconciler) prepareRetryAfterHumanIntervention(ctx context.Context, node *v1.Node) (bool, time.Duration, error) {
+	if node == nil || node.Annotations == nil || isNodeHumanInterventionRequired(node) {
+		return false, 0, nil
+	}
+	lastResult := strings.TrimSpace(node.Annotations[narLastRepairResultAnnotation])
+	if !strings.EqualFold(lastResult, "failed") {
+		return false, 0, nil
+	}
+	if _, ok := node.Annotations[narRepairCycleAttemptsKey]; ok {
+		return false, 0, nil
+	}
+	lastEndRaw := strings.TrimSpace(node.Annotations[narLastRepairEndAnnotation])
+	if lastEndRaw == "" {
+		return false, 0, nil
+	}
+	lastEnd, err := time.Parse(time.RFC3339, lastEndRaw)
+	if err != nil {
+		return false, 0, nil
+	}
+	cooldown := getNodeCooldownDuration(node)
+	if cooldown > 0 {
+		retryAt := lastEnd.Add(cooldown)
+		if remaining := time.Until(retryAt); remaining > 0 {
+			return false, remaining, nil
+		}
+	}
+	if err := r.resetNodeAutoRepairRetryState(ctx, node); err != nil {
+		return false, 0, err
+	}
+	return true, 0, nil
+}
+
+func (r *NodeAutoRepairReconciler) resetNodeAutoRepairRetryState(ctx context.Context, node *v1.Node) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &v1.Node{}
+		if err := r.Client.Get(ctx, client.ObjectKey{Name: node.Name}, latest); err != nil {
+			return err
+		}
+		updated := latest.DeepCopy()
+		if updated.Labels != nil {
+			delete(updated.Labels, repairHumanInterventionLabel)
+			for key := range updated.Labels {
+				if strings.HasPrefix(key, repairProblemDetectedLabel) {
+					delete(updated.Labels, key)
+				}
+			}
+		}
+		if updated.Annotations != nil {
+			delete(updated.Annotations, "oci.oraclecloud.com/nodeautorepair-problems")
+			delete(updated.Annotations, narLastRepairEndAnnotation)
+			delete(updated.Annotations, narLastRepairResultAnnotation)
+			for _, key := range repairAnnotationKeys {
+				delete(updated.Annotations, key)
+			}
+		}
 		if err := r.Client.Patch(ctx, updated, client.MergeFrom(latest)); err != nil {
 			return err
 		}
@@ -657,6 +750,19 @@ func (p ConditionChangedPredicate) Update(e event.UpdateEvent) bool {
 	if oldHuman != newHuman {
 		p.log.Infof("CCM: Node auto-repair human intervention label changed (node=%s old=%q new=%q)",
 			newNode.Name, oldHuman, newHuman)
+		return true
+	}
+	oldThreshold := ""
+	newThreshold := ""
+	if oldNode.Labels != nil {
+		oldThreshold = strings.TrimSpace(oldNode.Labels[repairUnhealthyThresholdLabel])
+	}
+	if newNode.Labels != nil {
+		newThreshold = strings.TrimSpace(newNode.Labels[repairUnhealthyThresholdLabel])
+	}
+	if oldThreshold != newThreshold {
+		p.log.Infof("CCM: Node auto-repair unhealthy threshold label changed (node=%s old=%q new=%q)",
+			newNode.Name, oldThreshold, newThreshold)
 		return true
 	}
 

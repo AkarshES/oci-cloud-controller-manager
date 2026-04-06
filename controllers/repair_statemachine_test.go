@@ -87,6 +87,10 @@ func TestBeginState_PreservesExistingStartTime(t *testing.T) {
 }
 
 func TestHandleUncordoning_RequeuesWhileNodeUnhealthy(t *testing.T) {
+	orig := postRebootObservationWindow
+	postRebootObservationWindow = 30 * time.Second
+	defer func() { postRebootObservationWindow = orig }()
+
 	now := time.Now().UTC().Format(time.RFC3339)
 	node := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
@@ -113,36 +117,45 @@ func TestHandleUncordoning_RequeuesWhileNodeUnhealthy(t *testing.T) {
 		tracker:  newRepairStateTracker("rid-1"),
 	}
 	sm.tracker.States[stateUncordon] = &stateTrackerEntry{
-		StartTime: now,
+		StartTime: time.Now().UTC().Add(-5 * time.Second).Format(time.RFC3339),
 	}
 
 	res, err := sm.handleUncordoning(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if res.RequeueAfter != repairStateConfigs[stateUncordon].successRequeue {
-		t.Fatalf("expected requeueAfter %v, got %v", repairStateConfigs[stateUncordon].successRequeue, res.RequeueAfter)
+	if res.RequeueAfter <= 0 || res.RequeueAfter > postRebootObservationWindow {
+		t.Fatalf("expected requeue during post-reboot observation window, got %v", res.RequeueAfter)
 	}
 }
 
-func TestHandleUncordoning_WaitsForHealthyStabilization(t *testing.T) {
-	orig := healthyStabilization
-	healthyStabilization = 30 * time.Second
-	defer func() { healthyStabilization = orig }()
+func TestHandleUncordoning_EntersCleanupWhenConditionsRemainUnhealthyAfterObservationWindow(t *testing.T) {
+	orig := postRebootObservationWindow
+	postRebootObservationWindow = 30 * time.Second
+	defer func() { postRebootObservationWindow = orig }()
 
 	scheme := runtime.NewScheme()
 	if err := v1.AddToScheme(scheme); err != nil {
 		t.Fatalf("failed to add corev1 scheme: %v", err)
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
 	node := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "nar-uncordon-stabilization",
+			Name: "nar-uncordon-observation-fail",
 			Annotations: map[string]string{
-				narStateAnnotationKey:       string(stateUncordon),
-				narRepairIDAnnotationKey:    "rid-stable",
-				narLastTransitionAnnotation: now,
+				narStateAnnotationKey:            string(stateUncordon),
+				narRepairIDAnnotationKey:         "rid-observe",
+				narLastTransitionAnnotation:      time.Now().UTC().Add(-31 * time.Second).Format(time.RFC3339),
+				narCordonedByRepairAnnotationKey: "true",
+			},
+		},
+		Spec: v1.NodeSpec{
+			Unschedulable: true,
+			Taints:        []v1.Taint{CreateRepairTaint()},
+		},
+		Status: v1.NodeStatus{
+			Conditions: []v1.NodeCondition{
+				{Type: v1.NodeConditionType("GPUCount"), Status: v1.ConditionTrue},
 			},
 		},
 	}
@@ -153,30 +166,30 @@ func TestHandleUncordoning_WaitsForHealthyStabilization(t *testing.T) {
 		reconciler: r,
 		node:       node.DeepCopy(),
 		nodeKey:    client.ObjectKey{Name: node.Name},
-		repairID:   "rid-stable",
-		tracker:    newRepairStateTracker("rid-stable"),
+		repairID:   "rid-observe",
+		tracker:    newRepairStateTracker("rid-observe"),
 	}
-	sm.tracker.States[stateUncordon] = &stateTrackerEntry{StartTime: now}
+	sm.tracker.States[stateUncordon] = &stateTrackerEntry{
+		StartTime: time.Now().UTC().Add(-31 * time.Second).Format(time.RFC3339),
+	}
 
 	res, err := sm.handleUncordoning(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if res.RequeueAfter != repairStateConfigs[stateUncordon].successRequeue {
-		t.Fatalf("expected requeueAfter %v, got %v", repairStateConfigs[stateUncordon].successRequeue, res.RequeueAfter)
+		t.Fatalf("expected cleanup requeueAfter %v, got %v", repairStateConfigs[stateUncordon].successRequeue, res.RequeueAfter)
 	}
 
 	latest := &v1.Node{}
 	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: node.Name}, latest); err != nil {
 		t.Fatalf("failed to fetch latest node: %v", err)
 	}
-	tracker := loadRepairStateTracker(latest)
-	entry := tracker.current(stateUncordon)
-	if entry == nil || entry.HealthySince == "" {
-		t.Fatalf("expected healthy stabilization timestamp to be recorded, got %+v", entry)
+	if !latest.Spec.Unschedulable {
+		t.Fatalf("expected node to remain cordoned until cleanup uncordon runs")
 	}
-	if got := latest.Annotations[narLastRepairResultAnnotation]; got != "" {
-		t.Fatalf("expected repair result to remain unset while stabilizing, got %q", got)
+	if got := latest.Annotations[narFailureCleanupPendingKey]; got != "true" {
+		t.Fatalf("expected cleanup-pending annotation after unhealthy observation window, got %q", got)
 	}
 }
 
