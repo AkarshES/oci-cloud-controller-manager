@@ -257,15 +257,6 @@ locals {
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
           },
           /*
-            Tally Prod CSI Pin Override
-          */
-          {
-            regions      = ["bom"]
-            env          = "prd"
-            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.tally_csi_overrides))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaosp7wej2fqrvacexolafmu3kw3euc2k5lwuirycvwzhspoleqrsq"
-          },
-          /*
             Tally QA CSI Pin Override
           */
           {
