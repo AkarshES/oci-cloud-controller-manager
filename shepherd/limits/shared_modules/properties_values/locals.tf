@@ -1,8 +1,4 @@
 locals {
-  tally_csi_overrides = {
-    "v1.31" : "v1.31-d02f08265e8-67@sha256:4d0b75d5875307be05859d157e9d647b0703f878100e49a6a0df38b53d2dcaa3",
-    "v1.32" : "v1.32-bf20a443646-33@sha256:6ca6fd685627f329769e110f34c4d48d78621859539ce64aa2de4fa868ed10a0"
-  }
 
   karpenter_la_ccm_overrides_v1-17-1 = {
     "default" : "oke-multiarch-1.16-520cc1d-11@sha256:5a38b559cbb0a027b06f9381973974854b7bc5c5085ddd9e225ddf02820cdc78",
@@ -255,25 +251,7 @@ locals {
             env          = "integ"
             value        = jsonencode(merge(local.csi_default_mapping.default.all, local.oci_cnp_dev_csi_override))
             tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaajol5woa4is3merb234fy4b46bps2nsjr3lcz7rvgj25dr5dxfmnq"
-          },
-          /*
-            Tally QA CSI Pin Override
-          */
-          {
-            regions      = ["bom"]
-            env          = "prd"
-            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.tally_csi_overrides))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaaxtpwu4jog5czcjmawmwptkuqjfimnc57iij6asca4xwjx3wkf3pq"
-          },
-          /*
-            Tally DEV CSI Pin Override
-          */
-          {
-            regions      = ["bom"]
-            env          = "prd"
-            value        = jsonencode(merge(local.csi_default_mapping.default.all, local.tally_csi_overrides))
-            tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaacihe4hnurwedhwfbgvexk2uemvwpyoq37vywgl6yh5n3a7wpopca"
-          },
+          }
         ]
       },
       "lustre-csi-driver-enabled" = {
