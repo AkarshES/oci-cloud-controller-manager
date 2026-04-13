@@ -419,11 +419,9 @@ function setup_amd() {
         export OCI_NODESUBNET=$OCI_NODESUBNET_AMD
         export NSG_OCIDS=$NSG_OCIDS_AMD
         export OKE_ENDPOINT=$OKE_ENDPOINT_AMD
-        declare_setup "CREATE"
     elif [[ "$#" -ne  "0" && "$1" == "EXIST" ]]; then
         export CLUSTER_KUBECONFIG=$CLUSTER_KUBECONFIG_AMD
         export CLOUD_CONFIG=$CLOUD_CONFIG_AMD
-        declare_setup
     fi
 }
 
@@ -447,11 +445,9 @@ function setup_arm() {
         export CUSTOM_DRIVER_HANDLE=$CUSTOM_DRIVER_HANDLE
         export CREATE_UHP_NODEPOOL=$CREATE_UHP_NODEPOOL
         export ENABLE_PARALLEL_RUN=$ENABLE_PARALLEL_RUN
-        declare_setup "CREATE"
     elif [[ "$#" -ne  "0" && "$1" == "EXIST" ]]; then
         export CLUSTER_KUBECONFIG=$CLUSTER_KUBECONFIG_ARM
         export CLOUD_CONFIG=$CLOUD_CONFIG_ARM
-        declare_setup
     fi
 }
 
@@ -665,6 +661,7 @@ function run_tests () {
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "AMD" ]]; then
             setup_amd "CREATE"
             setup_ip_family_dependent_env
+            declare_setup "CREATE"
             check_environment
             declare_environment
             run_e2e_tests
@@ -674,6 +671,7 @@ function run_tests () {
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "ARM" ]]; then
             setup_arm "CREATE"
             setup_ip_family_dependent_env
+            declare_setup "CREATE"
             check_environment
             declare_environment
             run_e2e_tests
@@ -685,6 +683,7 @@ function run_tests () {
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "ARM" ]]; then
             setup_arm "EXIST"
             setup_ip_family_dependent_env
+            declare_setup
             check_environment
             declare_environment
             run_e2e_tests_existing_cluster
@@ -694,6 +693,7 @@ function run_tests () {
         if [[ "$SCOPE" == "BOTH" || "$SCOPE" == "AMD" ]]; then
             setup_amd "EXIST"
             setup_ip_family_dependent_env
+            declare_setup
             check_environment
             declare_environment
             run_e2e_tests_existing_cluster
