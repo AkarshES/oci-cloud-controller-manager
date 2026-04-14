@@ -59,9 +59,19 @@ func TestStateTimedOut_TrueWhenExceedsTimeout(t *testing.T) {
 	sm.tracker = newRepairStateTracker("rid-1")
 	entry := sm.tracker.begin(stateDraining)
 	// backdate start time to exceed default draining timeout
-	entry.StartTime = time.Now().UTC().Add(-20 * time.Minute).Format(time.RFC3339)
+	entry.StartTime = time.Now().UTC().Add(-31 * time.Minute).Format(time.RFC3339)
 	if !sm.stateTimedOut(stateDraining) {
 		t.Fatalf("expected draining state to be timed out")
+	}
+}
+
+func TestStateTimedOut_FalseBeforeThirtyMinuteDrainingTimeout(t *testing.T) {
+	sm := &nodeRepairStateMachine{node: &v1.Node{}}
+	sm.tracker = newRepairStateTracker("rid-1")
+	entry := sm.tracker.begin(stateDraining)
+	entry.StartTime = time.Now().UTC().Add(-29 * time.Minute).Format(time.RFC3339)
+	if sm.stateTimedOut(stateDraining) {
+		t.Fatalf("expected draining state to remain within the 30 minute timeout")
 	}
 }
 

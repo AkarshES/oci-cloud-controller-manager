@@ -15,6 +15,11 @@ Node AutoRepair uses a state machine to repair a node after it has stayed contin
 - `oci.oraclecloud.com/nodeautorepair-last-result` — last completed repair result (`succeeded` or `failed`)
 - `oci.oraclecloud.com/node-auto-repair-unhealthy-threshold` label — optional per-node override for the unhealthy toleration window before a repair starts
 - `oci.oraclecloud.com/node-auto-repair-human-intervention=true` label — hard stop after 3 consecutive failed repair cycles; must be cleared manually
+- `oci.oraclecloud.com/nodeautorepair-state-meta` — JSON state metadata used to persist per-state progress across reconciles. For `Draining`, this includes:
+  - `forced` — whether drain has crossed the force threshold and is now using direct pod deletion
+  - `drain.status` — `in_progress`, `backoff`, `complete`, or `skipped`
+  - `drain.failureType` — `pdb`, `namespace_terminating`, or `hard_error`
+  - `drain.remainingPods`, `drain.blockingPod`, `drain.lastMessage`, `drain.lastUpdateTime`
 
 ## State Definitions
 - Detected
@@ -35,7 +40,11 @@ Node AutoRepair uses a state machine to repair a node after it has stayed contin
 2. switch on state:
    - Detected -> write state `Cordoning` (and record `repair-id`)
    - Cordoning -> perform cordon(node); on success set state `Draining`; on failure retry or set `Failed`
-   - Draining -> perform drain(node); on success set state `Rebooting`; on failure retry or set `Failed`
+   - Draining -> run a resume-safe drain loop:
+     - list drain candidates with `kubectl/pkg/drain` filters so daemonset, mirror pod, emptyDir, and unmanaged-pod semantics stay aligned with kubectl drain
+     - when there are no drainable pods left, mark drain `complete` and move to `Rebooting`
+     - otherwise classify the current attempt as `in_progress`, `backoff`, or `hard_error`
+     - persist drain sub-state in `state-meta` so the next reconcile can continue with the same context
    - Rebooting -> call cloud reboot API (or annotate node for agent); on success set state `Uncordoning`; otherwise retry/fail
    - Uncordoning -> in the normal success path, wait for a fixed post-reboot observation window, then require all unhealthy conditions to be cleared before uncordon/success
    - Failed cleanup path -> if a repair step fails after NAR already cordoned the node, keep retrying uncordon until the node is schedulable again, then finalize the cycle as `failed`
@@ -50,7 +59,7 @@ Every state write should update `last-transition` and `attempts`.
   - If a repair cycle fails, clear transient repair state and wait for a fresh 10-minute continuous unhealthy window before retrying.
   - Retry up to 3 failed repair cycles.
   - After the 3rd failed cycle, label the node with `oci.oraclecloud.com/node-auto-repair-human-intervention=true` and stop automatic repair until an operator clears the label.
-- Per-state timeouts (current defaults in code): Cordoning 60s, Draining 15m, Rebooting 20m, Uncordoning 5m. These are configurable via:
+- Per-state timeouts (current defaults in code): Cordoning 60s, Draining 30m, Rebooting 20m, Uncordoning 5m. These are configurable via:
   - `NODE_AUTOREPAIR_TIMEOUT_CORDONING`
   - `NODE_AUTOREPAIR_TIMEOUT_DRAINING`
   - `NODE_AUTOREPAIR_TIMEOUT_REBOOTING`
@@ -59,10 +68,17 @@ Every state write should update `last-transition` and `attempts`.
   - unhealthy dwell threshold before starting repair: `10m` via `NODE_AUTOREPAIR_UNHEALTHY_THRESHOLD`
   - reboot polling interval: `20s` via `NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL`
   - post-reboot observation window before successful uncordon: `90s` via `NODE_AUTOREPAIR_POST_REBOOT_OBSERVATION`
-  - drain force-after threshold: `10m` via `NODE_AUTOREPAIR_DRAIN_FORCE_AFTER`
+  - force drain is enabled by default via `NODE_AUTOREPAIR_DRAIN_FORCE=true`
+  - `NODE_AUTOREPAIR_DRAIN_FORCE=false` disables force drain entirely
+  - `NODE_AUTOREPAIR_DRAIN_FORCE_AFTER` delays force drain when set to a positive duration; the default `0` forces immediately
 
 ## Safety Constraints
-- Before Draining, respect PodDisruptionBudgets (PDB). If PDB blocks eviction, wait and retry. Respect PDB for a maximum of 10 mins and force repair after the wait
+- Before Draining, respect PodDisruptionBudgets (PDB). NAR now classifies eviction responses explicitly:
+  - `429` or known PDB internal errors -> `backoff` with `failureType=pdb`
+  - `403 NamespaceTerminating` for pods not already deleting -> `backoff` with `failureType=namespace_terminating`
+  - deleting pods or eviction `404` -> `in_progress`
+  - unknown/unauthorized candidate or eviction failures -> `hard_error`
+- When force drain is enabled, NAR bypasses evictions and uses direct pod deletion once the configured force window is reached. By default the force window is immediate; customers can either disable force drain entirely or delay it with `NODE_AUTOREPAIR_DRAIN_FORCE_AFTER`.
 - Skip DaemonSet pods and mirror pods when draining; handle local-volume usage carefully (see kubectl drain behavior).
 - Only the leader instance performs active repairs (use existing leader election).
 - Concurrency limits:
@@ -88,7 +104,7 @@ only one controller is activelly doing node auto repair
 - After 3 consecutive failed repair cycles, add the human-intervention label and stop until an operator clears it.
 - If the human-intervention label is manually removed, do not restart immediately unless the cooldown window since the last failed repair has already elapsed; once it has elapsed, reset NAR-generated labels/summary state and retry from a fresh cycle.
 - Cordon/Uncordon: update `Node.Spec.Unschedulable` via `client-go` (idempotent).
-- Drain: prefer reusing `k8s.io/kubectl/pkg/drain`'s `drain.Helper` to correctly handle PDBs, DaemonSets, and local PVs. If not possible, implement eviction via the Eviction subresource and wait for pods to terminate while respecting PDB. Respect PDB for a maximum of 10 mins and force repair after the wait
+- Drain: reuse `k8s.io/kubectl/pkg/drain`'s `drain.Helper.GetPodsForDeletion` for candidate selection, but perform eviction/delete explicitly inside NAR so each reconcile can classify and persist drain progress. Force drain is customer-configurable and defaults to enabled.
 - Reboot: reuse existing OCI client in `pkg/oci` to call instance reboot APIs; After reboot, we will check if instance is up and running using polling, if instance is not up and running, we wait for `instanceRunningPollInterval` (default 20s, configurable via `NODE_AUTOREPAIR_REBOOT_POLL_INTERVAL`) until instance is running again, if after 20 mins instance is not running, we move to failed step
 - Uncordon success path: after reboot, wait for the 90-second post-reboot observation window; only if all unhealthy conditions are cleared at that point should the node be uncordoned and the repair marked successful.
 - Uncordon failed-cycle cleanup path: if a repair cycle fails after NAR already cordoned the node, uncordon even if unhealthy conditions still persist, and only then record the cycle as failed.
@@ -99,6 +115,10 @@ only one controller is activelly doing node auto repair
 ## Observability and Alerts
 - Emit Kubernetes Events for state transitions and failures.
 - Export Prometheus metrics: `nodeautorepair_repair_total`, `nodeautorepair_repair_failures_total`, `nodeautorepair_repair_duration_seconds` (by state)
+- Export drain-specific metrics:
+  - `nodeautorepair_drain_remaining_pods`
+  - `nodeautorepair_drain_force_total`
+  - `nodeautorepair_drain_blocked_total{reason=...}`
 
 ## Testing Strategy
 - Unit tests: state handler success, failure, and idempotency paths.

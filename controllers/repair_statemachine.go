@@ -18,7 +18,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/kubectl/pkg/drain"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -43,9 +42,16 @@ const (
 	metricRepairTotal             = "nodeautorepair_repair_total"
 	metricRepairFailures          = "nodeautorepair_repair_failures_total"
 	metricRepairDuration          = "nodeautorepair_repair_duration_seconds"
+	metricDrainRemainingPods      = "nodeautorepair_drain_remaining_pods"
+	metricDrainForceTotal         = "nodeautorepair_drain_force_total"
+	metricDrainBlockedTotal       = "nodeautorepair_drain_blocked_total"
 	eventRepairDetected           = "NodeRepairDetected"
 	eventRepairCordoned           = "NodeRepairCordoned"
 	eventRepairDraining           = "NodeRepairDraining"
+	eventRepairDrainBlockedPDB    = "NodeRepairDrainBlockedPDB"
+	eventRepairDrainBlockedNS     = "NodeRepairDrainBlockedNamespaceTerminating"
+	eventRepairDrainForced        = "NodeRepairDrainForced"
+	eventRepairDrainCompleted     = "NodeRepairDrainCompleted"
 	eventRepairRebooting          = "NodeRepairRebooting"
 	eventRepairUncordoned         = "NodeRepairUncordoned"
 	eventRepairThrottled          = "NodeRepairThrottled"
@@ -86,7 +92,7 @@ var (
 			retryBase:      defaultRetryBase,
 		},
 		stateDraining: {
-			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_DRAINING", 15*time.Minute),
+			timeout:        getEnvDuration("NODE_AUTOREPAIR_TIMEOUT_DRAINING", 30*time.Minute),
 			successRequeue: 10 * time.Second,
 			retryBase:      defaultRetryBase,
 		},
@@ -121,9 +127,10 @@ var (
 		narFailureCleanupPendingKey,
 		narFailureCleanupStateKey,
 	}
-	// Respect PDB up to 10 minutes by default, then force repair per design doc
-	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 10*time.Minute)
-	drainForceAlways        = getEnvBool("NODE_AUTOREPAIR_DRAIN_FORCE", false)
+	// Force drain is enabled by default. If force-after is <= 0, force deletion starts immediately.
+	// Customers can disable force drain entirely with NODE_AUTOREPAIR_DRAIN_FORCE=false.
+	drainForceAfter         = getEnvDuration("NODE_AUTOREPAIR_DRAIN_FORCE_AFTER", 0)
+	drainForceEnabled       = getEnvBool("NODE_AUTOREPAIR_DRAIN_FORCE", true)
 	drainIgnoreDaemonSets   = getEnvBool("NODE_AUTOREPAIR_DRAIN_IGNORE_DAEMONSETS", true)
 	drainDeleteEmptyDirData = getEnvBool("NODE_AUTOREPAIR_DRAIN_DELETE_EMPTYDIR", false)
 	drainAttemptTimeout     = getEnvDuration("NODE_AUTOREPAIR_DRAIN_ATTEMPT_TIMEOUT", 60*time.Second)
@@ -135,10 +142,11 @@ type repairStateTracker struct {
 }
 
 type stateTrackerEntry struct {
-	StartTime    string `json:"startTime,omitempty"`
-	Attempts     int    `json:"attempts,omitempty"`
-	Forced       bool   `json:"forced,omitempty"`
-	HealthySince string `json:"healthySince,omitempty"`
+	StartTime    string             `json:"startTime,omitempty"`
+	Attempts     int                `json:"attempts,omitempty"`
+	Forced       bool               `json:"forced,omitempty"`
+	HealthySince string             `json:"healthySince,omitempty"`
+	Drain        *drainTrackerState `json:"drain,omitempty"`
 }
 
 func (sm *nodeRepairStateMachine) refreshStateTracker() {
@@ -458,13 +466,27 @@ func (sm *nodeRepairStateMachine) handleDraining(ctx context.Context) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	if err := sm.drainNode(ctx); err != nil {
-		sm.l().Error(err, fmt.Sprintf("Draining node failed (attempt=%d)", attempt))
-		sm.emitWarningEvent(eventRepairDraining, fmt.Sprintf("Draining failed (attempt %d): %v", attempt, err))
+	prev := sm.currentDrainSnapshot()
+	result, drainErr := sm.drainNode(ctx)
+	if err := sm.persistDrainResult(ctx, result); err != nil {
+		return ctrl.Result{}, err
+	}
+	sm.recordMetricWithDims(metricDrainRemainingPods, float64(result.RemainingPods), nil)
+	sm.emitDrainStateEvents(prev, result)
+
+	switch result.Outcome {
+	case drainOutcomeComplete:
+		sm.l().Info("CCM: Drain completed; transitioning to rebooting")
+	case drainOutcomeInProgress, drainOutcomeBackoff:
+		return ctrl.Result{RequeueAfter: repairStateConfigs[stateDraining].successRequeue}, nil
+	default:
+		if drainErr == nil {
+			drainErr = errors.New(result.Message)
+		}
+		sm.l().Error(drainErr, fmt.Sprintf("Draining node failed (attempt=%d)", attempt))
+		sm.emitWarningEvent(eventRepairDraining, fmt.Sprintf("Draining failed (attempt %d): %v", attempt, drainErr))
 		return ctrl.Result{RequeueAfter: sm.retryDelay(stateDraining, attempt)}, nil
 	}
-	sm.l().Info("CCM: Emit draining event and transition to rebooting")
-	sm.emitEvent(eventRepairDraining, "Drain succeeded; moving to Rebooting")
 	sm.l().Info("CCM: Record state duration for draining")
 	sm.recordStateDuration(stateDraining)
 	if err := sm.setState(ctx, stateRebooting); err != nil {
@@ -883,54 +905,13 @@ func (sm *nodeRepairStateMachine) uncordonNode(ctx context.Context) error {
 	})
 }
 
-func (sm *nodeRepairStateMachine) drainNode(ctx context.Context) error {
+func (sm *nodeRepairStateMachine) drainNode(ctx context.Context) (drainResult, error) {
 	childCtx, cancel := context.WithTimeout(ctx, drainAttemptTimeout)
 	defer cancel()
-	// Determine whether to force drain (skip PDB by disabling evictions) based on elapsed time
-	// in current Draining state, or if globally configured to always force.
-	forcedMode := drainForceAlways
-	if !forcedMode {
-		// Use the state's last transition time (entering Draining) for a stable start timestamp
-		// regardless of reconcile retries.
-		start := sm.lastTransitionTime()
-		if !start.IsZero() && drainForceAfter > 0 && time.Since(start) >= drainForceAfter {
-			forcedMode = true
-		}
-	}
-	helper := &drain.Helper{
-		Ctx:    childCtx,
-		Client: sm.reconciler.KubeClient,
-		// If forcedMode, we both set Force and DisableEviction to bypass PDB protection
-		// and proceed with deletions when evictions cannot make progress.
-		Force:               forcedMode || drainForceAlways,
-		GracePeriodSeconds:  -1,
-		IgnoreAllDaemonSets: drainIgnoreDaemonSets,
-		DeleteEmptyDirData:  drainDeleteEmptyDirData,
-		DisableEviction:     forcedMode,
-		Timeout:             drainAttemptTimeout,
-		Out:                 nopWriter{},
-		ErrOut:              nopWriter{},
-	}
-	if forcedMode {
-		// Mark we have switched to forced draining in the tracker metadata and emit an event once.
-		var emitted bool
-		if sm.tracker != nil {
-			// Ensure the entry exists without clobbering its start when available.
-			sm.tracker.ensureStart(stateDraining, sm.lastTransitionTime())
-			if entry := sm.tracker.current(stateDraining); entry != nil {
-				if !entry.Forced {
-					entry.Forced = true
-					emitted = true
-					// Best-effort persist; ignore error here, actual drain proceeds regardless.
-					_ = sm.persistTracker(ctx)
-				}
-			}
-		}
-		if emitted {
-			sm.emitEvent(eventRepairDraining, "PDB wait exceeded; forcing evictions and deletions")
-		}
-	}
-	return drain.RunNodeDrain(helper, sm.node.Name)
+	forcedMode := shouldForceDrain(sm.lastTransitionTime())
+	result, err := newNodeDrainExecutor(sm.reconciler.KubeClient).DrainNode(childCtx, sm.node.Name, forcedMode)
+	result.Forced = forcedMode
+	return result, err
 }
 
 func (sm *nodeRepairStateMachine) triggerReboot(ctx context.Context) (string, error) {
@@ -1032,6 +1013,10 @@ func (sm *nodeRepairStateMachine) emitWarningEvent(reason, message string) {
 }
 
 func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
+	sm.recordMetricWithDims(metric, value, nil)
+}
+
+func (sm *nodeRepairStateMachine) recordMetricWithDims(metric string, value float64, extraDims map[string]string) {
 	if sm.reconciler.MetricPusher == nil {
 		return
 	}
@@ -1043,6 +1028,9 @@ func (sm *nodeRepairStateMachine) recordMetric(metric string, value float64) {
 	}
 	if sm.node.Spec.ProviderID != "" {
 		dimensions[metrics.InstanceIdDimension] = sm.node.Spec.ProviderID
+	}
+	for key, val := range extraDims {
+		dimensions[key] = val
 	}
 	metrics.SendMetricData(sm.reconciler.MetricPusher, metric, value, dimensions)
 }
@@ -1112,6 +1100,84 @@ type nopWriter struct{}
 
 func (nopWriter) Write(p []byte) (int, error) {
 	return len(p), nil
+}
+
+type drainTrackerSnapshot struct {
+	Forced bool
+	Drain  *drainTrackerState
+}
+
+func (sm *nodeRepairStateMachine) currentDrainSnapshot() drainTrackerSnapshot {
+	snapshot := drainTrackerSnapshot{}
+	if sm.tracker == nil {
+		return snapshot
+	}
+	entry := sm.tracker.current(stateDraining)
+	if entry == nil {
+		return snapshot
+	}
+	snapshot.Forced = entry.Forced
+	snapshot.Drain = cloneDrainTrackerState(entry.Drain)
+	return snapshot
+}
+
+func cloneDrainTrackerState(state *drainTrackerState) *drainTrackerState {
+	if state == nil {
+		return nil
+	}
+	cloned := *state
+	return &cloned
+}
+
+func (sm *nodeRepairStateMachine) persistDrainResult(ctx context.Context, result drainResult) error {
+	if sm.tracker == nil {
+		sm.tracker = newRepairStateTracker(sm.repairID)
+	}
+	sm.tracker.ensureStart(stateDraining, sm.lastTransitionTime())
+	entry := sm.tracker.current(stateDraining)
+	if entry == nil {
+		entry = sm.tracker.begin(stateDraining)
+	}
+	entry.Forced = result.Forced
+	entry.Drain = &drainTrackerState{
+		Status:         result.Status,
+		FailureType:    result.FailureType,
+		RemainingPods:  result.RemainingPods,
+		BlockingPod:    result.BlockingPod,
+		LastMessage:    result.Message,
+		LastUpdateTime: time.Now().UTC().Format(time.RFC3339),
+	}
+	return sm.persistTracker(ctx)
+}
+
+func (sm *nodeRepairStateMachine) emitDrainStateEvents(prev drainTrackerSnapshot, result drainResult) {
+	if !prev.Forced && result.Forced {
+		sm.emitEvent(eventRepairDrainForced, "Drain force threshold reached; switching to direct pod deletion")
+		sm.recordMetric(metricDrainForceTotal, 1)
+	}
+
+	if result.FailureType != "" && drainFailureChanged(prev.Drain, result) {
+		sm.recordMetricWithDims(metricDrainBlockedTotal, 1, map[string]string{"reason": string(result.FailureType)})
+	}
+
+	switch {
+	case result.Outcome == drainOutcomeBackoff && drainFailureChanged(prev.Drain, result):
+		switch result.FailureType {
+		case drainFailureTypePDB:
+			sm.emitEvent(eventRepairDrainBlockedPDB, fmt.Sprintf("Drain blocked by PodDisruptionBudget for %s", result.BlockingPod))
+		case drainFailureTypeNamespaceTerminating:
+			sm.emitEvent(eventRepairDrainBlockedNS, fmt.Sprintf("Drain blocked by terminating namespace for %s", result.BlockingPod))
+		}
+	case result.Outcome == drainOutcomeComplete:
+		sm.emitEvent(eventRepairDrainCompleted, "Drain succeeded; moving to Rebooting")
+	}
+}
+
+func drainFailureChanged(prev *drainTrackerState, result drainResult) bool {
+	if prev == nil {
+		return result.FailureType != ""
+	}
+	return prev.Status != result.Status || prev.FailureType != result.FailureType
 }
 
 // removeRepairTaint removes the NoSchedule taint used to mark a node under repair
