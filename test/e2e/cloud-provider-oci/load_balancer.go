@@ -2878,10 +2878,10 @@ var _ = Describe("LB Properties", func() {
 				s.Spec.LoadBalancerIP = requestedIP
 				s.Spec.Ports = []v1.ServicePort{{Name: "http", Port: 80, TargetPort: intstr.FromInt(80)},
 					{Name: "https", Port: 443, TargetPort: intstr.FromInt(80)}}
-				s.ObjectMeta.Annotations[cloudprovider.ServiceAnnotationLoadBalancerSubnet1] = setupF.Lbrgnsubnet
 				s.ObjectMeta.Annotations = map[string]string{
 					cloudprovider.ServiceAnnotationLoadBalancerConnectionIdleTimeout: "500",
 					cloudprovider.ServiceAnnotationLoadBalancerInternal:              "true",
+					cloudprovider.ServiceAnnotationLoadBalancerSubnet1:               setupF.Lbrgnsubnet,
 				}
 			})
 
@@ -3321,7 +3321,7 @@ var _ = Describe("LB Properties", func() {
 					loadBalancer, err := f.Client.LoadBalancer(zap.L().Sugar(), lbType, nil).GetLoadBalancerByName(ctx, compartmentId, lbName)
 					sharedfw.ExpectNoError(err)
 					By("verifying verify whether LB has been created with the configured reserved IPs")
-					assertReservedIPsAttached(f.Client, loadBalancer, reservedIPs, []string{setupF.Subnet1})
+					assertReservedIPsAttached(f.Client, loadBalancer, reservedIPs, []string{setupF.Lbrgnsubnet})
 
 					By("changing TCP service to type=ClusterIP")
 					tcpService = jig.UpdateServiceOrFail(ns, tcpService.Name, func(s *v1.Service) {
