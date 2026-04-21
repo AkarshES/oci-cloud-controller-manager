@@ -1,8 +1,23 @@
+// Copyright 2026 Oracle and/or its affiliates. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package oci
 
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/oracle/oci-cloud-controller-manager/pkg/flexcidr"
@@ -23,14 +38,15 @@ import (
 const flexCIDRRetryDelay = time.Minute
 
 type FlexCIDRController struct {
-	nodeInformer    coreinformers.NodeInformer
-	serviceInformer coreinformers.ServiceInformer
-	kubeClient      clientset.Interface
-	cloud           *CloudProvider
-	queue           workqueue.RateLimitingInterface
-	logger          *zap.SugaredLogger
-	instanceCache   cache.Store
-	ociClient       client.Interface
+	nodeInformer           coreinformers.NodeInformer
+	serviceInformer        coreinformers.ServiceInformer
+	kubeClient             clientset.Interface
+	cloud                  *CloudProvider
+	queue                  workqueue.RateLimitingInterface
+	logger                 *zap.SugaredLogger
+	ociClient              client.Interface
+	expectedPodCIDRsMu     sync.RWMutex
+	expectedPodCIDRsByNode map[string][]string
 }
 
 func NewFlexCIDRController(
@@ -39,18 +55,17 @@ func NewFlexCIDRController(
 	kubeClient clientset.Interface,
 	cloud *CloudProvider,
 	logger *zap.SugaredLogger,
-	instanceCache cache.Store,
 	ociClient client.Interface) *FlexCIDRController {
 
 	controller := &FlexCIDRController{
-		nodeInformer:    nodeInformer,
-		serviceInformer: serviceInformer,
-		kubeClient:      kubeClient,
-		cloud:           cloud,
-		queue:           workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
-		logger:          logger,
-		instanceCache:   instanceCache,
-		ociClient:       ociClient,
+		nodeInformer:           nodeInformer,
+		serviceInformer:        serviceInformer,
+		kubeClient:             kubeClient,
+		cloud:                  cloud,
+		queue:                  workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
+		logger:                 logger,
+		ociClient:              ociClient,
+		expectedPodCIDRsByNode: make(map[string][]string),
 	}
 
 	controller.nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -61,6 +76,14 @@ func NewFlexCIDRController(
 		UpdateFunc: func(_, newObj interface{}) {
 			node := newObj.(*v1.Node)
 			controller.queue.Add(node.Name)
+		},
+		DeleteFunc: func(obj interface{}) {
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err != nil {
+				controller.logger.With(zap.Error(err)).Debug("failed to determine deleted node cache key")
+				return
+			}
+			controller.deleteExpectedPodCIDRs(key)
 		},
 	})
 
@@ -116,16 +139,17 @@ func (fcc *FlexCIDRController) processItem(key string) error {
 		return nil
 	}
 
+	if expectedPodCIDRs, ok := fcc.getExpectedPodCIDRs(node.Name); ok && flexcidr.StringSlicesEqualIgnoreOrder(node.Spec.PodCIDRs, expectedPodCIDRs) {
+		logger.Debugf("node already has cached expected podCIDRs %v", expectedPodCIDRs)
+		return nil
+	}
+
 	instance, instanceID, err := fcc.getInstanceByNode(node, logger)
 	if err != nil {
 		return err
 	}
 	if instance == nil {
 		return nil
-	}
-
-	if err := fcc.instanceCache.Add(instance); err != nil {
-		logger.With(zap.Error(err)).Debug("failed to add instance to cache")
 	}
 
 	if instance.LifecycleState != core.InstanceLifecycleStateRunning {
@@ -166,12 +190,38 @@ func (fcc *FlexCIDRController) processItem(key string) error {
 	if !flexCIDRManager.ValidateFlexCidrList(flexCIDRs) {
 		return fmt.Errorf("computed flex CIDRs %v are invalid", flexCIDRs)
 	}
+	fcc.setExpectedPodCIDRs(node.Name, flexCIDRs)
 	if flexcidr.StringSlicesEqualIgnoreOrder(node.Spec.PodCIDRs, flexCIDRs) {
 		logger.Debugf("node already has expected podCIDRs %v", flexCIDRs)
 		return nil
 	}
 
 	return flexcidr.PatchNodePodCIDRs(context.Background(), fcc.kubeClient, node.Name, flexCIDRs, logger)
+}
+
+func (fcc *FlexCIDRController) getExpectedPodCIDRs(nodeName string) ([]string, bool) {
+	fcc.expectedPodCIDRsMu.RLock()
+	defer fcc.expectedPodCIDRsMu.RUnlock()
+
+	podCIDRs, ok := fcc.expectedPodCIDRsByNode[nodeName]
+	if !ok {
+		return nil, false
+	}
+	return append([]string(nil), podCIDRs...), true
+}
+
+func (fcc *FlexCIDRController) setExpectedPodCIDRs(nodeName string, podCIDRs []string) {
+	fcc.expectedPodCIDRsMu.Lock()
+	defer fcc.expectedPodCIDRsMu.Unlock()
+
+	fcc.expectedPodCIDRsByNode[nodeName] = append([]string(nil), podCIDRs...)
+}
+
+func (fcc *FlexCIDRController) deleteExpectedPodCIDRs(nodeName string) {
+	fcc.expectedPodCIDRsMu.Lock()
+	defer fcc.expectedPodCIDRsMu.Unlock()
+
+	delete(fcc.expectedPodCIDRsByNode, nodeName)
 }
 
 func (fcc *FlexCIDRController) getInstanceByNode(node *v1.Node, logger *zap.SugaredLogger) (*core.Instance, string, error) {

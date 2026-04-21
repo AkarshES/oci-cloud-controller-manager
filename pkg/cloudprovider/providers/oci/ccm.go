@@ -197,7 +197,6 @@ func (cp *CloudProvider) Initialize(clientBuilder cloudprovider.ControllerClient
 		cp.kubeclient,
 		cp,
 		cp.logger,
-		cp.instanceCache,
 		cp.client)
 
 	nodeInformer := factory.Core().V1().Nodes()

@@ -1,15 +1,25 @@
+// Copyright 2026 Oracle and/or its affiliates. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package flexcidr
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"math"
 	"math/bits"
-	"math/rand"
 	"net"
-	"net/http"
 	"sync"
 	"time"
 
@@ -20,12 +30,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/util/retry"
 )
-
-var retryRNG = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 const (
 	podCIDRTag             = "pod-cidr"
@@ -34,75 +43,6 @@ const (
 	listTimeout            = 25 * time.Second
 	defaultNamespace       = "default"
 )
-
-var initRetryOnce sync.Once
-
-func initOCIRetry() {
-	initRetryOnce.Do(func() {
-		p := common.DefaultRetryPolicy()
-		common.GlobalRetry = &p
-	})
-}
-
-func init() { initOCIRetry() }
-
-func runWithRateLimitRetry(ctx context.Context, logger *zap.SugaredLogger, operation string, fn func(context.Context) error) error {
-	policy := common.NewRetryPolicyWithOptions(
-		common.WithMaximumNumberAttempts(6),
-		common.WithShouldRetryOperation(func(r common.OCIOperationResponse) bool {
-			return isRateLimitError(r.Error)
-		}),
-		common.WithNextDuration(func(r common.OCIOperationResponse) time.Duration {
-			attempt := float64(r.AttemptNumber - 1)
-			base := math.Pow(2, attempt)
-			jitter := 1 + (retryRNG.Float64()-0.5)*0.2
-			return time.Duration(base * jitter * float64(time.Second))
-		}),
-	)
-
-	maxAttempts := policy.MaximumNumberAttempts
-	var lastErr error
-
-	for attempt := uint(1); maxAttempts == 0 || attempt <= maxAttempts; attempt++ {
-		opErr := fn(ctx)
-		lastErr = opErr
-		operationResponse := common.OCIOperationResponse{Error: opErr, AttemptNumber: attempt}
-
-		if !policy.ShouldRetryOperation(operationResponse) {
-			return opErr
-		}
-
-		backoff := policy.NextDuration(operationResponse)
-		if logger != nil {
-			logger.Warnf("%s hit rate limit on attempt %d, retrying in %s", operation, attempt, backoff)
-		}
-		if deadline, ok := ctx.Deadline(); ok && time.Now().Add(backoff).After(deadline) {
-			return fmt.Errorf("%s retry exceeded context deadline: %w", operation, context.DeadlineExceeded)
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(backoff):
-		}
-	}
-
-	if lastErr == nil {
-		lastErr = fmt.Errorf("operation %s reached retry limit", operation)
-	}
-	return fmt.Errorf("%s retry exceeded maximum attempts: %w", operation, lastErr)
-}
-
-func isRateLimitError(err error) bool {
-	if err == nil {
-		return false
-	}
-	var serviceErr common.ServiceError
-	if errors.As(err, &serviceErr) {
-		return serviceErr.GetHTTPStatusCode() == http.StatusTooManyRequests
-	}
-	return false
-}
 
 type IpFamily struct {
 	IPv4 string
@@ -115,16 +55,16 @@ type PrimaryVnicConfig struct {
 }
 
 func ParsePrimaryVnicConfig(instance *core.Instance) (PrimaryVnicConfig, bool) {
-	for k, v := range instance.Metadata {
-		if k == primaryVnicMetadataKey {
-			var config PrimaryVnicConfig
-			if err := json.Unmarshal([]byte(v), &config); err != nil {
-				return PrimaryVnicConfig{}, false
-			}
-			return config, true
-		}
+	v, ok := instance.Metadata[primaryVnicMetadataKey]
+	if !ok {
+		return PrimaryVnicConfig{}, false
 	}
-	return PrimaryVnicConfig{}, false
+
+	var config PrimaryVnicConfig
+	if err := json.Unmarshal([]byte(v), &config); err != nil {
+		return PrimaryVnicConfig{}, false
+	}
+	return config, true
 }
 
 func GetClusterIpFamily(ctx context.Context, serviceLister corelisters.ServiceLister) (IpFamily, error) {
@@ -153,51 +93,28 @@ func PatchNodePodCIDRs(ctx context.Context, kubeClient kubernetes.Interface, nod
 		return fmt.Errorf("no PodCIDRs computed")
 	}
 
-	node, err := kubeClient.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+	patchBytes, err := json.Marshal(map[string]any{
+		"spec": map[string]any{
+			"podCIDR":  podCIDRs[0],
+			"podCIDRs": append([]string(nil), podCIDRs...),
+		},
+	})
 	if err != nil {
-		return err
-	}
-
-	nodeDry := node.DeepCopy()
-	nodeDry.Spec.PodCIDR = podCIDRs[0]
-	nodeDry.Spec.PodCIDRs = append([]string(nil), podCIDRs...)
-	if _, err := kubeClient.CoreV1().Nodes().Update(ctx, nodeDry, metav1.UpdateOptions{DryRun: []string{metav1.DryRunAll}}); err != nil {
-		if logger != nil {
-			logger.Errorf("dry-run update failed for node %s: %v", nodeName, err)
-		}
 		return err
 	}
 
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		currentNode, getErr := kubeClient.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
-		if getErr != nil {
-			return getErr
-		}
-		currentNode.Spec.PodCIDR = podCIDRs[0]
-		currentNode.Spec.PodCIDRs = append([]string(nil), podCIDRs...)
-		_, updateErr := kubeClient.CoreV1().Nodes().Update(ctx, currentNode, metav1.UpdateOptions{})
-		return updateErr
+		_, patchErr := kubeClient.CoreV1().Nodes().Patch(ctx, nodeName, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
+		return patchErr
 	}); err != nil {
 		if logger != nil {
-			logger.Errorf("failed to update node %s: %v", nodeName, err)
+			logger.Errorf("failed to patch node %s podCIDRs: %v", nodeName, err)
 		}
 		return err
-	}
-
-	updatedNode, err := kubeClient.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	if updatedNode.Spec.PodCIDR != podCIDRs[0] {
-		return fmt.Errorf("post-update check: spec.podCIDR=%q (expected %q)", updatedNode.Spec.PodCIDR, podCIDRs[0])
-	}
-	if !StringSlicesEqualIgnoreOrder(updatedNode.Spec.PodCIDRs, podCIDRs) {
-		return fmt.Errorf("post-update check: spec.podCIDRs=%v (expected %v)", updatedNode.Spec.PodCIDRs, podCIDRs)
 	}
 
 	if logger != nil {
-		logger.Infof("successfully updated node %s podCIDRs to %v", nodeName, podCIDRs)
+		logger.Infof("successfully patched node %s podCIDRs to %v", nodeName, podCIDRs)
 	}
 	return nil
 }
@@ -272,6 +189,9 @@ func getCIDRsByFamily(cidrBlocks []string) ([]string, []string, error) {
 }
 
 func formatIpCidr(ip string, mask *int) string {
+	if mask == nil {
+		return ip
+	}
 	return fmt.Sprintf("%s/%d", ip, *mask)
 }
 
@@ -392,6 +312,10 @@ func (f *FlexCIDR) CreateFlexCidr(primaryVnicID string, isIPv4 bool, isIPv6 bool
 
 	flexCidr := ""
 
+	if isIPv4 == isIPv6 {
+		return "", fmt.Errorf("exactly one IP family must be requested")
+	}
+
 	ipv4CidrBlock, ipv6CidrBlock, err := f.getCidrBlocks()
 	if err != nil {
 		return flexCidr, err
@@ -473,20 +397,46 @@ func (f *FlexCIDR) GetOrCreateFlexCidrList(primaryVnicID string) ([]string, erro
 		return nil, fmt.Errorf("flexCidrs %v is invalid", existingFlexCIDRs)
 	}
 
+	type createResult struct {
+		cidr string
+		err  error
+	}
+
+	var (
+		wg         sync.WaitGroup
+		ipv4Result createResult
+		ipv6Result createResult
+	)
+
 	if f.ClusterIpFamily.IPv4 != "" {
-		ipv4FlexCIDR, err := f.CreateFlexCidr(primaryVnicID, true, false)
-		if err != nil {
-			return nil, err
-		}
-		flexCidrs = append(flexCidrs, ipv4FlexCIDR)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ipv4Result.cidr, ipv4Result.err = f.CreateFlexCidr(primaryVnicID, true, false)
+		}()
 	}
 
 	if f.ClusterIpFamily.IPv6 != "" {
-		ipv6FlexCIDR, err := f.CreateFlexCidr(primaryVnicID, false, true)
-		if err != nil {
-			return nil, err
-		}
-		flexCidrs = append(flexCidrs, ipv6FlexCIDR)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ipv6Result.cidr, ipv6Result.err = f.CreateFlexCidr(primaryVnicID, false, true)
+		}()
+	}
+
+	wg.Wait()
+
+	if ipv4Result.err != nil {
+		return nil, ipv4Result.err
+	}
+	if ipv6Result.err != nil {
+		return nil, ipv6Result.err
+	}
+	if f.ClusterIpFamily.IPv4 != "" {
+		flexCidrs = append(flexCidrs, ipv4Result.cidr)
+	}
+	if f.ClusterIpFamily.IPv6 != "" {
+		flexCidrs = append(flexCidrs, ipv6Result.cidr)
 	}
 
 	if len(flexCidrs) == 0 {

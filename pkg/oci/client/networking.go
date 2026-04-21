@@ -317,19 +317,28 @@ func (c *client) CreatePrivateIp(ctx context.Context, vnicId string) (*core.Priv
 }
 
 func (c *client) CreatePrivateIpWithRequest(ctx context.Context, request core.CreatePrivateIpRequest) (core.PrivateIp, error) {
-	if !c.rateLimiter.Writer.TryAccept() {
-		return core.PrivateIp{}, RateLimitError(false, "CreatePrivateIp")
-	}
-	requestMetadata := getDefaultRequestMetadata(c.requestMetadata)
-	request.RequestMetadata = requestMetadata
-	resp, err := c.network.CreatePrivateIp(ctx, request)
-	incRequestCounter(err, createVerb, privateIPResource)
+	var privateIP core.PrivateIp
+	err := runWithRateLimitRetry(ctx, c.logger, "CreatePrivateIp", func(ctx context.Context) error {
+		if !c.rateLimiter.Writer.TryAccept() {
+			return RateLimitError(false, "CreatePrivateIp")
+		}
+
+		request.RequestMetadata = getDefaultRequestMetadata(c.requestMetadata)
+		resp, err := c.network.CreatePrivateIp(ctx, request)
+		incRequestCounter(err, createVerb, privateIPResource)
+		if err != nil {
+			c.logger.Infof("CreatePrivateIp failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
+			return errors.WithStack(err)
+		}
+
+		privateIP = resp.PrivateIp
+		return nil
+	})
 	if err != nil {
-		c.logger.Infof("CreatePrivateIp failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
-		return core.PrivateIp{}, errors.WithStack(err)
+		return core.PrivateIp{}, err
 	}
 
-	return resp.PrivateIp, nil
+	return privateIP, nil
 }
 
 func (c *client) GetIpv6(ctx context.Context, id string) (*core.Ipv6, error) {
@@ -394,19 +403,28 @@ func (c *client) CreateIpv6(ctx context.Context, vnicId string) (*core.Ipv6, err
 }
 
 func (c *client) CreateIpv6WithRequest(ctx context.Context, request core.CreateIpv6Request) (core.Ipv6, error) {
-	if !c.rateLimiter.Writer.TryAccept() {
-		return core.Ipv6{}, RateLimitError(false, "CreateIpv6")
-	}
-	requestMetadata := getDefaultRequestMetadata(c.requestMetadata)
-	request.RequestMetadata = requestMetadata
-	resp, err := c.network.CreateIpv6(ctx, request)
-	incRequestCounter(err, createVerb, ipv6IPResource)
+	var ipv6 core.Ipv6
+	err := runWithRateLimitRetry(ctx, c.logger, "CreateIpv6", func(ctx context.Context) error {
+		if !c.rateLimiter.Writer.TryAccept() {
+			return RateLimitError(false, "CreateIpv6")
+		}
+
+		request.RequestMetadata = getDefaultRequestMetadata(c.requestMetadata)
+		resp, err := c.network.CreateIpv6(ctx, request)
+		incRequestCounter(err, createVerb, ipv6IPResource)
+		if err != nil {
+			c.logger.Infof("CreateIpv6 failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
+			return errors.WithStack(err)
+		}
+
+		ipv6 = resp.Ipv6
+		return nil
+	})
 	if err != nil {
-		c.logger.Infof("CreateIpv6 failed %s", pointer.StringDeref(resp.OpcRequestId, ""))
-		return core.Ipv6{}, errors.WithStack(err)
+		return core.Ipv6{}, err
 	}
 
-	return resp.Ipv6, nil
+	return ipv6, nil
 }
 
 func (c *client) CreateNetworkSecurityGroup(ctx context.Context, compartmentId, vcnId, displayName, serviceUid string) (*core.NetworkSecurityGroup, error) {
